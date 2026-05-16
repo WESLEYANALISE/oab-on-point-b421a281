@@ -1,20 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, ChevronLeft, ChevronRight, Flag } from "lucide-react";
+import { useState } from "react";
+import { Loader2, ChevronLeft, ChevronRight, Flag, Check, X, FileText, ListChecks } from "lucide-react";
 import { getSimulado, iniciarTentativa, salvarResposta, finalizarTentativa } from "@/lib/simulados.functions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/simulados/$id")({
-  head: ({ params }) => ({
-    meta: [{ title: `Simulado — OAB na Risca` }],
-  }),
+  head: () => ({ meta: [{ title: `Simulado — OAB na Risca` }] }),
   component: PraticaPage,
 });
 
 type Alt = "A" | "B" | "C" | "D";
+type View = "enunciado" | "alternativas";
 
 function PraticaPage() {
   const { id } = Route.useParams();
@@ -35,7 +34,9 @@ function PraticaPage() {
   });
 
   const [idx, setIdx] = useState(0);
-  const [respostas, setRespostas] = useState<Record<number, Alt>>({});
+  const [view, setView] = useState<View>("enunciado");
+  // Estado por questão: { selecionada, respondida }
+  const [respostas, setRespostas] = useState<Record<number, { alt: Alt; respondida: boolean }>>({});
 
   const questoes = sim.data?.questoes ?? [];
   const atual = questoes[idx];
@@ -52,13 +53,25 @@ function PraticaPage() {
     },
   });
 
-  function escolher(alt: Alt) {
+  function selecionar(alt: Alt) {
     if (!atual) return;
-    setRespostas((r) => ({ ...r, [atual.numero]: alt }));
-    salvarMut.mutate({ numero: atual.numero, alt });
+    const r = respostas[atual.numero];
+    if (r?.respondida) return; // bloqueia troca após responder
+    setRespostas((prev) => ({ ...prev, [atual.numero]: { alt, respondida: false } }));
   }
 
-  const respondidas = Object.keys(respostas).length;
+  function responder() {
+    if (!atual) return;
+    const r = respostas[atual.numero];
+    if (!r || r.respondida) return;
+    setRespostas((prev) => ({ ...prev, [atual.numero]: { ...r, respondida: true } }));
+    salvarMut.mutate({ numero: atual.numero, alt: r.alt });
+  }
+
+  function irPara(novoIdx: number) {
+    setIdx(novoIdx);
+    setView("enunciado");
+  }
 
   if (sim.isLoading || tentativa.isLoading) {
     return (
@@ -71,99 +84,169 @@ function PraticaPage() {
     return <div className="p-6 text-center text-muted-foreground">Simulado indisponível.</div>;
   }
 
+  const totalQ = questoes.length;
+  const respondidasN = Object.values(respostas).filter((r) => r.respondida).length;
+  const estado = respostas[atual.numero];
+  const respondida = !!estado?.respondida;
+  const correta = atual.resposta_correta as Alt | undefined;
+  const ehUltima = idx === totalQ - 1;
+  const numero = sim.data.simulado.prova_numero;
+  const ano = sim.data.simulado.ano;
+
   return (
-    <div className="px-4 md:px-8 py-6 max-w-3xl mx-auto">
+    <div className="px-4 md:px-8 py-5 pb-28 max-w-3xl mx-auto">
       <header className="mb-4">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">{sim.data.simulado.titulo}</p>
+        <p className="text-xs text-muted-foreground">
+          {numero}º Exame da Ordem · Simulado{ano ? ` · ${ano}` : ""}
+        </p>
         <div className="flex items-baseline justify-between mt-1">
-          <h1 className="font-display text-2xl">Questão {atual.numero} de {questoes.length}</h1>
-          <span className="text-xs text-muted-foreground">{respondidas}/{questoes.length} respondidas</span>
+          <h1 className="font-display text-2xl">
+            Questão {atual.numero} <span className="text-muted-foreground text-base">de {totalQ}</span>
+          </h1>
+          <span className="text-xs text-muted-foreground">{respondidasN}/{totalQ} respondidas</span>
         </div>
         {atual.materia && (
-          <p className="mt-1 inline-block px-2 py-0.5 rounded-full text-[11px] bg-primary/10 text-primary font-medium">
+          <p className="mt-2 inline-block px-2 py-0.5 rounded-full text-[11px] bg-primary/10 text-primary font-medium">
             {atual.materia}
           </p>
         )}
       </header>
 
-      <article className="rounded-xl border border-border bg-card p-5">
-        <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{atual.enunciado}</p>
-        <ul className="mt-5 space-y-2">
-          {(["A", "B", "C", "D"] as const).map((letra) => {
-            const texto = (atual.alternativas as Record<string, string>)[letra];
-            const selecionada = respostas[atual.numero] === letra;
-            return (
-              <li key={letra}>
-                <button
-                  onClick={() => escolher(letra)}
-                  className={cn(
-                    "w-full text-left flex gap-3 p-3 rounded-lg border transition-colors",
-                    selecionada
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:bg-accent",
-                  )}
-                >
-                  <span className={cn(
-                    "h-7 w-7 shrink-0 rounded-full grid place-items-center text-sm font-semibold",
-                    selecionada ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
-                  )}>{letra}</span>
-                  <span className="text-sm leading-relaxed">{texto}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+      {/* Toggle Enunciado / Alternativas */}
+      <div className="grid grid-cols-2 gap-1 p-1 bg-muted rounded-full mb-4">
+        <button
+          onClick={() => setView("enunciado")}
+          className={cn(
+            "flex items-center justify-center gap-2 py-2 rounded-full text-sm font-medium transition-colors",
+            view === "enunciado" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+          )}
+        >
+          <FileText className="h-4 w-4" /> Enunciado
+        </button>
+        <button
+          onClick={() => setView("alternativas")}
+          className={cn(
+            "flex items-center justify-center gap-2 py-2 rounded-full text-sm font-medium transition-colors",
+            view === "alternativas" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+          )}
+        >
+          <ListChecks className="h-4 w-4" /> Alternativas
+        </button>
+      </div>
+
+      <article className="rounded-xl border border-border bg-card p-5 min-h-[40vh]">
+        {view === "enunciado" ? (
+          <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{atual.enunciado}</p>
+        ) : (
+          <ul className="space-y-2">
+            {(["A", "B", "C", "D"] as const).map((letra) => {
+              const texto = (atual.alternativas as Record<string, string>)[letra];
+              const selecionada = estado?.alt === letra;
+              const ehCorreta = respondida && correta === letra;
+              const ehErrada = respondida && selecionada && correta !== letra;
+              return (
+                <li key={letra}>
+                  <button
+                    onClick={() => selecionar(letra)}
+                    disabled={respondida}
+                    className={cn(
+                      "w-full text-left flex gap-3 p-3 rounded-lg border transition-colors",
+                      ehCorreta && "border-green-500 bg-green-500/10",
+                      ehErrada && "border-destructive bg-destructive/10",
+                      !respondida && selecionada && "border-primary bg-primary/10",
+                      !respondida && !selecionada && "border-border hover:bg-accent",
+                      respondida && !ehCorreta && !ehErrada && "border-border opacity-60",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "h-7 w-7 shrink-0 rounded-full grid place-items-center text-sm font-semibold",
+                        ehCorreta && "bg-green-500 text-white",
+                        ehErrada && "bg-destructive text-destructive-foreground",
+                        !respondida && selecionada && "bg-primary text-primary-foreground",
+                        !respondida && !selecionada && "bg-muted text-foreground",
+                        respondida && !ehCorreta && !ehErrada && "bg-muted text-foreground",
+                      )}
+                    >
+                      {ehCorreta ? <Check className="h-4 w-4" /> : ehErrada ? <X className="h-4 w-4" /> : letra}
+                    </span>
+                    <span className="text-sm leading-relaxed">{texto}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {respondida && view === "alternativas" && (
+          <div
+            className={cn(
+              "mt-4 rounded-lg p-3 text-sm font-medium",
+              estado?.alt === correta
+                ? "bg-green-500/10 text-green-600"
+                : "bg-destructive/10 text-destructive",
+            )}
+          >
+            {estado?.alt === correta
+              ? "Resposta correta!"
+              : `Resposta incorreta. Gabarito: ${correta}.`}
+          </div>
+        )}
       </article>
 
-      <nav className="flex items-center justify-between mt-5 gap-2">
-        <Button
-          variant="outline"
-          onClick={() => setIdx((i) => Math.max(0, i - 1))}
-          disabled={idx === 0}
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
-        </Button>
-        {idx < questoes.length - 1 ? (
-          <Button onClick={() => setIdx((i) => Math.min(questoes.length - 1, i + 1))}>
-            Próxima <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        ) : (
+      {/* Rodapé fixo: Voltar · Responder · Próximo */}
+      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t border-border md:left-64">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-2">
           <Button
-            onClick={() => finalMut.mutate()}
-            disabled={finalMut.isPending}
-            className="bg-gradient-gold text-gold-foreground"
+            variant="outline"
+            size="icon"
+            onClick={() => irPara(Math.max(0, idx - 1))}
+            disabled={idx === 0}
+            aria-label="Voltar"
           >
-            {finalMut.isPending ? (
-              <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Finalizando…</>
-            ) : (
-              <><Flag className="h-4 w-4 mr-1" /> Finalizar simulado</>
-            )}
+            <ChevronLeft className="h-5 w-5" />
           </Button>
-        )}
-      </nav>
 
-      <section className="mt-6">
-        <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Mapa de questões</p>
-        <div className="grid grid-cols-10 gap-1.5">
-          {questoes.map((q, i) => {
-            const r = respostas[q.numero];
-            const isAtual = i === idx;
-            return (
-              <button
-                key={q.id}
-                onClick={() => setIdx(i)}
-                className={cn(
-                  "h-8 rounded text-[11px] font-semibold transition-colors",
-                  isAtual && "ring-2 ring-primary",
-                  r ? "bg-primary text-primary-foreground" : "bg-muted text-foreground hover:bg-accent",
-                )}
-              >
-                {q.numero}
-              </button>
-            );
-          })}
+          {!respondida ? (
+            <Button
+              className="flex-1"
+              disabled={!estado?.alt || salvarMut.isPending}
+              onClick={() => {
+                if (view === "enunciado") setView("alternativas");
+                else responder();
+              }}
+            >
+              {view === "enunciado" ? "Ver alternativas" : "Responder"}
+            </Button>
+          ) : ehUltima ? (
+            <Button
+              className="flex-1 bg-gradient-gold text-gold-foreground"
+              onClick={() => finalMut.mutate()}
+              disabled={finalMut.isPending}
+            >
+              {finalMut.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Finalizando…</>
+              ) : (
+                <><Flag className="h-4 w-4 mr-1" /> Finalizar simulado</>
+              )}
+            </Button>
+          ) : (
+            <Button className="flex-1" onClick={() => irPara(idx + 1)}>
+              Próxima questão <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          )}
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => irPara(Math.min(totalQ - 1, idx + 1))}
+            disabled={ehUltima}
+            aria-label="Próxima"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
         </div>
-      </section>
+      </nav>
     </div>
   );
 }
