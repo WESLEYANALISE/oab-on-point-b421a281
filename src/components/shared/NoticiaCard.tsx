@@ -32,7 +32,7 @@ export function NoticiaCard({ noticia, variant = "default" }: { noticia: Noticia
             {noticia.categoria}
           </span>
           <span className={cn("text-[11px]", variant === "hero" ? "text-primary-foreground/70" : "text-muted-foreground")}>
-            {new Date(noticia.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+            {formatBR(noticia.data)}
           </span>
         </div>
         <h3 className={cn(
