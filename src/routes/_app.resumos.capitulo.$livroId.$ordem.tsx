@@ -2,11 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Minus, Plus, Type } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { obterLivroResumo } from "@/lib/resumos.functions";
 import { normalizarTitulo } from "@/lib/titulo";
+import { useFontScale } from "@/hooks/use-font-scale";
 
 export const Route = createFileRoute("/_app/resumos/capitulo/$livroId/$ordem")({
   component: CapituloView,
@@ -15,6 +17,7 @@ export const Route = createFileRoute("/_app/resumos/capitulo/$livroId/$ordem")({
 function CapituloView() {
   const { livroId, ordem } = Route.useParams();
   const ordemNum = Number(ordem);
+  const { scale, increase, decrease, canIncrease, canDecrease } = useFontScale();
   const fn = useServerFn(obterLivroResumo);
   const { data, isPending } = useQuery({
     queryKey: ["resumo-livro", livroId],
@@ -59,17 +62,45 @@ function CapituloView() {
         <ArrowLeft className="h-3.5 w-3.5" /> {data.livro.titulo}
       </Link>
 
-      <header className="mb-6 pb-4 border-b border-border">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-          Capítulo {atual.ordem} de {capitulos.length}
-        </p>
-        <h1 className="font-display text-2xl md:text-4xl leading-tight mt-1 break-words">
-          {normalizarTitulo(atual.titulo)}
-        </h1>
+      <header className="mb-6 pb-4 border-b border-border flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Capítulo {atual.ordem} de {capitulos.length}
+          </p>
+          <h1 className="font-display text-2xl md:text-4xl leading-tight mt-1 break-words">
+            {normalizarTitulo(atual.titulo)}
+          </h1>
+        </div>
+        <div className="md:hidden flex items-center gap-1 shrink-0">
+          <button
+            type="button"
+            onClick={decrease}
+            disabled={!canDecrease}
+            aria-label="Diminuir fonte"
+            className="h-8 w-8 grid place-items-center rounded-md border border-border bg-card hover:bg-accent disabled:opacity-40"
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </button>
+          <Type className="h-3.5 w-3.5 text-muted-foreground" />
+          <button
+            type="button"
+            onClick={increase}
+            disabled={!canIncrease}
+            aria-label="Aumentar fonte"
+            className="h-8 w-8 grid place-items-center rounded-md border border-border bg-card hover:bg-accent disabled:opacity-40"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </header>
 
-      <article className="prose prose-sm md:prose-base max-w-none dark:prose-invert prose-img:rounded-lg prose-img:mx-auto prose-headings:font-display prose-strong:text-foreground prose-a:text-primary">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{atual.conteudo_markdown ?? ""}</ReactMarkdown>
+      <article
+        className="prose prose-sm md:prose-base max-w-none dark:prose-invert prose-img:rounded-lg prose-img:mx-auto prose-headings:font-display prose-headings:text-foreground prose-h1:text-2xl prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-3 prose-h2:pb-1 prose-h2:border-b prose-h2:border-border/50 prose-h3:text-lg prose-h3:mt-6 prose-h3:text-gold prose-strong:text-foreground prose-strong:font-semibold prose-a:text-primary prose-p:leading-relaxed prose-p:my-4 prose-li:my-1 prose-blockquote:border-l-gold prose-blockquote:text-muted-foreground prose-hr:border-border"
+        style={{ fontSize: `${scale}em` }}
+      >
+        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+          {atual.conteudo_markdown ?? ""}
+        </ReactMarkdown>
       </article>
 
       <nav className="mt-10 pt-6 border-t border-border flex justify-between gap-3">
