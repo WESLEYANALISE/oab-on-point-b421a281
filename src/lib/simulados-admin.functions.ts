@@ -303,15 +303,48 @@ ${(job.data.ocr_prova ?? "").slice(0, 90000)}
 ${(job.data.ocr_gabarito ?? "").slice(0, 20000)}`;
 
       await appendLog(data.jobId, "info", `Organizando questões via Gemini Flash Lite (lote ${data.batchIndex + 1})…`);
-      const raw = await geminiExtractJson(system, user);
-      const parsed = JSON.parse(raw) as { questoes?: unknown[] };
-      const validas: z.infer<typeof QuestaoSchema>[] = [];
-      for (const q of parsed.questoes ?? []) {
-        const r = QuestaoSchema.safeParse(q);
-        if (r.success && r.data.numero >= inicio && r.data.numero <= fim) {
-          validas.push(r.data);
+      const validasMap = new Map<number, z.infer<typeof QuestaoSchema>>();
+
+      const runExtract = async (prompt: string) => {
+        const raw = await geminiExtractJson(system, prompt);
+        let parsed: { questoes?: unknown[] } = {};
+        try { parsed = JSON.parse(raw) as { questoes?: unknown[] }; } catch { parsed = {}; }
+        for (const q of parsed.questoes ?? []) {
+          const r = QuestaoSchema.safeParse(q);
+          if (r.success && r.data.numero >= inicio && r.data.numero <= fim) {
+            validasMap.set(r.data.numero, r.data);
+          }
+        }
+      };
+
+      await runExtract(user);
+
+      // Retry para números faltantes (até 3 tentativas)
+      for (let tentativa = 1; tentativa <= 3; tentativa++) {
+        const faltantes: number[] = [];
+        for (let n = inicio; n <= fim; n++) if (!validasMap.has(n)) faltantes.push(n);
+        if (faltantes.length === 0) break;
+        await appendLog(
+          data.jobId,
+          "info",
+          `Faltam ${faltantes.length} questões (${faltantes.join(", ")}). Retentativa ${tentativa}/3…`,
+        );
+        const retryPrompt = `Extraia ESPECIFICAMENTE as questões de números ${faltantes.join(", ")} do Exame abaixo. Use o mesmo schema e regras anteriores. Retorne JSON: { "questoes": [ ... ] }
+
+===== PROVA =====
+${(job.data.ocr_prova ?? "").slice(0, 90000)}
+
+===== GABARITO =====
+${(job.data.ocr_gabarito ?? "").slice(0, 20000)}`;
+        try {
+          await runExtract(retryPrompt);
+        } catch (err) {
+          const m = err instanceof Error ? err.message : String(err);
+          await appendLog(data.jobId, "info", `Retentativa ${tentativa} falhou: ${m}`);
         }
       }
+
+      const validas = Array.from(validasMap.values()).sort((a, b) => a.numero - b.numero);
 
       if (validas.length > 0) {
         // Remove duplicatas antes de inserir
