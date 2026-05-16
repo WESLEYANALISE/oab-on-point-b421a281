@@ -320,7 +320,8 @@ ${(job.data.ocr_prova ?? "").slice(0, 90000)}
 ===== GABARITO =====
 ${(job.data.ocr_gabarito ?? "").slice(0, 20000)}`;
 
-      const raw = await mistralChatJson(apiKey, system, user);
+      await appendLog(data.jobId, "info", `Organizando questões via Gemini Flash Lite (lote ${data.batchIndex + 1})…`);
+      const raw = await geminiExtractJson(system, user);
       const parsed = JSON.parse(raw) as { questoes?: unknown[] };
       const validas: z.infer<typeof QuestaoSchema>[] = [];
       for (const q of parsed.questoes ?? []) {
