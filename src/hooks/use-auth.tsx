@@ -81,12 +81,6 @@ function writeLastUid(uid: string | null) {
   }
 }
 
-// Otimistic: se já temos um uid em cache, assumimos sessão até getSession confirmar.
-// Isso impede que o gate `!!user` esconda a UI no primeiro paint.
-function hasCachedSession(): boolean {
-  return !!readLastUid();
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
