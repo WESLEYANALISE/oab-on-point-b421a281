@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_app/simulados/$slug/resultado/$tentativa
 });
 
 function ResultadoPage() {
-  const { id, tentativaId } = Route.useParams();
+  const { tentativaId } = Route.useParams();
   const fn = useServerFn(getResultado);
   const { data, isLoading } = useQuery({
     queryKey: ["resultado", tentativaId],
