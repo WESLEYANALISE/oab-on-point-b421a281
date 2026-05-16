@@ -128,7 +128,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 const NON_PERSISTED_PREFIXES = new Set([
   "profile",
   "is-admin",
-  "simulado-job",
+  "sim-job",
   "simulado-queue",
 ]);
 
