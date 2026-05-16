@@ -1,88 +1,114 @@
-## Visão geral
+## Objetivo
 
-O **OAB na Risca** é um app de estudos focado em quem vai prestar o Exame da OAB. Será inspirado no app de referência (mesmas categorias de funcionalidade: aulas interativas, resumos, flashcards, questões, simulados, assistente, notícias), mas com **identidade visual própria**, **dados mockados** na V1, **sem login** ainda, e estrutura nativa do **TanStack Start** (não React Router DOM).
+Limpar a home no mobile: cabeçalho enxuto com contagem regressiva em destaque, bloco principal para **Estudar / Aulas Interativas**, e abaixo um carrossel **Ferramentas de estudo** (resumos, flashcards, biblioteca, áudio-aulas) no estilo do app de referência.
 
-Como o app de referência tem 400+ páginas e 200+ componentes, vou entregar em **fases**. Cada fase é uma mensagem de trabalho separada — assim você vê resultado funcionando rápido, dá feedback, e seguimos.
+## Mudanças
 
----
+### 1. `HomeHero.tsx` — reduzido pela metade
+Manter só o essencial no topo. Sem manchete grande, sem parágrafo longo, sem 2 botões CTA.
 
-## Identidade visual (OAB na Risca)
+```
+┌──────────────────────────────────────┐
+│ 42º EXAME · 1ª FASE                  │
+│                                      │
+│ 128  09  29        [📅 Calendário] │
+│ DIAS HRS MIN                         │
+│                                      │
+│ ─────────────────────────────        │
+│ Domingo, 23 de setembro de 2026      │
+└──────────────────────────────────────┘
+```
 
-- **Tom:** profissional-jurídico moderno, motivacional ("na risca" = preciso, no detalhe), focado em foco/produtividade
-- **Paleta:** preto profundo + bordô/vinho (toga) + dourado discreto (selo OAB) + off-white. Vou propor as variáveis exatas em oklch quando começar a Fase 1
-- **Tipografia:** display serifada elegante (ex.: Instrument Serif ou Cormorant) + sans humanista para corpo (Inter Tight ou Work Sans)
-- **Layout:** mobile-first com carrosséis horizontais, cards com cover, hero slider na home, navbar inferior no mobile e sidebar no desktop
-- **Componentes base:** shadcn/ui já instalado + Embla carousel + Framer Motion para transições
+- Pill "42º Exame · 1ª fase" (chip pequeno dourado)
+- Countdown grande em destaque (números bem maiores, foco visual principal)
+- Botão "Calendário" alinhado à direita do countdown → `/reta-final`
+- Linha divisória sutil
+- Data por extenso embaixo, discreta
+- Padding vertical reduzido: `py-5 md:py-10` (era `py-10 md:py-16`)
+- Sem headline "Passe na OAB na risca" e sem parágrafo descritivo no mobile (mantém só o essencial — a marca já está no header)
 
----
+### 2. Nova seção destacada: **Estudar**
+Substitui o carrossel "Estudar" atual por um **card grande único** em destaque para "Aulas Interativas" (o ponto de entrada principal):
 
-## Arquitetura técnica
+```
+┌──────────────────────────────────────┐
+│ ESTUDAR                              │
+│                                      │
+│ ┌──────────────────────────────────┐ │
+│ │ [📚]            AULAS            │ │
+│ │             INTERATIVAS          │ │
+│ │  Comece de onde parou →          │ │
+│ │  Ética · Aula 4 · 62%            │ │
+│ │  ████████░░░░░░                  │ │
+│ └──────────────────────────────────┘ │
+└──────────────────────────────────────┘
+```
 
-- **Rotas:** TanStack Start file-based em `src/routes/` (sem `src/pages/`)
-- **Estado de servidor:** TanStack Query já configurado
-- **Dados mockados:** módulos TS em `src/data/` (matérias, aulas, questões, flashcards, simulados, notícias) — fáceis de trocar por chamadas reais depois
-- **Layout compartilhado:** route layout pathless (`_app.tsx`) com header + bottom nav (mobile) / sidebar (desktop)
-- **Assistente IA:** placeholder de UI de chat na V1; integração com Lovable AI Gateway entra na Fase 4
+- Card grande full-width com gradient bordô, mais alto (~180px mobile)
+- Ícone grande, título "Aulas Interativas" em display
+- Funde com o "Continue de onde parou" — mostra progresso da última aula ali dentro
+- CTA "Começar a estudar" → `/aulas` (ou `/materias/etica-oab` se já tem progresso)
+- Remove o card "Continue de onde parou" separado (vira parte deste)
 
----
+### 3. Novo carrossel: **Ferramentas de estudo**
+Estilo do projeto de referência (`EstudosCarousel`): cards horizontais menores com thumb/cover + ícone + label + sublegenda.
 
-## Fases de entrega
+Itens:
+1. **Resumos** → `/resumos` — "Direto ao ponto"
+2. **Flashcards** → `/flashcards` — "Memorize com SRS"
+3. **Biblioteca** → `/biblioteca` *(rota nova, placeholder ComingSoon)* — "PDFs, livros e súmulas"
+4. **Áudio-aulas** → `/audioaulas` *(rota nova, placeholder ComingSoon)* — "Estude no fone"
 
-### Fase 1 — Fundação visual e home (próxima mensagem)
-- Design system OAB na Risca em `src/styles.css` (tokens oklch, fontes, radius, sombras)
-- Layout app: `_app.tsx` com header, bottom nav mobile, sidebar desktop
-- **Home `/`:** hero slider, "Continue estudando", carrossel de matérias OAB, atalhos (Aulas, Resumos, Flashcards, Questões, Simulados, Notícias), seção destaque "Reta final OAB", carrossel de notícias, CTA do Assistente
-- Componentes reutilizáveis: `MateriaCard`, `AtalhoCard`, `Carousel`, `SectionHeader`, `HeroSlide`, `NoticiaCard`
-- Página `/materias` com grid completo das matérias da OAB 1ª fase (Constitucional, Civil, Processo Civil, Penal, Processo Penal, Trabalho, Processo do Trabalho, Tributário, Administrativo, Empresarial, Consumidor, Ambiental, Internacional, Filosofia, ECA, Estatuto da OAB, Direitos Humanos, Ética)
-- Mocks iniciais de matérias e notícias
+```
+┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
+│  📄     │ │  🃏     │ │  📚     │ │  🎧     │
+│         │ │         │ │         │ │         │
+│ Resumos │ │ Flash.. │ │ Biblio. │ │ Áudio.. │
+│ Direto..│ │ Memori..│ │ PDFs... │ │ Estude..│
+└─────────┘ └─────────┘ └─────────┘ └─────────┘
+   ←─── scroll horizontal ───→
+```
 
-### Fase 2 — Aulas interativas e Resumos
-- `/materias/$slug` — detalhe da matéria com tópicos, progresso, abas (Aulas / Resumos / Flashcards / Questões)
-- `/materias/$slug/aulas/$aulaId` — **aula interativa**: slides navegáveis com texto, exemplos, quiz inline ao final, marcar como concluída, "próxima aula"
-- `/materias/$slug/resumos` e `/materias/$slug/resumos/$id` — leitura com sumário lateral, marcar lido, exportar
-- Sistema de progresso local (localStorage) por aula/resumo
-- Mocks de aulas (3–5 por matéria piloto) e resumos
+- Cards de ~150px de largura, ~170px de altura
+- Topo: bloco colorido (cor por ferramenta) com ícone grande
+- Rodapé: nome em bold + subtítulo cinza
+- `overflow-x-auto scrollbar-hide snap-x`, padding inicial `px-4`
+- Reaproveita o estilo já criado para os cards de estudo
 
-### Fase 3 — Flashcards, Questões e Simulados
-- `/flashcards` hub + `/materias/$slug/flashcards` — viewer estilo Anki (flip, acertei/errei, SRS simples)
-- `/questoes` hub + filtros por matéria/banca/ano — `/questoes/resolver` com cronômetro, gabarito, comentário
-- `/simulados` — listar simulados OAB (exames anteriores mockados) + `/simulados/$id/realizar` (80 questões, cronômetro de 5h, salvar parciais) + `/simulados/$id/resultado` (gráficos por matéria, % aproveitamento)
-- "Caderno de erros" automático
+### 4. Remover a seção **Praticar**
+A pedido implícito (não foi mencionada na nova organização). Questões e simulados continuam acessíveis pela barra inferior (já tem botão "Questões") e pelo menu lateral. Remove a seção "Praticar" da home para reduzir poluição.
 
-### Fase 4 — Assistente IA + Notícias OAB + Polimento
-- Habilitar **Lovable Cloud** + **Lovable AI Gateway**
-- `/assistente` — chat com markdown, contexto OAB (system prompt jurídico), histórico em sessão
-- Botão flutuante do assistente em todas as páginas
-- `/noticias` + `/noticias/$id` — feed de notícias jurídicas/OAB (mockado; depois RSS real)
-- Página "Reta final OAB" — countdown para próximo exame, plano de estudos sugerido, dicas
-- Página de perfil simples (preferências, tema escuro/claro, matérias favoritas — tudo em localStorage)
-- Animações de entrada, skeletons, vazios bem desenhados, SEO meta por rota
+### 5. Reordenação final da home (mobile)
 
-### Fases futuras (depois da V1)
-- Login (Lovable Cloud Auth) e sincronização de progresso
-- Conteúdo real: integração com banco de questões, geração de aulas/resumos via IA
-- Vade Mecum, Súmulas, Jurisprudência
-- Plano de estudos personalizado com IA
-- Gamificação, ranking, streaks
-- Áudio-aulas, vídeo-aulas
-- PWA / app mobile
+```
+1. HomeHero (compacto: countdown + data + calendário)
+2. Seção "Estudar" → card grande Aulas Interativas + progresso
+3. Carrossel "Ferramentas de estudo" → Resumos / Flashcards / Biblioteca / Áudio-aulas
+4. Carrossel "Matérias da OAB" (mantém)
+5. Card Assistente IA (mantém)
+6. Notícias (mantém)
+```
 
----
+### 6. Rotas placeholder novas
+- `src/routes/_app.biblioteca.tsx` → `<ComingSoon>`
+- `src/routes/_app.audioaulas.tsx` → `<ComingSoon>`
+- Adicionar as duas no `MenuDrawer.tsx` (grupo "Estudar")
 
-## O que NÃO entra (escopo OAB-only)
+## Arquivos tocados
 
-Removido do app original por não ser foco do exame: política, Câmara/Senado, eleições, JuriFlix, blogger jurídico, faculdade/semestre, OAB ferramentas avançadas de advogado (contratos, prazos, processos, jurisprudência profissional), documentários, filmes, três poderes, Meu Brasil, etc.
+**Editados:**
+- `src/components/home/HomeHero.tsx` — versão compacta
+- `src/routes/_app.index.tsx` — nova ordem de seções, novo card "Estudar", carrossel "Ferramentas", remove "Praticar"
+- `src/components/layout/MenuDrawer.tsx` — adiciona Biblioteca e Áudio-aulas
 
----
+**Criados:**
+- `src/routes/_app.biblioteca.tsx`
+- `src/routes/_app.audioaulas.tsx`
 
-## Detalhes técnicos (opcional)
+## Detalhes técnicos
 
-- Cada rota terá `head()` próprio com title/description/og — não vou reutilizar metadados da home
-- Mocks em `src/data/*.ts` exportando funções `getMaterias()`, `getAulasByMateria(slug)`, etc., para troca trivial por server functions depois
-- Componentes pequenos e focados; nada de página monolítica de 700 linhas como no original
-- Progresso em `localStorage` via hook `useProgresso(key)` — fácil migrar para backend
-- Sem `react-router-dom`, sem `@/integrations/supabase` na V1
-
----
-
-**Próximo passo se você aprovar:** começo pela **Fase 1** — design system + home + página de matérias. Depois você testa, ajusta direção visual, e seguimos para a Fase 2.
+- Mantém TanStack file routing (`_app.biblioteca.tsx`, `_app.audioaulas.tsx`).
+- Reutiliza `CountdownExame` com prop `compact` já existente, mas aumenta o tamanho dos números no hero (variante `hero`) para virarem o foco visual.
+- Cards de "Ferramentas" usam mesmas classes do `StudyCardItem` atual mas com layout mais vertical e ícone grande no topo (sem precisar de imagens — só ícone + cor).
+- Sem mudança no bottom nav, no MobileHeader nem no DesktopSidebar.
+- Nada de assets/imagens novos — tudo com ícones lucide + tokens do design system.

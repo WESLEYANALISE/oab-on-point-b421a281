@@ -5,7 +5,7 @@ import { MateriaCard } from "@/components/shared/MateriaCard";
 import { NoticiaCard } from "@/components/shared/NoticiaCard";
 import { getMaterias } from "@/data/materias";
 import { getNoticias } from "@/data/noticias";
-import { Sparkles, ArrowRight, Flame, BookOpen, FileText, Layers, ClipboardList, Target } from "lucide-react";
+import { Sparkles, ArrowRight, BookOpen, FileText, Layers, Library, Headphones, Flame } from "lucide-react";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_app/")({
   component: HomePage,
 });
 
-type StudyCard = {
+type Ferramenta = {
   key: string;
   to: string;
   label: string;
@@ -28,28 +28,26 @@ type StudyCard = {
   cor: string;
 };
 
-const ESTUDAR: StudyCard[] = [
-  { key: "aulas", to: "/aulas", label: "Aulas Interativas", descricao: "Slides + quiz inline", icon: BookOpen, cor: "bg-gradient-toga text-primary-foreground" },
+const FERRAMENTAS: Ferramenta[] = [
   { key: "resumos", to: "/resumos", label: "Resumos", descricao: "Direto ao ponto", icon: FileText, cor: "bg-secondary text-secondary-foreground" },
   { key: "flashcards", to: "/flashcards", label: "Flashcards", descricao: "Memorize com SRS", icon: Layers, cor: "bg-gradient-gold text-gold-foreground" },
+  { key: "biblioteca", to: "/biblioteca", label: "Biblioteca", descricao: "PDFs, livros e súmulas", icon: Library, cor: "bg-gradient-toga text-primary-foreground" },
+  { key: "audioaulas", to: "/audioaulas", label: "Áudio-aulas", descricao: "Estude no fone", icon: Headphones, cor: "bg-foreground text-background" },
 ];
 
-const PRATICAR: StudyCard[] = [
-  { key: "questoes", to: "/questoes", label: "Questões", descricao: "Banco FGV completo", icon: ClipboardList, cor: "bg-secondary text-secondary-foreground" },
-  { key: "simulados", to: "/simulados", label: "Simulados", descricao: "80 questões · 5h", icon: Target, cor: "bg-gradient-toga text-primary-foreground" },
-];
-
-function StudyCardItem({ item }: { item: StudyCard }) {
+function FerramentaCard({ item }: { item: Ferramenta }) {
   const Icon = item.icon;
   return (
     <Link
       to={item.to}
-      className={`group snap-start shrink-0 w-[200px] md:w-[230px] rounded-2xl p-5 min-h-[150px] flex flex-col justify-between transition-all hover:-translate-y-0.5 hover:shadow-lg ${item.cor}`}
+      className="snap-start shrink-0 w-[150px] rounded-2xl overflow-hidden border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-lg"
     >
-      <Icon className="h-7 w-7 opacity-90" />
-      <div>
-        <p className="font-display text-xl leading-tight">{item.label}</p>
-        <p className="text-[11px] opacity-75 mt-1">{item.descricao}</p>
+      <div className={`h-[110px] flex items-center justify-center ${item.cor}`}>
+        <Icon className="h-10 w-10 opacity-90" strokeWidth={1.8} />
+      </div>
+      <div className="p-3">
+        <p className="font-display text-base leading-tight">{item.label}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{item.descricao}</p>
       </div>
     </Link>
   );
@@ -65,43 +63,62 @@ function HomePage() {
     <div className="space-y-10 md:space-y-14 pb-10">
       <HomeHero />
 
-      {/* Continue estudando */}
+      {/* Estudar — card grande Aulas Interativas + progresso integrado */}
       <section className="px-4 md:px-10 max-w-6xl">
-        <div className="rounded-2xl border border-border bg-card p-4 md:p-6 flex flex-col md:flex-row md:items-center gap-4 md:gap-8">
-          <div className="flex-1 min-w-0">
-            <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-primary font-semibold mb-2">
+        <div className="mb-3">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">Estudar</p>
+        </div>
+        <Link
+          to="/aulas"
+          className="group block relative overflow-hidden rounded-2xl bg-gradient-toga text-primary-foreground p-5 md:p-7 min-h-[180px] hover:shadow-xl transition-all"
+        >
+          <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-gold/15 blur-3xl" />
+          <div className="absolute inset-0 opacity-[0.05]" style={{
+            backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
+            backgroundSize: "20px 20px",
+          }} />
+          <div className="relative flex items-start gap-4">
+            <div className="h-12 w-12 rounded-xl bg-primary-foreground/15 border border-primary-foreground/20 grid place-items-center shrink-0">
+              <BookOpen className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-display text-2xl md:text-3xl leading-tight">
+                Aulas <span className="text-gold">Interativas</span>
+              </h2>
+              <p className="text-primary-foreground/75 text-sm mt-1">
+                Slides, quiz no meio da aula e seu progresso por matéria.
+              </p>
+            </div>
+          </div>
+
+          <div className="relative mt-5 pt-4 border-t border-primary-foreground/15">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-gold font-semibold mb-2">
               <Flame className="h-3 w-3" /> Continue de onde parou
             </div>
-            <p className="font-display text-xl md:text-3xl leading-tight">Ética Profissional · Aula 4</p>
-            <p className="text-xs md:text-sm text-muted-foreground mt-1">Honorários advocatícios — fixação e sucumbência</p>
-            <div className="mt-3 h-1.5 rounded-full bg-muted overflow-hidden">
-              <div className="h-full w-[62%] bg-gradient-toga" />
+            <div className="flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-display text-lg leading-tight truncate">Ética Profissional · Aula 4</p>
+                <p className="text-xs text-primary-foreground/70 mt-0.5 truncate">Honorários advocatícios — fixação</p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 text-sm text-gold font-semibold group-hover:gap-2 transition-all">
+                Retomar <ArrowRight className="h-4 w-4" />
+              </span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-1.5">62% concluído</p>
+            <div className="mt-3 h-1.5 rounded-full bg-primary-foreground/10 overflow-hidden">
+              <div className="h-full w-[62%] bg-gold" />
+            </div>
+            <p className="text-[11px] text-primary-foreground/60 mt-1.5">62% concluído</p>
           </div>
-          <Link to="/materias/$slug" params={{ slug: "etica-oab" }} className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-md bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition">
-            Retomar <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+        </Link>
       </section>
 
-      {/* Estudar — carrossel */}
+      {/* Ferramentas de estudo */}
       <section className="max-w-6xl">
         <div className="px-4 md:px-10">
-          <SectionHeader eyebrow="Estudar" title="Aulas interativas e mais" />
+          <SectionHeader eyebrow="Ferramentas" title="Ferramentas de estudo" />
         </div>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
-          {ESTUDAR.map((item) => <StudyCardItem key={item.key} item={item} />)}
-        </div>
-      </section>
-
-      {/* Praticar */}
-      <section className="max-w-6xl">
-        <div className="px-4 md:px-10">
-          <SectionHeader eyebrow="Praticar" title="Coloque o conteúdo à prova" />
-        </div>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
-          {PRATICAR.map((item) => <StudyCardItem key={item.key} item={item} />)}
+          {FERRAMENTAS.map((item) => <FerramentaCard key={item.key} item={item} />)}
         </div>
       </section>
 
@@ -117,7 +134,7 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Destaque assistente */}
+      {/* Assistente IA */}
       <section className="px-4 md:px-10 max-w-6xl">
         <Link to="/assistente" className="block group">
           <div className="rounded-2xl bg-secondary text-secondary-foreground p-5 md:p-10 relative overflow-hidden">
