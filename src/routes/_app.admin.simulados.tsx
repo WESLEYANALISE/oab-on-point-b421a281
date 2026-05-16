@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Sparkles, Trash2, CheckCircle2, AlertCircle, Clock, X } from "lucide-react";
 import {
   listProvasComStatus,
-  prepararSimulado,
-  iniciarGeracao,
+  iniciarJob,
+  executarOcr,
   processarBatch,
   getJobStatus,
   cancelarJob,
@@ -20,13 +20,11 @@ export const Route = createFileRoute("/_app/admin/simulados")({
   component: AdminSimulados,
 });
 
-type Preview = Awaited<ReturnType<typeof prepararSimulado>>;
-
 function AdminSimulados() {
   const qc = useQueryClient();
   const { session } = useAuth();
   const listFn = useServerFn(listProvasComStatus);
-  const prepararFn = useServerFn(prepararSimulado);
+  const iniciarFn = useServerFn(iniciarJob);
   const delFn = useServerFn(excluirSimulado);
   const authHeaders = session?.access_token
     ? { Authorization: `Bearer ${session.access_token}` }
@@ -38,19 +36,18 @@ function AdminSimulados() {
     queryFn: () => listFn({ headers: authHeaders }),
   });
 
-  const [preparandoNum, setPreparandoNum] = useState<number | null>(null);
-  const [preview, setPreview] = useState<Preview | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [iniciandoNum, setIniciandoNum] = useState<number | null>(null);
 
-  const preparar = useMutation({
+  const iniciar = useMutation({
     mutationFn: (provaNumero: number) => {
       if (!authHeaders) throw new Error("Sessão expirada. Entre novamente.");
-      return prepararFn({ data: { provaNumero }, headers: authHeaders });
+      return iniciarFn({ data: { provaNumero }, headers: authHeaders });
     },
-    onMutate: (n) => setPreparandoNum(n),
-    onSuccess: (p) => setPreview(p),
-    onError: (e) => toast.error(`Falha ao preparar: ${e instanceof Error ? e.message : "erro"}`),
-    onSettled: () => setPreparandoNum(null),
+    onMutate: (n) => setIniciandoNum(n),
+    onSuccess: (r) => setActiveJobId(r.jobId),
+    onError: (e) => toast.error(`Falha ao iniciar: ${e instanceof Error ? e.message : "erro"}`),
+    onSettled: () => setIniciandoNum(null),
   });
 
   const excluir = useMutation({
@@ -70,7 +67,7 @@ function AdminSimulados() {
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Admin</p>
         <h1 className="font-display text-3xl">Gerar simulados</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          1) Prévia (OCR + contagem) → 2) Confirmar → 3) Geração em lotes com logs ao vivo.
+          OCR via Mistral + organização via Gemini, com logs ao vivo.
         </p>
       </header>
 
@@ -116,12 +113,12 @@ function AdminSimulados() {
                   )}
                   <Button
                     size="sm"
-                    disabled={!podeGerar || preparandoNum === p.numero}
-                    onClick={() => preparar.mutate(p.numero)}
+                    disabled={!podeGerar || iniciandoNum === p.numero}
+                    onClick={() => iniciar.mutate(p.numero)}
                   >
-                    {preparandoNum === p.numero ? (
+                    {iniciandoNum === p.numero ? (
                       <>
-                        <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Lendo PDFs…
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Iniciando…
                       </>
                     ) : status === "pronto" ? (
                       <>
@@ -140,24 +137,12 @@ function AdminSimulados() {
         </ul>
       )}
 
-      {preparandoNum !== null && !preview && <PreparandoModal numero={preparandoNum} />}
-
-      {preview && !activeJobId && (
-        <PreviewModal
-          preview={preview}
-          authHeaders={authHeaders}
-          onCancel={() => setPreview(null)}
-          onConfirm={(jobId) => setActiveJobId(jobId)}
-        />
-      )}
-
       {activeJobId && (
         <ProgressModal
           jobId={activeJobId}
           authHeaders={authHeaders}
           onClose={() => {
             setActiveJobId(null);
-            setPreview(null);
             qc.invalidateQueries({ queryKey: ["admin-provas"] });
           }}
         />
@@ -188,114 +173,7 @@ function StatusBadge({ status }: { status?: string | null }) {
   return <span className="text-muted-foreground">Sem simulado</span>;
 }
 
-// ============ Preparando Modal (durante OCR) ============
-function PreparandoModal({ numero }: { numero: number }) {
-  const [segs, setSegs] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setSegs((s) => s + 1), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
-        <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary mb-3" />
-        <p className="text-xs uppercase tracking-widest text-muted-foreground">Etapa 1 de 3</p>
-        <h2 className="font-display text-xl mt-1">Lendo PDFs da Prova {numero}</h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          Executando OCR da prova e do gabarito via Mistral. Isso pode levar até 60s.
-        </p>
-        <p className="text-xs text-muted-foreground mt-3 font-mono">{segs}s decorridos…</p>
-      </div>
-    </div>
-  );
-}
-
-// ============ Preview Modal ============
-function PreviewModal({
-  preview,
-  authHeaders,
-  onCancel,
-  onConfirm,
-}: {
-  preview: Preview;
-  authHeaders: Record<string, string> | undefined;
-  onCancel: () => void;
-  onConfirm: (jobId: string) => void;
-}) {
-  const iniciarFn = useServerFn(iniciarGeracao);
-  const cancelFn = useServerFn(cancelarJob);
-
-  const iniciar = useMutation({
-    mutationFn: () => {
-      if (!authHeaders) throw new Error("Sessão expirada");
-      return iniciarFn({ data: { jobId: preview.jobId }, headers: authHeaders });
-    },
-    onSuccess: () => onConfirm(preview.jobId),
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro"),
-  });
-
-  const cancelar = useMutation({
-    mutationFn: () => {
-      if (!authHeaders) throw new Error("Sessão expirada");
-      return cancelFn({ data: { jobId: preview.jobId }, headers: authHeaders });
-    },
-    onSettled: () => onCancel(),
-  });
-
-  const tempoEstimado = Math.ceil(preview.totalEstimado / 20) * 20; // ~20s por lote
-  return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl max-w-md w-full p-6 shadow-2xl">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">Prévia da extração</p>
-            <h2 className="font-display text-xl mt-1">{preview.titulo}</h2>
-          </div>
-          <button onClick={() => cancelar.mutate()} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <dl className="space-y-3 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Questões detectadas</dt>
-            <dd className="font-semibold">{preview.totalEstimado}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Matérias identificadas</dt>
-            <dd className="font-semibold">{preview.materiasDetectadas.length}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Tempo estimado</dt>
-            <dd className="font-semibold">~{tempoEstimado}s</dd>
-          </div>
-        </dl>
-
-        {preview.materiasDetectadas.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {preview.materiasDetectadas.map((m) => (
-              <span key={m} className="text-[11px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                {m}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="flex gap-2 mt-6">
-          <Button variant="outline" className="flex-1" onClick={() => cancelar.mutate()} disabled={cancelar.isPending}>
-            Cancelar
-          </Button>
-          <Button className="flex-1" onClick={() => iniciar.mutate()} disabled={iniciar.isPending}>
-            {iniciar.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Sparkles className="h-4 w-4 mr-1" />}
-            Gerar agora
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============ Progress Modal ============
+// ============ Progress Modal (OCR + Geração com logs ao vivo) ============
 function ProgressModal({
   jobId,
   authHeaders,
@@ -306,6 +184,7 @@ function ProgressModal({
   onClose: () => void;
 }) {
   const statusFn = useServerFn(getJobStatus);
+  const ocrFn = useServerFn(executarOcr);
   const batchFn = useServerFn(processarBatch);
   const cancelFn = useServerFn(cancelarJob);
 
@@ -315,17 +194,29 @@ function ProgressModal({
     queryFn: () => statusFn({ data: { jobId }, headers: authHeaders }),
     refetchInterval: (q) => {
       const j = q.state.data;
-      return j?.etapa === "gerando" ? 1500 : false;
+      if (!j) return 1000;
+      return j.etapa === "ocr" || j.etapa === "gerando" ? 1500 : false;
     },
   });
 
+  // Dispara OCR uma vez
+  const ocrStartedRef = useRef(false);
+  useEffect(() => {
+    if (!authHeaders || ocrStartedRef.current) return;
+    if (job?.etapa !== "ocr") return;
+    ocrStartedRef.current = true;
+    ocrFn({ data: { jobId }, headers: authHeaders }).catch((e) => {
+      toast.error(`OCR falhou: ${e instanceof Error ? e.message : "erro"}`);
+    });
+  }, [jobId, authHeaders, job?.etapa, ocrFn]);
+
   // Loop client-side de batches
-  const runningRef = useRef(false);
+  const batchingRef = useRef(false);
   useEffect(() => {
     if (!job || !authHeaders) return;
     if (job.etapa !== "gerando") return;
-    if (runningRef.current) return;
-    runningRef.current = true;
+    if (batchingRef.current) return;
+    batchingRef.current = true;
 
     (async () => {
       let idx = job.batch_atual ?? 0;
@@ -338,7 +229,7 @@ function ProgressModal({
       } catch (e) {
         toast.error(`Geração interrompida: ${e instanceof Error ? e.message : "erro"}`);
       } finally {
-        runningRef.current = false;
+        batchingRef.current = false;
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -359,6 +250,7 @@ function ProgressModal({
 
   const total = job?.total_estimado ?? 0;
   const feitas = job?.questoes_processadas ?? 0;
+  const isOcr = job?.etapa === "ocr" || !job;
   const pct = total > 0 ? Math.min(100, Math.round((feitas / total) * 100)) : 0;
   const inicio = job?.iniciado_em ? new Date(job.iniciado_em).getTime() : Date.now();
   const decorrido = (Date.now() - inicio) / 1000;
@@ -366,16 +258,24 @@ function ProgressModal({
   const concluido = job?.etapa === "pronto";
   const erro = job?.etapa === "erro";
 
+  const etapaLabel = !job
+    ? "Conectando…"
+    : job.etapa === "ocr"
+      ? "Extraindo PDFs (OCR Mistral)"
+      : job.etapa === "gerando"
+        ? "Organizando questões (Gemini)"
+        : job.etapa === "pronto"
+          ? "Concluído"
+          : "Erro";
+
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">
-              {concluido ? "Concluído" : erro ? "Erro" : "Gerando"}
-            </p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">{etapaLabel}</p>
             <h2 className="font-display text-xl mt-1">
-              {feitas} / {total} questões
+              {isOcr ? "Lendo PDFs…" : `${feitas} / ${total} questões`}
             </h2>
           </div>
           {(concluido || erro) && (
@@ -385,17 +285,23 @@ function ProgressModal({
           )}
         </div>
 
-        <div className="h-2 rounded-full bg-muted overflow-hidden mb-2">
-          <div
-            className={`h-full transition-all duration-500 ${erro ? "bg-destructive" : concluido ? "bg-green-500" : "bg-primary"}`}
-            style={{ width: `${pct}%` }}
-          />
+        <div className="h-2 rounded-full bg-muted overflow-hidden mb-2 relative">
+          {isOcr && !erro ? (
+            <div className="absolute inset-y-0 left-0 w-1/3 bg-primary animate-[shimmer_1.5s_ease-in-out_infinite] rounded-full" />
+          ) : (
+            <div
+              className={`h-full transition-all duration-500 ${erro ? "bg-destructive" : concluido ? "bg-green-500" : "bg-primary"}`}
+              style={{ width: `${pct}%` }}
+            />
+          )}
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mb-4">
           <span>
-            Lote {job?.batch_atual ?? 0} / {job?.batches_total ?? 0} · {pct}%
+            {isOcr
+              ? "Aguarde, OCR pode levar até 60s…"
+              : `Lote ${job?.batch_atual ?? 0} / ${job?.batches_total ?? 0} · ${pct}%`}
           </span>
-          {eta !== null && !concluido && !erro && <span>~{eta}s restantes</span>}
+          {!isOcr && eta !== null && !concluido && !erro && <span>~{eta}s restantes</span>}
         </div>
 
         <div
@@ -416,13 +322,13 @@ function ProgressModal({
               <span className="opacity-60">{new Date(l.ts).toLocaleTimeString()}</span> {l.msg}
             </div>
           ))}
-          {!job && <div className="text-muted-foreground">Conectando…</div>}
+          {!job && <div className="text-muted-foreground">Conectando ao job…</div>}
         </div>
 
         <div className="flex gap-2 mt-4">
           {!concluido && !erro && (
             <Button variant="outline" className="flex-1" onClick={() => cancelar.mutate()} disabled={cancelar.isPending}>
-              Cancelar geração
+              Cancelar
             </Button>
           )}
           {(concluido || erro) && (
