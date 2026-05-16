@@ -1,8 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, BookOpen, FileText, Layers, ClipboardList, Target, Sparkles, Newspaper, Award, Scale } from "lucide-react";
+import { Home, BookOpen, FileText, Layers, ClipboardList, Target, Sparkles, Newspaper, Award, Scale, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsAdmin } from "@/hooks/use-admin";
 
-const groups = [
+const baseGroups = [
   {
     label: "Navegar",
     items: [
@@ -35,8 +36,18 @@ const groups = [
   },
 ] as const;
 
+const adminGroup = {
+  label: "Admin",
+  items: [
+    { to: "/admin", label: "Painel admin", icon: ShieldCheck },
+    { to: "/admin/simulados", label: "Gerar simulados", icon: Target },
+  ],
+} as const;
+
 export function DesktopSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { data: isAdmin } = useIsAdmin();
+  const groups = isAdmin ? [...baseGroups, adminGroup] : baseGroups;
   return (
     <aside className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       <div className="px-6 py-5 border-b border-sidebar-border">

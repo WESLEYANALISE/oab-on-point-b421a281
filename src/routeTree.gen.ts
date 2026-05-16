@@ -16,7 +16,6 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
-import { Route as AppSimuladosRouteImport } from './routes/_app.simulados'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppResumosRouteImport } from './routes/_app.resumos'
 import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
@@ -86,11 +85,6 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppVadeMecumRoute = AppVadeMecumRouteImport.update({
   id: '/vade-mecum',
   path: '/vade-mecum',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSimuladosRoute = AppSimuladosRouteImport.update({
-  id: '/simulados',
-  path: '/simulados',
   getParentRoute: () => AppRoute,
 } as any)
 const AppRetaFinalRoute = AppRetaFinalRouteImport.update({
@@ -164,9 +158,9 @@ const AppAdminRoute = AppAdminRouteImport.update({
   getParentRoute: () => AppRoute,
 } as any)
 const AppSimuladosIndexRoute = AppSimuladosIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppSimuladosRoute,
+  id: '/simulados/',
+  path: '/simulados/',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppProvasIndexRoute = AppProvasIndexRouteImport.update({
   id: '/provas/',
@@ -189,9 +183,9 @@ const ApiPublicSeedProvasRoute = ApiPublicSeedProvasRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppSimuladosIdRoute = AppSimuladosIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppSimuladosRoute,
+  id: '/simulados/$id',
+  path: '/simulados/$id',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppProvasNumeroRoute = AppProvasNumeroRouteImport.update({
   id: '/provas/$numero',
@@ -297,7 +291,6 @@ export interface FileRoutesByFullPath {
   '/progresso': typeof AppProgressoRoute
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
-  '/simulados': typeof AppSimuladosRouteWithChildren
   '/vade-mecum': typeof AppVadeMecumRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
@@ -383,7 +376,6 @@ export interface FileRoutesById {
   '/_app/progresso': typeof AppProgressoRoute
   '/_app/resumos': typeof AppResumosRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
-  '/_app/simulados': typeof AppSimuladosRouteWithChildren
   '/_app/vade-mecum': typeof AppVadeMecumRoute
   '/_app/': typeof AppIndexRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
@@ -431,7 +423,6 @@ export interface FileRouteTypes {
     | '/progresso'
     | '/resumos'
     | '/reta-final'
-    | '/simulados'
     | '/vade-mecum'
     | '/admin/simulados'
     | '/biblioteca/$slug'
@@ -516,7 +507,6 @@ export interface FileRouteTypes {
     | '/_app/progresso'
     | '/_app/resumos'
     | '/_app/reta-final'
-    | '/_app/simulados'
     | '/_app/vade-mecum'
     | '/_app/'
     | '/_app/admin/simulados'
@@ -601,13 +591,6 @@ declare module '@tanstack/react-router' {
       path: '/vade-mecum'
       fullPath: '/vade-mecum'
       preLoaderRoute: typeof AppVadeMecumRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/simulados': {
-      id: '/_app/simulados'
-      path: '/simulados'
-      fullPath: '/simulados'
-      preLoaderRoute: typeof AppSimuladosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/reta-final': {
@@ -710,10 +693,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/simulados/': {
       id: '/_app/simulados/'
-      path: '/'
+      path: '/simulados'
       fullPath: '/simulados/'
       preLoaderRoute: typeof AppSimuladosIndexRouteImport
-      parentRoute: typeof AppSimuladosRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/provas/': {
       id: '/_app/provas/'
@@ -745,10 +728,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/simulados/$id': {
       id: '/_app/simulados/$id'
-      path: '/$id'
+      path: '/simulados/$id'
       fullPath: '/simulados/$id'
       preLoaderRoute: typeof AppSimuladosIdRouteImport
-      parentRoute: typeof AppSimuladosRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/provas/$numero': {
       id: '/_app/provas/$numero'
@@ -959,20 +942,6 @@ const AppSimuladosIdRouteWithChildren = AppSimuladosIdRoute._addFileChildren(
   AppSimuladosIdRouteChildren,
 )
 
-interface AppSimuladosRouteChildren {
-  AppSimuladosIdRoute: typeof AppSimuladosIdRouteWithChildren
-  AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
-}
-
-const AppSimuladosRouteChildren: AppSimuladosRouteChildren = {
-  AppSimuladosIdRoute: AppSimuladosIdRouteWithChildren,
-  AppSimuladosIndexRoute: AppSimuladosIndexRoute,
-}
-
-const AppSimuladosRouteWithChildren = AppSimuladosRoute._addFileChildren(
-  AppSimuladosRouteChildren,
-)
-
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAssistenteRoute: typeof AppAssistenteRoute
@@ -988,7 +957,6 @@ interface AppRouteChildren {
   AppProgressoRoute: typeof AppProgressoRoute
   AppResumosRoute: typeof AppResumosRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
-  AppSimuladosRoute: typeof AppSimuladosRouteWithChildren
   AppVadeMecumRoute: typeof AppVadeMecumRoute
   AppIndexRoute: typeof AppIndexRoute
   AppOabCalendarioRoute: typeof AppOabCalendarioRoute
@@ -998,7 +966,9 @@ interface AppRouteChildren {
   AppOabPrimeiraFaseRoute: typeof AppOabPrimeiraFaseRoute
   AppOabSegundaFaseRoute: typeof AppOabSegundaFaseRoute
   AppProvasNumeroRoute: typeof AppProvasNumeroRoute
+  AppSimuladosIdRoute: typeof AppSimuladosIdRouteWithChildren
   AppProvasIndexRoute: typeof AppProvasIndexRoute
+  AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -1016,7 +986,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppProgressoRoute: AppProgressoRoute,
   AppResumosRoute: AppResumosRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
-  AppSimuladosRoute: AppSimuladosRouteWithChildren,
   AppVadeMecumRoute: AppVadeMecumRoute,
   AppIndexRoute: AppIndexRoute,
   AppOabCalendarioRoute: AppOabCalendarioRoute,
@@ -1026,7 +995,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppOabPrimeiraFaseRoute: AppOabPrimeiraFaseRoute,
   AppOabSegundaFaseRoute: AppOabSegundaFaseRoute,
   AppProvasNumeroRoute: AppProvasNumeroRoute,
+  AppSimuladosIdRoute: AppSimuladosIdRouteWithChildren,
   AppProvasIndexRoute: AppProvasIndexRoute,
+  AppSimuladosIndexRoute: AppSimuladosIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -1042,3 +1013,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
