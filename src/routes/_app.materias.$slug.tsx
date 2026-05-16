@@ -67,7 +67,7 @@ function MateriaPage() {
       <div className="max-w-6xl px-4 md:px-10">
         <h2 className="font-display text-2xl mb-4">Tópicos da matéria</h2>
         <ul className="grid md:grid-cols-2 gap-2">
-          {materia.topicos.map((t, i) => (
+          {materia.topicos.map((t: string, i: number) => (
             <li key={t} className="flex items-start gap-3 p-3 rounded-lg bg-card border border-border">
               <span className="h-6 w-6 shrink-0 rounded-full bg-gold/20 text-primary text-xs font-bold grid place-items-center">{i + 1}</span>
               <span className="text-sm">{t}</span>
