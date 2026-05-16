@@ -141,7 +141,7 @@ async function fetchLivroSource(slug: string, livroId: number) {
     `"${src.downloadCol}"`,
     `"${src.linkCol}"`,
   ].filter(Boolean).join(", ");
-  const { data, error } = await supabaseAdmin.from(src.table).select(cols).eq("id", livroId).maybeSingle() as any;
+  const { data, error } = await (supabaseAdmin.from(src.table as any) as any).select(cols).eq("id", livroId).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Livro não encontrado");
   return {
@@ -178,7 +178,7 @@ export const listarLivrosParaResumo = createServerFn({ method: "GET" })
         `"${src.downloadCol}"`,
         `"${src.linkCol}"`,
       ].filter(Boolean).join(", ");
-      const { data } = await supabaseAdmin.from(src.table).select(cols) as any;
+      const { data } = await (supabaseAdmin.from(src.table as any) as any).select(cols);
       for (const r of (data ?? [])) {
         livros.push({
           slug: src.slug,
