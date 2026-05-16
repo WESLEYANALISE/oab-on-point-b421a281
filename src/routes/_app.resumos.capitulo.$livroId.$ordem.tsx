@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { obterLivroResumo } from "@/lib/resumos.functions";
+import { normalizarTitulo } from "@/lib/titulo";
 
 export const Route = createFileRoute("/_app/resumos/capitulo/$livroId/$ordem")({
   component: CapituloView,
