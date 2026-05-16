@@ -38,6 +38,7 @@ import { Route as AppResumosLivroIdRouteImport } from './routes/_app.resumos.$li
 import { Route as AppProvasNumeroRouteImport } from './routes/_app.provas.$numero'
 import { Route as AppOabSegundaFaseRouteImport } from './routes/_app.oab.segunda-fase'
 import { Route as AppOabReforcoRouteImport } from './routes/_app.oab.reforco'
+import { Route as AppOabProgressoRouteImport } from './routes/_app.oab.progresso'
 import { Route as AppOabPrimeiraFaseRouteImport } from './routes/_app.oab.primeira-fase'
 import { Route as AppOabPecaModeloRouteImport } from './routes/_app.oab.peca-modelo'
 import { Route as AppOabOQueEstudarRouteImport } from './routes/_app.oab.o-que-estudar'
@@ -202,6 +203,11 @@ const AppOabReforcoRoute = AppOabReforcoRouteImport.update({
   path: '/oab/reforco',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOabProgressoRoute = AppOabProgressoRouteImport.update({
+  id: '/oab/progresso',
+  path: '/oab/progresso',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOabPrimeiraFaseRoute = AppOabPrimeiraFaseRouteImport.update({
   id: '/oab/primeira-fase',
   path: '/oab/primeira-fase',
@@ -333,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/oab/o-que-estudar': typeof AppOabOQueEstudarRoute
   '/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
+  '/oab/progresso': typeof AppOabProgressoRoute
   '/oab/reforco': typeof AppOabReforcoRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
@@ -379,6 +386,7 @@ export interface FileRoutesByTo {
   '/oab/o-que-estudar': typeof AppOabOQueEstudarRoute
   '/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
+  '/oab/progresso': typeof AppOabProgressoRoute
   '/oab/reforco': typeof AppOabReforcoRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
@@ -429,6 +437,7 @@ export interface FileRoutesById {
   '/_app/oab/o-que-estudar': typeof AppOabOQueEstudarRoute
   '/_app/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/_app/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
+  '/_app/oab/progresso': typeof AppOabProgressoRoute
   '/_app/oab/reforco': typeof AppOabReforcoRoute
   '/_app/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/_app/provas/$numero': typeof AppProvasNumeroRoute
@@ -480,6 +489,7 @@ export interface FileRouteTypes {
     | '/oab/o-que-estudar'
     | '/oab/peca-modelo'
     | '/oab/primeira-fase'
+    | '/oab/progresso'
     | '/oab/reforco'
     | '/oab/segunda-fase'
     | '/provas/$numero'
@@ -526,6 +536,7 @@ export interface FileRouteTypes {
     | '/oab/o-que-estudar'
     | '/oab/peca-modelo'
     | '/oab/primeira-fase'
+    | '/oab/progresso'
     | '/oab/reforco'
     | '/oab/segunda-fase'
     | '/provas/$numero'
@@ -575,6 +586,7 @@ export interface FileRouteTypes {
     | '/_app/oab/o-que-estudar'
     | '/_app/oab/peca-modelo'
     | '/_app/oab/primeira-fase'
+    | '/_app/oab/progresso'
     | '/_app/oab/reforco'
     | '/_app/oab/segunda-fase'
     | '/_app/provas/$numero'
@@ -807,6 +819,13 @@ declare module '@tanstack/react-router' {
       path: '/oab/reforco'
       fullPath: '/oab/reforco'
       preLoaderRoute: typeof AppOabReforcoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/oab/progresso': {
+      id: '/_app/oab/progresso'
+      path: '/oab/progresso'
+      fullPath: '/oab/progresso'
+      preLoaderRoute: typeof AppOabProgressoRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/oab/primeira-fase': {
@@ -1049,6 +1068,7 @@ interface AppRouteChildren {
   AppOabOQueEstudarRoute: typeof AppOabOQueEstudarRoute
   AppOabPecaModeloRoute: typeof AppOabPecaModeloRoute
   AppOabPrimeiraFaseRoute: typeof AppOabPrimeiraFaseRoute
+  AppOabProgressoRoute: typeof AppOabProgressoRoute
   AppOabReforcoRoute: typeof AppOabReforcoRoute
   AppOabSegundaFaseRoute: typeof AppOabSegundaFaseRoute
   AppProvasNumeroRoute: typeof AppProvasNumeroRoute
@@ -1083,6 +1103,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOabOQueEstudarRoute: AppOabOQueEstudarRoute,
   AppOabPecaModeloRoute: AppOabPecaModeloRoute,
   AppOabPrimeiraFaseRoute: AppOabPrimeiraFaseRoute,
+  AppOabProgressoRoute: AppOabProgressoRoute,
   AppOabReforcoRoute: AppOabReforcoRoute,
   AppOabSegundaFaseRoute: AppOabSegundaFaseRoute,
   AppProvasNumeroRoute: AppProvasNumeroRoute,
