@@ -56,7 +56,7 @@ export const EXAMES_OAB: ExameOAB[] = [
     eventos: [
       { data: "2025-11-23", rotulo: "23 nov 2025", titulo: "1ª fase — Prova objetiva", status: "concluido" },
       { data: "2026-03-01", rotulo: "01 mar 2026", titulo: "2ª fase — Prova prático-profissional", status: "concluido" },
-      { data: "2026-04-01", rotulo: "01 abr 2026", titulo: "Resultado definitivo do 45º EOU",
+      { data: "2026-04-01", rotulo: "01 abr 2026", titulo: "Resultado definitivo do 45º Exame OAB",
         detalhe: "Encerrado o ciclo recursal da 2ª fase.", status: "concluido" },
     ],
   },

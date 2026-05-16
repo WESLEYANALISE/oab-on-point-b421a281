@@ -20,7 +20,7 @@ export function HomeGreeting() {
           <p className="font-display font-semibold text-[17px] md:text-xl leading-tight tracking-tight truncate mt-1">
             {firstName}
           </p>
-          <p className="text-[11px] text-primary-foreground/70 mt-0.5 truncate">Foco no 46º EOU</p>
+          <p className="text-[11px] text-primary-foreground/70 mt-0.5 truncate">Foco no 46º Exame OAB</p>
         </div>
         <ChevronRight className="ml-auto h-4 w-4 text-gold/80 shrink-0 transition-transform group-hover:translate-x-0.5" />
       </Link>

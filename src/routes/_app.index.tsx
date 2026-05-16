@@ -68,7 +68,7 @@ function AreaOABPage() {
 
           <div className="relative flex items-center justify-between gap-2 mb-4 flex-wrap">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/15 border border-gold/40 text-gold text-[9px] md:text-[10px] uppercase tracking-[0.18em] font-semibold">
-              <Sparkles className="h-3 w-3" /> 46º EOU
+              <Sparkles className="h-3 w-3" /> 46º Exame OAB
             </div>
             <Link
               to="/oab/calendario"
