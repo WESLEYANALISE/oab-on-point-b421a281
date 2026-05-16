@@ -15,8 +15,8 @@ export const Route = createFileRoute("/api/public/seed-provas")({
             return Response.json({ count: exames.length, exames });
           }
           if (debugId) {
-            const arquivos = await debugListarArquivos(debugId);
-            return Response.json({ arquivos });
+            const result = await debugClassificar(debugId);
+            return Response.json(result);
           }
           const res = await executarSeedProvasOab({
             dryRun,
