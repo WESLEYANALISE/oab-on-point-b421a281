@@ -72,14 +72,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "OAB na Risca" },
+      { name: "description", content: "Plataforma de preparação para o Exame da OAB — aulas interativas, resumos, flashcards, questões e simulados." },
+      { name: "author", content: "OAB na Risca" },
+      { property: "og:title", content: "OAB na Risca" },
+      { property: "og:description", content: "Estude para a OAB na precisão — aulas, resumos, flashcards, questões, simulados e assistente IA." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       {
