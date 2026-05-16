@@ -390,18 +390,81 @@ function normalizeForMatch(s: string): string {
 }
 
 // Indexa as posições dos marcadores de questão no OCR.
-// O Mistral OCR escreve no formato Markdown "# N", "## N" — não "Questão N".
-// Também aceitamos "Questão N" / "QUESTÃO N" como fallback.
+// Formatos reconhecidos (no início de linha):
+//   "# N", "## N" (Markdown — Mistral OCR)
+//   "Questão N" / "QUESTÃO N"
+//   "N" sozinho na linha (formato bruto do Mistral OCR — número da questão isolado)
+//   "N." ou "N)" no começo de linha (fallback)
+// Para o caso de "N sozinho" e "N./N)", só aceitamos quando o número é SEQUENCIAL
+// (1, 2, 3, …) e há "(A)" e "(B)" nas próximas ~80 linhas (cara de questão objetiva).
 function indexQuestionPositions(ocr: string): Map<number, number> {
   const positions = new Map<number, number>();
-  // ^ (início de linha, modo multiline) + (cabeçalho Markdown OU "Questão") + número (1-80)
-  const re = /^[ \t]*(?:#{1,6}[ \t]*(\d{1,3})[ \t]*$|quest[ãa]o[ \t]*(\d{1,3})\b)/gim;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(ocr)) !== null) {
-    const n = Number(m[1] ?? m[2]);
-    if (n < 1 || n > 80) continue;
-    if (!positions.has(n)) positions.set(n, m.index);
+  const lines = ocr.split("\n");
+
+  // Pré-calcula offset (índice no OCR) de cada linha
+  const offsets: number[] = new Array(lines.length);
+  let acc = 0;
+  for (let i = 0; i < lines.length; i++) {
+    offsets[i] = acc;
+    acc += lines[i].length + 1; // +1 pelo \n
   }
+
+  const reHeader = /^[ \t]*#{1,6}[ \t]*(\d{1,3})[ \t]*$/;
+  const reQuestao = /^[ \t]*quest[ãa]o[ \t]*(\d{1,3})\b/i;
+  const reBare = /^[ \t]*(\d{1,3})[ \t]*$/;
+  const reDotted = /^[ \t]*(\d{1,3})[\.)][ \t]+/;
+
+  const hasAlternativasProximas = (idxLinha: number): boolean => {
+    const fim = Math.min(lines.length, idxLinha + 80);
+    let viuA = false;
+    let viuB = false;
+    for (let j = idxLinha + 1; j < fim; j++) {
+      const l = lines[j];
+      if (/^\s*\(A\)/.test(l)) viuA = true;
+      else if (/^\s*\(B\)/.test(l)) viuB = true;
+      if (viuA && viuB) return true;
+      // se já bate outra questão, para
+      if (j > idxLinha + 2 && (reHeader.test(l) || reQuestao.test(l) || reBare.test(l))) {
+        // não interrompe imediatamente — só se já passamos o início
+      }
+    }
+    return viuA && viuB;
+  };
+
+  let proximoEsperado = 1; // para validar formato "N sozinho" sequencial
+
+  for (let i = 0; i < lines.length; i++) {
+    const linha = lines[i];
+    let n: number | null = null;
+    let exigeValidacao = false;
+
+    let m = reHeader.exec(linha);
+    if (m) {
+      n = Number(m[1]);
+    } else if ((m = reQuestao.exec(linha))) {
+      n = Number(m[1]);
+    } else if ((m = reBare.exec(linha))) {
+      n = Number(m[1]);
+      exigeValidacao = true;
+    } else if ((m = reDotted.exec(linha))) {
+      n = Number(m[1]);
+      exigeValidacao = true;
+    }
+
+    if (n === null) continue;
+    if (n < 1 || n > 80) continue;
+    if (positions.has(n)) continue;
+
+    if (exigeValidacao) {
+      // só aceita se for sequencial E tiver (A)/(B) próximos
+      if (n !== proximoEsperado) continue;
+      if (!hasAlternativasProximas(i)) continue;
+    }
+
+    positions.set(n, offsets[i]);
+    if (n >= proximoEsperado) proximoEsperado = n + 1;
+  }
+
   return positions;
 }
 
@@ -457,6 +520,36 @@ const MATERIAS_VALIDAS = [
   "Direito Eleitoral",
   "ECA",
 ];
+
+// Classificador de matéria de fallback (chamada curta, só matéria)
+async function classificarMateria(
+  enunciado: string,
+  alternativas: { A: string; B: string; C: string; D: string },
+): Promise<string | undefined> {
+  try {
+    const sys =
+      "Classifique a questão do Exame da OAB em UMA matéria da lista. " +
+      "Responda APENAS JSON: {\"materia\":\"<nome exato da lista>\"}.";
+    const usr = `Lista de matérias permitidas:
+${MATERIAS_VALIDAS.map((m) => `- ${m}`).join("\n")}
+
+Questão:
+${enunciado}
+
+(A) ${alternativas.A}
+(B) ${alternativas.B}
+(C) ${alternativas.C}
+(D) ${alternativas.D}`;
+    const raw = await geminiExtractJson(sys, usr);
+    const parsed = JSON.parse(raw) as { materia?: string };
+    const m = parsed.materia ?? "";
+    return MATERIAS_VALIDAS.find(
+      (v) => normalizeForMatch(v) === normalizeForMatch(m),
+    );
+  } catch {
+    return undefined;
+  }
+}
 
 // ============ Helper: extrai questões dentro de um range ============
 async function extrairQuestoes(
@@ -534,12 +627,21 @@ ${trecho.slice(0, 90000)}`;
         descartadasInvencao.push(r.data.numero);
         continue;
       }
-      validasMap.set(r.data.numero, r.data);
+      // ★ Validação de matéria: só aceita matéria da lista oficial
+      let materiaFinal = MATERIAS_VALIDAS.find(
+        (m) => normalizeForMatch(m) === normalizeForMatch(r.data.materia),
+      );
+      if (!materiaFinal) {
+        // Fallback: pede pra Gemini classificar só a matéria
+        materiaFinal = await classificarMateria(r.data.enunciado, r.data.alternativas);
+      }
+      if (!materiaFinal) continue; // sem matéria confiável → não salva
+      validasMap.set(r.data.numero, { ...r.data, materia: materiaFinal });
     }
   };
 
-  // Quebra `numeros` em grupos de no máx. 10 questões (janelas pequenas = menos chance de Gemini "completar")
-  const GROUP = 10;
+  // Quebra `numeros` em grupos de no máx. 5 questões (janelas pequenas = mais assertivo)
+  const GROUP = 5;
   for (let i = 0; i < numeros.length; i += GROUP) {
     const grupo = numeros.slice(i, i + GROUP);
     if (grupo.every((n) => validasMap.has(n))) continue;
