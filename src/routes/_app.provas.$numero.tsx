@@ -58,7 +58,10 @@ function PdfButton({
 
 function ProvaDetalhePage() {
   const { numero } = Route.useParams();
-  const cachedProva = PROVAS_OAB_CATALOGO.find((p) => p.numero === Number(numero)) ?? null;
+  const cachedProva: ProvaFull | null = (() => {
+    const prova = PROVAS_OAB_CATALOGO.find((p) => p.numero === Number(numero));
+    return prova ? { ...prova, oab_source_url: null } : null;
+  })();
   const { data, isLoading, error } = useQuery<ProvaFull | null>({
     queryKey: ["provas-oab", "detalhe", numero],
     initialData: cachedProva,
