@@ -371,6 +371,51 @@ export type Database = {
         }
         Relationships: []
       }
+      provas_oab: {
+        Row: {
+          ano: number | null
+          edital_url: string | null
+          gabarito_1fase_url: string | null
+          id: number
+          numero: number
+          oab_exame_id: string | null
+          oab_source_url: string | null
+          outros_arquivos: Json
+          prova_1fase_url: string | null
+          provas_2fase: Json
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ano?: number | null
+          edital_url?: string | null
+          gabarito_1fase_url?: string | null
+          id?: number
+          numero: number
+          oab_exame_id?: string | null
+          oab_source_url?: string | null
+          outros_arquivos?: Json
+          prova_1fase_url?: string | null
+          provas_2fase?: Json
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ano?: number | null
+          edital_url?: string | null
+          gabarito_1fase_url?: string | null
+          id?: number
+          numero?: number
+          oab_exame_id?: string | null
+          oab_source_url?: string | null
+          outros_arquivos?: Json
+          prova_1fase_url?: string | null
+          provas_2fase?: Json
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

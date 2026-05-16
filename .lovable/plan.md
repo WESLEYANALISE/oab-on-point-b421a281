@@ -1,39 +1,76 @@
-## O que está acontecendo
+## Objetivo
 
-A tela preta com o pequeno spinner dourado vem do arquivo `src/routes/_app.tsx`. Toda vez que você abre o app (ou troca de rota dentro da área logada), ele bloqueia a tela inteira enquanto espera duas coisas terminarem:
+Trocar o atalho "Questões" por "**Provas OAB**" e criar uma nova área onde o usuário acessa, de todos os exames já realizados, três PDFs: **Prova**, **Gabarito** e **Edital** — com os arquivos catalogados no Supabase.
 
-1. **Verificar sua sessão no Supabase** (`supabase.auth.getSession()` dentro de `src/hooks/use-auth.tsx`). Enquanto essa chamada não responde, a variável `authLoading` fica em `true` e o app inteiro vira spinner.
-2. **Carregar seu perfil** do banco (a query `useProfile`) só pra confirmar que o onboarding está completo.
+## O que descobri no site da OAB
 
-O problema é que o `getSession()` faz uma ida ao Supabase mesmo quando a sessão já está salva no `localStorage` do navegador, e em rede mais lenta isso demora 1–4 segundos. Como o app não mostra nada nesse meio tempo, fica essa sensação de "trava no carregamento".
+Fui em `examedeordem.oab.org.br/EditaisProvas` e mapeei todos os exames disponíveis no dropdown oficial:
 
-A rede mostra que tudo está funcionando (seu perfil carregou com `onboarding_completo: true`), o que confirma: não é bug de dados, é o app esperando demais antes de pintar a interface.
+- **46 exames no total** (do "Exame de Ordem Unificado 2010.2" até o "46º Exame de Ordem Unificado")
+- Cada exame tem uma página própria com uma lista de "Arquivos" contendo:
+  - Edital de abertura
+  - Prova da 1ª fase (objetiva) + gabarito
+  - Prova da 2ª fase (prático-profissional, por área: Civil, Penal, Trabalho, Tributário, Constitucional, Administrativo, Empresarial) + espelhos/gabaritos
+  - Comunicados, retificações, resultados
 
-## O que eu proponho fazer
+Como cada exame tem dezenas de PDFs (1ª fase + várias áreas da 2ª fase), proponho começar com os 3 principais por exame e por área da 2ª fase (decisão sua abaixo).
 
-Três ajustes pequenos, todos em arquivos do front-end:
+## Mudanças
 
-### 1. Ler a sessão do `localStorage` na hora (sem esperar rede)
-Em `src/hooks/use-auth.tsx`, trocar o fluxo atual para usar o evento `onAuthStateChange` do Supabase como fonte principal. Esse evento dispara **imediatamente** com a sessão que já está salva no navegador (`INITIAL_SESSION`), o que tira o "loading" assim que a página monta — sem precisar esperar uma chamada de rede.
+### 1. Trocar o atalho na home
+- `src/data/atalhos.ts`: substituir o item `questoes` por `provas` → label "**Provas OAB**", descrição "Edital, prova e gabarito", ícone `FileText`, rota `/provas`.
+- `src/routes/_app.index.tsx`: atualizar a lista usada na barra inferior também (item `Questões` → `Provas`).
 
-### 2. Mostrar a interface antes do perfil carregar
-Em `src/routes/_app.tsx`, parar de prender a tela atrás da query do perfil. A regra fica:
-- Sem sessão definida ainda → mostra um esqueleto leve do app (cabeçalho + área cinza) em vez do spinner solitário.
-- Sessão confirmada como ausente → redireciona pro `/login`.
-- Sessão confirmada com usuário → renderiza o app já. O redirecionamento pro `/onboarding` só dispara depois que a query do perfil responde, sem segurar a tela.
+### 2. Nova tabela no Supabase
 
-### 3. Cache leve do perfil entre navegações
-Adicionar `staleTime` de uns 30 segundos na `useProfile` (`src/hooks/use-auth.tsx`). Hoje, toda navegação entre páginas pode disparar nova requisição do perfil, e enquanto isso o spinner global aparece de novo. Com cache curto, o app não fica "piscando" o carregamento.
+Migration criando `provas_oab` (leitura pública, sem escrita pelo cliente):
 
-## Resultado esperado
+| coluna | tipo | descrição |
+|---|---|---|
+| `id` | bigint pk | |
+| `numero` | int | 1 a 46 (ordem cronológica) |
+| `titulo` | text | ex. "45º Exame de Ordem Unificado" |
+| `ano` | int | |
+| `edital_url` | text | PDF do edital |
+| `prova_1fase_url` | text | PDF da prova objetiva |
+| `gabarito_1fase_url` | text | PDF do gabarito definitivo da 1ª fase |
+| `provas_2fase` | jsonb | `[{ area, prova_url, espelho_url }]` por área |
+| `oab_source_url` | text | link da página oficial do exame |
 
-- Abertura do app passa de "tela preta + spinner por 2-4 s" para "interface já visível, dados completando em segundo plano".
-- Navegação entre páginas internas deixa de mostrar spinner cheio de tela.
-- Nenhuma mudança visual no app em si — só some o gargalo de loading.
+RLS: `SELECT` público; sem insert/update/delete pelo cliente.
 
-## Arquivos que serão alterados
+### 3. Server function de scraping (popular o banco)
 
-- `src/hooks/use-auth.tsx` — usar `onAuthStateChange` como fonte da sessão + `staleTime` na query do perfil.
-- `src/routes/_app.tsx` — soltar o spinner global, renderizar o shell, mover redirect de onboarding pra um efeito não bloqueante.
+`src/lib/provas-oab.functions.ts` com `seedProvasOab` (admin-only, chamada manualmente por você uma vez):
 
-Sem mudanças no banco, no Supabase, ou em outras telas.
+1. Busca o HTML de `https://examedeordem.oab.org.br/EditaisProvas?NumeroExame=0` para pegar os 46 `option value` do dropdown.
+2. Para cada um, faz fetch de `?NumeroExame={value}`, extrai os links de PDF da lista "Arquivos" e classifica por tipo (edital / prova 1ª / gabarito 1ª / prova 2ª por área / espelho).
+3. Usa `supabaseAdmin` para `upsert` em `provas_oab`.
+
+Execução: você roda uma vez via um botão "Atualizar catálogo" escondido (ou via `invoke-server-function`). Como a OAB lança um exame por vez, depois é só rodar de novo quando sair um exame novo.
+
+### 4. Telas
+
+- **`src/routes/_app/provas.tsx`** — Listagem dos 46 exames em grid (cards com número e ano), ordenados do mais recente para o mais antigo. Busca via `useQuery` no Supabase.
+- **`src/routes/_app/provas.$numero.tsx`** — Detalhe do exame escolhido:
+  - Bloco "1ª Fase": botões de download para **Edital**, **Prova** e **Gabarito**.
+  - Bloco "2ª Fase": lista por área (Civil, Penal, Trabalho, etc.) com **Prova** e **Espelho** de cada uma.
+  - Cada botão abre o PDF oficial da OAB em nova aba (`target="_blank" rel="noopener"`).
+
+Visual seguindo o resto do app (mesmos tokens, cor `gold`, mesmo padrão dos cards de "Atalhos").
+
+## Decisão necessária antes de implementar
+
+A 2ª fase tem **7 áreas por exame** × 46 exames = muitos PDFs. Como você quer que eu trate?
+
+- **(A) Só 1ª fase**: edital + prova + gabarito da objetiva (mais simples, 3 PDFs por exame).
+- **(B) 1ª e 2ª fase completas**: tudo (edital, 1ª fase + 2ª fase por área) — recomendado, é o que existe oficialmente.
+- **(C) 1ª fase + apenas uma área da 2ª fase escolhida pelo usuário** no onboarding.
+
+Me responde A, B ou C e eu sigo.
+
+## Detalhes técnicos
+
+- Scraping feito em server function com `fetch` + regex/`cheerio` no HTML (a página é server-rendered, sem JS).
+- Sem armazenar os PDFs no Storage por enquanto — apontamos para a URL oficial da OAB (sempre atualizada, sem custo de storage). Se um dia a OAB tirar do ar, dá pra migrar para o bucket `avatars`/novo bucket.
+- `useProfile` e demais hooks não são tocados.

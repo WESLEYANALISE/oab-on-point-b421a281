@@ -19,7 +19,6 @@ import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
 import { Route as AppSimuladosRouteImport } from './routes/_app.simulados'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppResumosRouteImport } from './routes/_app.resumos'
-import { Route as AppQuestoesRouteImport } from './routes/_app.questoes'
 import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
 import { Route as AppPlanoEstudoRouteImport } from './routes/_app.plano-estudo'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
@@ -31,7 +30,9 @@ import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
+import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
+import { Route as AppProvasNumeroRouteImport } from './routes/_app.provas.$numero'
 import { Route as AppOabSegundaFaseRouteImport } from './routes/_app.oab.segunda-fase'
 import { Route as AppOabPrimeiraFaseRouteImport } from './routes/_app.oab.primeira-fase'
 import { Route as AppOabPecaModeloRouteImport } from './routes/_app.oab.peca-modelo'
@@ -95,11 +96,6 @@ const AppResumosRoute = AppResumosRouteImport.update({
   path: '/resumos',
   getParentRoute: () => AppRoute,
 } as any)
-const AppQuestoesRoute = AppQuestoesRouteImport.update({
-  id: '/questoes',
-  path: '/questoes',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppProgressoRoute = AppProgressoRouteImport.update({
   id: '/progresso',
   path: '/progresso',
@@ -155,10 +151,20 @@ const AppAssistenteRoute = AppAssistenteRouteImport.update({
   path: '/assistente',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProvasIndexRoute = AppProvasIndexRouteImport.update({
+  id: '/provas/',
+  path: '/provas/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBibliotecaIndexRoute = AppBibliotecaIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppBibliotecaRoute,
+} as any)
+const AppProvasNumeroRoute = AppProvasNumeroRouteImport.update({
+  id: '/provas/$numero',
+  path: '/provas/$numero',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppOabSegundaFaseRoute = AppOabSegundaFaseRouteImport.update({
   id: '/oab/segunda-fase',
@@ -245,7 +251,6 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AppPerfilRoute
   '/plano-estudo': typeof AppPlanoEstudoRoute
   '/progresso': typeof AppProgressoRoute
-  '/questoes': typeof AppQuestoesRoute
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/simulados': typeof AppSimuladosRoute
@@ -259,7 +264,9 @@ export interface FileRoutesByFullPath {
   '/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
+  '/provas/$numero': typeof AppProvasNumeroRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
+  '/provas/': typeof AppProvasIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
@@ -280,7 +287,6 @@ export interface FileRoutesByTo {
   '/perfil': typeof AppPerfilRoute
   '/plano-estudo': typeof AppPlanoEstudoRoute
   '/progresso': typeof AppProgressoRoute
-  '/questoes': typeof AppQuestoesRoute
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/simulados': typeof AppSimuladosRoute
@@ -294,7 +300,9 @@ export interface FileRoutesByTo {
   '/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
+  '/provas/$numero': typeof AppProvasNumeroRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
+  '/provas': typeof AppProvasIndexRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdIndexRoute
@@ -317,7 +325,6 @@ export interface FileRoutesById {
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/plano-estudo': typeof AppPlanoEstudoRoute
   '/_app/progresso': typeof AppProgressoRoute
-  '/_app/questoes': typeof AppQuestoesRoute
   '/_app/resumos': typeof AppResumosRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/_app/simulados': typeof AppSimuladosRoute
@@ -332,7 +339,9 @@ export interface FileRoutesById {
   '/_app/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/_app/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/_app/oab/segunda-fase': typeof AppOabSegundaFaseRoute
+  '/_app/provas/$numero': typeof AppProvasNumeroRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
+  '/_app/provas/': typeof AppProvasIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/_app/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
@@ -357,7 +366,6 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/plano-estudo'
     | '/progresso'
-    | '/questoes'
     | '/resumos'
     | '/reta-final'
     | '/simulados'
@@ -371,7 +379,9 @@ export interface FileRouteTypes {
     | '/oab/peca-modelo'
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
+    | '/provas/$numero'
     | '/biblioteca/'
+    | '/provas/'
     | '/biblioteca/$slug/$bookId'
     | '/biblioteca/$slug/'
     | '/biblioteca/$slug/$bookId/ler'
@@ -392,7 +402,6 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/plano-estudo'
     | '/progresso'
-    | '/questoes'
     | '/resumos'
     | '/reta-final'
     | '/simulados'
@@ -406,7 +415,9 @@ export interface FileRouteTypes {
     | '/oab/peca-modelo'
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
+    | '/provas/$numero'
     | '/biblioteca'
+    | '/provas'
     | '/biblioteca/$slug'
     | '/biblioteca/$slug/$bookId/ler'
     | '/biblioteca/$slug/$bookId'
@@ -428,7 +439,6 @@ export interface FileRouteTypes {
     | '/_app/perfil'
     | '/_app/plano-estudo'
     | '/_app/progresso'
-    | '/_app/questoes'
     | '/_app/resumos'
     | '/_app/reta-final'
     | '/_app/simulados'
@@ -443,7 +453,9 @@ export interface FileRouteTypes {
     | '/_app/oab/peca-modelo'
     | '/_app/oab/primeira-fase'
     | '/_app/oab/segunda-fase'
+    | '/_app/provas/$numero'
     | '/_app/biblioteca/'
+    | '/_app/provas/'
     | '/_app/biblioteca/$slug/$bookId'
     | '/_app/biblioteca/$slug/'
     | '/_app/biblioteca/$slug/$bookId/ler'
@@ -530,13 +542,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppResumosRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/questoes': {
-      id: '/_app/questoes'
-      path: '/questoes'
-      fullPath: '/questoes'
-      preLoaderRoute: typeof AppQuestoesRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/progresso': {
       id: '/_app/progresso'
       path: '/progresso'
@@ -614,12 +619,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssistenteRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/provas/': {
+      id: '/_app/provas/'
+      path: '/provas'
+      fullPath: '/provas/'
+      preLoaderRoute: typeof AppProvasIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/biblioteca/': {
       id: '/_app/biblioteca/'
       path: '/'
       fullPath: '/biblioteca/'
       preLoaderRoute: typeof AppBibliotecaIndexRouteImport
       parentRoute: typeof AppBibliotecaRoute
+    }
+    '/_app/provas/$numero': {
+      id: '/_app/provas/$numero'
+      path: '/provas/$numero'
+      fullPath: '/provas/$numero'
+      preLoaderRoute: typeof AppProvasNumeroRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/oab/segunda-fase': {
       id: '/_app/oab/segunda-fase'
@@ -794,7 +813,6 @@ interface AppRouteChildren {
   AppPerfilRoute: typeof AppPerfilRoute
   AppPlanoEstudoRoute: typeof AppPlanoEstudoRoute
   AppProgressoRoute: typeof AppProgressoRoute
-  AppQuestoesRoute: typeof AppQuestoesRoute
   AppResumosRoute: typeof AppResumosRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
   AppSimuladosRoute: typeof AppSimuladosRoute
@@ -806,6 +824,8 @@ interface AppRouteChildren {
   AppOabPecaModeloRoute: typeof AppOabPecaModeloRoute
   AppOabPrimeiraFaseRoute: typeof AppOabPrimeiraFaseRoute
   AppOabSegundaFaseRoute: typeof AppOabSegundaFaseRoute
+  AppProvasNumeroRoute: typeof AppProvasNumeroRoute
+  AppProvasIndexRoute: typeof AppProvasIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -820,7 +840,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppPerfilRoute: AppPerfilRoute,
   AppPlanoEstudoRoute: AppPlanoEstudoRoute,
   AppProgressoRoute: AppProgressoRoute,
-  AppQuestoesRoute: AppQuestoesRoute,
   AppResumosRoute: AppResumosRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
   AppSimuladosRoute: AppSimuladosRoute,
@@ -832,6 +851,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppOabPecaModeloRoute: AppOabPecaModeloRoute,
   AppOabPrimeiraFaseRoute: AppOabPrimeiraFaseRoute,
   AppOabSegundaFaseRoute: AppOabSegundaFaseRoute,
+  AppProvasNumeroRoute: AppProvasNumeroRoute,
+  AppProvasIndexRoute: AppProvasIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

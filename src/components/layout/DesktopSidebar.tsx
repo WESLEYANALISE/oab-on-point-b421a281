@@ -22,7 +22,7 @@ const groups = [
   {
     label: "Praticar",
     items: [
-      { to: "/questoes", label: "Questões", icon: ClipboardList },
+      { to: "/provas", label: "Provas OAB", icon: FileText },
       { to: "/simulados", label: "Simulados", icon: Target },
     ],
   },
