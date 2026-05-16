@@ -176,6 +176,39 @@
     to   { opacity: 1; transform: translateY(0); }
   }
   .animate-fade-in { animation: fade-in 200ms ease-out both; }
+
+  /* Reflexo dourado varrendo de baixo pra cima — uma única vez */
+  @keyframes chapter-sheen {
+    0%   { transform: translateY(110%) rotate(8deg); opacity: 0; }
+    15%  { opacity: 1; }
+    85%  { opacity: 1; }
+    100% { transform: translateY(-110%) rotate(8deg); opacity: 0; }
+  }
+  .chapter-sheen {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .chapter-sheen::after {
+    content: "";
+    position: absolute;
+    inset: -20% -10%;
+    background: linear-gradient(
+      0deg,
+      transparent 0%,
+      color-mix(in oklab, var(--gold, oklch(0.78 0.13 80)) 0%, transparent) 30%,
+      color-mix(in oklab, var(--gold, oklch(0.78 0.13 80)) 35%, transparent) 50%,
+      color-mix(in oklab, var(--gold, oklch(0.78 0.13 80)) 0%, transparent) 70%,
+      transparent 100%
+    );
+    mix-blend-mode: screen;
+    pointer-events: none;
+    transform: translateY(110%) rotate(8deg);
+    animation: chapter-sheen 1400ms ease-out both;
+    animation-delay: var(--sheen-delay, 0ms);
+    z-index: 1;
+  }
+  .chapter-sheen > * { position: relative; z-index: 2; }
 }
 
 /* Resumo / artigo markdown — hierarquia tipográfica garantida */
