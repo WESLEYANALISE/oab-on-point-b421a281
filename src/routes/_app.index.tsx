@@ -32,11 +32,11 @@ function formatNoticiaDate(iso: string) {
 }
 
 const ATALHOS = [
-  { label: "Biblioteca", icon: Library,    to: "/biblioteca" as const },
-  { label: "Resumos",    icon: FileText,   to: "/resumos" as const },
-  { label: "Simulados",  icon: Trophy,     to: "/simulados" as const },
-  { label: "Provas",     icon: FileText,   to: "/provas" as const },
-  { label: "Videoaulas", icon: Video,      to: "/aulas" as const },
+  { label: "Biblioteca", sub: "Livros e PDFs",     icon: Library,  to: "/biblioteca" as const },
+  { label: "Resumos",    sub: "Por matéria",       icon: FileText, to: "/resumos" as const },
+  { label: "Simulados",  sub: "Treine no tempo",   icon: Trophy,   to: "/simulados" as const },
+  { label: "Provas",     sub: "Exames anteriores", icon: FileText, to: "/provas" as const },
+  { label: "Videoaulas", sub: "Aulas em vídeo",    icon: Video,    to: "/aulas" as const },
 ];
 
 const FERRAMENTAS = [
@@ -72,16 +72,19 @@ function AreaOABPage() {
       <section className="px-4 md:px-8">
         <SectionTitle icon={Zap} eyebrow="Acesso rápido" title="Seus Atalhos OAB" />
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 md:gap-3">
-          {ATALHOS.map(({ label, icon: Icon, to }) => (
+          {ATALHOS.map(({ label, sub, icon: Icon, to }) => (
             <Link
               key={label}
               to={to}
-              className="group relative overflow-hidden rounded-2xl border border-gold/15 bg-gradient-toga text-primary-foreground p-3 min-h-[84px] md:min-h-[92px] flex flex-col items-start justify-between hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30"
+              className="group relative overflow-hidden rounded-2xl border border-gold/15 bg-gradient-toga text-primary-foreground p-3 min-h-[96px] md:min-h-[104px] flex flex-col items-start justify-between gap-2 hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30"
             >
               <div className="h-9 w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center">
                 <Icon className="h-4 w-4 text-gold" strokeWidth={2} />
               </div>
-              <p className="font-display font-semibold text-[13px] md:text-sm leading-tight tracking-tight">{label}</p>
+              <div className="min-w-0 w-full">
+                <p className="font-display font-semibold text-[13px] md:text-sm leading-tight tracking-tight truncate">{label}</p>
+                <p className="text-[10px] md:text-[11px] text-primary-foreground/65 mt-0.5 leading-snug line-clamp-1">{sub}</p>
+              </div>
             </Link>
           ))}
         </div>
