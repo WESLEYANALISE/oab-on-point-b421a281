@@ -5,7 +5,7 @@ import { MateriaCard } from "@/components/shared/MateriaCard";
 import { NoticiaCard } from "@/components/shared/NoticiaCard";
 import { getMaterias } from "@/data/materias";
 import { getNoticias } from "@/data/noticias";
-import { Sparkles, ArrowRight, BookOpen, FileText, Layers, Library, Headphones, Flame } from "lucide-react";
+import { Sparkles, ArrowRight, BookOpen, FileText, Layers, Library, ClipboardList, FileCheck2, Newspaper, Flame } from "lucide-react";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -30,9 +30,11 @@ type Ferramenta = {
 
 const FERRAMENTAS: Ferramenta[] = [
   { key: "resumos", to: "/resumos", label: "Resumos", descricao: "Direto ao ponto", icon: FileText, cor: "bg-secondary text-secondary-foreground" },
-  { key: "flashcards", to: "/flashcards", label: "Flashcards", descricao: "Memorize com SRS", icon: Layers, cor: "bg-gradient-gold text-gold-foreground" },
   { key: "biblioteca", to: "/biblioteca", label: "Biblioteca", descricao: "PDFs, livros e súmulas", icon: Library, cor: "bg-gradient-toga text-primary-foreground" },
-  { key: "audioaulas", to: "/audioaulas", label: "Áudio-aulas", descricao: "Estude no fone", icon: Headphones, cor: "bg-foreground text-background" },
+  { key: "flashcards", to: "/flashcards", label: "Flashcards", descricao: "Memorize com SRS", icon: Layers, cor: "bg-gradient-gold text-gold-foreground" },
+  { key: "questoes", to: "/questoes", label: "Questões", descricao: "Banco da FGV", icon: ClipboardList, cor: "bg-secondary text-secondary-foreground" },
+  { key: "simulados", to: "/simulados", label: "Simulados", descricao: "Prova completa", icon: FileCheck2, cor: "bg-foreground text-background" },
+  { key: "noticias", to: "/noticias", label: "Notícias", descricao: "Atualidades jurídicas", icon: Newspaper, cor: "bg-accent text-accent-foreground" },
 ];
 
 function FerramentaCard({ item }: { item: Ferramenta }) {
@@ -40,10 +42,10 @@ function FerramentaCard({ item }: { item: Ferramenta }) {
   return (
     <Link
       to={item.to}
-      className="snap-start shrink-0 w-[150px] rounded-2xl overflow-hidden border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-lg"
+      className="rounded-2xl overflow-hidden border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-lg"
     >
-      <div className={`h-[110px] flex items-center justify-center ${item.cor}`}>
-        <Icon className="h-10 w-10 opacity-90" strokeWidth={1.8} />
+      <div className={`h-[100px] flex items-center justify-center ${item.cor}`}>
+        <Icon className="h-9 w-9 opacity-90" strokeWidth={1.8} />
       </div>
       <div className="p-3">
         <p className="font-display text-base leading-tight">{item.label}</p>
@@ -113,11 +115,9 @@ function HomePage() {
       </section>
 
       {/* Ferramentas de estudo */}
-      <section className="max-w-6xl">
-        <div className="px-4 md:px-10">
-          <SectionHeader eyebrow="Ferramentas" title="Ferramentas de estudo" />
-        </div>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
+      <section className="px-4 md:px-10 max-w-6xl">
+        <SectionHeader eyebrow="Ferramentas" title="Ferramentas de estudo" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {FERRAMENTAS.map((item) => <FerramentaCard key={item.key} item={item} />)}
         </div>
       </section>
