@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileText, Download, ExternalLink, Loader2, ScrollText } from "lucide-react";
+import { ArrowLeft, FileText, Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/provas/$numero")({
@@ -21,8 +21,6 @@ type ProvaFull = {
   edital_url: string | null;
   prova_1fase_url: string | null;
   gabarito_1fase_url: string | null;
-  provas_2fase: Array<{ area: string; prova_url?: string; espelho_url?: string }>;
-  outros_arquivos: Array<{ titulo: string; url: string; data?: string }>;
 };
 
 function PdfButton({
@@ -104,51 +102,6 @@ function ProvaDetalhePage() {
               <PdfButton href={data.gabarito_1fase_url} label="Gabarito" variant="gold" />
             </div>
           </section>
-
-          {/* 2ª Fase */}
-          {data.provas_2fase.length > 0 && (
-            <section className="px-4 md:px-10">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                2ª Fase — Prático-Profissional
-              </h2>
-              <div className="space-y-3">
-                {data.provas_2fase.map((p) => (
-                  <div key={p.area} className="rounded-2xl border border-border bg-card p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <ScrollText className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="font-semibold">{p.area}</h3>
-                    </div>
-                    <div className="grid gap-2 md:grid-cols-2">
-                      <PdfButton href={p.prova_url} label="Prova" variant="primary" />
-                      <PdfButton href={p.espelho_url} label="Espelho / Gabarito" variant="gold" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Outros */}
-          {data.outros_arquivos.length > 0 && (
-            <section className="px-4 md:px-10">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Outros documentos</h2>
-              <ul className="space-y-2">
-                {data.outros_arquivos.slice(0, 12).map((a) => (
-                  <li key={a.url}>
-                    <a
-                      href={a.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card hover:bg-accent px-4 py-2.5 text-sm"
-                    >
-                      <span className="line-clamp-1">{a.titulo}</span>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground shrink-0" />
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
 
           {data.oab_source_url && (
             <div className="px-4 md:px-10 text-xs text-muted-foreground">
