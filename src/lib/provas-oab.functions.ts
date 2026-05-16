@@ -86,19 +86,6 @@ async function listarExames(): Promise<Array<{ id: string; titulo: string }>> {
   return out;
 }
 
-export async function debugListarExames() {
-  return listarExames();
-}
-
-export async function debugClassificar(exameId: string) {
-  const arquivos = await listarArquivos(exameId);
-  return { arquivos, classificacao: classificar(arquivos) };
-}
-
-export async function debugListarArquivos(exameId: string) {
-  return listarArquivos(exameId);
-}
-
 async function listarArquivos(exameId: string): Promise<Arquivo[]> {
   const res = await fetch(`${OAB_BASE}/EditaisProvas?NumeroExame=${exameId}`, { headers: { "User-Agent": UA, "Accept": "text/html" } });
   const html = await res.text();
