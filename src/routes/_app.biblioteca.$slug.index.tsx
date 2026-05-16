@@ -110,6 +110,25 @@ function BibliotecaList() {
           </>
         ) : (
           <>
+            <div className="mb-3 inline-flex rounded-xl border border-border bg-card p-1 text-xs font-medium">
+              {([
+                { id: "cronologica", label: "Ordem de estudo", Icon: Clock },
+                { id: "alfabetica", label: "A–Z", Icon: ArrowDownAZ },
+              ] as const).map(({ id, label, Icon }) => {
+                const active = sort === id;
+                return (
+                  <button
+                    key={id}
+                    onClick={() => { setSort(id); setLimit(PAGE_SIZE); }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    aria-pressed={active}
+                  >
+                    <Icon className="w-3.5 h-3.5" /> {label}
+                  </button>
+                );
+              })}
+            </div>
+
             {livrosLoading && !livros && (
               <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden bg-card">
                 {Array.from({ length: 8 }).map((_, i) => (
