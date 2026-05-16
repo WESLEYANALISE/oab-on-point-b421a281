@@ -67,8 +67,10 @@ function absolutizeUrl(href: string): string {
   return OAB_BASE + "/" + href;
 }
 
+const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
+
 async function listarExames(): Promise<Array<{ id: string; titulo: string }>> {
-  const res = await fetch(`${OAB_BASE}/EditaisProvas?NumeroExame=0`);
+  const res = await fetch(`${OAB_BASE}/EditaisProvas?NumeroExame=0`, { headers: { "User-Agent": UA, "Accept": "text/html" } });
   const html = await res.text();
   const select = html.match(/<select[^>]*id="cmb-edital"[\s\S]*?<\/select>/);
   if (!select) return [];
@@ -84,8 +86,21 @@ async function listarExames(): Promise<Array<{ id: string; titulo: string }>> {
   return out;
 }
 
+export async function debugListarExames() {
+  return listarExames();
+}
+
+export async function debugClassificar(exameId: string) {
+  const arquivos = await listarArquivos(exameId);
+  return { arquivos, classificacao: classificar(arquivos) };
+}
+
+export async function debugListarArquivos(exameId: string) {
+  return listarArquivos(exameId);
+}
+
 async function listarArquivos(exameId: string): Promise<Arquivo[]> {
-  const res = await fetch(`${OAB_BASE}/EditaisProvas?NumeroExame=${exameId}`);
+  const res = await fetch(`${OAB_BASE}/EditaisProvas?NumeroExame=${exameId}`, { headers: { "User-Agent": UA, "Accept": "text/html" } });
   const html = await res.text();
   const arquivos: Arquivo[] = [];
   const anchorRe = /<a\s+[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
