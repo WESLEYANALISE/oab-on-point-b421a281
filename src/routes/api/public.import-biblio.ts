@@ -62,7 +62,7 @@ export const Route = createFileRoute("/api/public/import-biblio")({
             let inserted = 0;
             for (let i = 0; i < rows.length; i += 200) {
               const chunk = rows.slice(i, i + 200);
-              const { error } = await supabaseAdmin.from(t).insert(chunk);
+              const { error } = await (supabaseAdmin as any).from(t).insert(chunk);
               if (error) {
                 report[t] = { error: error.message, inserted };
                 break;
