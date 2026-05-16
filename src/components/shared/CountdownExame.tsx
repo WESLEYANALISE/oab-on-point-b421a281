@@ -14,7 +14,7 @@ type Size = { num: string; gap: string; pad: string; lbl: string };
 const SIZES: Record<"default" | "compact" | "hero", Size> = {
   default: { num: "text-3xl md:text-4xl", gap: "gap-2", pad: "px-3 py-2 min-w-[64px]", lbl: "text-[10px]" },
   compact: { num: "text-2xl md:text-3xl", gap: "gap-2", pad: "px-2.5 py-1.5 min-w-[52px]", lbl: "text-[9px]" },
-  hero:    { num: "text-4xl md:text-5xl", gap: "gap-2.5", pad: "px-3.5 py-2.5 min-w-[74px]", lbl: "text-[10px]" },
+  hero:    { num: "text-[32px] md:text-5xl", gap: "gap-2", pad: "px-2 py-2.5 md:px-3.5 md:py-2.5 min-w-0", lbl: "text-[9px] md:text-[10px]" },
 };
 
 export function CountdownExame({
@@ -42,8 +42,13 @@ export function CountdownExame({
   const numColor = light ? "text-primary-foreground" : "text-foreground";
   const lblColor = light ? "text-gold/80" : "text-muted-foreground";
 
+  const isHero = variant === "hero";
+  const containerCls = isHero
+    ? `grid grid-cols-3 ${s.gap}`
+    : `flex items-stretch ${s.gap}`;
+
   return (
-    <div className={`flex items-stretch ${s.gap}`} suppressHydrationWarning>
+    <div className={containerCls} suppressHydrationWarning>
       {items.map((i) => (
         <div
           key={i.l}
