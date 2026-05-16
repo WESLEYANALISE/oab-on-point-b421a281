@@ -48,6 +48,7 @@ const adminGroup = {
 export function DesktopSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: isAdmin } = useIsAdmin();
+  const { scale, increase, decrease, canIncrease, canDecrease } = useFontScale();
   const groups = isAdmin ? [...baseGroups, adminGroup] : baseGroups;
   return (
     <aside className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
