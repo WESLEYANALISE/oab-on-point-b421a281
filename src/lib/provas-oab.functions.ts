@@ -192,7 +192,8 @@ async function baixarESubir(
   path: string,
 ): Promise<string | null> {
   try {
-    const res = await fetch(sourceUrl, { redirect: "follow" });
+    const httpsUrl = sourceUrl.replace(/^http:\/\//i, "https://");
+    const res = await fetch(httpsUrl, { redirect: "follow" });
     if (!res.ok) return null;
     const buf = await res.arrayBuffer();
     const { error } = await supabaseAdmin.storage.from(BUCKET).upload(path, buf, {
