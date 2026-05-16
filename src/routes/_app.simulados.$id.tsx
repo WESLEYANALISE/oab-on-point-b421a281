@@ -186,49 +186,52 @@ function PraticaPage() {
       </div>
 
 
-      <article className="rounded-xl border border-border bg-card p-5 min-h-[40vh]">
-        {view === "enunciado" ? (
-          <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{atual.enunciado}</p>
-        ) : (
-          <ul className="space-y-2">
-            {(["A", "B", "C", "D"] as const).map((letra) => {
-              const texto = (atual.alternativas as Record<string, string>)[letra];
-              const selecionada = estado?.alt === letra;
-              const ehCorreta = respondida && correta === letra;
-              const ehErrada = respondida && selecionada && correta !== letra;
-              return (
-                <li key={letra}>
-                  <button
-                    onClick={() => selecionar(letra)}
-                    disabled={respondida}
-                    className={cn(
-                      "w-full text-left flex gap-3 p-3 rounded-lg border transition-colors",
-                      ehCorreta && "border-green-500 bg-green-500/10",
-                      ehErrada && "border-destructive bg-destructive/10",
-                      !respondida && selecionada && "border-primary bg-primary/10",
-                      !respondida && !selecionada && "border-border hover:bg-accent",
-                      respondida && !ehCorreta && !ehErrada && "border-border opacity-60",
-                    )}
-                  >
-                    <span
+      <article className="rounded-xl border border-border bg-card p-5 min-h-[40vh] overflow-hidden">
+        <div key={view} className="animate-fade-in">
+          {view === "enunciado" ? (
+            <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{atual.enunciado}</p>
+          ) : (
+            <ul className="space-y-2">
+              {(["A", "B", "C", "D"] as const).map((letra) => {
+                const texto = (atual.alternativas as Record<string, string>)[letra];
+                const selecionada = estado?.alt === letra;
+                const ehCorreta = respondida && correta === letra;
+                const ehErrada = respondida && selecionada && correta !== letra;
+                return (
+                  <li key={letra}>
+                    <button
+                      onClick={() => selecionar(letra)}
+                      disabled={respondida}
                       className={cn(
-                        "h-7 w-7 shrink-0 rounded-full grid place-items-center text-sm font-semibold",
-                        ehCorreta && "bg-green-500 text-white",
-                        ehErrada && "bg-destructive text-destructive-foreground",
-                        !respondida && selecionada && "bg-primary text-primary-foreground",
-                        !respondida && !selecionada && "bg-muted text-foreground",
-                        respondida && !ehCorreta && !ehErrada && "bg-muted text-foreground",
+                        "w-full text-left flex gap-3 p-3 rounded-lg border transition-colors",
+                        ehCorreta && "border-green-500 bg-green-500/10",
+                        ehErrada && "border-destructive bg-destructive/10",
+                        !respondida && selecionada && "border-primary bg-primary/10",
+                        !respondida && !selecionada && "border-border hover:bg-accent",
+                        respondida && !ehCorreta && !ehErrada && "border-border opacity-60",
                       )}
                     >
-                      {ehCorreta ? <Check className="h-4 w-4" /> : ehErrada ? <X className="h-4 w-4" /> : letra}
-                    </span>
-                    <span className="text-sm leading-relaxed">{texto}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                      <span
+                        className={cn(
+                          "h-7 w-7 shrink-0 rounded-full grid place-items-center text-sm font-semibold",
+                          ehCorreta && "bg-green-500 text-white",
+                          ehErrada && "bg-destructive text-destructive-foreground",
+                          !respondida && selecionada && "bg-primary text-primary-foreground",
+                          !respondida && !selecionada && "bg-muted text-foreground",
+                          respondida && !ehCorreta && !ehErrada && "bg-muted text-foreground",
+                        )}
+                      >
+                        {ehCorreta ? <Check className="h-4 w-4" /> : ehErrada ? <X className="h-4 w-4" /> : letra}
+                      </span>
+                      <span className="text-sm leading-relaxed">{texto}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
 
         {respondida && view === "alternativas" && (
           <div
