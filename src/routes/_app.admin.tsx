@@ -21,12 +21,18 @@ function AdminLayout() {
 
   if (loading || isLoading) {
     return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" /> Verificando acesso…
+      <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
+        <header className="mb-6">
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">Painel</p>
+          <h1 className="font-display text-3xl md:text-4xl">Admin</h1>
+          <p className="text-sm text-muted-foreground mt-1 inline-flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Verificando acesso…
+          </p>
+        </header>
       </div>
     );
   }
-  if (!isAdmin) {
+  if (!user || !isAdmin) {
     return (
       <div className="p-8 text-center">
         <ShieldAlert className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
