@@ -60,15 +60,16 @@ function ResumoTimeline() {
         <p className="text-muted-foreground text-sm py-8 text-center">Nenhum capítulo disponível.</p>
       ) : (
         <ol className="relative ml-5 space-y-4 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-gradient-to-b before:from-gold/60 before:via-gold/30 before:to-transparent">
-          {capitulos.map((c) => (
+          {capitulos.map((c, i) => (
             <li key={c.id} className="relative pl-7">
-              <span className="absolute -left-4 top-4 h-8 w-8 rounded-full bg-gradient-toga border border-gold/50 grid place-items-center text-[11px] font-display font-bold text-gold shadow-[0_4px_14px_-2px_oklch(0.78_0.13_80/0.45)] ring-4 ring-background">
+              <span className="absolute -left-4 top-4 h-8 w-8 rounded-full bg-gradient-toga border border-gold/50 grid place-items-center text-[11px] font-display font-bold text-gold shadow-[0_4px_14px_-2px_oklch(0.78_0.13_80/0.45)] ring-4 ring-background z-10">
                 {c.ordem}
               </span>
               <Link
                 to="/resumos/capitulo/$livroId/$ordem"
                 params={{ livroId, ordem: String(c.ordem) }}
-                className="group block min-h-[92px] rounded-xl border border-gold/15 bg-gradient-to-br from-[oklch(0.28_0.07_18)] to-[oklch(0.19_0.04_18)] p-4 hover:border-gold/40 hover:-translate-y-0.5 transition-all shadow-md shadow-black/30"
+                style={{ ["--sheen-delay" as any]: `${(capitulos.length - 1 - i) * 90}ms` }}
+                className="chapter-sheen group block min-h-[92px] rounded-xl border border-gold/15 bg-gradient-to-br from-[oklch(0.28_0.07_18)] to-[oklch(0.19_0.04_18)] p-4 hover:border-gold/40 hover:-translate-y-0.5 transition-all shadow-md shadow-black/30"
               >
                 <div className="flex items-center justify-between gap-3 h-full">
                   <div className="min-w-0">
