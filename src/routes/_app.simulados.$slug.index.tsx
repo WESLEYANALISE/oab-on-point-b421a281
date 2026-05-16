@@ -136,7 +136,7 @@ function OverviewPage() {
 
   if (!overview.data) {
     return (
-      <div className="px-4 md:px-8 py-5 pb-32 max-w-3xl mx-auto animate-fade-in">
+      <div className="px-4 md:px-8 py-5 pb-32 max-w-3xl mx-auto">
         <header className="mb-5">
           <p className="text-xs text-muted-foreground">
             Exame da Ordem{card?.ano ? ` · ${card.ano}` : ""}
