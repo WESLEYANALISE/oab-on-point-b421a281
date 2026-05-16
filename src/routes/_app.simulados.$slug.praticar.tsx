@@ -199,6 +199,7 @@ function PraticaPage() {
       </header>
 
       {/* Toggle Enunciado / Alternativas */}
+      {!especial && (
       <div className="relative grid grid-cols-2 p-1 bg-muted rounded-full mb-4">
         <div
           className="absolute top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-full bg-card shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
@@ -223,6 +224,7 @@ function PraticaPage() {
           <ListChecks className="h-4 w-4" /> Alternativas
         </button>
       </div>
+      )}
 
 
       <article className="rounded-xl border border-border bg-card p-5 min-h-[40vh] overflow-hidden">
@@ -317,7 +319,38 @@ function PraticaPage() {
             <ChevronLeft className="h-5 w-5" />
           </Button>
 
-          {!respondida ? (
+          {especial ? (
+            ehUltima ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button className="flex-1 bg-gradient-gold text-gold-foreground" disabled={finalMut.isPending}>
+                    {finalMut.isPending ? (
+                      <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Finalizando…</>
+                    ) : (
+                      <><Flag className="h-4 w-4 mr-1" /> Finalizar simulado</>
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Finalizar este simulado?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Você respondeu {respondidasN} de {totalQ} questões. Após finalizar
+                      não será possível alterar suas respostas. Quer continuar?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Voltar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => finalMut.mutate()}>Sim, finalizar</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <Button className="flex-1" onClick={() => irPara(idx + 1)}>
+                {ehAnulada ? "Próxima questão" : "Pular questão"} <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            )
+          ) : !respondida ? (
             <Button
               className="flex-1"
               disabled={view === "alternativas" && !estado?.alt}
