@@ -413,6 +413,69 @@ export type Database = {
         }
         Relationships: []
       }
+      simulado_jobs: {
+        Row: {
+          batch_atual: number
+          batches_total: number
+          concluido_em: string | null
+          created_at: string
+          erro_msg: string | null
+          etapa: string
+          gerado_por: string | null
+          id: string
+          iniciado_em: string | null
+          logs: Json
+          materias_detectadas: Json
+          ocr_gabarito: string | null
+          ocr_prova: string | null
+          prova_numero: number
+          questoes_processadas: number
+          simulado_id: string | null
+          total_estimado: number
+          updated_at: string
+        }
+        Insert: {
+          batch_atual?: number
+          batches_total?: number
+          concluido_em?: string | null
+          created_at?: string
+          erro_msg?: string | null
+          etapa?: string
+          gerado_por?: string | null
+          id?: string
+          iniciado_em?: string | null
+          logs?: Json
+          materias_detectadas?: Json
+          ocr_gabarito?: string | null
+          ocr_prova?: string | null
+          prova_numero: number
+          questoes_processadas?: number
+          simulado_id?: string | null
+          total_estimado?: number
+          updated_at?: string
+        }
+        Update: {
+          batch_atual?: number
+          batches_total?: number
+          concluido_em?: string | null
+          created_at?: string
+          erro_msg?: string | null
+          etapa?: string
+          gerado_por?: string | null
+          id?: string
+          iniciado_em?: string | null
+          logs?: Json
+          materias_detectadas?: Json
+          ocr_gabarito?: string | null
+          ocr_prova?: string | null
+          prova_numero?: number
+          questoes_processadas?: number
+          simulado_id?: string | null
+          total_estimado?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       simulado_questoes: {
         Row: {
           alternativas: Json
