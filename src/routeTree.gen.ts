@@ -29,6 +29,7 @@ import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
 import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
+import { Route as AppBibliotecaSlugBookIdRouteImport } from './routes/_app.biblioteca.$slug.$bookId'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -129,6 +130,11 @@ const AppBibliotecaSlugRoute = AppBibliotecaSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => AppBibliotecaRoute,
 } as any)
+const AppBibliotecaSlugBookIdRoute = AppBibliotecaSlugBookIdRouteImport.update({
+  id: '/$bookId',
+  path: '/$bookId',
+  getParentRoute: () => AppBibliotecaSlugRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -147,9 +153,10 @@ export interface FileRoutesByFullPath {
   '/reta-final': typeof AppRetaFinalRoute
   '/simulados': typeof AppSimuladosRoute
   '/vade-mecum': typeof AppVadeMecumRoute
-  '/biblioteca/$slug': typeof AppBibliotecaSlugRoute
+  '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
+  '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRoute
 }
 export interface FileRoutesByTo {
   '/assistente': typeof AppAssistenteRoute
@@ -168,9 +175,10 @@ export interface FileRoutesByTo {
   '/simulados': typeof AppSimuladosRoute
   '/vade-mecum': typeof AppVadeMecumRoute
   '/': typeof AppIndexRoute
-  '/biblioteca/$slug': typeof AppBibliotecaSlugRoute
+  '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
+  '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -191,9 +199,10 @@ export interface FileRoutesById {
   '/_app/simulados': typeof AppSimuladosRoute
   '/_app/vade-mecum': typeof AppVadeMecumRoute
   '/_app/': typeof AppIndexRoute
-  '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRoute
+  '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
   '/_app/noticias/$id': typeof AppNoticiasIdRoute
+  '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -217,6 +226,7 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
+    | '/biblioteca/$slug/$bookId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/assistente'
@@ -238,6 +248,7 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
+    | '/biblioteca/$slug/$bookId'
   id:
     | '__root__'
     | '/_app'
@@ -260,6 +271,7 @@ export interface FileRouteTypes {
     | '/_app/biblioteca/$slug'
     | '/_app/materias/$slug'
     | '/_app/noticias/$id'
+    | '/_app/biblioteca/$slug/$bookId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -408,15 +420,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugRouteImport
       parentRoute: typeof AppBibliotecaRoute
     }
+    '/_app/biblioteca/$slug/$bookId': {
+      id: '/_app/biblioteca/$slug/$bookId'
+      path: '/$bookId'
+      fullPath: '/biblioteca/$slug/$bookId'
+      preLoaderRoute: typeof AppBibliotecaSlugBookIdRouteImport
+      parentRoute: typeof AppBibliotecaSlugRoute
+    }
   }
 }
 
+interface AppBibliotecaSlugRouteChildren {
+  AppBibliotecaSlugBookIdRoute: typeof AppBibliotecaSlugBookIdRoute
+}
+
+const AppBibliotecaSlugRouteChildren: AppBibliotecaSlugRouteChildren = {
+  AppBibliotecaSlugBookIdRoute: AppBibliotecaSlugBookIdRoute,
+}
+
+const AppBibliotecaSlugRouteWithChildren =
+  AppBibliotecaSlugRoute._addFileChildren(AppBibliotecaSlugRouteChildren)
+
 interface AppBibliotecaRouteChildren {
-  AppBibliotecaSlugRoute: typeof AppBibliotecaSlugRoute
+  AppBibliotecaSlugRoute: typeof AppBibliotecaSlugRouteWithChildren
 }
 
 const AppBibliotecaRouteChildren: AppBibliotecaRouteChildren = {
-  AppBibliotecaSlugRoute: AppBibliotecaSlugRoute,
+  AppBibliotecaSlugRoute: AppBibliotecaSlugRouteWithChildren,
 }
 
 const AppBibliotecaRouteWithChildren = AppBibliotecaRoute._addFileChildren(
@@ -493,3 +523,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
