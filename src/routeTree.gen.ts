@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
 import { Route as AppSimuladosRouteImport } from './routes/_app.simulados'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppResumosRouteImport } from './routes/_app.resumos'
@@ -19,6 +20,7 @@ import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
 import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
 import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
+import { Route as AppDesktopRouteImport } from './routes/_app.desktop'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
@@ -33,6 +35,11 @@ const AppRoute = AppRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVadeMecumRoute = AppVadeMecumRouteImport.update({
+  id: '/vade-mecum',
+  path: '/vade-mecum',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSimuladosRoute = AppSimuladosRouteImport.update({
@@ -75,6 +82,11 @@ const AppFlashcardsRoute = AppFlashcardsRouteImport.update({
   path: '/flashcards',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDesktopRoute = AppDesktopRouteImport.update({
+  id: '/desktop',
+  path: '/desktop',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBibliotecaRoute = AppBibliotecaRouteImport.update({
   id: '/biblioteca',
   path: '/biblioteca',
@@ -112,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
   '/biblioteca': typeof AppBibliotecaRoute
+  '/desktop': typeof AppDesktopRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
@@ -120,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/simulados': typeof AppSimuladosRoute
+  '/vade-mecum': typeof AppVadeMecumRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
 }
@@ -128,6 +142,7 @@ export interface FileRoutesByTo {
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
   '/biblioteca': typeof AppBibliotecaRoute
+  '/desktop': typeof AppDesktopRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
@@ -136,6 +151,7 @@ export interface FileRoutesByTo {
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/simulados': typeof AppSimuladosRoute
+  '/vade-mecum': typeof AppVadeMecumRoute
   '/': typeof AppIndexRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
@@ -147,6 +163,7 @@ export interface FileRoutesById {
   '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRoute
   '/_app/biblioteca': typeof AppBibliotecaRoute
+  '/_app/desktop': typeof AppDesktopRoute
   '/_app/flashcards': typeof AppFlashcardsRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/noticias': typeof AppNoticiasRouteWithChildren
@@ -155,6 +172,7 @@ export interface FileRoutesById {
   '/_app/resumos': typeof AppResumosRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/_app/simulados': typeof AppSimuladosRoute
+  '/_app/vade-mecum': typeof AppVadeMecumRoute
   '/_app/': typeof AppIndexRoute
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
   '/_app/noticias/$id': typeof AppNoticiasIdRoute
@@ -167,6 +185,7 @@ export interface FileRouteTypes {
     | '/audioaulas'
     | '/aulas'
     | '/biblioteca'
+    | '/desktop'
     | '/flashcards'
     | '/materias'
     | '/noticias'
@@ -175,6 +194,7 @@ export interface FileRouteTypes {
     | '/resumos'
     | '/reta-final'
     | '/simulados'
+    | '/vade-mecum'
     | '/materias/$slug'
     | '/noticias/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -183,6 +203,7 @@ export interface FileRouteTypes {
     | '/audioaulas'
     | '/aulas'
     | '/biblioteca'
+    | '/desktop'
     | '/flashcards'
     | '/materias'
     | '/noticias'
@@ -191,6 +212,7 @@ export interface FileRouteTypes {
     | '/resumos'
     | '/reta-final'
     | '/simulados'
+    | '/vade-mecum'
     | '/'
     | '/materias/$slug'
     | '/noticias/$id'
@@ -201,6 +223,7 @@ export interface FileRouteTypes {
     | '/_app/audioaulas'
     | '/_app/aulas'
     | '/_app/biblioteca'
+    | '/_app/desktop'
     | '/_app/flashcards'
     | '/_app/materias'
     | '/_app/noticias'
@@ -209,6 +232,7 @@ export interface FileRouteTypes {
     | '/_app/resumos'
     | '/_app/reta-final'
     | '/_app/simulados'
+    | '/_app/vade-mecum'
     | '/_app/'
     | '/_app/materias/$slug'
     | '/_app/noticias/$id'
@@ -232,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/vade-mecum': {
+      id: '/_app/vade-mecum'
+      path: '/vade-mecum'
+      fullPath: '/vade-mecum'
+      preLoaderRoute: typeof AppVadeMecumRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/simulados': {
@@ -288,6 +319,13 @@ declare module '@tanstack/react-router' {
       path: '/flashcards'
       fullPath: '/flashcards'
       preLoaderRoute: typeof AppFlashcardsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/desktop': {
+      id: '/_app/desktop'
+      path: '/desktop'
+      fullPath: '/desktop'
+      preLoaderRoute: typeof AppDesktopRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/biblioteca': {
@@ -364,6 +402,7 @@ interface AppRouteChildren {
   AppAudioaulasRoute: typeof AppAudioaulasRoute
   AppAulasRoute: typeof AppAulasRoute
   AppBibliotecaRoute: typeof AppBibliotecaRoute
+  AppDesktopRoute: typeof AppDesktopRoute
   AppFlashcardsRoute: typeof AppFlashcardsRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
@@ -372,6 +411,7 @@ interface AppRouteChildren {
   AppResumosRoute: typeof AppResumosRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
   AppSimuladosRoute: typeof AppSimuladosRoute
+  AppVadeMecumRoute: typeof AppVadeMecumRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -380,6 +420,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAudioaulasRoute: AppAudioaulasRoute,
   AppAulasRoute: AppAulasRoute,
   AppBibliotecaRoute: AppBibliotecaRoute,
+  AppDesktopRoute: AppDesktopRoute,
   AppFlashcardsRoute: AppFlashcardsRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
   AppNoticiasRoute: AppNoticiasRouteWithChildren,
@@ -388,6 +429,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppResumosRoute: AppResumosRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
   AppSimuladosRoute: AppSimuladosRoute,
+  AppVadeMecumRoute: AppVadeMecumRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

@@ -5,7 +5,10 @@ import { MateriaCard } from "@/components/shared/MateriaCard";
 import { NoticiaCard } from "@/components/shared/NoticiaCard";
 import { getMaterias } from "@/data/materias";
 import { getNoticias } from "@/data/noticias";
-import { Sparkles, ArrowRight, BookOpen, FileText, Layers, Library, ClipboardList, FileCheck2, Newspaper, Flame } from "lucide-react";
+import {
+  Sparkles, ArrowRight, BookOpen, FileText, Library, Headphones, Bot,
+  Scale, Monitor, FileCheck2, Brain, ClipboardList, ChevronRight, Flame,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -19,22 +22,56 @@ export const Route = createFileRoute("/_app/")({
   component: HomePage,
 });
 
-type Ferramenta = {
+// ---------- Estudos Aprofundados (2x2) ----------
+type Estudo = {
   key: string;
   to: string;
   label: string;
   descricao: string;
+  cta: string;
   icon: typeof BookOpen;
-  cor: string;
+  cor: string; // background do ícone
+  border: string; // borda do card
+};
+
+const ESTUDOS: Estudo[] = [
+  { key: "resumos",    to: "/resumos",    label: "Resumos",    descricao: "Resumos jurídicos completos", cta: "Acessar",     icon: FileText,   cor: "bg-emerald-500/15 text-emerald-400", border: "border-emerald-500/20" },
+  { key: "biblioteca", to: "/biblioteca", label: "Biblioteca", descricao: "Acervo completo de livros",   cta: "Acessar",     icon: Library,    cor: "bg-gold/15 text-gold",               border: "border-gold/20" },
+  { key: "audioaulas", to: "/audioaulas", label: "Audioaulas", descricao: "Ouça e aprenda",              cta: "Ouvir agora", icon: Headphones, cor: "bg-violet-500/15 text-violet-300",   border: "border-violet-500/20" },
+  { key: "horus",      to: "/assistente", label: "Hórus",      descricao: "Assistente jurídico IA",      cta: "Conversar",   icon: Bot,        cor: "bg-primary/15 text-primary",         border: "border-primary/20" },
+];
+
+function EstudoCard({ item }: { item: Estudo }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      to={item.to}
+      className={`group relative overflow-hidden rounded-2xl bg-card border ${item.border} p-4 min-h-[150px] flex flex-col justify-between hover:-translate-y-0.5 transition-all`}
+    >
+      <div className={`h-10 w-10 rounded-xl grid place-items-center ${item.cor}`}>
+        <Icon className="h-5 w-5" strokeWidth={2} />
+      </div>
+      <div>
+        <p className="font-display text-lg leading-tight">{item.label}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{item.descricao}</p>
+        <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-gold group-hover:gap-1.5 transition-all">
+          {item.cta} <ArrowRight className="h-3 w-3" />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+// ---------- Ferramentas (carrossel com capa) ----------
+type Ferramenta = {
+  key: string; to: string; label: string; sub: string; icon: typeof Scale; cover: string;
 };
 
 const FERRAMENTAS: Ferramenta[] = [
-  { key: "resumos", to: "/resumos", label: "Resumos", descricao: "Direto ao ponto", icon: FileText, cor: "bg-secondary text-secondary-foreground" },
-  { key: "biblioteca", to: "/biblioteca", label: "Biblioteca", descricao: "PDFs, livros e súmulas", icon: Library, cor: "bg-gradient-toga text-primary-foreground" },
-  { key: "flashcards", to: "/flashcards", label: "Flashcards", descricao: "Memorize com SRS", icon: Layers, cor: "bg-gradient-gold text-gold-foreground" },
-  { key: "questoes", to: "/questoes", label: "Questões", descricao: "Banco da FGV", icon: ClipboardList, cor: "bg-secondary text-secondary-foreground" },
-  { key: "simulados", to: "/simulados", label: "Simulados", descricao: "Prova completa", icon: FileCheck2, cor: "bg-foreground text-background" },
-  { key: "noticias", to: "/noticias", label: "Notícias", descricao: "Atualidades jurídicas", icon: Newspaper, cor: "bg-accent text-accent-foreground" },
+  { key: "vademecum", to: "/vade-mecum", label: "Vade Mecum",   sub: "Legislação completa", icon: Scale,      cover: "from-amber-700/40 via-amber-900/30 to-background" },
+  { key: "horus2",    to: "/assistente",  label: "Hórus",        sub: "Assistente jurídico", icon: Bot,        cover: "from-primary/40 via-primary/20 to-background" },
+  { key: "desktop",   to: "/desktop",     label: "Desktop",      sub: "Acesso pelo computador", icon: Monitor, cover: "from-rose-600/30 via-rose-900/20 to-background" },
+  { key: "simulado",  to: "/simulados",   label: "Simulados",    sub: "Prova completa FGV",  icon: FileCheck2, cover: "from-sky-600/30 via-sky-900/20 to-background" },
 ];
 
 function FerramentaCard({ item }: { item: Ferramenta }) {
@@ -42,15 +79,48 @@ function FerramentaCard({ item }: { item: Ferramenta }) {
   return (
     <Link
       to={item.to}
-      className="rounded-2xl overflow-hidden border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-lg"
+      className="snap-start shrink-0 w-[180px] rounded-2xl overflow-hidden border border-border bg-card hover:-translate-y-0.5 transition-all"
     >
-      <div className={`h-[100px] flex items-center justify-center ${item.cor}`}>
-        <Icon className="h-9 w-9 opacity-90" strokeWidth={1.8} />
+      <div className={`relative h-[120px] bg-gradient-to-br ${item.cover} grid place-items-center`}>
+        <Icon className="h-12 w-12 text-foreground/80" strokeWidth={1.5} />
+        <div className="absolute top-2 right-2 h-7 w-7 rounded-full bg-background/60 backdrop-blur grid place-items-center">
+          <ChevronRight className="h-4 w-4" />
+        </div>
       </div>
       <div className="p-3">
         <p className="font-display text-base leading-tight">{item.label}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{item.descricao}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{item.sub}</p>
       </div>
+    </Link>
+  );
+}
+
+// ---------- Pratique (linhas largas) ----------
+type Pratica = {
+  key: string; to: string; label: string; sub: string; icon: typeof Brain; cor: string;
+};
+
+const PRATICAS: Pratica[] = [
+  { key: "flashcards", to: "/flashcards", label: "Flashcards", sub: "Memorize com cards inteligentes", icon: Brain,        cor: "bg-sky-500 text-white" },
+  { key: "questoes",   to: "/questoes",   label: "Questões",   sub: "Pratique com questões objetivas", icon: ClipboardList, cor: "bg-orange-500 text-white" },
+  { key: "simulados",  to: "/simulados",  label: "Simulados",  sub: "Prova completa cronometrada",     icon: FileCheck2,    cor: "bg-emerald-500 text-white" },
+];
+
+function PraticaRow({ item }: { item: Pratica }) {
+  const Icon = item.icon;
+  return (
+    <Link
+      to={item.to}
+      className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card hover:bg-secondary transition-colors"
+    >
+      <div className={`h-12 w-12 rounded-xl grid place-items-center shrink-0 ${item.cor}`}>
+        <Icon className="h-6 w-6" strokeWidth={2} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-display text-lg leading-tight">{item.label}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{item.sub}</p>
+      </div>
+      <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
     </Link>
   );
 }
@@ -65,11 +135,8 @@ function HomePage() {
     <div className="space-y-10 md:space-y-14 pb-10">
       <HomeHero />
 
-      {/* Estudar — card grande Aulas Interativas + progresso integrado */}
+      {/* Aulas Interativas — card destaque */}
       <section className="px-4 md:px-10 max-w-6xl">
-        <div className="mb-3">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">Estudar</p>
-        </div>
         <Link
           to="/aulas"
           className="group block relative overflow-hidden rounded-2xl bg-gradient-toga text-primary-foreground p-5 md:p-7 min-h-[180px] hover:shadow-xl transition-all"
@@ -114,23 +181,52 @@ function HomePage() {
         </Link>
       </section>
 
-      {/* Ferramentas de estudo */}
+      {/* Estudos aprofundados — 2x2 */}
       <section className="px-4 md:px-10 max-w-6xl">
-        <SectionHeader eyebrow="Ferramentas" title="Ferramentas de estudo" />
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        <SectionHeader eyebrow="Estudar" title="Ferramentas de estudo" />
+        <div className="grid grid-cols-2 gap-3">
+          {ESTUDOS.map((item) => <EstudoCard key={item.key} item={item} />)}
+        </div>
+      </section>
+
+      {/* Ferramentas — carrossel com capa */}
+      <section className="max-w-6xl">
+        <div className="px-4 md:px-10">
+          <SectionHeader eyebrow="Ferramentas" title="Ferramentas" />
+        </div>
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
           {FERRAMENTAS.map((item) => <FerramentaCard key={item.key} item={item} />)}
         </div>
       </section>
 
-      {/* Matérias OAB */}
+      {/* Pratique */}
+      <section className="px-4 md:px-10 max-w-6xl">
+        <SectionHeader eyebrow="Pratique" title="Teste seus conhecimentos" />
+        <div className="grid gap-3">
+          {PRATICAS.map((item) => <PraticaRow key={item.key} item={item} />)}
+        </div>
+      </section>
+
+      {/* Explorar Biblioteca — matérias como cards */}
       <section className="max-w-6xl">
         <div className="md:px-10">
-          <SectionHeader eyebrow="1ª fase" title="Matérias da OAB" to="/materias" />
+          <SectionHeader eyebrow="Biblioteca" title="Explorar Biblioteca" to="/materias" />
         </div>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
           {materias.map((m) => (
             <div key={m.slug} className="snap-start"><MateriaCard materia={m} compact /></div>
           ))}
+        </div>
+      </section>
+
+      {/* Notícias */}
+      <section className="px-4 md:px-10 max-w-6xl">
+        <SectionHeader eyebrow="Atualidades jurídicas" title="O que tá rolando" to="/noticias" />
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="md:col-span-2"><NoticiaCard noticia={destaque} variant="hero" /></div>
+          <div className="grid gap-3">
+            {outras.slice(0, 3).map((n) => <NoticiaCard key={n.id} noticia={n} />)}
+          </div>
         </div>
       </section>
 
@@ -151,17 +247,6 @@ function HomePage() {
             </div>
           </div>
         </Link>
-      </section>
-
-      {/* Notícias */}
-      <section className="px-4 md:px-10 max-w-6xl">
-        <SectionHeader eyebrow="Atualidades jurídicas" title="O que tá rolando" to="/noticias" />
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="md:col-span-2"><NoticiaCard noticia={destaque} variant="hero" /></div>
-          <div className="grid gap-3">
-            {outras.slice(0, 3).map((n) => <NoticiaCard key={n.id} noticia={n} />)}
-          </div>
-        </div>
       </section>
     </div>
   );
