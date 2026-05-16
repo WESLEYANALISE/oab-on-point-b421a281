@@ -44,6 +44,8 @@ function AppLayout() {
         </main>
         {showBottomNav && <BottomNav />}
       </div>
+      <SimuladoQueueDriver />
+      <SimuladoQueueIndicator />
     </div>
   );
 }
