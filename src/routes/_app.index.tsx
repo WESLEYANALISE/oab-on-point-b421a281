@@ -89,7 +89,7 @@ function AreaOABPage() {
 
       {/* ===== Notícias ===== */}
       <section>
-        <div className="px-4 md:px-10 flex items-end justify-between gap-3 mb-4">
+        <div className="px-4 md:px-8 flex items-end justify-between gap-3 mb-4">
           <SectionTitle icon={Newspaper} eyebrow="Atualidades do exame" title="Notícias da OAB" inline />
           <Link
             to="/noticias"
@@ -100,31 +100,15 @@ function AreaOABPage() {
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
+        {/* Mobile: scroll horizontal · Desktop: grid */}
+        <div className="md:hidden flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory">
           {noticias.map((n) => (
-            <Link
-              key={n.id}
-              to="/noticias/$id"
-              params={{ id: n.id }}
-              className="snap-start shrink-0 w-[220px] md:w-[260px] rounded-2xl overflow-hidden border border-border bg-card hover:border-gold/30 transition-colors"
-            >
-              <div className="relative h-28 md:h-36 bg-gradient-to-br from-[oklch(0.32_0.1_240)] via-[oklch(0.22_0.08_240)] to-[oklch(0.16_0.05_240)] flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 opacity-20" style={{
-                  backgroundImage: "radial-gradient(circle at 30% 40%, oklch(0.85 0.12 80 / 0.4), transparent 60%)",
-                }} />
-                <p className="relative font-display font-bold text-2xl md:text-3xl tracking-tight text-primary-foreground/90">NOTÍCIAS</p>
-                <span className="absolute top-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-[oklch(0.45_0.18_240)] text-white text-[9px] font-bold uppercase tracking-wider">
-                  {n.categoria === "OAB" || n.categoria === "Exame" ? "OAB Nacional" : n.fonte.split(" ")[0]}
-                </span>
-                <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/55 text-white text-[10px] font-medium" suppressHydrationWarning>
-                  <Calendar className="h-3 w-3" />
-                  {formatNoticiaDate(n.data)}
-                </span>
-              </div>
-              <div className="p-3">
-                <p className="font-medium text-[13px] md:text-sm leading-snug line-clamp-3 text-foreground">{n.titulo}</p>
-              </div>
-            </Link>
+            <NoticiaCardLink key={n.id} n={n} className="snap-start shrink-0 w-[220px]" />
+          ))}
+        </div>
+        <div className="hidden md:grid px-8 grid-cols-3 lg:grid-cols-4 gap-4">
+          {noticias.slice(0, 4).map((n) => (
+            <NoticiaCardLink key={n.id} n={n} className="w-full" />
           ))}
         </div>
       </section>
