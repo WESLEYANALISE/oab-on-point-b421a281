@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Search, Calendar, Sparkles, ArrowRight,
+  Calendar, Sparkles, ArrowRight,
   Library, Trophy, HelpCircle, Video, Newspaper,
   Target, FileText, BookOpen, CalendarDays, ClipboardList, Layers, ScrollText,
   GraduationCap, Zap, Compass,
