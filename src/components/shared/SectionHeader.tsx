@@ -13,15 +13,15 @@ export function SectionHeader({
   cta?: string;
 }) {
   return (
-    <div className="flex items-end justify-between gap-3 px-4 md:px-0 mb-3">
+    <div className="flex items-end justify-between gap-3 px-4 md:px-0 mb-4">
       <div>
         {eyebrow && (
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-1">{eyebrow}</p>
+          <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold mb-1.5">{eyebrow}</p>
         )}
-        <h2 className="font-display text-2xl md:text-3xl leading-tight">{title}</h2>
+        <h2 className="font-display font-semibold text-[26px] md:text-[32px] leading-[1.05] tracking-tight">{title}</h2>
       </div>
       {to && (
-        <Link to={to} className="text-xs md:text-sm font-medium text-primary hover:underline inline-flex items-center gap-0.5 shrink-0">
+        <Link to={to} className="text-xs md:text-sm font-medium text-gold hover:text-gold/80 inline-flex items-center gap-0.5 shrink-0">
           {cta} <ChevronRight className="h-4 w-4" />
         </Link>
       )}
