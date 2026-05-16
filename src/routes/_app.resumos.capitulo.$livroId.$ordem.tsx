@@ -273,6 +273,78 @@ function CapituloView() {
           )}
         </div>
       </nav>
+
+      {pdfDialogAberto && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-background/70 backdrop-blur-sm p-4 animate-tab-fade"
+          onClick={() => setPdfDialogAberto(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Opções de PDF"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-2xl border border-gold/30 bg-card shadow-[0_20px_60px_-20px_rgba(0,0,0,0.7)] p-5"
+          >
+            <h2 className="font-display text-lg text-gold mb-1">Baixar PDF do capítulo</h2>
+            <p className="text-xs text-muted-foreground mb-4">
+              Inclua complementos gerados por IA, se desejar.
+            </p>
+
+            <label className="flex items-start gap-3 rounded-lg border border-border bg-background/40 p-3 cursor-pointer hover:border-gold/40 transition mb-2">
+              <input
+                type="checkbox"
+                checked={incluirExemplo}
+                onChange={(e) => setIncluirExemplo(e.target.checked)}
+                className="mt-0.5 accent-[oklch(0.78_0.13_80)]"
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-display font-semibold text-foreground">
+                  Exemplo prático
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  Situação concreta ilustrando o capítulo.
+                </span>
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 rounded-lg border border-border bg-background/40 p-3 cursor-pointer hover:border-gold/40 transition mb-5">
+              <input
+                type="checkbox"
+                checked={incluirTermos}
+                onChange={(e) => setIncluirTermos(e.target.checked)}
+                className="mt-0.5 accent-[oklch(0.78_0.13_80)]"
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-display font-semibold text-foreground">
+                  Termos jurídicos
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  Glossário com 10 a 15 termos detalhados.
+                </span>
+              </span>
+            </label>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPdfDialogAberto(false)}
+                className="text-xs uppercase tracking-wider px-3 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={baixarPdf}
+                className="inline-flex items-center gap-1.5 text-xs uppercase tracking-wider font-display font-semibold px-4 py-2 rounded-lg border border-gold/50 bg-gradient-toga text-gold hover:border-gold/80 transition"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Baixar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
