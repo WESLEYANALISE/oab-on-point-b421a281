@@ -24,7 +24,6 @@ import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
 import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
-import { Route as AppDesktopRouteImport } from './routes/_app.desktop'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
@@ -126,11 +125,6 @@ const AppMateriasRoute = AppMateriasRouteImport.update({
 const AppFlashcardsRoute = AppFlashcardsRouteImport.update({
   id: '/flashcards',
   path: '/flashcards',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDesktopRoute = AppDesktopRouteImport.update({
-  id: '/desktop',
-  path: '/desktop',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBibliotecaRoute = AppBibliotecaRouteImport.update({
@@ -289,7 +283,6 @@ export interface FileRoutesByFullPath {
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
   '/biblioteca': typeof AppBibliotecaRouteWithChildren
-  '/desktop': typeof AppDesktopRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
@@ -331,7 +324,6 @@ export interface FileRoutesByTo {
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
-  '/desktop': typeof AppDesktopRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
@@ -376,7 +368,6 @@ export interface FileRoutesById {
   '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRoute
   '/_app/biblioteca': typeof AppBibliotecaRouteWithChildren
-  '/_app/desktop': typeof AppDesktopRoute
   '/_app/flashcards': typeof AppFlashcardsRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/noticias': typeof AppNoticiasRouteWithChildren
@@ -424,7 +415,6 @@ export interface FileRouteTypes {
     | '/audioaulas'
     | '/aulas'
     | '/biblioteca'
-    | '/desktop'
     | '/flashcards'
     | '/materias'
     | '/noticias'
@@ -466,7 +456,6 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/audioaulas'
     | '/aulas'
-    | '/desktop'
     | '/flashcards'
     | '/materias'
     | '/noticias'
@@ -510,7 +499,6 @@ export interface FileRouteTypes {
     | '/_app/audioaulas'
     | '/_app/aulas'
     | '/_app/biblioteca'
-    | '/_app/desktop'
     | '/_app/flashcards'
     | '/_app/materias'
     | '/_app/noticias'
@@ -660,13 +648,6 @@ declare module '@tanstack/react-router' {
       path: '/flashcards'
       fullPath: '/flashcards'
       preLoaderRoute: typeof AppFlashcardsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/desktop': {
-      id: '/_app/desktop'
-      path: '/desktop'
-      fullPath: '/desktop'
-      preLoaderRoute: typeof AppDesktopRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/biblioteca': {
@@ -955,7 +936,6 @@ interface AppRouteChildren {
   AppAudioaulasRoute: typeof AppAudioaulasRoute
   AppAulasRoute: typeof AppAulasRoute
   AppBibliotecaRoute: typeof AppBibliotecaRouteWithChildren
-  AppDesktopRoute: typeof AppDesktopRoute
   AppFlashcardsRoute: typeof AppFlashcardsRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
@@ -986,7 +966,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppAudioaulasRoute: AppAudioaulasRoute,
   AppAulasRoute: AppAulasRoute,
   AppBibliotecaRoute: AppBibliotecaRouteWithChildren,
-  AppDesktopRoute: AppDesktopRoute,
   AppFlashcardsRoute: AppFlashcardsRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
   AppNoticiasRoute: AppNoticiasRouteWithChildren,
@@ -1025,3 +1004,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
