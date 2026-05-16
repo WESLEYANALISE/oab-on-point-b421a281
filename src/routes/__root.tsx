@@ -1,8 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  PersistQueryClientProvider,
-  type Persister,
-} from "@tanstack/react-query-persist-client";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import {
   Outlet,
   Link,
@@ -73,10 +71,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+const CACHE_BUSTER = "oab-v1";
+
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  persister: Persister | null;
-  cacheBuster: string;
 }>()({
   head: () => ({
     meta: [
@@ -133,7 +131,16 @@ const NON_PERSISTED_PREFIXES = new Set([
 ]);
 
 function RootComponent() {
-  const { queryClient, persister, cacheBuster } = Route.useRouteContext();
+  const { queryClient } = Route.useRouteContext();
+  const persister =
+    typeof window !== "undefined"
+      ? createSyncStoragePersister({
+          storage: window.localStorage,
+          key: "oab-rq-cache",
+          throttleTime: 1000,
+        })
+      : null;
+  const cacheBuster = CACHE_BUSTER;
 
   if (!persister) {
     return (
