@@ -30,7 +30,9 @@ import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca
 import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
+import { Route as AppBibliotecaSlugIndexRouteImport } from './routes/_app.biblioteca.$slug.index'
 import { Route as AppBibliotecaSlugBookIdRouteImport } from './routes/_app.biblioteca.$slug.$bookId'
+import { Route as AppBibliotecaSlugBookIdIndexRouteImport } from './routes/_app.biblioteca.$slug.$bookId.index'
 import { Route as AppBibliotecaSlugBookIdLerRouteImport } from './routes/_app.biblioteca.$slug.$bookId.ler'
 
 const AppRoute = AppRouteImport.update({
@@ -137,11 +139,22 @@ const AppBibliotecaSlugRoute = AppBibliotecaSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => AppBibliotecaRoute,
 } as any)
+const AppBibliotecaSlugIndexRoute = AppBibliotecaSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppBibliotecaSlugRoute,
+} as any)
 const AppBibliotecaSlugBookIdRoute = AppBibliotecaSlugBookIdRouteImport.update({
   id: '/$bookId',
   path: '/$bookId',
   getParentRoute: () => AppBibliotecaSlugRoute,
 } as any)
+const AppBibliotecaSlugBookIdIndexRoute =
+  AppBibliotecaSlugBookIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AppBibliotecaSlugBookIdRoute,
+  } as any)
 const AppBibliotecaSlugBookIdLerRoute =
   AppBibliotecaSlugBookIdLerRouteImport.update({
     id: '/ler',
@@ -171,7 +184,9 @@ export interface FileRoutesByFullPath {
   '/noticias/$id': typeof AppNoticiasIdRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
+  '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
+  '/biblioteca/$slug/$bookId/': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/assistente': typeof AppAssistenteRoute
@@ -189,12 +204,12 @@ export interface FileRoutesByTo {
   '/simulados': typeof AppSimuladosRoute
   '/vade-mecum': typeof AppVadeMecumRoute
   '/': typeof AppIndexRoute
-  '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
-  '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
+  '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
+  '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -220,7 +235,9 @@ export interface FileRoutesById {
   '/_app/noticias/$id': typeof AppNoticiasIdRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
+  '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/_app/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
+  '/_app/biblioteca/$slug/$bookId/': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -246,7 +263,9 @@ export interface FileRouteTypes {
     | '/noticias/$id'
     | '/biblioteca/'
     | '/biblioteca/$slug/$bookId'
+    | '/biblioteca/$slug/'
     | '/biblioteca/$slug/$bookId/ler'
+    | '/biblioteca/$slug/$bookId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/assistente'
@@ -264,12 +283,12 @@ export interface FileRouteTypes {
     | '/simulados'
     | '/vade-mecum'
     | '/'
-    | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
     | '/biblioteca'
-    | '/biblioteca/$slug/$bookId'
+    | '/biblioteca/$slug'
     | '/biblioteca/$slug/$bookId/ler'
+    | '/biblioteca/$slug/$bookId'
   id:
     | '__root__'
     | '/_app'
@@ -294,7 +313,9 @@ export interface FileRouteTypes {
     | '/_app/noticias/$id'
     | '/_app/biblioteca/'
     | '/_app/biblioteca/$slug/$bookId'
+    | '/_app/biblioteca/$slug/'
     | '/_app/biblioteca/$slug/$bookId/ler'
+    | '/_app/biblioteca/$slug/$bookId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -450,12 +471,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugRouteImport
       parentRoute: typeof AppBibliotecaRoute
     }
+    '/_app/biblioteca/$slug/': {
+      id: '/_app/biblioteca/$slug/'
+      path: '/'
+      fullPath: '/biblioteca/$slug/'
+      preLoaderRoute: typeof AppBibliotecaSlugIndexRouteImport
+      parentRoute: typeof AppBibliotecaSlugRoute
+    }
     '/_app/biblioteca/$slug/$bookId': {
       id: '/_app/biblioteca/$slug/$bookId'
       path: '/$bookId'
       fullPath: '/biblioteca/$slug/$bookId'
       preLoaderRoute: typeof AppBibliotecaSlugBookIdRouteImport
       parentRoute: typeof AppBibliotecaSlugRoute
+    }
+    '/_app/biblioteca/$slug/$bookId/': {
+      id: '/_app/biblioteca/$slug/$bookId/'
+      path: '/'
+      fullPath: '/biblioteca/$slug/$bookId/'
+      preLoaderRoute: typeof AppBibliotecaSlugBookIdIndexRouteImport
+      parentRoute: typeof AppBibliotecaSlugBookIdRoute
     }
     '/_app/biblioteca/$slug/$bookId/ler': {
       id: '/_app/biblioteca/$slug/$bookId/ler'
@@ -469,11 +504,13 @@ declare module '@tanstack/react-router' {
 
 interface AppBibliotecaSlugBookIdRouteChildren {
   AppBibliotecaSlugBookIdLerRoute: typeof AppBibliotecaSlugBookIdLerRoute
+  AppBibliotecaSlugBookIdIndexRoute: typeof AppBibliotecaSlugBookIdIndexRoute
 }
 
 const AppBibliotecaSlugBookIdRouteChildren: AppBibliotecaSlugBookIdRouteChildren =
   {
     AppBibliotecaSlugBookIdLerRoute: AppBibliotecaSlugBookIdLerRoute,
+    AppBibliotecaSlugBookIdIndexRoute: AppBibliotecaSlugBookIdIndexRoute,
   }
 
 const AppBibliotecaSlugBookIdRouteWithChildren =
@@ -483,10 +520,12 @@ const AppBibliotecaSlugBookIdRouteWithChildren =
 
 interface AppBibliotecaSlugRouteChildren {
   AppBibliotecaSlugBookIdRoute: typeof AppBibliotecaSlugBookIdRouteWithChildren
+  AppBibliotecaSlugIndexRoute: typeof AppBibliotecaSlugIndexRoute
 }
 
 const AppBibliotecaSlugRouteChildren: AppBibliotecaSlugRouteChildren = {
   AppBibliotecaSlugBookIdRoute: AppBibliotecaSlugBookIdRouteWithChildren,
+  AppBibliotecaSlugIndexRoute: AppBibliotecaSlugIndexRoute,
 }
 
 const AppBibliotecaSlugRouteWithChildren =
