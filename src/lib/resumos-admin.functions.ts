@@ -119,15 +119,65 @@ async function uploadImg(livroId: string, pageIdx: number, imgId: string, b64: s
 }
 
 // ---------- bibliotecas: descobrir tabela/colunas por slug ----------
+// Por enquanto, apenas a biblioteca "Estudos" é elegível para resumos.
 type BibSrc = { slug: string; table: string; tituloCol: string; autorCol: string | null; capaCol: string; areaCol: string; downloadCol: string; linkCol: string };
 const BIBS: BibSrc[] = [
   { slug: "estudos", table: "BIBLIOTECA-ESTUDOS", tituloCol: "Tema", autorCol: null, capaCol: "Capa-livro", areaCol: "Área", downloadCol: "Download", linkCol: "Link" },
-  { slug: "classicos", table: "BIBLIOTECA-CLASSICOS", tituloCol: "livro", autorCol: "autor", capaCol: "imagem", areaCol: "area", downloadCol: "download", linkCol: "link" },
-  { slug: "oratoria", table: "BIBLIOTECA-ORATORIA", tituloCol: "livro", autorCol: "autor", capaCol: "imagem", areaCol: "area", downloadCol: "download", linkCol: "link" },
-  { slug: "lideranca", table: "BIBLIOTECA-LIDERANÇA", tituloCol: "livro", autorCol: "autor", capaCol: "imagem", areaCol: "area", downloadCol: "download", linkCol: "link" },
-  { slug: "politica", table: "BIBLIOTECA-POLITICA", tituloCol: "livro", autorCol: "autor", capaCol: "imagem", areaCol: "area", downloadCol: "download", linkCol: "link" },
-  { slug: "fora-da-toga", table: "BIBLIOTECA-FORA-DA-TOGA", tituloCol: "livro", autorCol: "autor", capaCol: "capa-livro", areaCol: "area", downloadCol: "download", linkCol: "link" },
 ];
+
+// ---------- Google Drive: extrair id e baixar PDF ----------
+function extractDriveId(url: string): string | null {
+  const patterns = [
+    /\/file\/d\/([a-zA-Z0-9_-]{20,})/,
+    /[?&]id=([a-zA-Z0-9_-]{20,})/,
+    /\/d\/([a-zA-Z0-9_-]{20,})/,
+  ];
+  for (const re of patterns) {
+    const m = url.match(re);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+async function fetchPdfBytes(url: string): Promise<{ bytes: Uint8Array; contentType: string }> {
+  const driveId = extractDriveId(url);
+  const candidates: string[] = [];
+  if (driveId) {
+    candidates.push(`https://drive.usercontent.google.com/download?id=${driveId}&export=download&confirm=t`);
+    candidates.push(`https://drive.google.com/uc?export=download&id=${driveId}&confirm=t`);
+  } else {
+    candidates.push(url);
+  }
+  let lastErr = "";
+  for (const u of candidates) {
+    try {
+      const res = await fetch(u, { redirect: "follow" });
+      if (!res.ok) { lastErr = `HTTP ${res.status}`; continue; }
+      const ct = res.headers.get("content-type") ?? "";
+      const buf = new Uint8Array(await res.arrayBuffer());
+      // valida assinatura "%PDF"
+      if (buf.length > 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46) {
+        return { bytes: buf, contentType: "application/pdf" };
+      }
+      lastErr = `resposta não é PDF (content-type: ${ct})`;
+    } catch (e) {
+      lastErr = e instanceof Error ? e.message : String(e);
+    }
+  }
+  throw new Error(`Não foi possível baixar o PDF (${lastErr}). Verifique se o link do Drive está com acesso público.`);
+}
+
+async function ensurePublicPdfUrl(slug: string, livroId: number, sourceUrl: string): Promise<string> {
+  // se já é PDF direto, devolve
+  if (/\.pdf(\?|$)/i.test(sourceUrl) && !sourceUrl.includes("drive.google.com")) return sourceUrl;
+  const { bytes } = await fetchPdfBytes(sourceUrl);
+  const path = `${slug}/${livroId}.pdf`;
+  const up = await supabaseAdmin.storage
+    .from("resumos-pdfs")
+    .upload(path, bytes, { contentType: "application/pdf", upsert: true });
+  if (up.error) throw new Error(`Upload PDF: ${up.error.message}`);
+  return supabaseAdmin.storage.from("resumos-pdfs").getPublicUrl(path).data.publicUrl;
+}
 
 async function fetchLivroSource(slug: string, livroId: number) {
   const src = BIBS.find((b) => b.slug === slug);
@@ -249,7 +299,9 @@ export const gerarPreviaResumo = createServerFn({ method: "POST" })
     }
 
     try {
-      const ocr = await mistralOcrFull(apiKey, livro.pdfUrl);
+      // Drive `/view` não é PDF — baixa e republica em storage público
+      const pdfPublicUrl = await ensurePublicPdfUrl(data.slug, data.livro_id, livro.pdfUrl);
+      const ocr = await mistralOcrFull(apiKey, pdfPublicUrl);
 
       // upload de imagens por página e reescrita do markdown
       const paginas: Array<{ index: number; markdown: string }> = [];
