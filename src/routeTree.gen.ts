@@ -15,6 +15,7 @@ import { Route as AppSimuladosRouteImport } from './routes/_app.simulados'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppResumosRouteImport } from './routes/_app.resumos'
 import { Route as AppQuestoesRouteImport } from './routes/_app.questoes'
+import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
 import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
 import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
@@ -50,6 +51,11 @@ const AppResumosRoute = AppResumosRouteImport.update({
 const AppQuestoesRoute = AppQuestoesRouteImport.update({
   id: '/questoes',
   path: '/questoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProgressoRoute = AppProgressoRouteImport.update({
+  id: '/progresso',
+  path: '/progresso',
   getParentRoute: () => AppRoute,
 } as any)
 const AppNoticiasRoute = AppNoticiasRouteImport.update({
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
+  '/progresso': typeof AppProgressoRoute
   '/questoes': typeof AppQuestoesRoute
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
+  '/progresso': typeof AppProgressoRoute
   '/questoes': typeof AppQuestoesRoute
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/_app/flashcards': typeof AppFlashcardsRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/noticias': typeof AppNoticiasRouteWithChildren
+  '/_app/progresso': typeof AppProgressoRoute
   '/_app/questoes': typeof AppQuestoesRoute
   '/_app/resumos': typeof AppResumosRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/flashcards'
     | '/materias'
     | '/noticias'
+    | '/progresso'
     | '/questoes'
     | '/resumos'
     | '/reta-final'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/flashcards'
     | '/materias'
     | '/noticias'
+    | '/progresso'
     | '/questoes'
     | '/resumos'
     | '/reta-final'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/_app/flashcards'
     | '/_app/materias'
     | '/_app/noticias'
+    | '/_app/progresso'
     | '/_app/questoes'
     | '/_app/resumos'
     | '/_app/reta-final'
@@ -224,6 +236,13 @@ declare module '@tanstack/react-router' {
       path: '/questoes'
       fullPath: '/questoes'
       preLoaderRoute: typeof AppQuestoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/progresso': {
+      id: '/_app/progresso'
+      path: '/progresso'
+      fullPath: '/progresso'
+      preLoaderRoute: typeof AppProgressoRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/noticias': {
@@ -308,6 +327,7 @@ interface AppRouteChildren {
   AppFlashcardsRoute: typeof AppFlashcardsRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
+  AppProgressoRoute: typeof AppProgressoRoute
   AppQuestoesRoute: typeof AppQuestoesRoute
   AppResumosRoute: typeof AppResumosRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
@@ -321,6 +341,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFlashcardsRoute: AppFlashcardsRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
   AppNoticiasRoute: AppNoticiasRouteWithChildren,
+  AppProgressoRoute: AppProgressoRoute,
   AppQuestoesRoute: AppQuestoesRoute,
   AppResumosRoute: AppResumosRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,

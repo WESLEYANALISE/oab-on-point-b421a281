@@ -10,7 +10,7 @@ function diff() {
   return { d, h, m };
 }
 
-export function CountdownExame({ light = false }: { light?: boolean }) {
+export function CountdownExame({ light = false, compact = false }: { light?: boolean; compact?: boolean }) {
   const [t, setT] = useState<{ d: number; h: number; m: number } | null>(null);
   useEffect(() => {
     setT(diff());
@@ -18,18 +18,19 @@ export function CountdownExame({ light = false }: { light?: boolean }) {
     return () => clearInterval(id);
   }, []);
   if (!t) {
-    return <div className="flex items-end gap-3 h-[60px]" aria-hidden />;
+    return <div className={compact ? "h-[44px]" : "h-[60px]"} aria-hidden />;
   }
   const items = [
     { v: t.d, l: "dias" },
     { v: t.h, l: "hrs" },
     { v: t.m, l: "min" },
   ];
+  const numCls = compact ? "text-3xl md:text-4xl" : "text-4xl md:text-5xl";
   return (
-    <div className="flex items-end gap-3">
+    <div className="flex items-end gap-4">
       {items.map((i) => (
         <div key={i.l} className="text-center">
-          <p className={`font-display text-4xl md:text-5xl leading-none ${light ? "text-primary-foreground" : ""}`}>
+          <p className={`font-display ${numCls} leading-none ${light ? "text-primary-foreground" : ""}`}>
             {String(i.v).padStart(2, "0")}
           </p>
           <p className={`text-[10px] uppercase tracking-[0.18em] mt-1 ${light ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
