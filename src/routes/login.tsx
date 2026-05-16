@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, UserRound } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,6 +27,18 @@ function LoginPage() {
       return;
     }
     navigate({ to: "/" });
+  }
+
+  async function handleGuest() {
+    setGuestLoading(true);
+    const { error } = await supabase.auth.signInAnonymously();
+    setGuestLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Bem-vindo, convidado! 👋");
+    navigate({ to: "/onboarding" });
   }
 
   return (
@@ -56,6 +69,21 @@ function LoginPage() {
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Entrar
+        </button>
+
+        <div className="relative py-1">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gold/15" /></div>
+          <div className="relative flex justify-center"><span className="px-3 text-[10px] uppercase tracking-[0.22em] text-primary-foreground/50 bg-[oklch(0.13_0.04_18)]">ou</span></div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGuest}
+          disabled={guestLoading}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gold/30 text-primary-foreground font-semibold py-3 hover:bg-gold/10 active:scale-[0.98] transition disabled:opacity-60"
+        >
+          {guestLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserRound className="h-4 w-4" />}
+          Entrar como convidado
         </button>
       </form>
     </AuthShell>
