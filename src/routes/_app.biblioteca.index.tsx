@@ -18,7 +18,7 @@ const BIBLIOTECAS = [
   { slug: "fora-da-toga", title: "Fora da Toga", subtitle: "Leituras complementares", table: "BIBLIOTECA-FORA-DA-TOGA", cover: foraDaTogaImg },
 ] as const;
 
-export const Route = createFileRoute("/_app/biblioteca")({
+export const Route = createFileRoute("/_app/biblioteca/")({
   head: () => ({ meta: [{ title: "Biblioteca · OAB na Risca" }] }),
   component: BibliotecaHub,
 });
