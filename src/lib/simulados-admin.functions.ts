@@ -521,6 +521,36 @@ const MATERIAS_VALIDAS = [
   "ECA",
 ];
 
+// Classificador de matéria de fallback (chamada curta, só matéria)
+async function classificarMateria(
+  enunciado: string,
+  alternativas: { A: string; B: string; C: string; D: string },
+): Promise<string | undefined> {
+  try {
+    const sys =
+      "Classifique a questão do Exame da OAB em UMA matéria da lista. " +
+      "Responda APENAS JSON: {\"materia\":\"<nome exato da lista>\"}.";
+    const usr = `Lista de matérias permitidas:
+${MATERIAS_VALIDAS.map((m) => `- ${m}`).join("\n")}
+
+Questão:
+${enunciado}
+
+(A) ${alternativas.A}
+(B) ${alternativas.B}
+(C) ${alternativas.C}
+(D) ${alternativas.D}`;
+    const raw = await geminiExtractJson(sys, usr);
+    const parsed = JSON.parse(raw) as { materia?: string };
+    const m = parsed.materia ?? "";
+    return MATERIAS_VALIDAS.find(
+      (v) => normalizeForMatch(v) === normalizeForMatch(m),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 // ============ Helper: extrai questões dentro de um range ============
 async function extrairQuestoes(
   jobId: string,
