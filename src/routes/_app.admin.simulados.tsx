@@ -378,7 +378,7 @@ function ProgressModal({
           ref={logsRef}
           className="h-56 overflow-y-auto bg-background/50 border border-border rounded-lg p-3 text-xs font-mono space-y-1"
         >
-          {(job?.logs ?? []).map((l, i) => (
+          {((job?.logs ?? []) as Array<{ ts: string; nivel: string; msg: string }>).map((l, i) => (
             <div
               key={i}
               className={
