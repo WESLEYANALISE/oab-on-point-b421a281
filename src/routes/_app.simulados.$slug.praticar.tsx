@@ -159,6 +159,10 @@ function PraticaPage() {
   const estado = respostas[atual.numero];
   const respondida = !!estado?.respondida;
   const correta = atual.resposta_correta as Alt | undefined;
+  const qStatus = (atual as { status?: string }).status ?? "ok";
+  const ehAnulada = qStatus === "anulada";
+  const ehFalhou = qStatus === "falhou_extracao";
+  const especial = ehAnulada || ehFalhou;
   const ehUltima = idx === totalQ - 1;
   const numero = sim.data.simulado.prova_numero;
   const ano = sim.data.simulado.ano;
