@@ -188,36 +188,53 @@ function CapituloView() {
         )}
       </div>
 
-      <nav className="mt-10 pt-6 border-t border-border flex justify-between gap-3">
+      <nav className="mt-10 pt-5 border-t border-border grid grid-cols-3 items-stretch gap-2">
         {prev ? (
           <Link
             to="/resumos/capitulo/$livroId/$ordem"
             params={{ livroId, ordem: String(prev.ordem) }}
-            className="inline-flex items-start gap-2 text-sm text-muted-foreground hover:text-foreground max-w-[45%]"
+            className="group flex items-center gap-2 rounded-xl border border-border bg-card/50 hover:border-gold/40 hover:bg-card transition px-3 py-2.5 min-w-0"
           >
-            <ChevronLeft className="h-4 w-4 mt-0.5 shrink-0" />
+            <ChevronLeft className="h-4 w-4 shrink-0 text-gold" />
             <span className="text-left min-w-0">
-              <span className="block text-[10px] uppercase">Anterior</span>
-              <span className="block truncate">{normalizarTitulo(prev.titulo)}</span>
+              <span className="block text-[9px] uppercase tracking-wider text-muted-foreground">Anterior</span>
+              <span className="block text-xs font-display truncate text-foreground">{normalizarTitulo(prev.titulo)}</span>
             </span>
           </Link>
         ) : (
-          <span />
+          <span aria-hidden />
         )}
+
+        <button
+          type="button"
+          onClick={baixarPdf}
+          disabled={gerandoPdf}
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-gold/40 bg-gradient-toga text-gold font-display font-semibold text-xs uppercase tracking-wider px-3 py-2.5 hover:border-gold/70 hover:shadow-[0_4px_18px_-4px_oklch(0.78_0.13_80/0.6)] transition disabled:opacity-60 disabled:cursor-not-allowed"
+          aria-label="Baixar resumo em PDF"
+        >
+          {gerandoPdf ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+          <span className="hidden sm:inline">{gerandoPdf ? "Gerando…" : "Baixar PDF"}</span>
+          <span className="sm:hidden">PDF</span>
+        </button>
+
         {next ? (
           <Link
             to="/resumos/capitulo/$livroId/$ordem"
             params={{ livroId, ordem: String(next.ordem) }}
-            className="inline-flex items-start gap-2 text-sm text-muted-foreground hover:text-foreground ml-auto max-w-[45%]"
+            className="group flex items-center gap-2 rounded-xl border border-border bg-card/50 hover:border-gold/40 hover:bg-card transition px-3 py-2.5 min-w-0 justify-end"
           >
             <span className="text-right min-w-0">
-              <span className="block text-[10px] uppercase">Próximo</span>
-              <span className="block truncate">{normalizarTitulo(next.titulo)}</span>
+              <span className="block text-[9px] uppercase tracking-wider text-muted-foreground">Próximo</span>
+              <span className="block text-xs font-display truncate text-foreground">{normalizarTitulo(next.titulo)}</span>
             </span>
-            <ChevronRight className="h-4 w-4 mt-0.5 shrink-0" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-gold" />
           </Link>
         ) : (
-          <span />
+          <span aria-hidden />
         )}
       </nav>
     </div>
