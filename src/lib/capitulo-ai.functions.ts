@@ -8,29 +8,34 @@ const Input = z.object({
   tipo: z.enum(["exemplo", "termos"]),
 });
 
-async function chamarIA(system: string, user: string): Promise<string> {
-  const apiKey = process.env.LOVABLE_API_KEY;
-  if (!apiKey) throw new Error("LOVABLE_API_KEY ausente");
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+const GEMINI_MODEL = "gemini-2.5-flash";
+
+async function chamarGemini(system: string, user: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY ausente");
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+  const res = await fetch(url, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
+      system_instruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+      },
     }),
   });
+
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`IA falhou (${res.status}): ${txt.slice(0, 200)}`);
+    throw new Error(`Gemini falhou (${res.status}): ${txt.slice(0, 200)}`);
   }
   const json: any = await res.json();
-  return json?.choices?.[0]?.message?.content ?? "";
+  const partes = json?.candidates?.[0]?.content?.parts ?? [];
+  return partes.map((p: any) => p?.text ?? "").join("").trim();
 }
 
 export const gerarComplementoCapitulo = createServerFn({ method: "POST" })
@@ -67,6 +72,6 @@ export const gerarComplementoCapitulo = createServerFn({ method: "POST" })
       user = `Capítulo: ${cap.data.titulo}\n\nConteúdo do capítulo:\n${conteudo}`;
     }
 
-    const conteudo_markdown = await chamarIA(system, user);
+    const conteudo_markdown = await chamarGemini(system, user);
     return { conteudo_markdown };
   });
