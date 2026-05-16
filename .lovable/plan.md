@@ -1,38 +1,29 @@
-## Ajuste
+## Objetivo
+1. Fazer as telas abrirem instantaneamente ao clicar.
+2. Adicionar uma animação de slide da esquerda para a direita em toda troca de rota.
 
-Você tem razão — só **3 PDFs por exame** (edital + prova 1ª fase + gabarito 1ª fase). Isso dá **46 × 3 = 138 PDFs**, algo entre **200–400 MB no total**. Cabe tranquilo no Free do Supabase (1 GB) e sem Lovable Cloud — tudo no Supabase que o projeto já usa.
+## O que vai mudar
 
-A parte de 2ª fase eu **removo** das telas e da tabela (você não pediu, e simplifica tudo).
+### 1. Pré-carregamento de rotas (`src/router.tsx`)
+- Trocar `defaultPreload: false` por `defaultPreload: "intent"`.
+- Resultado: assim que o usuário toca/passa o dedo sobre um botão ou link, a rota e seus dados começam a carregar antes mesmo do clique — quando ele clica, a tela já está pronta.
+- Também vou habilitar `defaultPreloadDelay: 50` para começar o preload bem rápido.
 
-## O que vou fazer
+### 2. Animação de transição (`src/routes/_app.tsx`)
+- Envolver o `<Outlet />` num wrapper animado usando `framer-motion` (`AnimatePresence` + `motion.div`), com `key={pathname}`.
+- Animação: entra deslizando da esquerda (`x: -24, opacity: 0` → `x: 0, opacity: 1`) e sai deslizando para a direita (`x: 24, opacity: 0`).
+- Duração curta (~220ms, easing suave) para sentir rápido e fluido, sem atrasar a percepção de instantaneidade.
+- Aplica em **todas** as rotas dentro do layout `_app` (início, biblioteca, provas, matérias, simulados, vídeoaulas, etc.) — ou seja, em tudo que o usuário navega no app.
 
-### 1. Bucket no Supabase Storage
-- Bucket público `provas-oab` (somente leitura pública).
-- Estrutura: `provas-oab/{numero}/edital.pdf`, `prova.pdf`, `gabarito.pdf`.
-- RLS: SELECT público; escrita só via service role.
+### 3. Sem mudanças de lógica
+- Não toco em autenticação, dados, server functions nem layout.
+- Apenas roteador + wrapper visual.
 
-### 2. Simplificar a tabela `provas_oab`
-Migration pra dropar `provas_2fase` e `outros_arquivos` (não vamos usar). Mantém: `numero`, `titulo`, `ano`, `oab_exame_id`, `oab_source_url`, `edital_url`, `prova_1fase_url`, `gabarito_1fase_url`.
+## Detalhes técnicos
+- `framer-motion` já está disponível no projeto (ou instalo via `bun add framer-motion` se faltar).
+- O wrapper respeita `prefers-reduced-motion` (sem animação para quem desabilitou movimento no sistema).
+- O `BottomNav`, `MobileHeader` e `DesktopSidebar` ficam fora do wrapper animado — só o conteúdo da página desliza, a navegação fica fixa.
 
-### 3. `seedProvasOab` passa a baixar + subir
-A server function sem senha extra:
-1. Faz scrape do site da OAB pra achar os 3 PDFs de cada exame.
-2. Baixa cada PDF com `fetch`.
-3. Sobe pro bucket via `supabaseAdmin.storage.from('provas-oab').upload(..., { contentType: 'application/pdf', upsert: true })`.
-4. Grava a `publicUrl` do Supabase nas colunas da tabela (não mais o link da OAB).
-5. 200ms de delay entre downloads pra não estressar o site.
-
-Aceita parâmetro opcional `apenasNumero` pra reprocessar um exame específico quando sair retificação ou um exame novo.
-
-### 4. Telas
-- `/provas/$numero` — remove o bloco "2ª Fase" e o bloco "Outros documentos". Fica só **Edital / Prova / Gabarito**, apontando pros PDFs do Supabase.
-- `/provas` — sem mudança.
-
-### 5. Execução
-Quando aprovar:
-1. Crio a migration (bucket + policies + drop das colunas).
-2. Edito `src/lib/provas-oab.functions.ts`.
-3. Edito `src/routes/_app.provas.$numero.tsx` pra tirar a 2ª fase.
-4. Você manda "rodar o seed" e eu invoco a função (3–5 min pra processar os 138 PDFs).
-
-Pode seguir?
+## Resultado esperado
+- Clicar em qualquer item (Biblioteca, Simulados, Provas, Videoaulas, Matérias, Progresso, etc.) abre a tela praticamente sem espera.
+- Cada troca de tela tem uma transição rápida e elegante deslizando da esquerda para a direita.
