@@ -108,6 +108,25 @@ function AdminSimulados() {
       toast.error(e instanceof Error ? e.message : "Falhou", { id: `audit-${n}` }),
   });
 
+  const reextrair = useMutation({
+    mutationFn: (provaNumero: number) => {
+      if (!authHeaders) throw new Error("Sessão expirada. Entre novamente.");
+      return reextFn({ data: { provaNumero }, headers: authHeaders });
+    },
+    onMutate: (n) => {
+      toast.loading(`Reextraindo falhas da prova ${n}…`, { id: `reext-${n}` });
+    },
+    onSuccess: (r, n) => {
+      toast.success(
+        `Prova ${n}: ${r.reextraidas}/${r.tentadas} reextraídas · ${r.restantes} ainda sem extração`,
+        { id: `reext-${n}`, duration: 6000 },
+      );
+      qc.invalidateQueries({ queryKey: ["admin-provas"] });
+    },
+    onError: (e, n) =>
+      toast.error(e instanceof Error ? e.message : "Falhou", { id: `reext-${n}` }),
+  });
+
   const filaPositionOf = (n: number): number | null => {
     if (queue.atual?.provaNumero === n) return 0;
     const idx = queue.fila.indexOf(n);
