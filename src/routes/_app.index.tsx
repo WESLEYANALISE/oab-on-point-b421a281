@@ -109,7 +109,7 @@ function AreaOABPage() {
           </Link>
         </div>
         {/* Mobile: scroll horizontal · Desktop: grid */}
-        <div className="md:hidden flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory">
+        <div className="md:hidden flex gap-3 overflow-x-auto scrollbar-hide px-4 scroll-px-4 pb-2 snap-x snap-mandatory">
           {noticias.map((n) => (
             <NoticiaCardLink key={n.id} n={n} className="snap-start shrink-0 w-[220px]" />
           ))}
