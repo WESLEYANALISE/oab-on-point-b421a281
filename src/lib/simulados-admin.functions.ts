@@ -526,7 +526,7 @@ export const processarBatch = createServerFn({ method: "POST" })
     const numerosAlvo: number[] = [];
     for (let n = inicio; n <= fim; n++) numerosAlvo.push(n);
 
-    const gabarito = (job.data.gabarito_oficial ?? {}) as Record<string, string>;
+    const gabarito = normalizeGabarito(job.data.gabarito_oficial);
     const simuladoId = job.data.simulado_id as string;
 
     try {
@@ -541,14 +541,20 @@ export const processarBatch = createServerFn({ method: "POST" })
           .eq("simulado_id", simuladoId)
           .in("numero", validas.map((q) => q.numero));
 
-        const rows = validas.map((q) => ({
-          simulado_id: simuladoId,
-          numero: q.numero,
-          enunciado: q.enunciado,
-          materia: q.materia,
-          alternativas: q.alternativas,
-          resposta_correta: gabarito[String(q.numero)],
-        }));
+        const rows = validas.map((q) => {
+          const g = gabarito[String(q.numero)];
+          const anulada = !!g?.anulada;
+          return {
+            simulado_id: simuladoId,
+            numero: q.numero,
+            enunciado: q.enunciado,
+            materia: q.materia,
+            alternativas: q.alternativas,
+            resposta_correta: anulada ? null : (g?.letra ?? null),
+            status: anulada ? "anulada" : "ok",
+            nota_oficial: g?.nota ?? null,
+          };
+        });
         const insQ = await supabaseAdmin.from("simulado_questoes").insert(rows);
         if (insQ.error) throw new Error(insQ.error.message);
       }
@@ -572,7 +578,12 @@ export const processarBatch = createServerFn({ method: "POST" })
         })
         .eq("id", data.jobId);
 
-      await appendLog(data.jobId, "ok", `Lote ${data.batchIndex + 1} concluído (+${validas.length} questões)`);
+      const anuladasLote = validas.filter((q) => gabarito[String(q.numero)]?.anulada).length;
+      await appendLog(
+        data.jobId,
+        "ok",
+        `Lote ${data.batchIndex + 1} concluído (+${validas.length} questões${anuladasLote ? `, ${anuladasLote} anuladas` : ""})`,
+      );
 
       return { proximo: ultimoLote ? null : proximoIndex, processadas: novoTotal };
     } catch (e) {
