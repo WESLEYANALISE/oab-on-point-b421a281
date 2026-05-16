@@ -1,59 +1,45 @@
-Vou ajustar o pipeline para parar de depender só de marcador “Questão N” e fazer a Gemini trabalhar melhor com o texto bruto real do OCR.
+## Diagnóstico
 
-## Diagnóstico confirmado
+O app passa por uma fase visível de "procurando usuário" em toda navegação. Causas, lendo o código:
 
-- O OCR do simulado 46 tem questões que aparecem como número sozinho na linha, por exemplo `1`, e não como `# 1` nem `Questão 1`.
-- Por isso o código atual ainda registra: `OCR não contém marcador "Questão" para...`.
-- As 25 questões com “Sem matéria” são placeholders `falhou_extracao`; elas entram no Raio-X porque a tela está contando todas as linhas, inclusive falhas. Isso deve ser filtrado.
+1. **`src/hooks/use-auth.tsx` só sai do `loading=true` quando o `onAuthStateChange` dispara.** Não há `supabase.auth.getSession()` síncrono na montagem. Resultado: o Provider sempre renderiza com `user=null` por alguns frames, mesmo quando a sessão já está em `localStorage`.
 
-## Plano de correção
+2. **Todas as queries das páginas internas (`_app.*`) usam `enabled: !!user`.** Enquanto o passo 1 não termina, nenhuma query roda — só skeleton. Em `simulados/$slug`, `index`, `progresso`, etc., isso aparece como a tela "carregando" inteira.
 
-1. **Tornar o recorte do OCR mais robusto**
-   - Atualizar o detector de questões para reconhecer também número sozinho no começo da linha: `1`, `2`, `3` etc.
-   - Só aceitar esse número como questão quando o trecho seguinte tiver cara de questão objetiva, com alternativas `(A)`, `(B)`, `(C)`, `(D)`.
-   - Manter suporte a `# N`, `## N`, `Questão N`, `N.` e `N)`.
+3. **`HomeGreeting` mostra o pulse cinza no lugar do nome** porque `useProfile` só fica `enabled` depois que `user` existe. Mesmo com `initialData: cached`, o `cached` só é lido quando `user.id` já está disponível — ou seja, depois do passo 1.
 
-2. **Extrair em grupos menores, como você pediu**
-   - Reduzir a extração para grupos de **5 questões por chamada** da Gemini.
-   - Cada chamada recebe um trecho contínuo do OCR bruto com margem antes/depois, não um texto inventado ou resumido.
-   - Se faltar alguma questão, tentar individualmente com uma janela maior do OCR.
+4. **Hydration mismatch em `_app.simulados.$slug`** (runtime error atual): o branch sem dados usa `animate-fade-in` e o branch com dados não, gerando classes diferentes entre SSR e cliente. Isso força o React a descartar e re-renderizar a subtree (mais "flash" de loading).
 
-3. **Adicionar fallback com Gemini lendo o OCR bruto quando o marcador falhar**
-   - Se o detector local não encontrar uma questão, chamar a Gemini só para localizar a questão no texto bruto, retornando âncoras literais do início/fim.
-   - Depois disso, usar essas âncoras para recortar o OCR e extrair a questão.
-   - A Gemini não vai criar questão; ela vai apenas localizar e formatar o que já está no OCR.
+5. **Auth logs mostram refresh token normal (~160 ms)**, não há lentidão real do Supabase. O problema é 100% no front: estamos esperando eventos assíncronos antes de pintar o que já temos em cache local.
 
-4. **Melhorar a classificação de matéria**
-   - Exigir que toda questão extraída tenha uma matéria da lista permitida.
-   - Não salvar “Sem matéria” em questão válida.
-   - Se a Gemini não conseguir classificar com segurança, fazer uma segunda chamada curta só com o enunciado e alternativas para classificar a matéria.
-   - Se ainda assim falhar, a questão continua como `falhou_extracao`, em vez de virar “Sem matéria”.
+## Plano
 
-5. **Corrigir o Raio-X**
-   - Alterar `getSimuladoOverview` para ignorar questões com `status='falhou_extracao'` no Raio-X.
-   - Assim o aluno não verá “Sem matéria” como matéria cobrada.
-   - O total exibido no Raio-X passa a representar apenas questões realmente extraídas.
+### 1. `src/hooks/use-auth.tsx` — hidratar sessão de forma síncrona
+- Inicializar `session` lendo `supabase.auth.getSession()` **antes** de assinar `onAuthStateChange`. Setar `loading=false` assim que a primeira resposta chegar (geralmente um microtask, pois vem do `localStorage`).
+- Persistir o último `user.id` autenticado em `localStorage` (chave `oab:last-uid`) para que possamos ler o perfil em cache **antes** mesmo do `getSession()` resolver.
+- Manter `onAuthStateChange` apenas para reagir a SIGNED_IN / SIGNED_OUT / TOKEN_REFRESHED e invalidar caches na troca real de usuário.
+- Em `useProfile`, ler o cache (`oab:profile:<uid>`) usando `oab:last-uid` quando `user` ainda não chegou, e passar como `initialData`/`placeholderData`. Assim o nome aparece no primeiro paint.
 
-6. **Reprocessar provas já quebradas**
-   - Reusar o botão “Reextrair falhas”, mas agora com o pipeline novo.
-   - Para o simulado 46, ele deve tentar recuperar as 25 questões que hoje estão como `falhou_extracao`.
-   - Para simulados antigos com o mesmo problema, o mesmo botão poderá ser usado.
+### 2. `src/routes/_app.tsx` — não bloquear UI esperando auth
+- Continuar redirecionando para `/login` quando `!authLoading && !user`, mas **renderizar o `Outlet` mesmo durante `authLoading`** (já fazemos, mas garantir que filhos não fiquem presos em skeleton). 
+- Em rotas que dependem de `user`, trocar `enabled: !!user` por `enabled: !authLoading && !!user` somente onde necessário, e usar `placeholderData`/`keepPreviousData` quando a query já tem dados em cache do TanStack Query.
 
-## Arquivos a alterar
+### 3. `HomeGreeting` — mostrar nome do cache imediatamente
+- Ler `oab:profile:<last-uid>` síncrono no primeiro render (via `useState` lazy initializer) e usar como fallback de `firstName`. O pulse só aparece para usuário realmente novo (sem cache).
 
-- `src/lib/simulados-admin.functions.ts`
-  - detector de marcadores;
-  - extração em grupos de 5;
-  - fallback de localização pela Gemini;
-  - reforço da classificação de matéria.
+### 4. Corrigir hydration mismatch em `_app.simulados.$slug.index.tsx`
+- Mover `animate-fade-in` para um wrapper estável (ou aplicá-lo só após `mounted`) de forma que SSR e primeiro paint do cliente produzam exatamente o mesmo `className`. Elimina o aviso e o re-render da subtree inteira.
 
-- `src/lib/simulados.functions.ts`
-  - Raio-X deve excluir `falhou_extracao`.
+### 5. (Opcional, baixo custo) Aumentar persistência das queries críticas
+- `["simulado-overview", id]` e `["simulados-list"]` ganham `placeholderData: keepPreviousData` para navegação entre simulados não mostrar skeleton quando já existe dado antigo.
+
+## Arquivos a editar
+- `src/hooks/use-auth.tsx` (principal)
+- `src/components/home/HomeGreeting.tsx`
+- `src/routes/_app.simulados.$slug.index.tsx` (fix hidratação)
+- Eventuais ajustes pontuais em rotas que usam `enabled: !!user` se ainda persistir flicker.
 
 ## Resultado esperado
-
-- Menos mensagens de “OCR não contém marcador”.
-- Menos questões perdidas.
-- Nenhuma questão inventada.
-- Raio-X sem “Sem matéria” indevido.
-- Questões extraídas a partir do texto bruto real do Mistral, em grupos menores e com validação literal contra o OCR.
+- Primeiro paint já mostra nome do usuário e conteúdo cacheado (sem pulse).
+- Skeleton de páginas internas desaparece em ~0–50 ms (cache local), em vez de esperar o round-trip do Supabase.
+- Sem warning de hydration mismatch no console.
