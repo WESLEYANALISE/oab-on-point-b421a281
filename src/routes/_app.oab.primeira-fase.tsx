@@ -1,20 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft, ArrowRight, Flame, Target, BookOpen, Clock,
   Play, Layers, FileText, Notebook, RefreshCw, ChevronRight,
-  Minus, Plus, Calendar, Sparkles, TrendingUp,
+  Calendar, Sparkles, TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MATERIAS_OAB_46 } from "@/data/oab-materias-46";
 import { touchStreak } from "@/lib/streak";
 import { fraseDoDia } from "@/lib/motivacao";
-import {
-  DURACOES, type Duracao, readPlanoConfig, savePlanoConfig,
-  gerarPlano, proximaSessao,
-} from "@/lib/plano-estudo";
 import { getStatsPrimeiraFase } from "@/lib/primeira-fase.functions";
 
 export const Route = createFileRoute("/_app/oab/primeira-fase")({
@@ -28,19 +24,15 @@ export const Route = createFileRoute("/_app/oab/primeira-fase")({
 });
 
 function PrimeiraFasePage() {
-  // ---- Streak (client only) ----
   const [streakDias, setStreakDias] = useState(0);
-  const [historico, setHistorico] = useState<boolean[]>(Array(14).fill(false));
   const [frase, setFrase] = useState<string>("");
 
   useEffect(() => {
-    const { state, historico } = touchStreak();
+    const { state } = touchStreak();
     setStreakDias(state.dias);
-    setHistorico(historico);
     setFrase(fraseDoDia());
   }, []);
 
-  // ---- Stats Supabase ----
   const fetchStats = useServerFn(getStatsPrimeiraFase);
   const { data: stats } = useQuery({
     queryKey: ["pf-stats"],
@@ -61,21 +53,20 @@ function PrimeiraFasePage() {
         frase={frase}
       />
 
-      <div className="px-4 md:px-8 mt-6 md:mt-8 space-y-8">
-        <PlanoCard />
+      <div className="px-4 md:px-8 mt-6 md:mt-8 space-y-7">
+        <AcoesPrincipais />
         <TrilhaTimeline />
-        <ProgressoTabs historico={historico} stats={stats} />
       </div>
     </div>
   );
 }
 
-// ==================== HERO ====================
+// ==================== HERO COMPACTO ====================
 function StatsHero({
   streakDias, acertoPct, editalPct, horasSemana, frase,
 }: { streakDias: number; acertoPct: number; editalPct: number; horasSemana: number; frase: string }) {
   return (
-    <header className="relative overflow-hidden px-4 pt-5 pb-7 md:px-8 md:pt-7 md:pb-9 bg-gradient-toga text-primary-foreground">
+    <header className="relative overflow-hidden px-4 pt-5 pb-6 md:px-8 md:pt-7 md:pb-7 bg-gradient-toga text-primary-foreground">
       <div className="absolute -top-20 -right-12 h-56 w-56 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-16 -left-6 h-44 w-44 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
 
@@ -87,37 +78,38 @@ function StatsHero({
         <p className="text-[10px] uppercase tracking-[0.24em] text-gold/85 font-semibold mb-2">
           Hub de estudo
         </p>
-        <h1 className="font-display font-semibold text-[28px] md:text-4xl leading-[1.05] tracking-tight">
+        <h1 className="font-display font-semibold text-[26px] md:text-4xl leading-[1.05] tracking-tight">
           1ª Fase OAB
         </h1>
-        <p className="mt-2 text-[13px] md:text-[15px] text-primary-foreground/80 max-w-xl italic">
+        <p className="mt-1.5 text-[12px] md:text-[14px] text-primary-foreground/75 max-w-xl italic line-clamp-2">
           {frase || "\u00a0"}
         </p>
       </div>
 
-      <div className="relative mt-5 grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
-        <StatPill icon={Flame} label="Dias seguidos" value={`${streakDias}`} accent />
-        <StatPill icon={Target} label="Acerto" value={`${acertoPct}%`} />
-        <StatPill icon={BookOpen} label="Edital" value={`${editalPct}%`} />
-        <StatPill icon={Clock} label="Esta semana" value={`${horasSemana}h`} />
+      {/* Linha única compacta de stats */}
+      <div className="relative mt-4 grid grid-cols-4 gap-1.5 md:gap-2">
+        <StatChip icon={Flame} label="Dias" value={`${streakDias}`} accent />
+        <StatChip icon={Target} label="Acerto" value={`${acertoPct}%`} />
+        <StatChip icon={BookOpen} label="Edital" value={`${editalPct}%`} />
+        <StatChip icon={Clock} label="Semana" value={`${horasSemana}h`} />
       </div>
     </header>
   );
 }
 
-function StatPill({ icon: Icon, label, value, accent = false }:
+function StatChip({ icon: Icon, label, value, accent = false }:
   { icon: typeof Flame; label: string; value: string; accent?: boolean }) {
   return (
     <div className={cn(
-      "rounded-xl border px-3 py-2.5 backdrop-blur-sm",
+      "rounded-lg border px-2 py-1.5 backdrop-blur-sm min-w-0",
       accent ? "bg-gold/15 border-gold/40" : "bg-primary-foreground/8 border-primary-foreground/15",
     )}>
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] font-semibold text-primary-foreground/70">
-        <Icon className={cn("h-3 w-3", accent && "text-gold")} />
-        {label}
+      <div className="flex items-center gap-1 text-[9px] uppercase tracking-[0.14em] font-semibold text-primary-foreground/70">
+        <Icon className={cn("h-[11px] w-[11px] shrink-0", accent && "text-gold")} />
+        <span className="truncate">{label}</span>
       </div>
       <p className={cn(
-        "mt-1 font-display font-semibold text-xl md:text-2xl leading-none tabular-nums",
+        "mt-0.5 font-display font-semibold text-[15px] md:text-lg leading-none tabular-nums",
         accent && "text-gold",
       )}>
         {value}
@@ -126,108 +118,52 @@ function StatPill({ icon: Icon, label, value, accent = false }:
   );
 }
 
-// ==================== PLANO ====================
-function PlanoCard() {
-  const [dias, setDias] = useState<Duracao>(30);
-  const [horas, setHoras] = useState<number>(2);
-
-  useEffect(() => {
-    const cfg = readPlanoConfig();
-    setDias(cfg.dias);
-    setHoras(cfg.horasPorDia);
-  }, []);
-
-  useEffect(() => {
-    savePlanoConfig({ dias, horasPorDia: horas });
-  }, [dias, horas]);
-
-  const sessao = useMemo(() => proximaSessao({ dias, horasPorDia: horas }), [dias, horas]);
-  const totalSessoes = useMemo(() => gerarPlano({ dias, horasPorDia: horas }).length, [dias, horas]);
-
+// ==================== AÇÕES PRINCIPAIS ====================
+function AcoesPrincipais() {
+  const acoes = [
+    {
+      to: "/plano-estudo" as const,
+      icon: Calendar,
+      eyebrow: "Personalizado",
+      title: "Meu plano de estudo",
+      desc: "Defina sua meta e horas por dia",
+    },
+    {
+      to: "/oab/progresso" as const,
+      icon: Sparkles,
+      eyebrow: "Sua evolução",
+      title: "Meu progresso",
+      desc: "Acertos, matérias e histórico",
+    },
+  ];
   return (
-    <section>
-      <SectionTitle icon={Calendar} eyebrow="Personalizado para você" title="Meu plano de estudo" />
-      <div className="rounded-2xl border border-gold/15 bg-card overflow-hidden shadow-md shadow-black/20">
-        <div className="p-4 md:p-5 space-y-4">
-          {/* Duração */}
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-muted-foreground mb-2">
-              Quero estar pronto em
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {DURACOES.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDias(d)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-colors tabular-nums",
-                    dias === d
-                      ? "bg-gold text-gold-foreground border-gold shadow-sm"
-                      : "bg-transparent border-border text-foreground hover:border-gold/40",
-                  )}
-                >
-                  {d === 365 ? "1 ano" : `${d} dias`}
-                </button>
-              ))}
+    <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {acoes.map((a) => (
+        <Link
+          key={a.to}
+          to={a.to}
+          className="group relative overflow-hidden rounded-2xl border border-gold/20 bg-card p-4 md:p-5 shadow-md shadow-black/20 hover:-translate-y-0.5 hover:border-gold/40 transition-all"
+        >
+          <div className="absolute -top-10 -right-8 h-28 w-28 rounded-full bg-gold/10 blur-2xl pointer-events-none" />
+          <div className="relative flex items-start gap-3">
+            <div className="h-11 w-11 rounded-xl bg-gold/15 border border-gold/30 grid place-items-center shrink-0">
+              <a.icon className="h-5 w-5 text-gold" strokeWidth={2} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-gold/90 font-semibold mb-1">
+                {a.eyebrow}
+              </p>
+              <h3 className="font-display font-semibold text-[16px] md:text-[17px] leading-tight tracking-tight">
+                {a.title}
+              </h3>
+              <p className="text-[11.5px] text-muted-foreground mt-1 line-clamp-2">{a.desc}</p>
+            </div>
+            <div className="h-7 w-7 rounded-full bg-gold/15 border border-gold/30 grid place-items-center shrink-0 group-hover:translate-x-0.5 group-hover:bg-gold/30 transition-all">
+              <ChevronRight className="h-3.5 w-3.5 text-gold" />
             </div>
           </div>
-
-          {/* Horas */}
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-muted-foreground">
-                Horas por dia
-              </p>
-              <p className="font-display font-semibold text-2xl tabular-nums mt-0.5">
-                {horas}h
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setHoras((h) => Math.max(0.5, +(h - 0.5).toFixed(1)))}
-                className="h-9 w-9 rounded-full border border-border grid place-items-center hover:border-gold/40 active:scale-95"
-                aria-label="Diminuir"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setHoras((h) => Math.min(10, +(h + 0.5).toFixed(1)))}
-                className="h-9 w-9 rounded-full border border-border grid place-items-center hover:border-gold/40 active:scale-95"
-                aria-label="Aumentar"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Próxima sessão */}
-        {sessao && (
-          <div className="border-t border-border bg-muted/30 p-4 md:p-5 flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-gold mb-1">
-                Próxima sessão · hoje
-              </p>
-              <p className="font-semibold text-[14px] md:text-[15px] truncate">
-                {sessao.materia.nome}
-              </p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">
-                {sessao.tipo === "aula" ? "Aula" : sessao.tipo === "questoes" ? "Questões" : "Revisão"}
-                {" · "}{sessao.minutos} min · {totalSessoes} sessões no plano
-              </p>
-            </div>
-            <Link
-              to="/oab/o-que-estudar"
-              className="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-full bg-gold text-gold-foreground text-[12px] font-semibold hover:bg-gold/90 transition"
-            >
-              <Play className="h-3.5 w-3.5 fill-current" /> Começar
-            </Link>
-          </div>
-        )}
-      </div>
+        </Link>
+      ))}
     </section>
   );
 }
@@ -238,7 +174,6 @@ type TrilhaItem = {
   label: string;
   desc: string;
   to: string;
-  params?: Record<string, string>;
 };
 
 const TRILHA: TrilhaItem[] = [
@@ -309,108 +244,6 @@ function TrilhaTimeline() {
   );
 }
 
-// ==================== PROGRESSO ====================
-function ProgressoTabs({ historico, stats }: {
-  historico: boolean[];
-  stats?: Awaited<ReturnType<typeof getStatsPrimeiraFase>>;
-}) {
-  const [tab, setTab] = useState<"materias" | "geral">("materias");
-
-  const porMateria = useMemo(() => {
-    const map = new Map<string, { acerto: number; total: number }>();
-    for (const m of stats?.porMateria ?? []) {
-      map.set(m.materia, { acerto: m.acerto, total: m.total });
-    }
-    return MATERIAS_OAB_46.map((m) => {
-      const v = map.get(m.nome) ?? map.get(m.id) ?? { acerto: 0, total: 0 };
-      const pct = v.total > 0 ? Math.round((v.acerto / v.total) * 100) : 0;
-      return { id: m.id, nome: m.nome, pct, total: v.total };
-    });
-  }, [stats]);
-
-  return (
-    <section>
-      <SectionTitle icon={Sparkles} eyebrow="Acompanhe sua evolução" title="Meu progresso" />
-
-      <div className="rounded-2xl border border-border bg-card overflow-hidden">
-        <div className="flex border-b border-border">
-          <TabBtn active={tab === "materias"} onClick={() => setTab("materias")} label="Por matéria" />
-          <TabBtn active={tab === "geral"} onClick={() => setTab("geral")} label="Geral" />
-        </div>
-
-        {tab === "materias" && (
-          <div className="p-4 md:p-5 space-y-2.5">
-            {porMateria.map((m) => (
-              <div key={m.id}>
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <p className="text-[12px] font-medium truncate">{m.nome}</p>
-                  <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">
-                    {m.pct}% · {m.total}q
-                  </span>
-                </div>
-                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-gold to-amber-400 transition-all"
-                    style={{ width: `${m.pct}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {tab === "geral" && (
-          <div className="p-4 md:p-5">
-            <p className="text-[10px] uppercase tracking-[0.2em] font-semibold text-muted-foreground mb-3">
-              Últimos 14 dias
-            </p>
-            <div className="flex items-end gap-1">
-              {historico.map((ativo, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <div className={cn(
-                    "w-full rounded-sm transition-colors",
-                    ativo ? "bg-gold h-8" : "bg-muted h-3",
-                  )} />
-                  <span className="text-[9px] text-muted-foreground">{14 - i}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-              <MiniStat label="Tentativas" value={stats?.tentativas ?? 0} />
-              <MiniStat label="Acertos" value={stats?.totalAcertos ?? 0} />
-              <MiniStat label="Questões" value={stats?.totalQuestoesRespondidas ?? 0} />
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl bg-muted/30 border border-border py-3">
-      <p className="font-display font-semibold text-xl tabular-nums">{value}</p>
-      <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mt-0.5">{label}</p>
-    </div>
-  );
-}
-
-function TabBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex-1 py-2.5 text-[12px] font-semibold transition-colors",
-        active ? "text-gold border-b-2 border-gold -mb-px" : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {label}
-    </button>
-  );
-}
-
 function SectionTitle({ icon: Icon, eyebrow, title }:
   { icon: typeof Sparkles; eyebrow: string; title: string }) {
   return (
@@ -419,8 +252,8 @@ function SectionTitle({ icon: Icon, eyebrow, title }:
         <Icon className="h-4 w-4 text-gold" strokeWidth={2} />
       </div>
       <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-[0.22em] text-gold/85 font-semibold">{eyebrow}</p>
         <h2 className="font-display font-semibold text-[19px] md:text-[22px] leading-[1.1] tracking-tight truncate">{title}</h2>
-        <p className="text-[10px] md:text-[11px] text-muted-foreground mt-0.5 truncate">{eyebrow}</p>
       </div>
     </div>
   );
