@@ -209,24 +209,56 @@
   color: var(--gold, oklch(0.78 0.13 80));
 }
 .markdown-body h4 { font-size: 1em; margin: 1.2em 0 0.4em; text-transform: uppercase; letter-spacing: 0.04em; color: color-mix(in oklab, var(--foreground) 75%, transparent); }
-.markdown-body strong { color: var(--foreground); font-weight: 600; }
-.markdown-body em { color: color-mix(in oklab, var(--foreground) 90%, transparent); }
-.markdown-body a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+.markdown-body strong {
+  color: var(--gold, oklch(0.78 0.13 80));
+  font-weight: 700;
+}
+.markdown-body em { color: color-mix(in oklab, var(--foreground) 90%, transparent); font-style: italic; }
+.markdown-body a {
+  color: var(--gold, oklch(0.78 0.13 80));
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--gold, oklch(0.78 0.13 80)) 60%, transparent);
+  text-underline-offset: 3px;
+}
+.markdown-body a:hover { text-decoration-color: currentColor; }
 .markdown-body ul,
 .markdown-body ol { padding-left: 1.4em; margin: 0.9em 0; }
 .markdown-body ul { list-style: disc; }
 .markdown-body ol { list-style: decimal; }
-.markdown-body li { margin: 0.35em 0; }
+.markdown-body li { margin: 0.4em 0; padding-left: 0.2em; }
 .markdown-body li > p { margin: 0.3em 0; }
-.markdown-body li::marker { color: var(--gold, oklch(0.78 0.13 80)); }
-.markdown-body blockquote {
-  margin: 1.2em 0;
-  padding: 0.6em 1em;
-  border-left: 3px solid var(--gold, oklch(0.78 0.13 80));
-  background: color-mix(in oklab, var(--card) 60%, transparent);
-  color: color-mix(in oklab, var(--foreground) 80%, transparent);
-  border-radius: 0 0.4rem 0.4rem 0;
+.markdown-body li::marker {
+  color: var(--gold, oklch(0.78 0.13 80));
+  font-weight: 700;
 }
+.markdown-body blockquote {
+  margin: 1.4em 0;
+  padding: 0.85em 1.1em 0.85em 1.2em;
+  border-left: 4px solid var(--gold, oklch(0.78 0.13 80));
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--gold, oklch(0.78 0.13 80)) 12%, transparent) 0%,
+    color-mix(in oklab, var(--card) 70%, transparent) 100%
+  );
+  color: color-mix(in oklab, var(--foreground) 92%, transparent);
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-style: italic;
+  position: relative;
+  box-shadow: 0 2px 8px -4px rgba(0, 0, 0, 0.3);
+}
+.markdown-body blockquote::before {
+  content: "“";
+  position: absolute;
+  top: -0.2em;
+  left: 0.3em;
+  font-family: var(--font-display);
+  font-size: 2.4em;
+  line-height: 1;
+  color: color-mix(in oklab, var(--gold, oklch(0.78 0.13 80)) 70%, transparent);
+  pointer-events: none;
+}
+.markdown-body blockquote > * { position: relative; }
+.markdown-body blockquote p { margin: 0.3em 0; }
 .markdown-body code {
   background: color-mix(in oklab, var(--muted) 70%, transparent);
   padding: 0.15em 0.4em;
