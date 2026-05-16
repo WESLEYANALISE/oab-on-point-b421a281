@@ -49,7 +49,7 @@ export function MobileHeader() {
             <button
               type="button"
               onClick={() => navigate({ to: "/" })}
-              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-primary/15 text-primary border border-primary/30 text-sm font-medium hover:bg-primary/25 active:scale-[0.97] transition"
+              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-white/10 text-white border border-white/20 text-sm font-medium hover:bg-white/15 active:scale-[0.97] transition"
               aria-label="Ir para o início"
             >
               <Home className="h-4 w-4" />
