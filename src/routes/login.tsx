@@ -15,6 +15,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -26,6 +27,18 @@ function LoginPage() {
       return;
     }
     navigate({ to: "/" });
+  }
+
+  async function handleGuest() {
+    setGuestLoading(true);
+    const { error } = await supabase.auth.signInAnonymously();
+    setGuestLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Bem-vindo, convidado! 👋");
+    navigate({ to: "/onboarding" });
   }
 
   return (
