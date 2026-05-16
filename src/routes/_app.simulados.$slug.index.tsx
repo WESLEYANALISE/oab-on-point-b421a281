@@ -256,17 +256,25 @@ function Materiais({
 }
 
 // ============ Edital estruturado ============
+type EditalConteudo = {
+  resumo: string;
+  cronograma: Array<{ data: string; titulo: string }>;
+  taxas: Array<{ descricao: string; valor: string }>;
+  requisitos: string[];
+  secoes: Array<{ titulo: string; conteudo: string }>;
+};
+type EditalResult = { conteudo: EditalConteudo | null; fonte: string };
+
 function Edital({ provaNumero, editalUrl }: { provaNumero: number; editalUrl: string | null }) {
   const fn = useServerFn(getEditalResumo);
-  const q = useQuery({
+  const q = useQuery<EditalResult>({
     queryKey: ["edital-resumo", provaNumero],
     queryFn: async () => {
-      // Timeout de UI de 35s — se o LLM travar, devolve fallback estruturado.
-      const timeout = new Promise<{ conteudo: null; fonte: string }>((resolve) =>
+      const timeout = new Promise<EditalResult>((resolve) =>
         setTimeout(() => resolve({ conteudo: null, fonte: "timeout" }), 35_000),
       );
-      const real = fn({ data: { provaNumero } }) as Promise<{ conteudo: unknown; fonte: string }>;
-      return (await Promise.race([real, timeout])) as { conteudo: any; fonte: string };
+      const real = fn({ data: { provaNumero } }) as unknown as Promise<EditalResult>;
+      return await Promise.race([real, timeout]);
     },
     staleTime: Infinity,
     enabled: !!editalUrl,
