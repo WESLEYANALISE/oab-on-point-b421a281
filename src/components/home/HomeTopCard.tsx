@@ -84,7 +84,7 @@ export function HomeTopCard() {
           <Sep />
           <Stat n={t.m} l="min" />
         </div>
-        <p className="mt-1.5 text-[11px] text-primary-foreground/60 leading-none">
+        <p className="mt-3 md:mt-3.5 text-[11px] text-primary-foreground/60 leading-none">
           {EXAM_LONG}
         </p>
       </div>
