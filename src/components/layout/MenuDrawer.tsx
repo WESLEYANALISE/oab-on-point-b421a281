@@ -19,6 +19,8 @@ const groups = [
       { to: "/aulas", label: "Aulas Interativas", icon: BookOpen },
       { to: "/resumos", label: "Resumos", icon: FileText },
       { to: "/flashcards", label: "Flashcards", icon: Layers },
+      { to: "/biblioteca", label: "Biblioteca", icon: Library },
+      { to: "/audioaulas", label: "Áudio-aulas", icon: Headphones },
     ],
   },
   {
