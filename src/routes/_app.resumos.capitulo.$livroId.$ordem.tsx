@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { obterLivroResumo } from "@/lib/resumos.functions";
+import { normalizarTitulo } from "@/lib/titulo";
 
 export const Route = createFileRoute("/_app/resumos/capitulo/$livroId/$ordem")({
   component: CapituloView,
@@ -63,7 +64,7 @@ function CapituloView() {
           Capítulo {atual.ordem} de {capitulos.length}
         </p>
         <h1 className="font-display text-2xl md:text-4xl leading-tight mt-1 break-words">
-          {atual.titulo}
+          {normalizarTitulo(atual.titulo)}
         </h1>
       </header>
 
@@ -81,7 +82,7 @@ function CapituloView() {
             <ChevronLeft className="h-4 w-4 mt-0.5 shrink-0" />
             <span className="text-left min-w-0">
               <span className="block text-[10px] uppercase">Anterior</span>
-              <span className="block truncate">{prev.titulo}</span>
+              <span className="block truncate">{normalizarTitulo(prev.titulo)}</span>
             </span>
           </Link>
         ) : (
@@ -95,7 +96,7 @@ function CapituloView() {
           >
             <span className="text-right min-w-0">
               <span className="block text-[10px] uppercase">Próximo</span>
-              <span className="block truncate">{next.titulo}</span>
+              <span className="block truncate">{normalizarTitulo(next.titulo)}</span>
             </span>
             <ChevronRight className="h-4 w-4 mt-0.5 shrink-0" />
           </Link>
