@@ -31,6 +31,7 @@ const baseGroups = [
   {
     label: "Mais",
     items: [
+      { to: "/blog", label: "Blog", icon: Newspaper },
       { to: "/noticias", label: "Notícias", icon: Newspaper },
       { to: "/assistente", label: "Assistente IA", icon: Sparkles },
     ],
@@ -42,6 +43,7 @@ const adminGroup = {
   items: [
     { to: "/admin", label: "Painel admin", icon: ShieldCheck },
     { to: "/admin/simulados", label: "Gerar simulados", icon: Target },
+    { to: "/admin/blog", label: "Gerenciar blog", icon: Newspaper },
   ],
 } as const;
 

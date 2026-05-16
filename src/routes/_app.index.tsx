@@ -37,6 +37,7 @@ const ATALHOS = [
   { label: "Simulados",  sub: "Treine no tempo",   icon: Trophy,   to: "/simulados" as const },
   { label: "Provas",     sub: "Exames anteriores", icon: FileText, to: "/provas" as const },
   { label: "Videoaulas", sub: "Aulas em vídeo",    icon: Video,    to: "/aulas" as const },
+  { label: "Blog",       sub: "Dicas diárias",     icon: Newspaper, to: "/blog" as const },
 ];
 
 const FERRAMENTAS = [
