@@ -40,7 +40,7 @@ export function CountdownExame({
     <div className={`flex items-end ${s.gap}`}>
       {items.map((i) => (
         <div key={i.l} className="text-center">
-          <p className={`font-display ${s.num} leading-none tabular-nums ${light ? "text-primary-foreground" : ""}`}>
+          <p className={`font-sans font-bold ${s.num} leading-none tabular-nums tracking-tight ${light ? "text-primary-foreground" : ""}`}>
             {String(i.v).padStart(2, "0")}
           </p>
           <p className={`text-[10px] uppercase tracking-[0.18em] mt-1 ${light ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
