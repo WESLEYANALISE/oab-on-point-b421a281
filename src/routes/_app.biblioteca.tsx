@@ -31,6 +31,8 @@ function BibliotecaHub() {
       );
       return out;
     },
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
   });
 
   return (
