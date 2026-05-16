@@ -280,13 +280,15 @@ export const analisarProva = createServerFn({ method: "POST" })
       const userPrompt = `Analise o material abaixo e retorne EXATAMENTE este JSON:
 {
   "total_questoes": <inteiro com o número total de questões objetivas da prova>,
-  "gabarito": [ { "numero": <int>, "letra": "A"|"B"|"C"|"D" }, ... ]
+  "gabarito": [ { "numero": <int>, "letra": "A"|"B"|"C"|"D"|null, "anulada": <bool>, "nota": <string|null> }, ... ]
 }
 
 Regras:
 - Conte o NÚMERO REAL de questões na prova (provavelmente 80, mas pode variar).
-- O gabarito deve ter UMA entrada por questão, com a letra oficial.
-- Se uma questão foi anulada no gabarito, escolha a primeira letra listada ou "A" como fallback.
+- O gabarito deve ter UMA entrada por questão.
+- Se o gabarito oficial marca a questão como ANULADA / Anulada / "Recurso deferido" / "Sem resposta", retorne "letra": null, "anulada": true, e em "nota" o texto bruto (ex.: "Anulada", "Recurso deferido").
+- Se houver letra normal, retorne "letra" com A/B/C/D, "anulada": false, "nota": null.
+- NUNCA invente uma letra para questões anuladas. Anuladas DEVEM ter letra null.
 - NÃO inclua nada além do JSON.
 
 ===== PROVA =====
@@ -296,7 +298,10 @@ ${(job.data.ocr_prova ?? "").slice(0, 90000)}
 ${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
 
       const raw = await geminiExtractJson(system, userPrompt);
-      let parsed: { total_questoes?: number; gabarito?: Array<{ numero: number; letra: string }> } = {};
+      let parsed: {
+        total_questoes?: number;
+        gabarito?: Array<{ numero: number; letra?: string | null; anulada?: boolean; nota?: string | null }>;
+      } = {};
       try {
         parsed = JSON.parse(raw);
       } catch {
@@ -308,12 +313,18 @@ ${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
         throw new Error(`Total de questões inválido detectado: ${parsed.total_questoes}`);
       }
 
-      const gabaritoMap: Record<string, string> = {};
+      const gabaritoMap: Record<string, GabaritoEntry> = {};
+      let anuladasCount = 0;
       for (const g of parsed.gabarito ?? []) {
         const n = Number(g.numero);
+        if (!(n >= 1 && n <= totalQ)) continue;
         const letra = String(g.letra ?? "").toUpperCase().trim();
-        if (n >= 1 && n <= totalQ && ["A", "B", "C", "D"].includes(letra)) {
-          gabaritoMap[String(n)] = letra;
+        const anulada = Boolean(g.anulada);
+        if (anulada) {
+          gabaritoMap[String(n)] = { letra: null, anulada: true, nota: g.nota ?? "Anulada" };
+          anuladasCount++;
+        } else if (["A", "B", "C", "D"].includes(letra)) {
+          gabaritoMap[String(n)] = { letra: letra as GabaritoEntry["letra"], anulada: false, nota: null };
         }
       }
 
@@ -321,7 +332,9 @@ ${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
       await appendLog(
         data.jobId,
         gabCount === totalQ ? "ok" : "info",
-        `Prova tem ${totalQ} questões. Gabarito com ${gabCount} respostas extraídas.${gabCount !== totalQ ? " (algumas faltam)" : ""}`,
+        `Prova tem ${totalQ} questões. Gabarito com ${gabCount} respostas extraídas${
+          anuladasCount ? ` (${anuladasCount} anuladas)` : ""
+        }.${gabCount !== totalQ ? " (algumas faltam)" : ""}`,
       );
 
       // Cria simulado (remove anterior se houver)
@@ -344,7 +357,7 @@ ${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
         .from("simulado_jobs")
         .update({
           total_estimado: totalQ,
-          gabarito_oficial: gabaritoMap,
+          gabarito_oficial: gabaritoMap as unknown as Record<string, unknown>,
           simulado_id: sim.data.id,
           batches_total: batches,
           batch_atual: 0,
