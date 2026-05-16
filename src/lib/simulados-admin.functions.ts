@@ -597,7 +597,16 @@ ${trecho.slice(0, 90000)}`;
         descartadasInvencao.push(r.data.numero);
         continue;
       }
-      validasMap.set(r.data.numero, r.data);
+      // ★ Validação de matéria: só aceita matéria da lista oficial
+      let materiaFinal = MATERIAS_VALIDAS.find(
+        (m) => normalizeForMatch(m) === normalizeForMatch(r.data.materia),
+      );
+      if (!materiaFinal) {
+        // Fallback: pede pra Gemini classificar só a matéria
+        materiaFinal = await classificarMateria(r.data.enunciado, r.data.alternativas);
+      }
+      if (!materiaFinal) continue; // sem matéria confiável → não salva
+      validasMap.set(r.data.numero, { ...r.data, materia: materiaFinal });
     }
   };
 
