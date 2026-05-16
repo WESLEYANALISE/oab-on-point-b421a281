@@ -572,6 +572,7 @@ export type Database = {
       }
       simulados: {
         Row: {
+          ano: number | null
           created_at: string
           erro_msg: string | null
           gerado_por: string | null
@@ -583,6 +584,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ano?: number | null
           created_at?: string
           erro_msg?: string | null
           gerado_por?: string | null
@@ -594,6 +596,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ano?: number | null
           created_at?: string
           erro_msg?: string | null
           gerado_por?: string | null

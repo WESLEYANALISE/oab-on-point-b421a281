@@ -48,29 +48,34 @@ async function mistralOcr(apiKey: string, documentUrl: string): Promise<string> 
   return (json.pages ?? []).map((p) => p.markdown ?? "").join("\n\n");
 }
 
-async function mistralChatJson(apiKey: string, systemPrompt: string, userPrompt: string) {
-  const res = await fetch("https://api.mistral.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+async function geminiExtractJson(systemPrompt: string, userPrompt: string): Promise<string> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.1,
+        },
+      }),
     },
-    body: JSON.stringify({
-      model: "mistral-large-latest",
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    }),
-  });
+  );
   if (!res.ok) {
     const txt = await res.text();
-    throw new Error(`Mistral chat falhou [${res.status}]: ${txt.slice(0, 300)}`);
+    if (res.status === 429) throw new Error("Limite de requisições do Gemini atingido. Aguarde alguns segundos.");
+    if (res.status === 403) throw new Error("Chave Gemini inválida ou sem permissão (403).");
+    throw new Error(`Gemini falhou [${res.status}]: ${txt.slice(0, 300)}`);
   }
-  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  return json.choices?.[0]?.message?.content ?? "{}";
+  const json = (await res.json()) as {
+    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+  };
+  return json.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
 }
 
 const QuestaoSchema = z.object({
@@ -234,7 +239,7 @@ export const iniciarGeracao = createServerFn({ method: "POST" })
 
     const prova = await supabaseAdmin
       .from("provas_oab")
-      .select("numero, titulo")
+      .select("numero, titulo, ano")
       .eq("numero", job.data.prova_numero)
       .single();
     if (prova.error) throw new Error(prova.error.message);
@@ -247,6 +252,7 @@ export const iniciarGeracao = createServerFn({ method: "POST" })
       .insert({
         prova_numero: prova.data.numero,
         titulo: `Simulado ${prova.data.titulo}`,
+        ano: prova.data.ano,
         status: "gerando",
         gerado_por: userId,
       })
@@ -281,8 +287,7 @@ export const processarBatch = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
 
-    const apiKey = process.env.MISTRAL_API_KEY;
-    if (!apiKey) throw new Error("MISTRAL_API_KEY não configurada");
+    if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
 
     const job = await supabaseAdmin
       .from("simulado_jobs")
@@ -316,7 +321,8 @@ ${(job.data.ocr_prova ?? "").slice(0, 90000)}
 ===== GABARITO =====
 ${(job.data.ocr_gabarito ?? "").slice(0, 20000)}`;
 
-      const raw = await mistralChatJson(apiKey, system, user);
+      await appendLog(data.jobId, "info", `Organizando questões via Gemini Flash Lite (lote ${data.batchIndex + 1})…`);
+      const raw = await geminiExtractJson(system, user);
       const parsed = JSON.parse(raw) as { questoes?: unknown[] };
       const validas: z.infer<typeof QuestaoSchema>[] = [];
       for (const q of parsed.questoes ?? []) {
