@@ -82,7 +82,7 @@ function CapituloView() {
             <ChevronLeft className="h-4 w-4 mt-0.5 shrink-0" />
             <span className="text-left min-w-0">
               <span className="block text-[10px] uppercase">Anterior</span>
-              <span className="block truncate">{prev.titulo}</span>
+              <span className="block truncate">{normalizarTitulo(prev.titulo)}</span>
             </span>
           </Link>
         ) : (
