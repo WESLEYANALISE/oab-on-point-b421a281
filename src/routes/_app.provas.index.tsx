@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, ArrowRight, Loader2 } from "lucide-react";
+import { FileText, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { PROVAS_OAB_CATALOGO, type ProvaListItem } from "@/data/provas-oab-catalogo";
 
 export const Route = createFileRoute("/_app/provas/")({
   head: () => ({
@@ -17,19 +18,10 @@ export const Route = createFileRoute("/_app/provas/")({
   component: ProvasPage,
 });
 
-type ProvaListItem = {
-  id: number;
-  numero: number;
-  titulo: string;
-  ano: number | null;
-  edital_url: string | null;
-  prova_1fase_url: string | null;
-  gabarito_1fase_url: string | null;
-};
-
 function ProvasPage() {
-  const { data, isLoading, error } = useQuery<ProvaListItem[]>({
+  const { data = PROVAS_OAB_CATALOGO, error } = useQuery<ProvaListItem[]>({
     queryKey: ["provas-oab", "lista"],
+    initialData: PROVAS_OAB_CATALOGO,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("provas_oab")
@@ -38,7 +30,10 @@ function ProvasPage() {
       if (error) throw error;
       return (data ?? []) as ProvaListItem[];
     },
-    staleTime: 5 * 60_000,
+    staleTime: 30 * 60_000,
+    gcTime: 60 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   return (
@@ -56,23 +51,18 @@ function ProvasPage() {
       </header>
 
       <section className="px-4 md:px-10">
-        {isLoading && (
-          <div className="flex items-center gap-2 text-muted-foreground py-10 justify-center">
-            <Loader2 className="h-5 w-5 animate-spin" /> Carregando catálogo…
-          </div>
-        )}
-        {error && (
+        {error && data.length === 0 && (
           <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
             Não foi possível carregar as provas. Tente novamente em instantes.
           </div>
         )}
-        {data && data.length === 0 && (
+        {data.length === 0 && (
           <div className="rounded-xl border border-border bg-card p-6 text-sm text-muted-foreground">
             Ainda não há provas catalogadas. Rode o seed do catálogo (server function <code>seedProvasOab</code>).
           </div>
         )}
 
-        {data && data.length > 0 && (
+        {data.length > 0 && (
           <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
             {data.map((p) => (
               <li key={p.id}>
