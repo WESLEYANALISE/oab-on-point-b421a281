@@ -81,36 +81,37 @@ function writeLastUid(uid: string | null) {
   }
 }
 
-// Otimistic: se já temos um uid em cache, assumimos sessão até getSession confirmar.
-// Isso impede que o gate `!!user` esconda a UI no primeiro paint.
-function hasCachedSession(): boolean {
-  return !!readLastUid();
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  // Se já há sessão cacheada, não bloqueamos a UI — começamos com loading=false.
-  const [loading, setLoading] = useState<boolean>(() => !hasCachedSession());
+  const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
   const lastUserIdRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
+    let authRestored = false;
 
-    // 1) Hidrata sessão do localStorage imediatamente.
+    // 1) Hidrata a sessão antes de liberar os guards de rota.
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       if (cancelled) return;
+      authRestored = true;
       setSession(s);
       setLoading(false);
       const uid = s?.user?.id ?? null;
       writeLastUid(uid);
       lastUserIdRef.current = uid;
     }).catch(() => {
+      authRestored = true;
       if (!cancelled) setLoading(false);
     });
 
     // 2) Reage a mudanças (login/logout/refresh).
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
+      if (cancelled) return;
+      if (!authRestored && event === "INITIAL_SESSION") {
+        setSession(s);
+        return;
+      }
       setSession(s);
       setLoading(false);
       const uid = s?.user?.id ?? null;

@@ -31,6 +31,16 @@ function AppLayout() {
     if (!profile.onboarding_completo) navigate({ to: "/onboarding" });
   }, [user, profile, navigate]);
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-background text-foreground">
+        <div className="h-10 w-10 rounded-full border-2 border-gold/20 border-t-gold animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   return (
     <div className="min-h-screen flex bg-background text-foreground">
       <DesktopSidebar />
