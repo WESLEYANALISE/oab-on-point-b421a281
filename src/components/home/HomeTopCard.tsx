@@ -5,7 +5,7 @@ import { AvatarUploader } from "@/components/profile/AvatarUploader";
 import { useProfile, greetingFor, readCachedProfileOptimistic } from "@/hooks/use-auth";
 
 const EXAM_DATE = new Date("2026-07-05T08:00:00-03:00");
-const EXAM_SHORT = "Dom, 5 jul 2026";
+const EXAM_LONG = "Domingo, 05 de julho de 2026";
 
 function diff() {
   const ms = EXAM_DATE.getTime() - Date.now();
@@ -38,10 +38,15 @@ export function HomeTopCard() {
       <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-12 -left-6 h-32 w-32 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
 
-      {/* Linha 1: avatar + saudação + atalho exame */}
+      {/* Selo do exame em foco */}
+      <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gold/15 border border-gold/35 text-gold text-[10px] font-semibold whitespace-nowrap shadow-sm">
+        <Sparkles className="h-2.5 w-2.5" /> 46º OAB
+      </span>
+
+      {/* Linha 1: avatar + saudação */}
       <Link
         to="/perfil"
-        className="relative flex items-center gap-3 px-3.5 py-3 md:px-5 md:py-3.5 group"
+        className="relative flex items-center gap-3 px-3.5 py-3 md:px-5 md:py-3.5 group pr-20"
       >
         <AvatarUploader size={44} />
         <div className="min-w-0 flex-1">
@@ -55,21 +60,17 @@ export function HomeTopCard() {
             {firstName || <span className="inline-block h-3.5 w-24 rounded bg-white/10 animate-pulse align-middle" />}
           </p>
         </div>
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gold/15 border border-gold/35 text-gold text-[10px] font-semibold whitespace-nowrap">
-          <Sparkles className="h-2.5 w-2.5" /> 46º OAB
-        </span>
-        <ChevronRight className="h-4 w-4 text-gold/70 shrink-0 transition-transform group-hover:translate-x-0.5" />
       </Link>
 
-      {/* Linha 2: rótulo "Próximo exame" + countdown + atalho calendário */}
+      {/* Linha 2: rótulo "Próximo exame" + countdown + data + botão calendário */}
       <div className="relative border-t border-primary-foreground/12 px-3.5 py-2.5 md:px-5 md:py-3">
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <p className="text-[9px] uppercase tracking-[0.22em] text-primary-foreground/60 font-semibold leading-none">
-            Próximo exame · {EXAM_SHORT}
+            Próximo exame
           </p>
           <Link
             to="/oab/calendario"
-            className="inline-flex items-center gap-1 text-[10px] md:text-[11px] font-semibold text-gold/90 hover:text-gold whitespace-nowrap"
+            className="inline-flex items-center gap-1 rounded-full bg-gold/15 hover:bg-gold/25 border border-gold/40 px-3 py-1.5 text-[11px] font-semibold text-gold whitespace-nowrap transition-colors"
           >
             <Calendar className="h-3 w-3" />
             Ver calendário
@@ -83,6 +84,9 @@ export function HomeTopCard() {
           <Sep />
           <Stat n={t.m} l="min" />
         </div>
+        <p className="mt-1.5 text-[11px] text-primary-foreground/60 leading-none">
+          {EXAM_LONG}
+        </p>
       </div>
     </div>
   );
