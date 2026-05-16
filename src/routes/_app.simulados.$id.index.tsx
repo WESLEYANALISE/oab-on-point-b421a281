@@ -147,6 +147,9 @@ function OverviewPage() {
           <Button
             className="flex-1 bg-gradient-gold text-gold-foreground"
             disabled={iniciarMut.isPending}
+            onMouseEnter={prefetchPratica}
+            onTouchStart={prefetchPratica}
+            onFocus={prefetchPratica}
             onClick={() => iniciarMut.mutate()}
           >
             {iniciarMut.isPending ? (
