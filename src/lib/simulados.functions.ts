@@ -134,6 +134,37 @@ export const iniciarTentativa = createServerFn({ method: "POST" })
     return { id: ins.data.id };
   });
 
+// ============ Reiniciar tentativa (descarta atual em andamento) ============
+export const reiniciarTentativa = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => simuladoRefSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const simuladoId = await resolveSimuladoId(supabase, data.id);
+    // Apaga TODAS as tentativas em andamento desse simulado para esse user
+    await supabase
+      .from("simulado_tentativas")
+      .delete()
+      .eq("user_id", userId)
+      .eq("simulado_id", simuladoId)
+      .is("concluido_em", null);
+    const { data: total } = await supabase
+      .from("simulado_questoes")
+      .select("id", { count: "exact", head: true })
+      .eq("simulado_id", simuladoId);
+    const ins = await supabase
+      .from("simulado_tentativas")
+      .insert({
+        user_id: userId,
+        simulado_id: simuladoId,
+        total: (total as unknown as { count?: number })?.count ?? 0,
+      })
+      .select("id")
+      .single();
+    if (ins.error) throw new Error(ins.error.message);
+    return { id: ins.data.id, simuladoId };
+  });
+
 // ============ Salvar resposta parcial ============
 export const salvarResposta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
