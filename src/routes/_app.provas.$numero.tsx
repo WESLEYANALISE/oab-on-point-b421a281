@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileText, Download, Loader2 } from "lucide-react";
+import { FileText, Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/provas/$numero")({
@@ -74,9 +74,6 @@ function ProvaDetalhePage() {
   return (
     <div className="pb-10 space-y-6">
       <header className="px-4 pt-4 md:px-10 md:pt-6">
-        <Link to="/provas" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3">
-          <ArrowLeft className="h-4 w-4" /> Todas as provas
-        </Link>
         {isLoading && (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
