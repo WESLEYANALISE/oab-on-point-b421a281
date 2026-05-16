@@ -30,6 +30,7 @@ import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
+import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
 import { Route as AppOabSegundaFaseRouteImport } from './routes/_app.oab.segunda-fase'
 import { Route as AppOabPrimeiraFaseRouteImport } from './routes/_app.oab.primeira-fase'
@@ -149,6 +150,11 @@ const AppAssistenteRoute = AppAssistenteRouteImport.update({
   path: '/assistente',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProvasIndexRoute = AppProvasIndexRouteImport.update({
+  id: '/provas/',
+  path: '/provas/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBibliotecaIndexRoute = AppBibliotecaIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -253,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
+  '/provas/': typeof AppProvasIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
+  '/provas': typeof AppProvasIndexRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdIndexRoute
@@ -324,6 +332,7 @@ export interface FileRoutesById {
   '/_app/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/_app/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
+  '/_app/provas/': typeof AppProvasIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/_app/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
     | '/biblioteca/'
+    | '/provas/'
     | '/biblioteca/$slug/$bookId'
     | '/biblioteca/$slug/'
     | '/biblioteca/$slug/$bookId/ler'
@@ -396,6 +406,7 @@ export interface FileRouteTypes {
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
     | '/biblioteca'
+    | '/provas'
     | '/biblioteca/$slug'
     | '/biblioteca/$slug/$bookId/ler'
     | '/biblioteca/$slug/$bookId'
@@ -432,6 +443,7 @@ export interface FileRouteTypes {
     | '/_app/oab/primeira-fase'
     | '/_app/oab/segunda-fase'
     | '/_app/biblioteca/'
+    | '/_app/provas/'
     | '/_app/biblioteca/$slug/$bookId'
     | '/_app/biblioteca/$slug/'
     | '/_app/biblioteca/$slug/$bookId/ler'
@@ -593,6 +605,13 @@ declare module '@tanstack/react-router' {
       path: '/assistente'
       fullPath: '/assistente'
       preLoaderRoute: typeof AppAssistenteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/provas/': {
+      id: '/_app/provas/'
+      path: '/provas'
+      fullPath: '/provas/'
+      preLoaderRoute: typeof AppProvasIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/biblioteca/': {
@@ -786,6 +805,7 @@ interface AppRouteChildren {
   AppOabPecaModeloRoute: typeof AppOabPecaModeloRoute
   AppOabPrimeiraFaseRoute: typeof AppOabPrimeiraFaseRoute
   AppOabSegundaFaseRoute: typeof AppOabSegundaFaseRoute
+  AppProvasIndexRoute: typeof AppProvasIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -811,6 +831,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOabPecaModeloRoute: AppOabPecaModeloRoute,
   AppOabPrimeiraFaseRoute: AppOabPrimeiraFaseRoute,
   AppOabSegundaFaseRoute: AppOabSegundaFaseRoute,
+  AppProvasIndexRoute: AppProvasIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
