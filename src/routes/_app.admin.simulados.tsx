@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Sparkles, Trash2, CheckCircle2, AlertCircle, Clock, ListPlus, Eye } from "lucide-react";
+import { Sparkles, Trash2, CheckCircle2, AlertCircle, Clock, ListPlus, Eye, ShieldAlert } from "lucide-react";
 import {
   listProvasComStatus,
   excluirSimulado,
+  auditarEReextrair,
 } from "@/lib/simulados-admin.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ function AdminSimulados() {
   const { session } = useAuth();
   const listFn = useServerFn(listProvasComStatus);
   const delFn = useServerFn(excluirSimulado);
+  const auditFn = useServerFn(auditarEReextrair);
   const authHeaders = session?.access_token
     ? { Authorization: `Bearer ${session.access_token}` }
     : undefined;
@@ -83,6 +85,25 @@ function AdminSimulados() {
       toast.success("Simulado excluído");
       qc.invalidateQueries({ queryKey: ["admin-provas"] });
     },
+  });
+
+  const auditar = useMutation({
+    mutationFn: (provaNumero: number) => {
+      if (!authHeaders) throw new Error("Sessão expirada. Entre novamente.");
+      return auditFn({ data: { provaNumero }, headers: authHeaders });
+    },
+    onMutate: (n) => {
+      toast.loading(`Auditando prova ${n}… (pode levar 1-2 min)`, { id: `audit-${n}` });
+    },
+    onSuccess: (r, n) => {
+      toast.success(
+        `Prova ${n}: ${r.inventadas} inventadas · ${r.reextraidas} reextraídas · ${r.restantes} sem extração`,
+        { id: `audit-${n}`, duration: 6000 },
+      );
+      qc.invalidateQueries({ queryKey: ["admin-provas"] });
+    },
+    onError: (e, n) =>
+      toast.error(e instanceof Error ? e.message : "Falhou", { id: `audit-${n}` }),
   });
 
   const filaPositionOf = (n: number): number | null => {
@@ -205,6 +226,21 @@ function AdminSimulados() {
                     }}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                )}
+                {status === "pronto" && !naFila && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={auditar.isPending}
+                    onClick={() => {
+                      if (confirm(`Auditar a prova ${p.numero}? Vai detectar questões inventadas e re-extrair do PDF.`))
+                        auditar.mutate(p.numero);
+                    }}
+                    title="Detecta questões alucinadas e reextrai do OCR"
+                  >
+                    <ShieldAlert className="h-4 w-4 mr-1" />
+                    Auditar
                   </Button>
                 )}
                 {!naFila && (

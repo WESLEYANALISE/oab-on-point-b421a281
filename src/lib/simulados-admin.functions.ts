@@ -379,6 +379,81 @@ ${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
     }
   });
 
+// ============ Helpers anti-invenção ============
+function normalizeForMatch(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// Indexa as posições de "Questão N" no OCR
+function indexQuestionPositions(ocr: string): Map<number, number> {
+  const positions = new Map<number, number>();
+  const re = /quest[ãa]o\s*(\d{1,3})\b/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(ocr)) !== null) {
+    const n = Number(m[1]);
+    if (!positions.has(n)) positions.set(n, m.index);
+  }
+  return positions;
+}
+
+// Recorta o trecho do OCR que contém as questões pedidas (sem truncar o resto)
+function sliceOcrForRange(ocr: string, numeros: number[]): { trecho: string; ausentes: number[] } {
+  const positions = indexQuestionPositions(ocr);
+  const presentes = numeros.filter((n) => positions.has(n));
+  const ausentes = numeros.filter((n) => !positions.has(n));
+  if (presentes.length === 0) return { trecho: "", ausentes };
+  const minN = Math.min(...presentes);
+  const maxN = Math.max(...presentes);
+  const start = Math.max(0, (positions.get(minN) ?? 0) - 200);
+  // fim = início da próxima questão depois de maxN, ou fim do OCR
+  let fimPos = ocr.length;
+  for (let k = maxN + 1; k <= maxN + 5; k++) {
+    const p = positions.get(k);
+    if (p !== undefined) {
+      fimPos = p;
+      break;
+    }
+  }
+  const end = Math.min(ocr.length, fimPos + 200);
+  return { trecho: ocr.slice(start, end), ausentes };
+}
+
+// Verifica se o enunciado realmente aparece no OCR original (anti-alucinação)
+function enunciadoAparece(enunciado: string, ocrNorm: string): boolean {
+  const norm = normalizeForMatch(enunciado);
+  if (norm.length < 30) return ocrNorm.includes(norm);
+  // testa 3 janelas distintas do enunciado
+  const probes = [norm.slice(0, 50), norm.slice(20, 80), norm.slice(40, 100)].filter(
+    (p) => p.length >= 30,
+  );
+  return probes.some((p) => ocrNorm.includes(p));
+}
+
+const MATERIAS_VALIDAS = [
+  "Ética e Estatuto da OAB",
+  "Direito Constitucional",
+  "Direito Civil",
+  "Processo Civil",
+  "Direito Penal",
+  "Processo Penal",
+  "Direito do Trabalho",
+  "Processo do Trabalho",
+  "Direito Tributário",
+  "Direito Administrativo",
+  "Direito Empresarial",
+  "Filosofia do Direito",
+  "Direitos Humanos",
+  "Direito Internacional",
+  "Direito Ambiental",
+  "Direito Eleitoral",
+  "ECA",
+];
+
 // ============ Helper: extrai questões dentro de um range ============
 async function extrairQuestoes(
   jobId: string,
@@ -387,114 +462,105 @@ async function extrairQuestoes(
   gabarito: Record<string, GabaritoEntry>,
 ): Promise<z.infer<typeof QuestaoSchema>[]> {
   if (numeros.length === 0) return [];
-  const inicio = Math.min(...numeros);
-  const fim = Math.max(...numeros);
-  const especifico = numeros.length < fim - inicio + 1;
+
+  const ocrNorm = normalizeForMatch(ocrProva);
 
   const system =
-    "Você extrai questões objetivas do Exame da OAB a partir de markdown OCR. " +
-    "Retorne SEMPRE JSON válido. NÃO inclua a resposta correta — apenas enunciado, matérias e alternativas.";
-
-  const alvo = especifico
-    ? `as questões de números ${numeros.join(", ")}`
-    : `APENAS as questões de número ${inicio} a ${fim} (inclusivos)`;
-
-  const user = `Extraia ${alvo} do Exame abaixo.
-Cada questão deve ter:
-- numero (inteiro)
-- enunciado (texto sem as alternativas)
-- materia (uma de: "Ética e Estatuto da OAB", "Direito Constitucional", "Direito Civil", "Processo Civil", "Direito Penal", "Processo Penal", "Direito do Trabalho", "Processo do Trabalho", "Direito Tributário", "Direito Administrativo", "Direito Empresarial", "Filosofia do Direito", "Direitos Humanos", "Direito Internacional", "Direito Ambiental", "Direito Eleitoral", "ECA")
-- alternativas: { A, B, C, D } (cada uma com o texto completo da alternativa)
-
-Retorne JSON: { "questoes": [ ... ] }
-
-===== PROVA =====
-${ocrProva.slice(0, 90000)}`;
+    "Você EXTRAI (não cria) questões objetivas do Exame da OAB a partir de OCR. " +
+    "É PROIBIDO inventar, completar, reformular ou parafrasear. " +
+    "Toda questão retornada deve poder ser encontrada PALAVRA POR PALAVRA no texto fornecido. " +
+    "Se uma questão pedida não estiver no texto, OMITA-A do JSON. Retorne SEMPRE JSON válido.";
 
   const validasMap = new Map<number, z.infer<typeof QuestaoSchema>>();
   const alvoSet = new Set(numeros);
+  const descartadasInvencao: number[] = [];
 
-  // Diagnóstico: marcador de cada questão presente no OCR?
-  const ocrLower = ocrProva.toLowerCase();
-  const semMarcador: number[] = [];
-  for (const n of numeros) {
-    const regex = new RegExp(`quest[aã]o\\s*${n}\\b`, "i");
-    if (!regex.test(ocrLower)) semMarcador.push(n);
-  }
-  if (semMarcador.length > 0) {
-    await appendLog(
-      jobId,
-      "info",
-      `OCR não contém marcador "Questão" para: ${semMarcador.slice(0, 10).join(", ")}${semMarcador.length > 10 ? "…" : ""}. Provável problema no PDF/OCR.`,
-    );
-  }
+  // Faz uma chamada por grupo de até `groupSize` números
+  const runForGroup = async (grupo: number[]): Promise<void> => {
+    const { trecho, ausentes } = sliceOcrForRange(ocrProva, grupo);
+    if (ausentes.length > 0) {
+      await appendLog(
+        jobId,
+        "info",
+        `OCR não contém marcador "Questão" para: ${ausentes.slice(0, 10).join(", ")}${ausentes.length > 10 ? "…" : ""}.`,
+      );
+    }
+    if (trecho.length === 0) return;
 
-  const runOnce = async (prompt: string): Promise<{ chars: number; recebidas: number[]; motivo?: string }> => {
-    const raw = await geminiExtractJson(system, prompt);
+    const userPrompt = `Extraia as questões de números ${grupo.join(", ")} do trecho de OCR abaixo.
+
+REGRAS OBRIGATÓRIAS:
+- Copie enunciado e alternativas EXATAMENTE como aparecem no texto.
+- Se uma questão pedida NÃO estiver presente no trecho, OMITA-A do JSON. NÃO invente.
+- NÃO complete questões parciais.
+
+Cada questão deve ter:
+- numero (inteiro)
+- enunciado (texto da questão sem as alternativas)
+- materia (uma de: ${MATERIAS_VALIDAS.map((m) => `"${m}"`).join(", ")})
+- alternativas: { A, B, C, D } (texto completo de cada alternativa, copiado do OCR)
+
+Retorne JSON: { "questoes": [ ... ] }
+
+===== OCR =====
+${trecho.slice(0, 90000)}`;
+
+    let raw: string;
+    try {
+      raw = await geminiExtractJson(system, userPrompt);
+    } catch (err) {
+      const m = err instanceof Error ? err.message : String(err);
+      await appendLog(jobId, "info", `Gemini falhou no grupo ${grupo[0]}–${grupo[grupo.length - 1]}: ${m}`);
+      return;
+    }
     let parsed: { questoes?: unknown[] } = {};
-    let motivo: string | undefined;
     try {
       parsed = JSON.parse(raw);
     } catch {
-      motivo = `parse JSON falhou (primeiros 200 chars: ${raw.slice(0, 200).replace(/\s+/g, " ")})`;
+      await appendLog(jobId, "info", `JSON inválido no grupo ${grupo[0]}–${grupo[grupo.length - 1]}`);
+      return;
     }
-    const recebidas: number[] = [];
     for (const q of parsed.questoes ?? []) {
       const r = QuestaoSchema.safeParse(q);
-      if (!r.success) {
-        const issue = r.error.issues[0];
-        const path = issue?.path.join(".") ?? "?";
-        const numTentado = (q as { numero?: unknown })?.numero;
-        motivo = motivo ?? `schema rejeitou questão ${numTentado ?? "?"}: ${path} → ${issue?.message ?? "inválido"}`;
+      if (!r.success) continue;
+      if (!alvoSet.has(r.data.numero)) continue;
+      if (!hasGabaritoEntry(gabarito, r.data.numero)) continue;
+      // ★ Validação anti-invenção: enunciado precisa aparecer no OCR original
+      if (!enunciadoAparece(r.data.enunciado, ocrNorm)) {
+        descartadasInvencao.push(r.data.numero);
         continue;
       }
-      recebidas.push(r.data.numero);
-      if (alvoSet.has(r.data.numero) && hasGabaritoEntry(gabarito, r.data.numero)) {
-        validasMap.set(r.data.numero, r.data);
-      }
+      validasMap.set(r.data.numero, r.data);
     }
-    return { chars: raw.length, recebidas, motivo };
   };
 
-  try {
-    const first = await runOnce(user);
-    if (first.motivo && validasMap.size === 0) {
-      await appendLog(jobId, "info", `Diagnóstico 1ª tentativa: ${first.motivo}`);
-    }
-  } catch (err) {
-    const m = err instanceof Error ? err.message : String(err);
-    await appendLog(jobId, "info", `1ª tentativa falhou: ${m}`);
+  // Quebra `numeros` em grupos de no máx. 10 questões (janelas pequenas = menos chance de Gemini "completar")
+  const GROUP = 10;
+  for (let i = 0; i < numeros.length; i += GROUP) {
+    const grupo = numeros.slice(i, i + GROUP);
+    if (grupo.every((n) => validasMap.has(n))) continue;
+    await runForGroup(grupo);
   }
 
-  // Retry para faltantes
-  for (let tentativa = 1; tentativa <= 3; tentativa++) {
-    const faltantes = numeros.filter((n) => !validasMap.has(n));
-    if (faltantes.length === 0) break;
+  // Retry só para faltantes (1x)
+  const faltantes = numeros.filter((n) => !validasMap.has(n));
+  if (faltantes.length > 0) {
     await appendLog(
       jobId,
       "info",
-      `Faltam ${faltantes.length} questões (${faltantes.slice(0, 10).join(", ")}${faltantes.length > 10 ? "…" : ""}). Retentativa ${tentativa}/3…`,
+      `Faltam ${faltantes.length} questões após 1ª passada (${faltantes.slice(0, 10).join(", ")}${faltantes.length > 10 ? "…" : ""}). Retentando individualmente…`,
     );
-    const retryPrompt = `Extraia ESPECIFICAMENTE as questões de números ${faltantes.join(", ")} do Exame abaixo. Use o schema e regras anteriores. Retorne JSON: { "questoes": [ ... ] }
-
-===== PROVA =====
-${ocrProva.slice(0, 90000)}`;
-    try {
-      const r = await runOnce(retryPrompt);
-      const aindaFaltam = faltantes.filter((n) => !validasMap.has(n));
-      if (aindaFaltam.length > 0) {
-        const recebeuOutras = r.recebidas.filter((n) => !faltantes.includes(n));
-        const detalhe = r.motivo
-          ? r.motivo
-          : recebeuOutras.length > 0
-          ? `Gemini devolveu questões erradas (${recebeuOutras.slice(0, 5).join(", ")}) em vez das pedidas`
-          : `Gemini devolveu ${r.chars} chars sem questões válidas`;
-        await appendLog(jobId, "info", `Retentativa ${tentativa}: ${detalhe}`);
-      }
-    } catch (err) {
-      const m = err instanceof Error ? err.message : String(err);
-      await appendLog(jobId, "info", `Retentativa ${tentativa} falhou: ${m}`);
+    for (const n of faltantes) {
+      await runForGroup([n]);
     }
+  }
+
+  if (descartadasInvencao.length > 0) {
+    await appendLog(
+      jobId,
+      "info",
+      `Descartadas ${descartadasInvencao.length} questão(ões) por invenção (não aparecem no OCR): ${descartadasInvencao.slice(0, 10).join(", ")}${descartadasInvencao.length > 10 ? "…" : ""}.`,
+    );
   }
 
   return Array.from(validasMap.values()).sort((a, b) => a.numero - b.numero);
@@ -797,4 +863,132 @@ export const excluirSimulado = createServerFn({ method: "POST" })
     const del = await supabaseAdmin.from("simulados").delete().eq("id", data.id);
     if (del.error) throw new Error(del.error.message);
     return { ok: true };
+  });
+
+// ============ Auditoria + Reextração de questões inventadas ============
+export const auditarEReextrair = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { provaNumero: number }) =>
+    z.object({ provaNumero: z.number().int().positive() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    // Pega o job mais recente "pronto" da prova (tem ocr_prova + gabarito)
+    const jobRes = await supabaseAdmin
+      .from("simulado_jobs")
+      .select("id, simulado_id, ocr_prova, gabarito_oficial, total_estimado")
+      .eq("prova_numero", data.provaNumero)
+      .not("simulado_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (jobRes.error) throw new Error(jobRes.error.message);
+    if (!jobRes.data || !jobRes.data.simulado_id || !jobRes.data.ocr_prova) {
+      throw new Error("Não há job com OCR salvo para esta prova. Gere o simulado primeiro.");
+    }
+    const job = jobRes.data;
+    const simuladoId = job.simulado_id as string;
+    const ocr = job.ocr_prova as string;
+    const ocrNorm = normalizeForMatch(ocr);
+    const gabarito = normalizeGabarito(job.gabarito_oficial);
+
+    // 1) Carrega questões atuais "ok" e detecta inventadas
+    const qs = await supabaseAdmin
+      .from("simulado_questoes")
+      .select("id, numero, enunciado, status")
+      .eq("simulado_id", simuladoId)
+      .eq("status", "ok");
+    if (qs.error) throw new Error(qs.error.message);
+
+    const inventadas: number[] = [];
+    for (const q of qs.data ?? []) {
+      if (!enunciadoAparece(q.enunciado as string, ocrNorm)) {
+        inventadas.push(q.numero as number);
+      }
+    }
+
+    await appendLog(
+      job.id,
+      "info",
+      `Auditoria: ${inventadas.length} questão(ões) inventadas detectada(s)${
+        inventadas.length > 0 ? ` (${inventadas.slice(0, 15).join(", ")}${inventadas.length > 15 ? "…" : ""})` : ""
+      }.`,
+    );
+
+    if (inventadas.length === 0) {
+      return { inventadas: 0, reextraidas: 0, restantes: 0 };
+    }
+
+    // 2) Apaga as inventadas
+    const del = await supabaseAdmin
+      .from("simulado_questoes")
+      .delete()
+      .eq("simulado_id", simuladoId)
+      .in("numero", inventadas);
+    if (del.error) throw new Error(del.error.message);
+
+    // 3) Re-extrai com o pipeline novo (anti-invenção)
+    const validas = await extrairQuestoes(job.id, ocr, inventadas, gabarito);
+
+    if (validas.length > 0) {
+      const rows = validas.map((q) => {
+        const g = gabarito[String(q.numero)];
+        const anulada = !!g?.anulada;
+        return {
+          simulado_id: simuladoId,
+          numero: q.numero,
+          enunciado: q.enunciado,
+          materia: q.materia,
+          alternativas: q.alternativas,
+          resposta_correta: anulada ? null : (g?.letra ?? null),
+          status: anulada ? "anulada" : "ok",
+          nota_oficial: g?.nota ?? null,
+        };
+      });
+      const ins = await supabaseAdmin.from("simulado_questoes").insert(rows);
+      if (ins.error) throw new Error(ins.error.message);
+    }
+
+    // 4) Marca as que ainda não saíram como falhou_extracao
+    const validasNums = new Set(validas.map((v) => v.numero));
+    const restantes = inventadas.filter((n) => !validasNums.has(n));
+    if (restantes.length > 0) {
+      const placeholders = restantes.map((n) => ({
+        simulado_id: simuladoId,
+        numero: n,
+        enunciado: "Esta questão não pôde ser extraída do PDF oficial.",
+        materia: null as string | null,
+        alternativas: { A: "—", B: "—", C: "—", D: "—" },
+        resposta_correta: null as string | null,
+        status: "falhou_extracao",
+        nota_oficial: null as string | null,
+      }));
+      const ins2 = await supabaseAdmin.from("simulado_questoes").insert(placeholders);
+      if (ins2.error) throw new Error(ins2.error.message);
+    }
+
+    // 5) Recalcula total
+    const cnt = await supabaseAdmin
+      .from("simulado_questoes")
+      .select("numero", { count: "exact", head: true })
+      .eq("simulado_id", simuladoId)
+      .neq("status", "falhou_extracao");
+    await supabaseAdmin
+      .from("simulados")
+      .update({ total_questoes: cnt.count ?? 0 })
+      .eq("id", simuladoId);
+
+    await appendLog(
+      job.id,
+      "ok",
+      `Auditoria concluída: ${validas.length} reextraída(s), ${restantes.length} marcada(s) como sem extração.`,
+    );
+
+    return {
+      inventadas: inventadas.length,
+      reextraidas: validas.length,
+      restantes: restantes.length,
+    };
   });
