@@ -81,9 +81,14 @@ function AreaOABPage() {
               <div className="h-9 w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center">
                 <Icon className="h-4 w-4 text-gold" strokeWidth={2} />
               </div>
-              <div className="min-w-0 w-full">
-                <p className="font-display font-semibold text-[13px] md:text-sm leading-tight tracking-tight truncate">{label}</p>
-                <p className="text-[10px] md:text-[11px] text-primary-foreground/65 mt-0.5 leading-snug line-clamp-1">{sub}</p>
+              <div className="flex items-end justify-between gap-2 w-full">
+                <div className="min-w-0 flex-1">
+                  <p className="font-display font-semibold text-[13px] md:text-sm leading-tight tracking-tight truncate">{label}</p>
+                  <p className="text-[10px] md:text-[11px] text-primary-foreground/65 mt-0.5 leading-snug line-clamp-1">{sub}</p>
+                </div>
+                <div className="h-7 w-7 rounded-full bg-gold grid place-items-center shrink-0 shadow-md shadow-black/40 group-hover:translate-x-0.5 transition-transform">
+                  <ArrowRight className="h-3.5 w-3.5 text-gold-foreground" />
+                </div>
               </div>
             </Link>
           ))}
