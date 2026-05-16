@@ -43,21 +43,34 @@ function AdminResumos() {
     staleTime: 30_000,
   });
 
-  const [filtro, setFiltro] = useState<string>("todos");
+  const [filtroArea, setFiltroArea] = useState<string>("todas");
   const [busca, setBusca] = useState("");
   const [preview, setPreview] = useState<{ resumo_livro_id: string; itens: PreviaItem[] } | null>(null);
   const [gerando, setGerando] = useState<Set<string>>(new Set());
 
   const livros = data ?? [];
-  const slugs = Array.from(new Set(livros.map((l) => l.slug)));
+  const areas = useMemo(
+    () => Array.from(new Set(livros.map((l) => l.area).filter(Boolean))).sort() as string[],
+    [livros],
+  );
 
   const filtrados = useMemo(() => {
     return livros.filter((l) => {
-      if (filtro !== "todos" && l.slug !== filtro) return false;
+      if (filtroArea !== "todas" && l.area !== filtroArea) return false;
       if (busca && !l.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
       return true;
     });
-  }, [livros, filtro, busca]);
+  }, [livros, filtroArea, busca]);
+
+  const porArea = useMemo(() => {
+    const map = new Map<string, typeof filtrados>();
+    for (const l of filtrados) {
+      const k = l.area ?? "Sem área";
+      if (!map.has(k)) map.set(k, [] as any);
+      (map.get(k) as any).push(l);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filtrados]);
 
   const previa = useMutation({
     mutationFn: (v: { slug: string; livro_id: number }) => previaFn({ data: v }),
