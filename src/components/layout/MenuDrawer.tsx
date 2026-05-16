@@ -52,7 +52,7 @@ export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
       <SheetContent
-        side="right"
+        side="left"
         className="w-[88vw] max-w-sm p-0 bg-sidebar text-sidebar-foreground border-sidebar-border flex flex-col"
       >
         <SheetHeader className="px-5 py-5 border-b border-sidebar-border">
