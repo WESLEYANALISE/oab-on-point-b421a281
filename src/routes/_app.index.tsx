@@ -114,14 +114,14 @@ function PraticaRow({ item }: { item: Pratica }) {
   return (
     <Link
       to={item.to}
-      className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card hover:bg-secondary transition-colors"
+      className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-border bg-card hover:bg-secondary hover:border-gold/20 transition-colors"
     >
-      <div className={`h-12 w-12 rounded-xl grid place-items-center shrink-0 ${item.cor}`}>
+      <div className={`h-12 w-12 rounded-2xl grid place-items-center shrink-0 ${item.cor} shadow-lg shadow-black/20`}>
         <Icon className="h-6 w-6" strokeWidth={2} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-display text-lg leading-tight">{item.label}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{item.sub}</p>
+        <p className="font-display font-semibold text-lg leading-tight tracking-tight">{item.label}</p>
+        <p className="text-[11px] text-muted-foreground/90 mt-0.5 truncate">{item.sub}</p>
       </div>
       <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
     </Link>
