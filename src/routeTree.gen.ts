@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
+import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -27,27 +28,40 @@ const AppMateriasRoute = AppMateriasRouteImport.update({
   path: '/materias',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMateriasSlugRoute = AppMateriasSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => AppMateriasRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/materias': typeof AppMateriasRoute
+  '/materias': typeof AppMateriasRouteWithChildren
+  '/materias/$slug': typeof AppMateriasSlugRoute
 }
 export interface FileRoutesByTo {
-  '/materias': typeof AppMateriasRoute
+  '/materias': typeof AppMateriasRouteWithChildren
   '/': typeof AppIndexRoute
+  '/materias/$slug': typeof AppMateriasSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
-  '/_app/materias': typeof AppMateriasRoute
+  '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/': typeof AppIndexRoute
+  '/_app/materias/$slug': typeof AppMateriasSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/materias'
+  fullPaths: '/' | '/materias' | '/materias/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/materias' | '/'
-  id: '__root__' | '/_app' | '/_app/materias' | '/_app/'
+  to: '/materias' | '/' | '/materias/$slug'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/_app/materias'
+    | '/_app/'
+    | '/_app/materias/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,16 +91,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMateriasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/materias/$slug': {
+      id: '/_app/materias/$slug'
+      path: '/$slug'
+      fullPath: '/materias/$slug'
+      preLoaderRoute: typeof AppMateriasSlugRouteImport
+      parentRoute: typeof AppMateriasRoute
+    }
   }
 }
 
+interface AppMateriasRouteChildren {
+  AppMateriasSlugRoute: typeof AppMateriasSlugRoute
+}
+
+const AppMateriasRouteChildren: AppMateriasRouteChildren = {
+  AppMateriasSlugRoute: AppMateriasSlugRoute,
+}
+
+const AppMateriasRouteWithChildren = AppMateriasRoute._addFileChildren(
+  AppMateriasRouteChildren,
+)
+
 interface AppRouteChildren {
-  AppMateriasRoute: typeof AppMateriasRoute
+  AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppMateriasRoute: AppMateriasRoute,
+  AppMateriasRoute: AppMateriasRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
 }
 
