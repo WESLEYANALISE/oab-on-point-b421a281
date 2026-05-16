@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Loader2,
@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import {
   getSimuladoOverview,
-  iniciarTentativa,
+  getSimuladoCompleto,
   listMinhasTentativas,
   getEditalResumo,
 } from "@/lib/simulados.functions";
@@ -37,9 +37,12 @@ type Aba = "materiais" | "edital" | "raiox" | "desempenho";
 function OverviewPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const overviewFn = useServerFn(getSimuladoOverview);
-  const iniciarFn = useServerFn(iniciarTentativa);
+  const completoFn = useServerFn(getSimuladoCompleto);
   const historicoFn = useServerFn(listMinhasTentativas);
+
+  const [aba, setAba] = useState<Aba>("materiais");
 
   const overview = useQuery({
     queryKey: ["simulado-overview", id],
@@ -47,19 +50,33 @@ function OverviewPage() {
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
   });
+  // Histórico só carrega quando a aba "Desempenho" é aberta
   const historico = useQuery({
     queryKey: ["simulado-historico", id],
     queryFn: () => historicoFn({ data: { simuladoId: id } }),
-    staleTime: 30_000,
+    staleTime: 60_000,
     refetchOnWindowFocus: false,
+    enabled: aba === "desempenho",
   });
 
-  const [aba, setAba] = useState<Aba>("materiais");
-
+  // Ao clicar em "Começar/Continuar", buscamos TUDO em uma chamada e
+  // seedamos o cache da prática para a próxima tela abrir instantânea.
   const iniciarMut = useMutation({
-    mutationFn: () => iniciarFn({ data: { simuladoId: id } }),
-    onSuccess: () => navigate({ to: "/simulados/$id/praticar", params: { id } }),
+    mutationFn: () => completoFn({ data: { id } }),
+    onSuccess: (data) => {
+      queryClient.setQueryData(["simulado-completo", id], data);
+      navigate({ to: "/simulados/$id/praticar", params: { id } });
+    },
   });
+
+  // Pré-aquece o cache no hover/foco para a navegação ser imediata.
+  function prefetchPratica() {
+    queryClient.prefetchQuery({
+      queryKey: ["simulado-completo", id],
+      queryFn: () => completoFn({ data: { id } }),
+      staleTime: 5 * 60_000,
+    });
+  }
 
   if (!overview.data) {
     return (
