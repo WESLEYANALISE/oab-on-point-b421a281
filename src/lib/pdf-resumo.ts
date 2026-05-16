@@ -99,7 +99,12 @@ function parseMarkdown(md: string): Bloco[] {
   return out;
 }
 
-export async function gerarPdfResumo(livro: Livro, capitulos: Capitulo[]): Promise<void> {
+export async function gerarPdfCapitulo(
+  livro: Livro,
+  capitulo: Capitulo,
+  totalCapitulos: number,
+  extras?: { exemplo?: string | null; termos?: string | null },
+): Promise<void> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -110,57 +115,45 @@ export async function gerarPdfResumo(livro: Livro, capitulos: Capitulo[]): Promi
   const larguraTexto = W - margemX * 2;
 
   // ===== Capa =====
-  desenharCapa(doc, livro, capitulos.length, W, H);
+  desenharCapaCapitulo(doc, livro, capitulo, totalCapitulos, W, H);
 
-  // ===== Sumário =====
-  doc.addPage();
-  let y = margemTop;
-  desenharCabecalho(doc, livro.titulo, W);
-  doc.setTextColor(...COR_BORDO);
-  doc.setFont("times", "bold");
-  doc.setFontSize(20);
-  doc.text("Sumário", margemX, y + 4);
-  y += 14;
-  doc.setDrawColor(...COR_DOURADO);
-  doc.setLineWidth(0.4);
-  doc.line(margemX, y - 6, margemX + 30, y - 6);
-
-  doc.setFont("times", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(...COR_TEXTO);
-  for (const c of capitulos) {
-    if (y > H - margemBottom - 10) {
-      desenharRodape(doc, W, H);
-      doc.addPage();
-      desenharCabecalho(doc, livro.titulo, W);
-      y = margemTop;
-    }
-    const num = String(c.ordem).padStart(2, "0");
-    const titulo = normalizarTitulo(c.titulo);
-    const linhas = doc.splitTextToSize(`${num}.  ${titulo}`, larguraTexto - 4);
-    doc.setTextColor(...COR_TEXTO);
-    doc.text(linhas, margemX, y);
-    y += linhas.length * 5.5 + 2;
+  // ===== Conteúdo =====
+  const secoes: { rotulo: string; titulo: string; markdown: string }[] = [
+    {
+      rotulo: `CAPÍTULO ${capitulo.ordem} DE ${totalCapitulos}`,
+      titulo: normalizarTitulo(capitulo.titulo),
+      markdown: capitulo.conteudo_markdown ?? "",
+    },
+  ];
+  if (extras?.exemplo) {
+    secoes.push({
+      rotulo: "COMPLEMENTO",
+      titulo: "Exemplo Prático",
+      markdown: extras.exemplo,
+    });
   }
-  desenharRodape(doc, W, H);
+  if (extras?.termos) {
+    secoes.push({
+      rotulo: "COMPLEMENTO",
+      titulo: "Termos Jurídicos",
+      markdown: extras.termos,
+    });
+  }
 
-  // ===== Capítulos =====
-  for (const c of capitulos) {
+  for (const sec of secoes) {
     doc.addPage();
     desenharCabecalho(doc, livro.titulo, W);
-    y = margemTop;
+    let y = margemTop;
 
-    // Cabeçalho do capítulo
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8.5);
     doc.setTextColor(...COR_DOURADO);
-    doc.text(`CAPÍTULO ${c.ordem} DE ${capitulos.length}`, margemX, y - 8);
+    doc.text(sec.rotulo, margemX, y - 8);
 
     doc.setFont("times", "bold");
     doc.setFontSize(20);
     doc.setTextColor(...COR_BORDO);
-    const tituloCap = normalizarTitulo(c.titulo);
-    const tituloLinhas = doc.splitTextToSize(tituloCap, larguraTexto);
+    const tituloLinhas = doc.splitTextToSize(sec.titulo, larguraTexto);
     doc.text(tituloLinhas, margemX, y);
     y += tituloLinhas.length * 8 + 2;
 
@@ -169,7 +162,7 @@ export async function gerarPdfResumo(livro: Livro, capitulos: Capitulo[]): Promi
     doc.line(margemX, y, margemX + 38, y);
     y += 8;
 
-    const blocos = parseMarkdown(c.conteudo_markdown ?? "");
+    const blocos = parseMarkdown(sec.markdown);
 
     for (const b of blocos) {
       const garantirEspaco = (altura: number) => {
@@ -223,10 +216,8 @@ export async function gerarPdfResumo(livro: Livro, capitulos: Capitulo[]): Promi
         const ls = doc.splitTextToSize(b.texto, larguraQ);
         const altura = ls.length * 5.2 + 6;
         garantirEspaco(altura + 2);
-        // fundo creme
         doc.setFillColor(...COR_CREME);
         doc.rect(margemX, y - 1, larguraTexto, altura, "F");
-        // barra dourada
         doc.setFillColor(...COR_DOURADO);
         doc.rect(margemX, y - 1, 1.4, altura, "F");
         doc.text(ls, margemX + padX, y + 4);
@@ -262,7 +253,6 @@ export async function gerarPdfResumo(livro: Livro, capitulos: Capitulo[]): Promi
         continue;
       }
 
-      // parágrafo
       doc.setFont("times", "normal");
       doc.setFontSize(11);
       renderizarSegmentos(
@@ -287,10 +277,9 @@ export async function gerarPdfResumo(livro: Livro, capitulos: Capitulo[]): Promi
     desenharRodape(doc, W, H);
   }
 
-  // Paginação no rodapé já está sendo escrita por desenharRodape, mas garantimos numeração final.
   numerarPaginas(doc, W, H);
 
-  const nomeArquivo = `${slug(livro.titulo)}-resumo.pdf`;
+  const nomeArquivo = `${slug(livro.titulo)}-cap${String(capitulo.ordem).padStart(2, "0")}-${slug(capitulo.titulo)}.pdf`;
   doc.save(nomeArquivo);
 }
 
