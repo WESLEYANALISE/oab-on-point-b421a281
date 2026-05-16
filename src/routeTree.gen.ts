@@ -9,6 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
@@ -18,6 +22,7 @@ import { Route as AppResumosRouteImport } from './routes/_app.resumos'
 import { Route as AppQuestoesRouteImport } from './routes/_app.questoes'
 import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
 import { Route as AppPlanoEstudoRouteImport } from './routes/_app.plano-estudo'
+import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
 import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
@@ -41,6 +46,26 @@ import { Route as AppBibliotecaSlugBookIdRouteImport } from './routes/_app.bibli
 import { Route as AppBibliotecaSlugBookIdIndexRouteImport } from './routes/_app.biblioteca.$slug.$bookId.index'
 import { Route as AppBibliotecaSlugBookIdLerRouteImport } from './routes/_app.biblioteca.$slug.$bookId.ler'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -83,6 +108,11 @@ const AppProgressoRoute = AppProgressoRouteImport.update({
 const AppPlanoEstudoRoute = AppPlanoEstudoRouteImport.update({
   id: '/plano-estudo',
   path: '/plano-estudo',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerfilRoute = AppPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
   getParentRoute: () => AppRoute,
 } as any)
 const AppNoticiasRoute = AppNoticiasRouteImport.update({
@@ -200,6 +230,10 @@ const AppBibliotecaSlugBookIdLerRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
@@ -208,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
+  '/perfil': typeof AppPerfilRoute
   '/plano-estudo': typeof AppPlanoEstudoRoute
   '/progresso': typeof AppProgressoRoute
   '/questoes': typeof AppQuestoesRoute
@@ -231,6 +266,10 @@ export interface FileRoutesByFullPath {
   '/biblioteca/$slug/$bookId/': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRoutesByTo {
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
@@ -238,6 +277,7 @@ export interface FileRoutesByTo {
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
+  '/perfil': typeof AppPerfilRoute
   '/plano-estudo': typeof AppPlanoEstudoRoute
   '/progresso': typeof AppProgressoRoute
   '/questoes': typeof AppQuestoesRoute
@@ -262,6 +302,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/signup': typeof SignupRoute
   '/_app/assistente': typeof AppAssistenteRoute
   '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRoute
@@ -270,6 +314,7 @@ export interface FileRoutesById {
   '/_app/flashcards': typeof AppFlashcardsRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/noticias': typeof AppNoticiasRouteWithChildren
+  '/_app/perfil': typeof AppPerfilRoute
   '/_app/plano-estudo': typeof AppPlanoEstudoRoute
   '/_app/progresso': typeof AppProgressoRoute
   '/_app/questoes': typeof AppQuestoesRoute
@@ -297,6 +342,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
+    | '/onboarding'
+    | '/reset-password'
+    | '/signup'
     | '/assistente'
     | '/audioaulas'
     | '/aulas'
@@ -305,6 +354,7 @@ export interface FileRouteTypes {
     | '/flashcards'
     | '/materias'
     | '/noticias'
+    | '/perfil'
     | '/plano-estudo'
     | '/progresso'
     | '/questoes'
@@ -328,6 +378,10 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug/$bookId/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/login'
+    | '/onboarding'
+    | '/reset-password'
+    | '/signup'
     | '/assistente'
     | '/audioaulas'
     | '/aulas'
@@ -335,6 +389,7 @@ export interface FileRouteTypes {
     | '/flashcards'
     | '/materias'
     | '/noticias'
+    | '/perfil'
     | '/plano-estudo'
     | '/progresso'
     | '/questoes'
@@ -358,6 +413,10 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/login'
+    | '/onboarding'
+    | '/reset-password'
+    | '/signup'
     | '/_app/assistente'
     | '/_app/audioaulas'
     | '/_app/aulas'
@@ -366,6 +425,7 @@ export interface FileRouteTypes {
     | '/_app/flashcards'
     | '/_app/materias'
     | '/_app/noticias'
+    | '/_app/perfil'
     | '/_app/plano-estudo'
     | '/_app/progresso'
     | '/_app/questoes'
@@ -392,10 +452,42 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  OnboardingRoute: typeof OnboardingRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -457,6 +549,13 @@ declare module '@tanstack/react-router' {
       path: '/plano-estudo'
       fullPath: '/plano-estudo'
       preLoaderRoute: typeof AppPlanoEstudoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/perfil': {
+      id: '/_app/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AppPerfilRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/noticias': {
@@ -692,6 +791,7 @@ interface AppRouteChildren {
   AppFlashcardsRoute: typeof AppFlashcardsRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
+  AppPerfilRoute: typeof AppPerfilRoute
   AppPlanoEstudoRoute: typeof AppPlanoEstudoRoute
   AppProgressoRoute: typeof AppProgressoRoute
   AppQuestoesRoute: typeof AppQuestoesRoute
@@ -717,6 +817,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFlashcardsRoute: AppFlashcardsRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
   AppNoticiasRoute: AppNoticiasRouteWithChildren,
+  AppPerfilRoute: AppPerfilRoute,
   AppPlanoEstudoRoute: AppPlanoEstudoRoute,
   AppProgressoRoute: AppProgressoRoute,
   AppQuestoesRoute: AppQuestoesRoute,
@@ -737,6 +838,10 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
+  OnboardingRoute: OnboardingRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
