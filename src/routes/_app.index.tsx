@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Calendar, Sparkles, ArrowRight,
-  Library, Trophy, HelpCircle, Video, Newspaper,
+  Library, Trophy, Video, Newspaper,
   Target, FileText, BookOpen, CalendarDays, ClipboardList, Layers, ScrollText,
   GraduationCap, Zap, Compass,
 } from "lucide-react";
-import { CountdownExame } from "@/components/shared/CountdownExame";
-import { HomeGreeting } from "@/components/home/HomeGreeting";
+import { HomeTopCard } from "@/components/home/HomeTopCard";
 import { getNoticias } from "@/data/noticias";
 import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.jpg";
 import segundaFaseCover from "@/assets/oab-segunda-fase-cover.jpg";
