@@ -96,7 +96,7 @@ function ResumoTimeline() {
                       Capítulo {c.ordem}
                     </p>
                     <p className="font-display text-[15px] md:text-base leading-snug mt-1 break-words text-primary-foreground line-clamp-2">
-                      {c.titulo}
+                      {normalizarTitulo(c.titulo)}
                     </p>
                   </div>
                   <div className="h-8 w-8 rounded-full bg-gold/15 border border-gold/30 grid place-items-center shrink-0 group-hover:bg-gold group-hover:text-gold-foreground transition">
