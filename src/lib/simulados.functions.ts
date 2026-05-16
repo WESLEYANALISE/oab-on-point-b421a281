@@ -36,6 +36,63 @@ export const getSimulado = createServerFn({ method: "POST" })
     return { simulado: sim.data, questoes: qs.data ?? [] };
   });
 
+// ============ Tudo o que a prática precisa em UMA chamada ============
+// Retorna simulado + questões + id de uma tentativa já em andamento
+// (ou cria uma nova) + respostas já salvas, evitando 2 roundtrips.
+export const getSimuladoCompleto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const [sim, qs, existing] = await Promise.all([
+      supabase
+        .from("simulados")
+        .select("id, prova_numero, titulo, total_questoes, ano")
+        .eq("id", data.id)
+        .maybeSingle(),
+      supabase
+        .from("simulado_questoes")
+        .select("id, numero, enunciado, materia, alternativas, resposta_correta")
+        .eq("simulado_id", data.id)
+        .order("numero", { ascending: true }),
+      supabase
+        .from("simulado_tentativas")
+        .select("id, respostas")
+        .eq("user_id", userId)
+        .eq("simulado_id", data.id)
+        .is("concluido_em", null)
+        .order("iniciado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (sim.error) throw new Error(sim.error.message);
+    if (qs.error) throw new Error(qs.error.message);
+    if (!sim.data) throw new Error("Simulado não encontrado");
+
+    let tentativaId = existing.data?.id ?? null;
+    const respostasSalvas =
+      (existing.data?.respostas as Record<string, string>) ?? {};
+    if (!tentativaId) {
+      const ins = await supabase
+        .from("simulado_tentativas")
+        .insert({
+          user_id: userId,
+          simulado_id: data.id,
+          total: qs.data?.length ?? 0,
+        })
+        .select("id")
+        .single();
+      if (ins.error) throw new Error(ins.error.message);
+      tentativaId = ins.data.id;
+    }
+    return {
+      simulado: sim.data,
+      questoes: qs.data ?? [],
+      tentativaId: tentativaId!,
+      respostasSalvas,
+    };
+  });
+
 // ============ Iniciar tentativa ============
 export const iniciarTentativa = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
