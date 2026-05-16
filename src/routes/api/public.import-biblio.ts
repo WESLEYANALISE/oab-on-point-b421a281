@@ -50,7 +50,7 @@ export const Route = createFileRoute("/api/public/import-biblio")({
         for (const t of tables) {
           try {
             // Check existing count to skip if already imported
-            const { count } = await supabaseAdmin
+            const { count } = await (supabaseAdmin as any)
               .from(t)
               .select("id", { count: "exact", head: true });
             if ((count ?? 0) > 0) {
