@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Gavel, Search, Calendar, Sparkles, ArrowRight,
+  Search, Calendar, Sparkles, ArrowRight,
   Library, Trophy, HelpCircle, Video, Newspaper,
   Target, FileText, BookOpen, CalendarDays, ClipboardList, Layers, ScrollText,
   GraduationCap, Zap, Compass,
 } from "lucide-react";
 import { CountdownExame } from "@/components/shared/CountdownExame";
+import { HomeGreeting } from "@/components/home/HomeGreeting";
 import { getNoticias } from "@/data/noticias";
 import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.jpg";
 import segundaFaseCover from "@/assets/oab-segunda-fase-cover.jpg";
@@ -54,29 +55,9 @@ function AreaOABPage() {
 
   return (
     <div className="pb-10 space-y-7 md:space-y-10">
-      {/* ===== Header pill ===== */}
+      {/* ===== Greeting ===== */}
       <header className="px-4 pt-4 md:px-10 md:pt-6">
-        <div className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-toga text-primary-foreground px-3.5 py-3 md:px-6 md:py-4 flex items-center justify-between gap-2 shadow-lg shadow-black/30 border border-gold/15">
-          <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
-          <div className="relative flex items-center gap-2.5 min-w-0">
-            <div className="h-10 w-10 rounded-xl bg-gold/15 border border-gold/30 grid place-items-center shrink-0">
-              <Gavel className="h-4.5 w-4.5 text-gold" />
-            </div>
-            <div className="min-w-0">
-              <p className="font-display font-semibold text-[15px] md:text-lg leading-tight tracking-tight truncate">ÁREA OAB</p>
-              <p className="text-[9px] md:text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold mt-0.5">Exame da Ordem</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => window.dispatchEvent(new CustomEvent("open-pesquisar-sheet"))}
-            className="relative shrink-0 inline-flex items-center gap-1.5 px-3 py-2 sm:px-3.5 rounded-full bg-primary-foreground/10 border border-primary-foreground/25 text-primary-foreground text-xs font-medium hover:bg-primary-foreground/20 active:scale-95 transition"
-            aria-label="Buscar"
-          >
-            <Search className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Buscar</span>
-          </button>
-        </div>
+        <HomeGreeting />
       </header>
 
       {/* ===== Countdown Hero ===== */}
