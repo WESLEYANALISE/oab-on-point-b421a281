@@ -1,65 +1,59 @@
-## Diagnóstico
+Vou ajustar o pipeline para parar de depender só de marcador “Questão N” e fazer a Gemini trabalhar melhor com o texto bruto real do OCR.
 
-Confirmei no banco e nos logs do job: **todas as 80 questões dos simulados 45 e 46 estão marcadas como `falhou_extracao`** (por isso o "Raio-X" mostra "Sem matéria 80 · 100%" e na prática a questão aparece como "não disponível"). Os simulados 40–44 nem têm mais linhas em `simulados`.
+## Diagnóstico confirmado
 
-### Causa raiz
+- O OCR do simulado 46 tem questões que aparecem como número sozinho na linha, por exemplo `1`, e não como `# 1` nem `Questão 1`.
+- Por isso o código atual ainda registra: `OCR não contém marcador "Questão" para...`.
+- As 25 questões com “Sem matéria” são placeholders `falhou_extracao`; elas entram no Raio-X porque a tela está contando todas as linhas, inclusive falhas. Isso deve ser filtrado.
 
-O Mistral OCR não escreve "Questão 1", "Questão 2"… nos PDFs novos. Ele usa cabeçalhos Markdown:
+## Plano de correção
 
-```text
-# 1
-Os irmãos, Matilde, advogada…
+1. **Tornar o recorte do OCR mais robusto**
+   - Atualizar o detector de questões para reconhecer também número sozinho no começo da linha: `1`, `2`, `3` etc.
+   - Só aceitar esse número como questão quando o trecho seguinte tiver cara de questão objetiva, com alternativas `(A)`, `(B)`, `(C)`, `(D)`.
+   - Manter suporte a `# N`, `## N`, `Questão N`, `N.` e `N)`.
 
-# 2
-Helena concluiu seu mestrado…
-```
+2. **Extrair em grupos menores, como você pediu**
+   - Reduzir a extração para grupos de **5 questões por chamada** da Gemini.
+   - Cada chamada recebe um trecho contínuo do OCR bruto com margem antes/depois, não um texto inventado ou resumido.
+   - Se faltar alguma questão, tentar individualmente com uma janela maior do OCR.
 
-Mas o pipeline novo (após o ajuste anti-alucinação) só procura por marcadores que casem com a regex:
+3. **Adicionar fallback com Gemini lendo o OCR bruto quando o marcador falhar**
+   - Se o detector local não encontrar uma questão, chamar a Gemini só para localizar a questão no texto bruto, retornando âncoras literais do início/fim.
+   - Depois disso, usar essas âncoras para recortar o OCR e extrair a questão.
+   - A Gemini não vai criar questão; ela vai apenas localizar e formatar o que já está no OCR.
 
-```ts
-/quest[ãa]o\s*(\d{1,3})\b/gi   // src/lib/simulados-admin.functions.ts:395
-```
+4. **Melhorar a classificação de matéria**
+   - Exigir que toda questão extraída tenha uma matéria da lista permitida.
+   - Não salvar “Sem matéria” em questão válida.
+   - Se a Gemini não conseguir classificar com segurança, fazer uma segunda chamada curta só com o enunciado e alternativas para classificar a matéria.
+   - Se ainda assim falhar, a questão continua como `falhou_extracao`, em vez de virar “Sem matéria”.
 
-Resultado: `indexQuestionPositions` devolve mapa vazio → `sliceOcrForRange` devolve trecho vazio → todas as questões são reportadas como "OCR não contém marcador 'Questão' para: 1, 2, 3…" (exatamente o que está no log do job) → nada é extraído → todas viram placeholder `falhou_extracao`.
+5. **Corrigir o Raio-X**
+   - Alterar `getSimuladoOverview` para ignorar questões com `status='falhou_extracao'` no Raio-X.
+   - Assim o aluno não verá “Sem matéria” como matéria cobrada.
+   - O total exibido no Raio-X passa a representar apenas questões realmente extraídas.
 
-Os jobs antigos (10:35 do 45, 19:45 do 46) ainda funcionavam porque mandavam o OCR inteiro para o Gemini sem janelas — depois do fix anti-invenção essa rota deixou de existir.
+6. **Reprocessar provas já quebradas**
+   - Reusar o botão “Reextrair falhas”, mas agora com o pipeline novo.
+   - Para o simulado 46, ele deve tentar recuperar as 25 questões que hoje estão como `falhou_extracao`.
+   - Para simulados antigos com o mesmo problema, o mesmo botão poderá ser usado.
 
-## Correção
+## Arquivos a alterar
 
-### 1. Reconhecer todos os marcadores de questão no OCR (src/lib/simulados-admin.functions.ts)
+- `src/lib/simulados-admin.functions.ts`
+  - detector de marcadores;
+  - extração em grupos de 5;
+  - fallback de localização pela Gemini;
+  - reforço da classificação de matéria.
 
-Reescrever `indexQuestionPositions` para detectar, **no começo da linha**:
+- `src/lib/simulados.functions.ts`
+  - Raio-X deve excluir `falhou_extracao`.
 
-- `# N`, `## N`, `### N` (formato real do Mistral)
-- `Questão N` / `QUESTÃO N`
-- `N.` ou `N)` seguidos de espaço (fallback prudente)
+## Resultado esperado
 
-Ignorar matches dentro de "Lei nº 12", "Art. 5", "ADI 3.510" etc. usando a âncora de início de linha (`^` com `/m`) e exigindo que o número esteja em 1–80 e em sequência crescente quando possível.
-
-### 2. Reextrair os simulados quebrados
-
-Adicionar uma server function `reextrairFalhas(provaNumero)` (gêmea da `auditarEReextrair` que já existe) que:
-
-- carrega o último job `pronto` com `ocr_prova` salvo;
-- pega da tabela `simulado_questoes` todos os `numero` com `status='falhou_extracao'`;
-- apaga esses placeholders;
-- chama `extrairQuestoes` (agora com o índice corrigido) para esse mesmo conjunto;
-- reinsere com `status='ok'` (ou `anulada` quando o gabarito marca), ou recria placeholder se mesmo assim falhar;
-- recalcula `simulados.total_questoes`.
-
-### 3. Botão "Reextrair falhas" no admin
-
-Em `src/routes/_app.admin.simulados.tsx`, ao lado do botão "Auditar" já existente, adicionar **"Reextrair falhas"** (ícone `RefreshCw`) que dispara a função acima. Mostrar toast com `{reextraidas, restantes}`.
-
-Sem mudança de UI no app do aluno — a tela de simulado já trata `status='falhou_extracao'` corretamente; assim que as questões voltarem como `ok`, o Raio-X passa a mostrar matérias reais e a prática mostra o enunciado.
-
-### 4. Fluxo para o usuário
-
-1. Implemento a correção.
-2. Você vai em `/admin/simulados` e clica em **"Reextrair falhas"** nos simulados 45 e 46.
-3. Em ~1–2 min as 80 questões reais voltam, o Raio-X é recalculado automaticamente e a prática volta a abrir.
-
-## Arquivos tocados
-
-- `src/lib/simulados-admin.functions.ts` — `indexQuestionPositions` + nova `reextrairFalhas`.
-- `src/routes/_app.admin.simulados.tsx` — botão "Reextrair falhas".
+- Menos mensagens de “OCR não contém marcador”.
+- Menos questões perdidas.
+- Nenhuma questão inventada.
+- Raio-X sem “Sem matéria” indevido.
+- Questões extraídas a partir do texto bruto real do Mistral, em grupos menores e com validação literal contra o OCR.
