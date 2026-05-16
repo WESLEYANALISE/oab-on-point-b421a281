@@ -2,12 +2,17 @@ import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AvatarUploader } from "@/components/profile/AvatarUploader";
-import { useProfile, greetingFor } from "@/hooks/use-auth";
+import { useProfile, greetingFor, readCachedProfileOptimistic } from "@/hooks/use-auth";
 
 export function HomeGreeting() {
   const { data: profile, isPending } = useProfile();
+  // Fallback síncrono do cache para evitar pulse no primeiro paint.
+  const [cachedFirst] = useState(() => {
+    const c = readCachedProfileOptimistic();
+    return (c?.display_name || "").trim().split(/\s+/)[0] || "";
+  });
   const rawFirst = (profile?.display_name || "").trim().split(/\s+/)[0];
-  const firstName = rawFirst || (isPending ? "" : "Estudante");
+  const firstName = rawFirst || cachedFirst || (isPending ? "" : "Estudante");
   // Saudação só é calculada no cliente para evitar mismatch de fuso/hidratação.
   const [greet, setGreet] = useState<string | null>(null);
   useEffect(() => {
