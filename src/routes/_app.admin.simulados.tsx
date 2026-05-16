@@ -7,6 +7,7 @@ import { listProvasComStatus, gerarSimulado, excluirSimulado } from "@/lib/simul
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_app/admin/simulados")({
   component: AdminSimulados,
@@ -14,13 +15,18 @@ export const Route = createFileRoute("/_app/admin/simulados")({
 
 function AdminSimulados() {
   const qc = useQueryClient();
+  const { session } = useAuth();
   const listFn = useServerFn(listProvasComStatus);
   const gerarFn = useServerFn(gerarSimulado);
   const delFn = useServerFn(excluirSimulado);
+  const authHeaders = session?.access_token
+    ? { Authorization: `Bearer ${session.access_token}` }
+    : undefined;
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-provas"],
-    queryFn: () => listFn(),
+    enabled: !!authHeaders,
+    queryFn: () => listFn({ headers: authHeaders }),
     refetchInterval: (q) => {
       const list = q.state.data as Awaited<ReturnType<typeof listFn>> | undefined;
       const algum = list?.some((p) => p.simulado?.status === "gerando");
@@ -31,7 +37,10 @@ function AdminSimulados() {
   const [gerandoNum, setGerandoNum] = useState<number | null>(null);
 
   const gerar = useMutation({
-    mutationFn: (provaNumero: number) => gerarFn({ data: { provaNumero } }),
+    mutationFn: (provaNumero: number) => {
+      if (!authHeaders) throw new Error("Sessão expirada. Entre novamente.");
+      return gerarFn({ data: { provaNumero }, headers: authHeaders });
+    },
     onMutate: (n) => setGerandoNum(n),
     onSuccess: () => {
       toast.success("Simulado gerado com sucesso!");
@@ -43,7 +52,10 @@ function AdminSimulados() {
   });
 
   const excluir = useMutation({
-    mutationFn: (id: string) => delFn({ data: { id } }),
+    mutationFn: (id: string) => {
+      if (!authHeaders) throw new Error("Sessão expirada. Entre novamente.");
+      return delFn({ data: { id }, headers: authHeaders });
+    },
     onSuccess: () => {
       toast.success("Simulado excluído");
       qc.invalidateQueries({ queryKey: ["admin-provas"] });
