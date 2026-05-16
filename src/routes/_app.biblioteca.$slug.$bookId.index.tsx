@@ -42,7 +42,7 @@ function BookDetail() {
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-base font-semibold text-foreground truncate">{cfg.title}</h1>
+          <h1 className="font-sans text-base font-semibold text-foreground truncate">{cfg.title}</h1>
         </div>
       </header>
 
@@ -52,23 +52,16 @@ function BookDetail() {
             {capa ? (
               <img src={capa} alt={titulo} width={112} height={160} loading="eager" decoding="async" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground p-2 text-center">{titulo}</div>
+              <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground p-2 text-center font-sans">{titulo}</div>
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-bold text-foreground leading-tight">{titulo}</h2>
+            <h2 className="font-sans text-lg font-bold text-foreground leading-tight">{titulo}</h2>
             {autor && <p className="text-sm text-muted-foreground mt-1">{autor}</p>}
           </div>
         </div>
 
-        {sobre && (
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-foreground mb-2">Sobre</h3>
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{sobre}</p>
-          </div>
-        )}
-
-        <div className="mt-auto sticky bottom-0 bg-background pt-4 pb-6 grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 mb-6">
           <a
             href={download ?? "#"}
             target="_blank"
@@ -85,6 +78,13 @@ function BookDetail() {
             <BookOpen className="w-4 h-4" /> Ler
           </button>
         </div>
+
+        {sobre && (
+          <div className="mb-6">
+            <h3 className="font-sans text-sm font-semibold text-foreground mb-2">Sobre</h3>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{sobre}</p>
+          </div>
+        )}
       </div>
     </div>
   );
