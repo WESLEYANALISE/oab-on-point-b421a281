@@ -673,7 +673,16 @@ export const validarFinal = createServerFn({ method: "POST" })
         .select("numero")
         .eq("simulado_id", simuladoId);
       const presentesFinal = new Set((existentesFinal.data ?? []).map((r) => r.numero));
-      const placeholders: Array<Record<string, unknown>> = [];
+      const placeholders: Array<{
+        simulado_id: string;
+        numero: number;
+        enunciado: string;
+        materia: string | null;
+        alternativas: { A: string; B: string; C: string; D: string };
+        resposta_correta: string | null;
+        status: string;
+        nota_oficial: string | null;
+      }> = [];
       for (let n = 1; n <= total; n++) {
         if (!presentesFinal.has(n)) {
           placeholders.push({
