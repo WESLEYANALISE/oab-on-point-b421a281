@@ -31,6 +31,23 @@ function CapituloView() {
   const prev = idx > 0 ? capitulos[idx - 1] : null;
   const next = idx >= 0 && idx < capitulos.length - 1 ? capitulos[idx + 1] : null;
 
+  const conteudoFormatado = useMemo(() => {
+    let md = (atual?.conteudo_markdown ?? "").replace(/\r\n/g, "\n").trim();
+    if (!md) return "";
+    // Remove H1 inicial repetido (mesmo texto do título do capítulo)
+    md = md.replace(/^#\s+.+\n+/, "");
+    // Transforma menções a artigos em citação (blockquote) na primeira linha em que aparecerem isoladas
+    md = md.replace(
+      /(^|\n)((?:Art(?:igo)?\.?\s*\d+[ºoO]?[^\n]{0,400}))(\n|$)/g,
+      (_m, pre, frase, post) => {
+        // Não cita se já estiver dentro de bloco
+        if (/^[>\s]*$/.test(pre)) return `${pre}> ${frase}${post}`;
+        return `${pre}> ${frase}${post}`;
+      },
+    );
+    return md;
+  }, [atual?.conteudo_markdown]);
+
   if (isPending || !data) {
     return (
       <div className="px-4 py-12 text-center text-muted-foreground">
@@ -99,7 +116,7 @@ function CapituloView() {
         style={{ fontSize: `${scale}rem` }}
       >
         <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-          {atual.conteudo_markdown ?? ""}
+          {conteudoFormatado}
         </ReactMarkdown>
       </article>
 
