@@ -1,5 +1,6 @@
 import { Outlet, createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { DesktopSidebar } from "@/components/layout/DesktopSidebar";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
