@@ -24,7 +24,7 @@ async function chamarGemini(system: string, user: string): Promise<string> {
       contents: [{ role: "user", parts: [{ text: user }] }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 2048,
+        maxOutputTokens: 8192,
       },
     }),
   });
