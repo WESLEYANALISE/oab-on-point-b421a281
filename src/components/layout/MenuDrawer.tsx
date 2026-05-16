@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, BookOpen, FileText, Layers, ClipboardList, Target, Sparkles, Newspaper, Award, Scale, Calendar, TrendingUp, Settings, Library, Headphones } from "lucide-react";
+import { Menu, Home, BookOpen, FileText, Layers, ClipboardList, Target, Sparkles, Newspaper, Award, Scale, Calendar, TrendingUp, Settings, Library, Headphones, User, Crown, ChevronRight, LogOut, HelpCircle } from "lucide-react";
 
 const groups = [
   {
@@ -40,12 +40,21 @@ const groups = [
   },
 ] as const;
 
+const accountItems = [
+  { to: "/perfil", label: "Ver perfil", sub: "Conta e dados pessoais", icon: User, accent: "bg-gold/15 text-gold" },
+  { to: "/planos", label: "Ver planos", sub: "Upgrade e assinatura", icon: Crown, accent: "bg-primary/15 text-primary" },
+] as const;
+
 export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
-      <SheetContent side="right" className="w-[88vw] max-w-sm p-0 bg-sidebar text-sidebar-foreground border-sidebar-border">
+      <SheetContent
+        side="right"
+        className="w-[88vw] max-w-sm p-0 bg-sidebar text-sidebar-foreground border-sidebar-border flex flex-col"
+      >
         <SheetHeader className="px-5 py-5 border-b border-sidebar-border">
           <SheetTitle asChild>
             <div className="flex items-center gap-2.5">
@@ -59,7 +68,29 @@ export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
             </div>
           </SheetTitle>
         </SheetHeader>
-        <nav className="overflow-y-auto h-[calc(100vh-88px)] px-3 py-4 space-y-5">
+
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+          {/* Conta — topo destacado */}
+          <div className="space-y-2">
+            {accountItems.map(({ to, label, sub, icon: Icon, accent }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={close}
+                className="flex items-center gap-3 p-3 rounded-xl bg-sidebar-accent/40 border border-sidebar-border hover:bg-sidebar-accent transition-colors"
+              >
+                <div className={`h-10 w-10 rounded-lg grid place-items-center ${accent}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold leading-tight">{label}</p>
+                  <p className="text-[11px] text-sidebar-foreground/60 truncate">{sub}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-sidebar-foreground/40 shrink-0" />
+              </Link>
+            ))}
+          </div>
+
           {groups.map((g) => (
             <div key={g.label}>
               <p className="px-3 mb-2 text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/50 font-semibold">{g.label}</p>
@@ -68,7 +99,7 @@ export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
                   <li key={`${g.label}-${label}`}>
                     <Link
                       to={to}
-                      onClick={() => setOpen(false)}
+                      onClick={close}
                       className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-sidebar-foreground/85 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                     >
                       <Icon className="h-4 w-4" />
@@ -79,9 +110,16 @@ export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
               </ul>
             </div>
           ))}
-          <div className="px-3 pt-2">
-            <button className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent transition-colors">
+
+          <div className="pt-2 border-t border-sidebar-border space-y-0.5">
+            <button className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors">
               <Settings className="h-4 w-4" /> Ajustes
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors">
+              <HelpCircle className="h-4 w-4" /> Ajuda e suporte
+            </button>
+            <button className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm text-destructive hover:bg-sidebar-accent transition-colors">
+              <LogOut className="h-4 w-4" /> Sair
             </button>
           </div>
         </nav>
