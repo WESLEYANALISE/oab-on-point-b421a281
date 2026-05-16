@@ -89,15 +89,14 @@ function hasCachedSession(): boolean {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  // Se já há sessão cacheada, não bloqueamos a UI — começamos com loading=false.
-  const [loading, setLoading] = useState<boolean>(() => !hasCachedSession());
+  const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
   const lastUserIdRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
 
-    // 1) Hidrata sessão do localStorage imediatamente.
+    // 1) Hidrata a sessão antes de liberar os guards de rota.
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       if (cancelled) return;
       setSession(s);
