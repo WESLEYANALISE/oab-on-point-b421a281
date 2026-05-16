@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Target, Loader2, ChevronRight } from "lucide-react";
+import { Target, ChevronRight } from "lucide-react";
 import { listSimulados } from "@/lib/simulados.functions";
 
 export const Route = createFileRoute("/_app/simulados/")({
@@ -16,9 +16,11 @@ export const Route = createFileRoute("/_app/simulados/")({
 
 function SimuladosPage() {
   const fetchFn = useServerFn(listSimulados);
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ["simulados-list"],
     queryFn: () => fetchFn(),
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
   });
 
   return (
