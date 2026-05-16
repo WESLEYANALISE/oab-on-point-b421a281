@@ -14,7 +14,315 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      "BIBLIOTECA-CLASSICOS": {
+        Row: {
+          analise_status: string | null
+          area: string | null
+          aula: string | null
+          autor: string | null
+          beneficios: string | null
+          "Capa-area": string | null
+          capitulos_gerados: number | null
+          download: string | null
+          id: number
+          imagem: string | null
+          link: string | null
+          livro: string | null
+          questoes_resumo: Json | null
+          resumo_capitulos: Json | null
+          resumo_gerado_em: string | null
+          sobre: string | null
+          total_capitulos: number | null
+          total_paginas: number | null
+          total_temas: number | null
+          url_videoaula: string | null
+        }
+        Insert: {
+          analise_status?: string | null
+          area?: string | null
+          aula?: string | null
+          autor?: string | null
+          beneficios?: string | null
+          "Capa-area"?: string | null
+          capitulos_gerados?: number | null
+          download?: string | null
+          id?: number
+          imagem?: string | null
+          link?: string | null
+          livro?: string | null
+          questoes_resumo?: Json | null
+          resumo_capitulos?: Json | null
+          resumo_gerado_em?: string | null
+          sobre?: string | null
+          total_capitulos?: number | null
+          total_paginas?: number | null
+          total_temas?: number | null
+          url_videoaula?: string | null
+        }
+        Update: {
+          analise_status?: string | null
+          area?: string | null
+          aula?: string | null
+          autor?: string | null
+          beneficios?: string | null
+          "Capa-area"?: string | null
+          capitulos_gerados?: number | null
+          download?: string | null
+          id?: number
+          imagem?: string | null
+          link?: string | null
+          livro?: string | null
+          questoes_resumo?: Json | null
+          resumo_capitulos?: Json | null
+          resumo_gerado_em?: string | null
+          sobre?: string | null
+          total_capitulos?: number | null
+          total_paginas?: number | null
+          total_temas?: number | null
+          url_videoaula?: string | null
+        }
+        Relationships: []
+      }
+      "BIBLIOTECA-ESTUDOS": {
+        Row: {
+          Área: string | null
+          aula: string | null
+          "Capa-area": string | null
+          "Capa-livro": string | null
+          Download: string | null
+          id: number
+          Link: string | null
+          Ordem: number | null
+          Sobre: string | null
+          Tema: string | null
+          url_capa_gerada: string | null
+        }
+        Insert: {
+          Área?: string | null
+          aula?: string | null
+          "Capa-area"?: string | null
+          "Capa-livro"?: string | null
+          Download?: string | null
+          id?: number
+          Link?: string | null
+          Ordem?: number | null
+          Sobre?: string | null
+          Tema?: string | null
+          url_capa_gerada?: string | null
+        }
+        Update: {
+          Área?: string | null
+          aula?: string | null
+          "Capa-area"?: string | null
+          "Capa-livro"?: string | null
+          Download?: string | null
+          id?: number
+          Link?: string | null
+          Ordem?: number | null
+          Sobre?: string | null
+          Tema?: string | null
+          url_capa_gerada?: string | null
+        }
+        Relationships: []
+      }
+      "BIBLIOTECA-FORA-DA-TOGA": {
+        Row: {
+          area: string | null
+          aula: string | null
+          autor: string | null
+          "capa-area": string | null
+          "capa-livro": string | null
+          download: string | null
+          id: number
+          link: string | null
+          livro: string | null
+          sobre: string | null
+        }
+        Insert: {
+          area?: string | null
+          aula?: string | null
+          autor?: string | null
+          "capa-area"?: string | null
+          "capa-livro"?: string | null
+          download?: string | null
+          id?: number
+          link?: string | null
+          livro?: string | null
+          sobre?: string | null
+        }
+        Update: {
+          area?: string | null
+          aula?: string | null
+          autor?: string | null
+          "capa-area"?: string | null
+          "capa-livro"?: string | null
+          download?: string | null
+          id?: number
+          link?: string | null
+          livro?: string | null
+          sobre?: string | null
+        }
+        Relationships: []
+      }
+      "BIBLIOTECA-LIDERANÇA": {
+        Row: {
+          area: string | null
+          aula: string | null
+          autor: string | null
+          beneficios: string | null
+          "Capa-area": string | null
+          download: string | null
+          id: number
+          imagem: string | null
+          link: string | null
+          livro: string | null
+          questoes_resumo: Json | null
+          resumo_capitulos: Json | null
+          resumo_gerado_em: string | null
+          sobre: string | null
+        }
+        Insert: {
+          area?: string | null
+          aula?: string | null
+          autor?: string | null
+          beneficios?: string | null
+          "Capa-area"?: string | null
+          download?: string | null
+          id?: number
+          imagem?: string | null
+          link?: string | null
+          livro?: string | null
+          questoes_resumo?: Json | null
+          resumo_capitulos?: Json | null
+          resumo_gerado_em?: string | null
+          sobre?: string | null
+        }
+        Update: {
+          area?: string | null
+          aula?: string | null
+          autor?: string | null
+          beneficios?: string | null
+          "Capa-area"?: string | null
+          download?: string | null
+          id?: number
+          imagem?: string | null
+          link?: string | null
+          livro?: string | null
+          questoes_resumo?: Json | null
+          resumo_capitulos?: Json | null
+          resumo_gerado_em?: string | null
+          sobre?: string | null
+        }
+        Relationships: []
+      }
+      "BIBLIOTECA-ORATORIA": {
+        Row: {
+          area: string | null
+          aula: string | null
+          autor: string | null
+          beneficios: string | null
+          "Capa-area": string | null
+          download: string | null
+          id: number
+          imagem: string | null
+          link: string | null
+          livro: string | null
+          questoes_resumo: Json | null
+          resumo_capitulos: Json | null
+          resumo_gerado_em: string | null
+          sobre: string | null
+        }
+        Insert: {
+          area?: string | null
+          aula?: string | null
+          autor?: string | null
+          beneficios?: string | null
+          "Capa-area"?: string | null
+          download?: string | null
+          id?: number
+          imagem?: string | null
+          link?: string | null
+          livro?: string | null
+          questoes_resumo?: Json | null
+          resumo_capitulos?: Json | null
+          resumo_gerado_em?: string | null
+          sobre?: string | null
+        }
+        Update: {
+          area?: string | null
+          aula?: string | null
+          autor?: string | null
+          beneficios?: string | null
+          "Capa-area"?: string | null
+          download?: string | null
+          id?: number
+          imagem?: string | null
+          link?: string | null
+          livro?: string | null
+          questoes_resumo?: Json | null
+          resumo_capitulos?: Json | null
+          resumo_gerado_em?: string | null
+          sobre?: string | null
+        }
+        Relationships: []
+      }
+      "BIBLIOTECA-POLITICA": {
+        Row: {
+          area: string | null
+          aula: string | null
+          autor: string | null
+          beneficios: string | null
+          "Capa-area": string | null
+          capitulos_gerados: number | null
+          download: string | null
+          id: number
+          imagem: string | null
+          link: string | null
+          livro: string | null
+          questoes_resumo: Json | null
+          resumo_capitulos: Json | null
+          resumo_gerado_em: string | null
+          sobre: string | null
+          total_capitulos: number | null
+        }
+        Insert: {
+          area?: string | null
+          aula?: string | null
+          autor?: string | null
+          beneficios?: string | null
+          "Capa-area"?: string | null
+          capitulos_gerados?: number | null
+          download?: string | null
+          id?: number
+          imagem?: string | null
+          link?: string | null
+          livro?: string | null
+          questoes_resumo?: Json | null
+          resumo_capitulos?: Json | null
+          resumo_gerado_em?: string | null
+          sobre?: string | null
+          total_capitulos?: number | null
+        }
+        Update: {
+          area?: string | null
+          aula?: string | null
+          autor?: string | null
+          beneficios?: string | null
+          "Capa-area"?: string | null
+          capitulos_gerados?: number | null
+          download?: string | null
+          id?: number
+          imagem?: string | null
+          link?: string | null
+          livro?: string | null
+          questoes_resumo?: Json | null
+          resumo_capitulos?: Json | null
+          resumo_gerado_em?: string | null
+          sobre?: string | null
+          total_capitulos?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

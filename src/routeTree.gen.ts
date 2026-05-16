@@ -28,6 +28,7 @@ import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
 import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
+import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -123,13 +124,18 @@ const AppMateriasSlugRoute = AppMateriasSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => AppMateriasRoute,
 } as any)
+const AppBibliotecaSlugRoute = AppBibliotecaSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => AppBibliotecaRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
-  '/biblioteca': typeof AppBibliotecaRoute
+  '/biblioteca': typeof AppBibliotecaRouteWithChildren
   '/desktop': typeof AppDesktopRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/reta-final': typeof AppRetaFinalRoute
   '/simulados': typeof AppSimuladosRoute
   '/vade-mecum': typeof AppVadeMecumRoute
+  '/biblioteca/$slug': typeof AppBibliotecaSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
 }
@@ -148,7 +155,7 @@ export interface FileRoutesByTo {
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
-  '/biblioteca': typeof AppBibliotecaRoute
+  '/biblioteca': typeof AppBibliotecaRouteWithChildren
   '/desktop': typeof AppDesktopRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/simulados': typeof AppSimuladosRoute
   '/vade-mecum': typeof AppVadeMecumRoute
   '/': typeof AppIndexRoute
+  '/biblioteca/$slug': typeof AppBibliotecaSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
 }
@@ -170,7 +178,7 @@ export interface FileRoutesById {
   '/_app/assistente': typeof AppAssistenteRoute
   '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRoute
-  '/_app/biblioteca': typeof AppBibliotecaRoute
+  '/_app/biblioteca': typeof AppBibliotecaRouteWithChildren
   '/_app/desktop': typeof AppDesktopRoute
   '/_app/flashcards': typeof AppFlashcardsRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/_app/simulados': typeof AppSimuladosRoute
   '/_app/vade-mecum': typeof AppVadeMecumRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRoute
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
   '/_app/noticias/$id': typeof AppNoticiasIdRoute
 }
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/simulados'
     | '/vade-mecum'
+    | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -225,6 +235,7 @@ export interface FileRouteTypes {
     | '/simulados'
     | '/vade-mecum'
     | '/'
+    | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
   id:
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/_app/simulados'
     | '/_app/vade-mecum'
     | '/_app/'
+    | '/_app/biblioteca/$slug'
     | '/_app/materias/$slug'
     | '/_app/noticias/$id'
   fileRoutesById: FileRoutesById
@@ -389,8 +401,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMateriasSlugRouteImport
       parentRoute: typeof AppMateriasRoute
     }
+    '/_app/biblioteca/$slug': {
+      id: '/_app/biblioteca/$slug'
+      path: '/$slug'
+      fullPath: '/biblioteca/$slug'
+      preLoaderRoute: typeof AppBibliotecaSlugRouteImport
+      parentRoute: typeof AppBibliotecaRoute
+    }
   }
 }
+
+interface AppBibliotecaRouteChildren {
+  AppBibliotecaSlugRoute: typeof AppBibliotecaSlugRoute
+}
+
+const AppBibliotecaRouteChildren: AppBibliotecaRouteChildren = {
+  AppBibliotecaSlugRoute: AppBibliotecaSlugRoute,
+}
+
+const AppBibliotecaRouteWithChildren = AppBibliotecaRoute._addFileChildren(
+  AppBibliotecaRouteChildren,
+)
 
 interface AppMateriasRouteChildren {
   AppMateriasSlugRoute: typeof AppMateriasSlugRoute
@@ -420,7 +451,7 @@ interface AppRouteChildren {
   AppAssistenteRoute: typeof AppAssistenteRoute
   AppAudioaulasRoute: typeof AppAudioaulasRoute
   AppAulasRoute: typeof AppAulasRoute
-  AppBibliotecaRoute: typeof AppBibliotecaRoute
+  AppBibliotecaRoute: typeof AppBibliotecaRouteWithChildren
   AppDesktopRoute: typeof AppDesktopRoute
   AppFlashcardsRoute: typeof AppFlashcardsRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
@@ -439,7 +470,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssistenteRoute: AppAssistenteRoute,
   AppAudioaulasRoute: AppAudioaulasRoute,
   AppAulasRoute: AppAulasRoute,
-  AppBibliotecaRoute: AppBibliotecaRoute,
+  AppBibliotecaRoute: AppBibliotecaRouteWithChildren,
   AppDesktopRoute: AppDesktopRoute,
   AppFlashcardsRoute: AppFlashcardsRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
