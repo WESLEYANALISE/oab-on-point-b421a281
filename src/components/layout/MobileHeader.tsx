@@ -1,5 +1,5 @@
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
-import { Scale, Search, Bell, ArrowLeft } from "lucide-react";
+import { Link, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
+import { Scale, Search, Bell, ArrowLeft, Home } from "lucide-react";
 
 export function MobileHeader() {
   const { pathname } = useLocation();
