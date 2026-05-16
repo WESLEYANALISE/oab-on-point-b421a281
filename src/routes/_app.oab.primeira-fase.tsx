@@ -293,7 +293,7 @@ function TrilhaTimeline() {
                 className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3.5 hover:border-gold/35 hover:-translate-y-0.5 transition-all shadow-sm"
               >
                 <div className="h-10 w-10 rounded-xl bg-gold/12 border border-gold/25 grid place-items-center shrink-0">
-                  <item.icon className="h-4.5 w-4.5 text-gold" strokeWidth={2} />
+                  <item.icon className="h-[18px] w-[18px] text-gold" strokeWidth={2} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-display font-semibold text-[14px] md:text-[15px] leading-tight tracking-tight">{item.label}</p>
