@@ -91,7 +91,34 @@ export function DesktopSidebar() {
           </div>
         ))}
       </nav>
-      <div className="px-4 py-4 border-t border-sidebar-border">
+      <div className="px-4 py-4 border-t border-sidebar-border space-y-3">
+        <div className="flex items-center justify-between gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/40 px-3 py-2">
+          <div className="flex items-center gap-2 text-xs text-sidebar-foreground/70">
+            <Type className="h-3.5 w-3.5" />
+            <span>Fonte</span>
+            <span className="text-sidebar-foreground/50">{Math.round(scale * 100)}%</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={decrease}
+              disabled={!canDecrease}
+              aria-label="Diminuir fonte"
+              className="h-7 w-7 grid place-items-center rounded-md border border-sidebar-border hover:bg-sidebar-accent disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={increase}
+              disabled={!canIncrease}
+              aria-label="Aumentar fonte"
+              className="h-7 w-7 grid place-items-center rounded-md border border-sidebar-border hover:bg-sidebar-accent disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
         <div className="rounded-lg bg-gradient-toga p-4">
           <p className="font-display text-lg leading-tight text-primary-foreground">Próximo Exame</p>
           <p className="text-xs text-primary-foreground/80 mt-1">42º Exame · 1ª fase</p>
