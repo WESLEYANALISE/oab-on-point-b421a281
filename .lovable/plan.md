@@ -1,73 +1,75 @@
-## Auditoria de cache / performance
+## Causa raiz da invenção
 
-Mapeamento atual:
+O OCR do Mistral está OK (cada prova gera ~105.000 caracteres de texto). O problema está em `src/lib/simulados-admin.functions.ts`, função `extrairQuestoes()`:
 
-**O que JÁ está bom**
-- Router: `defaultPreload: "intent"` + `defaultPreloadDelay: 50` + `defaultPreloadStaleTime: 0` em `src/router.tsx` (preload no hover já funciona).
-- `useProfile` e `useIsAdmin` com cache em `localStorage` + `initialData` (acabamos de fazer).
-- Biblioteca usa `queryOptions` reutilizáveis com `staleTime`/`gcTime` corretos.
-- Imagens das `FaseCard` da home com `width/height/fetchPriority`.
-- Notícias/matérias são módulos estáticos (sem rede).
-- Várias rotas (provas, simulados, biblioteca) já passam `staleTime` e desligam `refetchOnWindowFocus`.
+```ts
+${ocrProva.slice(0, 90000)}   // ← linha 412
+```
 
-**O que está faltando / pode melhorar**
+O texto é **truncado em 90.000 caracteres** antes de ser enviado ao Gemini. As questões 68–80 das provas ficam fora do trecho enviado. O prompt pede "extraia as questões 68 a 80" mas o documento que chega ao Gemini não as contém — então o Gemini **alucina** enunciados padronizados ("Município Beta… IPVA…", "sociedade empresária Theta Ltda…") em vez de retornar vazio.
 
-1. **Sem defaults globais no `QueryClient`** — `new QueryClient()` sem `defaultOptions`. Toda query que esquecer de declarar `staleTime` cai no default 0 (refetch a cada montagem). Risco real: `SimuladoQueueIndicator`, `SimuladoProgressModal`, alguns useQuery em rotas que não setam tudo.
-2. **Cache do React Query NÃO persiste** — recarregar a aba zera tudo (simulados, biblioteca, provas). Mesmo problema que tínhamos com o nome do usuário, só que para todos os dados.
-3. **Rotas usam `useQuery` no componente, não `loader` + `ensureQueryData`** — com isso o `preload: "intent"` não consegue pré-buscar dados na navegação (só pré-carrega o chunk JS). Resultado: clicou → renderiza skeleton → faz fetch.
-4. **Sem invalidação coordenada** após `salvarResposta`/`finalizarTentativa`, então listas de tentativas e overviews podem ficar com dado velho até bater o `staleTime`.
-5. **Sem `placeholderData: keepPreviousData`** em listas paginadas/filtradas (biblioteca quando troca de área pisca em branco).
+Confirmações no banco:
+- Todas as 7 provas têm OCR > 100k chars (não cabe nos 90k).
+- 100% das questões inventadas estão na faixa 60–80 de cada prova.
+- Hoje as 80 questões estão marcadas `status='ok'` (não dá pra distinguir verdadeiras de inventadas pela coluna status).
 
-## Plano
+## Correções no pipeline (nunca mais inventar)
 
-Foco: maximizar cache hit e eliminar refetches/remounts desnecessários, sem mudar regra de negócio.
+### 1) Eliminar o truncamento — enviar só a janela certa
+Em `extrairQuestoes()`, antes de chamar o Gemini:
+- localizar no `ocrProva` as posições dos marcadores `Questão <n>` para cada número do lote;
+- recortar a janela `[inicio-200 .. fim+200]` do OCR original;
+- se a janela passar de 90k, dividir o lote em sub-lotes menores (re-chamar `geminiExtractJson` para cada metade) em vez de truncar.
 
-### 1. `src/router.tsx` — defaults globais + persistência
+Assim o Gemini sempre recebe **o texto literal** das questões pedidas.
 
-- Adicionar `defaultOptions.queries`:
-  - `staleTime: 60_000` (1 min — padrão saudável)
-  - `gcTime: 30 * 60_000`
-  - `refetchOnWindowFocus: false`
-  - `refetchOnReconnect: false`
-  - `retry: 1`
-- Instalar `@tanstack/query-sync-storage-persister` + `@tanstack/react-query-persist-client` e ligar `persistQueryClient` no `localStorage` (chave `oab-rq-cache`, `maxAge: 24h`, `buster` com versão do app).
-- Excluir da persistência queries com chave começando em `["is-admin"]`, `["profile"]` (já têm cache próprio) e jobs em tempo real (`["simulado-job"]`, `["simulado-queue"]`) via `dehydrateOptions.shouldDehydrateQuery`.
+### 2) Reforçar o prompt anti-alucinação
+Trocar o `user` prompt de `extrairQuestoes` por:
 
-### 2. `src/routes/__root.tsx` — usar `PersistQueryClientProvider`
+> "Extraia apenas questões que aparecem LITERALMENTE no texto abaixo. Se uma questão pedida não estiver presente, OMITA-A do JSON (não invente, não reformule, não complete). Copie enunciado e alternativas como aparecem no documento."
 
-Trocar `QueryClientProvider` por `PersistQueryClientProvider` recebendo o persister do router context. Mantém o `queryClient` por request (SSR-safe).
+E no `system`: "É proibido criar conteúdo. Toda questão retornada deve poder ser encontrada palavra por palavra no texto fornecido."
 
-### 3. Converter rotas pesadas para `loader` + `ensureQueryData`
+### 3) Validador anti-invenção (server-side)
+Após o Gemini responder, antes de inserir em `simulado_questoes`:
+- Tomar os primeiros 60 caracteres significativos do `enunciado` retornado.
+- Procurar no `ocrProva` original (sem truncar).
+- Se não encontrar (normalizando espaços/acentos), descartar a questão e logar `"invenção descartada na Q<n>"`.
 
-Para aproveitar `preload: "intent"` (busca dados ao passar o mouse / tocar):
-- `src/routes/_app.simulados.index.tsx` — loader chama `ensureQueryData` da lista de simulados, raio-X e progresso.
-- `src/routes/_app.simulados.$slug.index.tsx` — loader pré-carrega overview + histórico + edital.
-- `src/routes/_app.provas.index.tsx` e `_app.provas.$numero.tsx` — loader com `ensureQueryData`.
-- `src/routes/_app.biblioteca.index.tsx`, `_app.biblioteca.$slug.index.tsx`, `_app.biblioteca.$slug.$bookId.index.tsx` — loader pré-carrega counts/áreas/livro.
+Isso transforma o sistema em fail-safe: questão inventada nunca chega ao banco.
 
-Componentes continuam usando `useQuery` com as mesmas `queryOptions` — sem refactor de UI.
+### 4) Validar distribuição final do edital OAB
+Em `validarFinal`, antes de marcar etapa `pronto`, conferir:
+- Ética ≥ 7 e ≤ 9
+- Filosofia do Direito ≥ 1 e ≤ 3
+- Total `ok` ≥ 70 de 80
 
-### 4. `placeholderData: keepPreviousData` em listas filtradas
+Se reprovar, marcar etapa `erro` com mensagem clara em vez de finalizar.
 
-- `livrosQueryOptions` em `_app.biblioteca.$slug.index.tsx` quando troca área/sort/paginação.
+## Limpeza dos simulados já existentes
 
-### 5. Invalidação após mutations
+### 5) Detectar e marcar as questões inventadas atuais
+Criar uma server function admin `marcarInventadas(prova_numero)` que:
+1. Lê `simulado_jobs.ocr_prova` da prova.
+2. Para cada questão `status='ok'`, testa se um trecho do enunciado aparece no OCR original (mesma checagem do passo 3).
+3. As que falharem viram `status='falhou_extracao'` com `enunciado='Esta questão precisa ser reextraída.'` e `materia=null`.
 
-- Em `salvarResposta`/`finalizarTentativa`/`reiniciarTentativa`, invalidar `["simulado-overview", slug]`, `["simulado-historico", slug]`, `["minhas-tentativas"]`, `["progresso-usuario"]`.
+Roda uma vez por prova (40 a 46). Resultado esperado: 50–80 questões reclassificadas no total.
 
-### 6. `SimuladoQueueIndicator` / `SimuladoProgressModal`
+### 6) Reprocessar os números marcados
+Adicionar botão admin "Reextrair faltantes desta prova" que chama o pipeline novo (passos 1–4) apenas para os números cujo `status != 'ok'`. As corretas que já existem ficam intocadas.
 
-- Manter `refetchInterval` para polling, mas marcar essas queries para NÃO persistir (no shouldDehydrateQuery) — não faz sentido restaurar status de job antigo.
+### 7) Excluir do raio-X tudo que não for `status='ok'`
+Em `ExamesTab` e na agregação por matéria do raio-X, filtrar `status = 'ok'`. Enquanto as provas não forem reextraídas, o raio-X mostra menos questões mas só as verdadeiras — o ranking de Ética vs Tributário volta ao normal automaticamente.
 
-## O que NÃO muda
+## Ordem de execução proposta
 
-- Sem mudanças em RLS, migrations, server functions de negócio.
-- Sem mudança de UI/UX.
-- Sem mudança em auth, rotas, ou regras de admin.
+1. Aplicar as 4 correções no pipeline (`extrairQuestoes`, prompt, validador, validação final).
+2. Adicionar filtro `status='ok'` no raio-X.
+3. Rodar `marcarInventadas` nas 7 provas (40–46).
+4. Você revisa o admin e dispara "Reextrair faltantes" prova por prova.
 
-## Resultado esperado
+## O que preciso confirmar
 
-- Recarregar a aba mantém listas/detalhes instantâneos (vindo do localStorage, revalidando em background).
-- Passar o mouse sobre um link já busca os dados — clique fica praticamente instantâneo.
-- Trocar de área na biblioteca não pisca em branco.
-- Após responder/finalizar simulado, raio-X/progresso/histórico atualizam imediatamente.
+1. Posso adicionar a server function `marcarInventadas` e o botão admin de re-extração, ou prefere que eu rode tudo automaticamente pelas 7 provas?
+2. Mantenho a coluna `status` atual (`ok` / `falhou_extracao` / `anulada`) ou crio um novo valor `inventada` para diferenciar as detectadas agora das que falharam por OCR?
