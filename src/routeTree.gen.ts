@@ -26,7 +26,6 @@ import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
-import { Route as ApiPublicImportBiblioRouteImport } from './routes/api/public.import-biblio'
 import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
@@ -115,11 +114,6 @@ const AppAssistenteRoute = AppAssistenteRouteImport.update({
   path: '/assistente',
   getParentRoute: () => AppRoute,
 } as any)
-const ApiPublicImportBiblioRoute = ApiPublicImportBiblioRouteImport.update({
-  id: '/api/public/import-biblio',
-  path: '/api/public/import-biblio',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppNoticiasIdRoute = AppNoticiasIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -156,7 +150,6 @@ export interface FileRoutesByFullPath {
   '/biblioteca/$slug': typeof AppBibliotecaSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
-  '/api/public/import-biblio': typeof ApiPublicImportBiblioRoute
 }
 export interface FileRoutesByTo {
   '/assistente': typeof AppAssistenteRoute
@@ -178,7 +171,6 @@ export interface FileRoutesByTo {
   '/biblioteca/$slug': typeof AppBibliotecaSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
-  '/api/public/import-biblio': typeof ApiPublicImportBiblioRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -202,7 +194,6 @@ export interface FileRoutesById {
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRoute
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
   '/_app/noticias/$id': typeof AppNoticiasIdRoute
-  '/api/public/import-biblio': typeof ApiPublicImportBiblioRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -226,7 +217,6 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
-    | '/api/public/import-biblio'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/assistente'
@@ -248,7 +238,6 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
-    | '/api/public/import-biblio'
   id:
     | '__root__'
     | '/_app'
@@ -271,12 +260,10 @@ export interface FileRouteTypes {
     | '/_app/biblioteca/$slug'
     | '/_app/materias/$slug'
     | '/_app/noticias/$id'
-    | '/api/public/import-biblio'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
-  ApiPublicImportBiblioRoute: typeof ApiPublicImportBiblioRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -400,13 +387,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssistenteRouteImport
       parentRoute: typeof AppRoute
     }
-    '/api/public/import-biblio': {
-      id: '/api/public/import-biblio'
-      path: '/api/public/import-biblio'
-      fullPath: '/api/public/import-biblio'
-      preLoaderRoute: typeof ApiPublicImportBiblioRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_app/noticias/$id': {
       id: '/_app/noticias/$id'
       path: '/$id'
@@ -509,8 +489,17 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
-  ApiPublicImportBiblioRoute: ApiPublicImportBiblioRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
