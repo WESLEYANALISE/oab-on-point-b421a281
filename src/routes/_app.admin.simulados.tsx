@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Loader2, Sparkles, Trash2, CheckCircle2, AlertCircle, Clock, X } from "lucide-react";
 import {
   listProvasComStatus,
@@ -268,8 +269,8 @@ function ProgressModal({
           ? "Concluído"
           : "Erro";
 
-  return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl max-w-lg w-full p-6 shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <div>
@@ -338,6 +339,7 @@ function ProgressModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
