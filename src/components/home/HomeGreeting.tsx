@@ -5,8 +5,9 @@ import { AvatarUploader } from "@/components/profile/AvatarUploader";
 import { useProfile, greetingFor } from "@/hooks/use-auth";
 
 export function HomeGreeting() {
-  const { data: profile } = useProfile();
-  const firstName = (profile?.display_name || "").trim().split(/\s+/)[0] || "Estudante";
+  const { data: profile, isPending } = useProfile();
+  const rawFirst = (profile?.display_name || "").trim().split(/\s+/)[0];
+  const firstName = rawFirst || (isPending ? "" : "Estudante");
   // Saudação só é calculada no cliente para evitar mismatch de fuso/hidratação.
   const [greet, setGreet] = useState<string | null>(null);
   useEffect(() => {
