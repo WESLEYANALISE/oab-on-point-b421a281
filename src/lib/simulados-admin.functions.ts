@@ -90,6 +90,34 @@ const QuestaoSchema = z.object({
   }),
 });
 
+// gabarito_oficial: { [numero]: { letra, anulada, nota } } (aceita formato antigo)
+type GabaritoEntry = { letra: "A" | "B" | "C" | "D" | null; anulada: boolean; nota: string | null };
+function normalizeGabarito(raw: unknown): Record<string, GabaritoEntry> {
+  const out: Record<string, GabaritoEntry> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === "string") {
+      const L = v.toUpperCase().trim();
+      out[k] = ["A", "B", "C", "D"].includes(L)
+        ? { letra: L as GabaritoEntry["letra"], anulada: false, nota: null }
+        : { letra: null, anulada: true, nota: v };
+    } else if (v && typeof v === "object") {
+      const obj = v as Record<string, unknown>;
+      const letra = typeof obj.letra === "string" ? obj.letra.toUpperCase().trim() : null;
+      out[k] = {
+        letra: letra && ["A", "B", "C", "D"].includes(letra) ? (letra as GabaritoEntry["letra"]) : null,
+        anulada: Boolean(obj.anulada),
+        nota: typeof obj.nota === "string" ? obj.nota : null,
+      };
+    }
+  }
+  return out;
+}
+function hasGabaritoEntry(g: Record<string, GabaritoEntry>, numero: number): boolean {
+  const e = g[String(numero)];
+  return !!e && (e.anulada || !!e.letra);
+}
+
 // ============ Lista de provas com status ============
 export const listProvasComStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
