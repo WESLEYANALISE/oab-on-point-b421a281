@@ -261,14 +261,12 @@ function Edital({ provaNumero, editalUrl }: { provaNumero: number; editalUrl: st
   const q = useQuery({
     queryKey: ["edital-resumo", provaNumero],
     queryFn: async () => {
-      // Timeout de UI de 35s — se o LLM travar, devolve null e mostra fallback.
-      const result = await Promise.race([
-        fn({ data: { provaNumero } }),
-        new Promise<{ conteudo: null; fonte: string }>((resolve) =>
-          setTimeout(() => resolve({ conteudo: null, fonte: "timeout" }), 35_000),
-        ),
-      ]);
-      return result as { conteudo: typeof result extends { conteudo: infer C } ? C : null; fonte: string };
+      // Timeout de UI de 35s — se o LLM travar, devolve fallback estruturado.
+      const timeout = new Promise<{ conteudo: null; fonte: string }>((resolve) =>
+        setTimeout(() => resolve({ conteudo: null, fonte: "timeout" }), 35_000),
+      );
+      const real = fn({ data: { provaNumero } }) as Promise<{ conteudo: unknown; fonte: string }>;
+      return (await Promise.race([real, timeout])) as { conteudo: any; fonte: string };
     },
     staleTime: Infinity,
     enabled: !!editalUrl,
