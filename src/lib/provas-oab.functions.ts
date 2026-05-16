@@ -170,6 +170,15 @@ async function baixarESubir(
   }
 }
 
+export async function debugClassificarNumero(numero: number) {
+  const exames = await listarExames();
+  const ex = exames.find((e) => parseNumero(e.titulo) === numero);
+  if (!ex) return { erro: "exame não encontrado", numero };
+  const arquivos = await listarArquivos(ex.id);
+  const c = classificar(arquivos);
+  return { ex, arquivos_total: arquivos.length, arquivos: arquivos.slice(0, 40), classificado: c };
+}
+
 export async function executarSeedProvasOab(data: { apenasNumero?: number; dryRun?: boolean } = {}) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
