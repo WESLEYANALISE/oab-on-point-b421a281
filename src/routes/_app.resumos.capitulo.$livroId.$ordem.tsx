@@ -64,7 +64,7 @@ function CapituloView() {
           Capítulo {atual.ordem} de {capitulos.length}
         </p>
         <h1 className="font-display text-2xl md:text-4xl leading-tight mt-1 break-words">
-          {atual.titulo}
+          {normalizarTitulo(atual.titulo)}
         </h1>
       </header>
 
