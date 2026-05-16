@@ -70,6 +70,21 @@ function LoginPage() {
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Entrar
         </button>
+
+        <div className="relative py-1">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gold/15" /></div>
+          <div className="relative flex justify-center"><span className="px-3 text-[10px] uppercase tracking-[0.22em] text-primary-foreground/50 bg-[oklch(0.13_0.04_18)]">ou</span></div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGuest}
+          disabled={guestLoading}
+          className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-gold/30 text-primary-foreground font-semibold py-3 hover:bg-gold/10 active:scale-[0.98] transition disabled:opacity-60"
+        >
+          {guestLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserRound className="h-4 w-4" />}
+          Entrar como convidado
+        </button>
       </form>
     </AuthShell>
   );
