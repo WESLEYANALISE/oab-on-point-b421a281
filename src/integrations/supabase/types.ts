@@ -380,9 +380,7 @@ export type Database = {
           numero: number
           oab_exame_id: string | null
           oab_source_url: string | null
-          outros_arquivos: Json
           prova_1fase_url: string | null
-          provas_2fase: Json
           titulo: string
           updated_at: string
         }
@@ -394,9 +392,7 @@ export type Database = {
           numero: number
           oab_exame_id?: string | null
           oab_source_url?: string | null
-          outros_arquivos?: Json
           prova_1fase_url?: string | null
-          provas_2fase?: Json
           titulo: string
           updated_at?: string
         }
@@ -408,9 +404,7 @@ export type Database = {
           numero?: number
           oab_exame_id?: string | null
           oab_source_url?: string | null
-          outros_arquivos?: Json
           prova_1fase_url?: string | null
-          provas_2fase?: Json
           titulo?: string
           updated_at?: string
         }
