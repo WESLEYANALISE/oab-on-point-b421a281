@@ -22,7 +22,7 @@ export function CountdownExame({
   compact = false,
   hero = false,
 }: { light?: boolean; compact?: boolean; hero?: boolean }) {
-  const [t, setT] = useState<{ d: number; h: number; m: number } | null>(null);
+  const [t, setT] = useState<{ d: number; h: number; m: number }>(() => diff());
   useEffect(() => {
     setT(diff());
     const id = setInterval(() => setT(diff()), 60000);
@@ -30,7 +30,6 @@ export function CountdownExame({
   }, []);
   const variant: keyof typeof SIZES = hero ? "hero" : compact ? "compact" : "default";
   const s = SIZES[variant];
-  if (!t) return <div style={{ height: s.box }} aria-hidden />;
   const items = [
     { v: t.d, l: "dias" },
     { v: t.h, l: "hrs" },
