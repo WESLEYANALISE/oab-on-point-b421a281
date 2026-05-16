@@ -193,14 +193,15 @@ function AdminResumos() {
                   </Button>
                 )}
                 {l.pdf_url && status === "previa_pronta" && r && (
-                  <Button size="sm" variant="outline" onClick={async () => {
-                    const { data: livro } = await fetch("/api/__noop", { method: "GET" }).then(() => ({ data: null })).catch(() => ({ data: null }));
-                    void livro;
-                    // carregamos a prévia da query atual
-                    const itens = ((r.previa as PreviaItem[]) ?? (l.resumo?.previa as PreviaItem[]) ?? []);
-                    // refetch detalhado para garantir
-                    const fresh = await refetchPrevia(r.id);
-                    setPreview({ resumo_livro_id: r.id, itens: fresh ?? itens });
+                  <Button size="sm" variant="outline" onClick={() => {
+                    const itens = ((r.previa as PreviaItem[]) ?? []).map((it) => ({
+                      ordem: it.ordem,
+                      titulo: it.titulo,
+                      pagina_inicio: it.pagina_inicio,
+                      pagina_fim: it.pagina_fim,
+                      incluir: it.incluir,
+                    }));
+                    setPreview({ resumo_livro_id: r.id, itens });
                   }}>
                     <Eye className="h-3.5 w-3.5 mr-1.5" /> Ver prévia
                   </Button>
@@ -265,10 +266,7 @@ function StatusBadge({ status, proc }: { status: string; proc: boolean }) {
   return <span className={`text-xs inline-flex items-center gap-1 ${v.cls}`}><Icon className="h-3 w-3" /> {v.label}</span>;
 }
 
-// recarrega só os itens de prévia de um resumo específico
-async function refetchPrevia(_id: string): Promise<PreviaItem[] | null> {
-  return null;
-}
+
 
 function PreviewDrawer({
   preview, onChange, onClose, onConfirm, saving,
