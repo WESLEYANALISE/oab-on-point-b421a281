@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, ChevronLeft, ChevronRight, Flag, Check, X, FileText, ListChecks } from "lucide-react";
 import { getSimulado, iniciarTentativa, salvarResposta, finalizarTentativa } from "@/lib/simulados.functions";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,17 @@ export const Route = createFileRoute("/_app/simulados/$id")({
 
 type Alt = "A" | "B" | "C" | "D";
 type View = "enunciado" | "alternativas";
+type EstadoResposta = { alt: Alt; respondida: boolean };
+
+function loadPersisted<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 function PraticaPage() {
   const { id } = Route.useParams();
@@ -26,17 +37,37 @@ function PraticaPage() {
   const sim = useQuery({
     queryKey: ["simulado", id],
     queryFn: () => getFn({ data: { id } }),
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
   const tentativa = useQuery({
     queryKey: ["tentativa", id],
     enabled: !!sim.data,
     queryFn: () => iniFn({ data: { simuladoId: id } }),
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
-  const [idx, setIdx] = useState(0);
+  const idxKey = `sim:${id}:idx`;
+  const respKey = `sim:${id}:resp`;
+  const [idx, setIdx] = useState<number>(() => loadPersisted(idxKey, 0));
   const [view, setView] = useState<View>("enunciado");
-  // Estado por questão: { selecionada, respondida }
-  const [respostas, setRespostas] = useState<Record<number, { alt: Alt; respondida: boolean }>>({});
+  const [respostas, setRespostas] = useState<Record<number, EstadoResposta>>(
+    () => loadPersisted(respKey, {}),
+  );
+
+  useEffect(() => {
+    try { sessionStorage.setItem(idxKey, JSON.stringify(idx)); } catch {}
+  }, [idx, idxKey]);
+  useEffect(() => {
+    try { sessionStorage.setItem(respKey, JSON.stringify(respostas)); } catch {}
+  }, [respostas, respKey]);
 
   const questoes = sim.data?.questoes ?? [];
   const atual = questoes[idx];
@@ -44,11 +75,13 @@ function PraticaPage() {
   const salvarMut = useMutation({
     mutationFn: ({ numero, alt }: { numero: number; alt: Alt }) =>
       salvarFn({ data: { tentativaId: tentativa.data!.id, numero, alternativa: alt } }),
+    retry: 2,
   });
 
   const finalMut = useMutation({
     mutationFn: () => finalFn({ data: { tentativaId: tentativa.data!.id } }),
     onSuccess: () => {
+      try { sessionStorage.removeItem(idxKey); sessionStorage.removeItem(respKey); } catch {}
       navigate({ to: "/simulados/$id/resultado/$tentativaId", params: { id, tentativaId: tentativa.data!.id } });
     },
   });
@@ -56,7 +89,7 @@ function PraticaPage() {
   function selecionar(alt: Alt) {
     if (!atual) return;
     const r = respostas[atual.numero];
-    if (r?.respondida) return; // bloqueia troca após responder
+    if (r?.respondida) return;
     setRespostas((prev) => ({ ...prev, [atual.numero]: { alt, respondida: false } }));
   }
 
@@ -73,7 +106,9 @@ function PraticaPage() {
     setView("enunciado");
   }
 
-  if (sim.isLoading || tentativa.isLoading) {
+  // Só mostra "Carregando" no primeiro load. Depois disso, mantém UI mesmo
+  // se houver revalidação em background (token refresh, etc.).
+  if (!sim.data && sim.isLoading) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando simulado…
