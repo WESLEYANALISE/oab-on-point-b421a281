@@ -1,88 +1,54 @@
-## Objetivo
+## Problema
 
-1. Reorganizar `/admin/resumos` em **navegação por área** (lista → detalhe), em vez de mostrar todas as áreas empilhadas com chips no topo.
-2. Tornar o card de cada livro **mobile-first**, garantindo que o botão "Gerar prévia" sempre apareça (hoje fica cortado fora da tela no 390px).
-3. Passar uma **revisão de responsividade no app inteiro** focada nos pontos onde o conteúdo encosta na borda ou some no mobile.
+O botão "Voltar" do cabeçalho mobile usa `router.history.back()`. Isso faz o navegador refazer a navegação anterior do zero — re-executa loaders, mostra estados de carregamento e, em algumas rotas, exibe brevemente a lista de rotas/menu antes de renderizar o destino. A sensação é lenta.
 
----
+## Solução
 
-## 1. Tela `/admin/resumos` — navegação por área
+Substituir o `history.back()` por uma navegação direta para o "pai lógico" da rota atual, com preload agressivo. Assim o destino já está em cache e a troca é instantânea.
 
-**Estado atual:** chips de área no topo + todas as áreas listadas verticalmente.
+### 1. Mapa de rotas-pai
 
-**Novo fluxo:**
+Criar `src/lib/voltar.ts` com uma função `resolverVoltar(pathname)` que retorna o destino correto:
 
 ```text
-[ /admin/resumos ]                  ← lista de áreas
-  Direito Civil          56  >
-  Direito Constitucional 38  >
-  Direito Penal          42  >
-  ...
-
-  ↓ clicar em uma área
-
-[ /admin/resumos?area=Direito+Civil ]  ← livros da área
-  ← Voltar para áreas
-  Busca por título
-  [card livro 1]
-  [card livro 2]
-  ...
+/resumos/capitulo/:livroId/:ordem  → /resumos/:livroId
+/resumos/:livroId                  → /resumos
+/resumos                           → /
+/simulados/...                     → /simulados  (e assim por diante)
+qualquer outra                     → /
 ```
 
-- Tudo na mesma rota usando estado local (`area` selecionada). Sem criar arquivo de rota novo.
-- Header da tela de detalhe mostra o nome da área + botão "voltar".
-- Busca por título só aparece dentro da área (procurar em 838 livros sem filtro não faz sentido).
-- Lista de áreas: cards verticais grandes, fáceis de tocar no mobile, com contagem de livros e indicador de progresso (`X com resumo / Y total`).
+Implementada com regex simples sobre o `pathname`, sem depender do histórico do navegador.
 
----
+### 2. MobileHeader
 
-## 2. Card do livro responsivo
+Em `src/components/layout/MobileHeader.tsx`:
 
-**Problema atual:** linha em flex horizontal com capa + título + ações empilha tudo na mesma row → no 390px o botão "Gerar prévia" sai da tela.
+- Trocar o `<button onClick={history.back}>` por um `<Link to={destino}>` (renderiza como `<a>` real, suporta cmd+click, fica acessível).
+- O `destino` vem de `resolverVoltar(pathname)`.
+- Adicionar `preload="intent"` para que o destino seja pré-buscado já no hover/touchstart — quando o usuário solta o dedo, a navegação é imediata.
+- Manter o visual atual (pill + ícone + "Voltar").
 
-**Layout novo:**
+### 3. Preload global mais agressivo
 
-```text
-Mobile (< 640px):
-┌──────────────────────────────┐
-│ [capa]  Título do livro      │
-│         status · 0/0 cap.    │
-│ ──────────────────────────── │
-│ [   Gerar prévia        ]    │  ← botão full-width
-│ [refazer] [excluir]          │
-└──────────────────────────────┘
+Em `src/router.tsx`, garantir:
 
-Desktop (≥ 640px): igual hoje, tudo na mesma linha.
-```
+- `defaultPreload: "intent"` (se ainda não estiver).
+- `defaultPreloadDelay: 0` para disparar o preload assim que o dedo toca o botão.
+- `defaultPendingMs` alto (ex.: 1500) para evitar o flash de "carregando" durante navegações curtas — se o loader resolver rápido, o usuário nunca vê estado intermediário.
 
-- Ações descem para uma segunda linha no mobile, ocupando largura total.
-- Botão principal vira `w-full` em telas pequenas.
-- Texto de erro com `break-words` em vez de `truncate` para o admin ver a mensagem.
+### 4. Voltar do capítulo
 
----
+No `_app.resumos.capitulo.$livroId.$ordem.tsx` o cabeçalho já é o `MobileHeader` global, então a correção acima cobre o caso da tela do print. Nada a mudar no arquivo da rota.
 
-## 3. Revisão de responsividade do app
+## Resultado esperado
 
-Varrer e ajustar os pontos críticos em mobile (390px), sem mexer em desktop:
+- Toque em "Voltar" no capítulo → vai direto para `/resumos/:livroId` sem flash, com a lista já cacheada por preload.
+- Toque em "Voltar" na lista do livro → vai direto para `/resumos`.
+- Sem mais dependência do histórico do navegador (que era a causa da lentidão e do "pisca-pisca" de rotas).
 
-- **`/admin/resumos`** (este redesign).
-- **`AdminLayout` / `_app.admin.tsx`** — padding lateral consistente, mensagem de "acesso negado" centralizada.
-- **`MobileHeader` + páginas com header próprio** (Voltar / Início) — garantir que não sobreponham conteúdo.
-- **`/admin/simulados`** — mesmo padrão de botões e tabela longa que pode estourar.
-- **`/oab/o-que-estudar`** — barras de progresso, busca e cards expansíveis no 390px.
-- **`/resumos` (público)** e **`/resumos/$livroId`** — grade de cards e sidebar de capítulos viram drawer no mobile.
-- **`/biblioteca/$slug`** — grids que devem cair pra 2 colunas em <400px.
-- **`HomeGreeting` / `HomeHero`** — saudação não pode ficar maior que a viewport.
+## Arquivos afetados
 
-Critério aceito: nenhuma página tem scroll horizontal no 390px, nenhum botão de ação primária fica fora da tela ou cortado, todo texto longo quebra (break-words) em vez de empurrar layout.
-
----
-
-## Detalhes técnicos
-
-- Arquivo principal: `src/routes/_app.admin.resumos.tsx`.
-  - Trocar `chips de área` + lista única por dois "modos" (lista de áreas / livros da área) controlados por `useState`.
-  - Card vira `flex-col sm:flex-row` com ações em `flex-wrap`.
-- Backend: **nenhuma mudança**. `listarLivrosParaResumo` já devolve `area`; a agregação por área é feita no client.
-- Hidratação: corrigir o mismatch SSR atual do `AdminLayout` (acesso negado vs. conteúdo) — provavelmente `useAdmin` retornando valor diferente entre server e client. Vou inspecionar e padronizar.
-- Sem nova migração, sem novo route, sem novo secret.
+- `src/lib/voltar.ts` (novo)
+- `src/components/layout/MobileHeader.tsx` (editar onClick → Link com preload)
+- `src/router.tsx` (ajustar defaults de preload/pending, se necessário)
