@@ -186,18 +186,20 @@ export const finalizarTentativa = createServerFn({ method: "POST" })
     const respostas = (t.data.respostas as Record<string, string>) ?? {};
     const { data: qs, error: qErr } = await supabase
       .from("simulado_questoes")
-      .select("numero, materia, resposta_correta")
+      .select("numero, materia, resposta_correta, status")
       .eq("simulado_id", t.data.simulado_id);
     if (qErr) throw new Error(qErr.message);
 
     let acertos = 0;
     const porMateria: Record<string, { acertos: number; total: number }> = {};
     for (const q of qs ?? []) {
+      if ((q as { status?: string }).status === "falhou_extracao") continue;
       const m = q.materia ?? "Sem matéria";
       porMateria[m] ??= { acertos: 0, total: 0 };
       porMateria[m].total += 1;
       const r = respostas[String(q.numero)];
-      if (r && r === q.resposta_correta) {
+      const anulada = (q as { status?: string }).status === "anulada";
+      if (anulada || (r && r === q.resposta_correta)) {
         acertos += 1;
         porMateria[m].acertos += 1;
       }
