@@ -283,7 +283,7 @@ function TabsSwitch({ aba, setAba }: { aba: Aba; setAba: (a: Aba) => void }) {
             aria-selected={active}
             type="button"
             onClick={() => setAba(t.id)}
-            className={`relative z-10 px-4 py-1.5 text-xs md:text-sm font-display font-semibold rounded-full transition-colors duration-200 ${
+            className={`relative z-10 flex-1 text-center px-3 py-1.5 text-xs md:text-sm font-display font-semibold rounded-full transition-colors duration-200 ${
               active ? "text-gold" : "text-muted-foreground hover:text-foreground"
             }`}
           >
