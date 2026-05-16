@@ -96,7 +96,7 @@ function CapituloView() {
           >
             <span className="text-right min-w-0">
               <span className="block text-[10px] uppercase">Próximo</span>
-              <span className="block truncate">{next.titulo}</span>
+              <span className="block truncate">{normalizarTitulo(next.titulo)}</span>
             </span>
             <ChevronRight className="h-4 w-4 mt-0.5 shrink-0" />
           </Link>
