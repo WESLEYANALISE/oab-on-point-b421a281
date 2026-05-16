@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Loader2,
   FileText,
@@ -26,6 +26,8 @@ import {
 } from "@/lib/simulados.functions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { isUuid } from "@/lib/simulado-slug";
 
 export const Route = createFileRoute("/_app/simulados/$slug/")({
   head: () => ({ meta: [{ title: "Simulado — OAB na Risca" }] }),
@@ -35,7 +37,9 @@ export const Route = createFileRoute("/_app/simulados/$slug/")({
 type Aba = "materiais" | "edital" | "raiox" | "desempenho";
 
 function OverviewPage() {
-  const { id } = Route.useParams();
+  const { slug } = Route.useParams();
+  const id = slug;
+  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const overviewFn = useServerFn(getSimuladoOverview);
@@ -49,14 +53,22 @@ function OverviewPage() {
     queryFn: () => overviewFn({ data: { id } }),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    enabled: !!user,
   });
+
+  useEffect(() => {
+    const canonical = overview.data?.simulado.slug;
+    if (canonical && isUuid(slug)) {
+      navigate({ to: "/simulados/$slug", params: { slug: canonical }, replace: true });
+    }
+  }, [navigate, overview.data?.simulado.slug, slug]);
   // Histórico só carrega quando a aba "Desempenho" é aberta
   const historico = useQuery({
     queryKey: ["simulado-historico", id],
     queryFn: () => historicoFn({ data: { simuladoId: id } }),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
-    enabled: aba === "desempenho",
+    enabled: !!user && aba === "desempenho",
   });
 
   // Ao clicar em "Começar/Continuar", buscamos TUDO em uma chamada e
@@ -65,7 +77,8 @@ function OverviewPage() {
     mutationFn: () => completoFn({ data: { id } }),
     onSuccess: (data) => {
       queryClient.setQueryData(["simulado-completo", id], data);
-      navigate({ to: "/simulados/$id/praticar", params: { id } });
+      queryClient.setQueryData(["simulado-completo", data.simulado.slug], data);
+      navigate({ to: "/simulados/$slug/praticar", params: { slug: data.simulado.slug } });
     },
   });
 
