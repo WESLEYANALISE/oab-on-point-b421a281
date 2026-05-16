@@ -413,6 +413,24 @@ export type Database = {
         }
         Relationships: []
       }
+      provas_oab_edital_resumo: {
+        Row: {
+          conteudo: Json
+          gerado_em: string
+          prova_numero: number
+        }
+        Insert: {
+          conteudo: Json
+          gerado_em?: string
+          prova_numero: number
+        }
+        Update: {
+          conteudo?: Json
+          gerado_em?: string
+          prova_numero?: number
+        }
+        Relationships: []
+      }
       simulado_jobs: {
         Row: {
           batch_atual: number
