@@ -112,7 +112,7 @@ export const getSimuladoCompleto = createServerFn({ method: "POST" })
       tentativaId = ins.data.id;
     }
     return {
-      simulado: sim.data,
+      simulado: { ...sim.data, slug: makeSimuladoSlug(sim.data) },
       questoes: qs.data ?? [],
       tentativaId: tentativaId!,
       respostasSalvas,
@@ -313,7 +313,7 @@ export const getSimuladoOverview = createServerFn({ method: "POST" })
       .sort((a, b) => b.qtd - a.qtd);
 
     return {
-      simulado: sim.data,
+      simulado: { ...sim.data, slug: makeSimuladoSlug(sim.data) },
       prova: prova.data ?? null,
       raioX,
       total,
