@@ -209,8 +209,8 @@ function SectionTitle({
 }
 
 function FaseCard({
-  to, label, sub, cover, lcp = false,
-}: { to: "/oab/primeira-fase" | "/oab/segunda-fase"; label: string; sub: string; cover: string; lcp?: boolean }) {
+  to, label, sub, cover, lcp = false, shineDelay = "0s",
+}: { to: "/oab/primeira-fase" | "/oab/segunda-fase"; label: string; sub: string; cover: string; lcp?: boolean; shineDelay?: string }) {
   return (
     <Link
       to={to}
@@ -226,6 +226,7 @@ function FaseCard({
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
+      <span className="countdown-shimmer" style={{ animationDelay: shineDelay }} aria-hidden />
       <span className="absolute top-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-gold/90 text-gold-foreground text-[9px] font-bold tracking-wider uppercase">
         OAB
       </span>
