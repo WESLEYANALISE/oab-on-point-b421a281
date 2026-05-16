@@ -10,11 +10,11 @@ function diff() {
   return { d, h, m };
 }
 
-type Size = { num: string; gap: string; box: number };
+type Size = { num: string; gap: string; pad: string; lbl: string };
 const SIZES: Record<"default" | "compact" | "hero", Size> = {
-  default: { num: "text-4xl md:text-5xl", gap: "gap-3", box: 60 },
-  compact: { num: "text-3xl md:text-4xl", gap: "gap-4", box: 44 },
-  hero:    { num: "text-5xl md:text-6xl", gap: "gap-4", box: 72 },
+  default: { num: "text-3xl md:text-4xl", gap: "gap-2", pad: "px-3 py-2 min-w-[64px]", lbl: "text-[10px]" },
+  compact: { num: "text-2xl md:text-3xl", gap: "gap-2", pad: "px-2.5 py-1.5 min-w-[52px]", lbl: "text-[9px]" },
+  hero:    { num: "text-4xl md:text-5xl", gap: "gap-2.5", pad: "px-3.5 py-2.5 min-w-[74px]", lbl: "text-[10px]" },
 };
 
 export function CountdownExame({
@@ -22,28 +22,40 @@ export function CountdownExame({
   compact = false,
   hero = false,
 }: { light?: boolean; compact?: boolean; hero?: boolean }) {
-  const [t, setT] = useState<{ d: number; h: number; m: number } | null>(null);
+  // Lazy init so SSR and first paint already render real numbers.
+  const [t, setT] = useState(() => diff());
   useEffect(() => {
     setT(diff());
-    const id = setInterval(() => setT(diff()), 60000);
+    const id = setInterval(() => setT(diff()), 30000);
     return () => clearInterval(id);
   }, []);
   const variant: keyof typeof SIZES = hero ? "hero" : compact ? "compact" : "default";
   const s = SIZES[variant];
-  const display = t ?? { d: 0, h: 0, m: 0 };
   const items = [
-    { v: display.d, l: "dias" },
-    { v: display.h, l: "hrs" },
-    { v: display.m, l: "min" },
+    { v: t.d, l: "dias" },
+    { v: t.h, l: "hrs" },
+    { v: t.m, l: "min" },
   ];
+  const boxBg = light
+    ? "bg-primary-foreground/8 border-primary-foreground/15"
+    : "bg-card border-border";
+  const numColor = light ? "text-primary-foreground" : "text-foreground";
+  const lblColor = light ? "text-gold/80" : "text-muted-foreground";
+
   return (
-    <div className={`flex items-end ${s.gap}`} suppressHydrationWarning>
+    <div className={`flex items-stretch ${s.gap}`} suppressHydrationWarning>
       {items.map((i) => (
-        <div key={i.l} className="text-center">
-          <p className={`font-sans font-bold ${s.num} leading-none tabular-nums tracking-tight ${light ? "text-primary-foreground" : ""}`} suppressHydrationWarning>
-            {t ? String(i.v).padStart(2, "0") : "--"}
+        <div
+          key={i.l}
+          className={`rounded-xl border ${boxBg} ${s.pad} backdrop-blur-sm flex flex-col items-center justify-center`}
+        >
+          <p
+            className={`font-display font-semibold ${s.num} ${numColor} leading-none tabular-nums tracking-tight`}
+            suppressHydrationWarning
+          >
+            {String(i.v).padStart(2, "0")}
           </p>
-          <p className={`text-[10px] uppercase tracking-[0.18em] mt-1 ${light ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+          <p className={`${s.lbl} uppercase tracking-[0.22em] mt-1.5 font-semibold ${lblColor}`}>
             {i.l}
           </p>
         </div>
