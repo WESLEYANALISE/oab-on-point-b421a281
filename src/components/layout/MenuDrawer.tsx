@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Home, BookOpen, FileText, Layers, ClipboardList, Target, Sparkles, Newspaper, Award, Scale, Calendar, TrendingUp, Settings, Library, Headphones, User, Crown, ChevronRight, LogOut, HelpCircle } from "lucide-react";
@@ -128,15 +128,21 @@ export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
   );
 }
 
-export function MenuTriggerButton() {
+export const MenuTriggerButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>((props, ref) => {
   return (
     <button
+      ref={ref}
       type="button"
-      className="flex flex-col items-center gap-1 py-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors w-full"
+      {...props}
+      className="flex flex-col items-center gap-1 py-2 text-[11px] text-foreground hover:text-primary transition-colors w-full"
       aria-label="Abrir menu"
     >
       <Menu className="h-5 w-5" />
       <span className="font-medium">Menu</span>
     </button>
   );
-}
+});
+MenuTriggerButton.displayName = "MenuTriggerButton";
