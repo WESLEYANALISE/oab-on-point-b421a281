@@ -47,7 +47,9 @@ function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         {!isBiblioteca && <MobileHeader />}
         <main className={`flex-1 ${showBottomNav ? "pb-20 md:pb-0" : ""} overflow-x-hidden`}>
-          <Outlet />
+          <div className="mx-auto w-full max-w-[1120px]">
+            <Outlet />
+          </div>
         </main>
         {showBottomNav && <BottomNav />}
       </div>
