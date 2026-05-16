@@ -286,8 +286,7 @@ export const processarBatch = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
 
-    const apiKey = process.env.MISTRAL_API_KEY;
-    if (!apiKey) throw new Error("MISTRAL_API_KEY não configurada");
+    if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
 
     const job = await supabaseAdmin
       .from("simulado_jobs")
