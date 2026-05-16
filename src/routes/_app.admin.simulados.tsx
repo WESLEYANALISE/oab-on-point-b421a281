@@ -140,6 +140,8 @@ function AdminSimulados() {
         </ul>
       )}
 
+      {preparandoNum !== null && !preview && <PreparandoModal numero={preparandoNum} />}
+
       {preview && !activeJobId && (
         <PreviewModal
           preview={preview}
@@ -184,6 +186,28 @@ function StatusBadge({ status }: { status?: string | null }) {
       </span>
     );
   return <span className="text-muted-foreground">Sem simulado</span>;
+}
+
+// ============ Preparando Modal (durante OCR) ============
+function PreparandoModal({ numero }: { numero: number }) {
+  const [segs, setSegs] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setSegs((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
+        <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary mb-3" />
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">Etapa 1 de 3</p>
+        <h2 className="font-display text-xl mt-1">Lendo PDFs da Prova {numero}</h2>
+        <p className="text-sm text-muted-foreground mt-2">
+          Executando OCR da prova e do gabarito via Mistral. Isso pode levar até 60s.
+        </p>
+        <p className="text-xs text-muted-foreground mt-3 font-mono">{segs}s decorridos…</p>
+      </div>
+    </div>
+  );
 }
 
 // ============ Preview Modal ============
