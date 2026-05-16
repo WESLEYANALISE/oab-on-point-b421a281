@@ -86,6 +86,10 @@ async function listarExames(): Promise<Array<{ id: string; titulo: string }>> {
   return out;
 }
 
+export async function debugListarExames() {
+  return listarExames();
+}
+
 export async function debugListarArquivos(exameId: string) {
   return listarArquivos(exameId);
 }
