@@ -37,10 +37,7 @@ function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         {!isBiblioteca && <MobileHeader />}
         <main className={`flex-1 ${showBottomNav ? "pb-20 md:pb-0" : ""} overflow-x-hidden`}>
-          {/* Fade puro por rota — sem reflow, sem framer-motion */}
-          <div key={pathname} className="animate-route-fade">
-            <Outlet />
-          </div>
+          <Outlet />
         </main>
         {showBottomNav && <BottomNav />}
       </div>

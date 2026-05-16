@@ -1,29 +1,36 @@
-## Finalizar tratamento de questões especiais e reprocessar exame 44
+## Por que existe o delay
 
-Concluir os 3 itens pendentes da última rodada.
+Em `src/routes/_app.tsx` o `<Outlet />` está envolto assim:
 
-### 1. Auto-avanço no `praticar` para questões especiais
-Arquivo: `src/routes/_app.simulados.$slug.praticar.tsx`
-- Quando `status === 'anulada'`: já mostra banner verde "conta como acerto". Adicionar botão grande "Próxima questão" no lugar das alternativas (sem precisar abrir "Ver alternativas") e marcar a resposta como `null` automaticamente no estado de respostas para que o resumo final saiba que foi vista.
-- Quando `status === 'falhou_extracao'`: banner âmbar + botão "Pular questão" que avança sem contar.
-- Na última questão, o botão vira "Finalizar simulado".
+```tsx
+<div key={pathname} className="animate-route-fade">
+  <Outlet />
+</div>
+```
 
-### 2. UI de revisão no `resultado`
-Arquivo: `src/routes/_app.simulados.$slug.resultado.$tentativaId.tsx`
-- Mostrar badge "Anulada — conta como acerto" (verde) nas questões com `status='anulada'`, sem destacar alternativa correta.
-- Mostrar badge "Extração falhou — desconsiderada" (cinza) nas `falhou_extracao`, fora do denominador.
-- Ajustar o texto do score: "X de Y questões válidas" quando houver falhas de extração; mostrar Z anuladas contadas como acerto.
-- Garantir que o cálculo bate com o que `simulados.functions.ts` já retorna (anulada = +1 acerto, falhou_extracao = excluída do total).
+Isso causa dois problemas que somados produzem o atraso visível mesmo quando a URL já mudou:
 
-### 3. Reprocessar exame 44, questão #69
-Plano operacional (não código):
-- Rodar o job de re-extração só do lote 4 (questões 61–80) do exame 44 via `simulados-admin.functions.ts` agora com os logs novos.
-- Se o log novo apontar motivo concreto (parse, schema, conteúdo da #69 com formatação atípica), corrigir prompt/parser pontualmente.
-- Se Gemini continuar não retornando a #69 após 3 tentativas, deixar o placeholder `falhou_extracao` (já suportado pelo fluxo do item 1 e 2) para que o simulado siga utilizável.
+1. **`key={pathname}` força remount total** da árvore da rota a cada navegação. Quando você volta para `/`, a home não é apenas reexibida — ela é **desmontada e remontada do zero**: todos os `useEffect`, queries, componentes pesados (Hero, CountdownExame, FaseCard com imagens, lista de notícias, ferramentas) precisam ser reconstruídos antes do primeiro pixel aparecer.
 
-Sem mudanças de schema. Sem nova migration.
+2. **`animate-route-fade`** (definida em `src/styles.css:171`) aplica `animation: route-fade 180ms ease-out both` no elemento recém-montado. O `both` mantém o estado inicial (`opacity: 0`) até a animação começar, então o conteúdo da próxima tela fica **invisível por ~180 ms** depois de o URL já ter trocado.
 
-### Arquivos a editar
-- `src/routes/_app.simulados.$slug.praticar.tsx`
-- `src/routes/_app.simulados.$slug.resultado.$tentativaId.tsx`
-- Possíveis ajustes pontuais em `src/lib/simulados-admin.functions.ts` se o relog do exame 44 indicar correção de prompt.
+A `_app.admin.tsx` também contribui um pouco porque, ao **entrar** no admin, faz uma verificação async de admin. Mas ao **sair** ela não roda — então a causa do delay descrito (sair de `/admin/simulados` para `/` ou voltar) é o remount + fade acima.
+
+## Plano
+
+Mudanças mínimas, só em UI/presentation:
+
+1. **`src/routes/_app.tsx`** — remover o wrapper `<div key={pathname} className="animate-route-fade">` e deixar o `<Outlet />` direto dentro do `<main>`. TanStack Router já faz o swap eficiente das rotas; sem o `key`, a home (e qualquer página já montada anteriormente em cache de componente) reaparece instantaneamente.
+
+2. **`src/styles.css`** — manter a classe `.animate-route-fade` e o keyframe (podem estar sendo usados em outros lugares de animação leve), mas **não usar mais por padrão na shell de rotas**. Sem custo adicional.
+
+3. **(opcional, mesma direção)** No `_app.admin.simulados.tsx`, o `refetchInterval: 5_000` continua rodando enquanto o admin está aberto, o que é correto — mas garantir que ao desmontar a página de admin o polling pare (já para automaticamente porque o componente desmonta). Nenhuma mudança necessária aqui; mantenho a observação só para registro.
+
+## Resultado esperado
+
+Apertar "Voltar" ou "Início" em `/admin/simulados` (ou em qualquer rota) leva à tela de destino **imediatamente**, sem fade de 180 ms e sem reconstruir a árvore do zero. A navegação passa a parecer nativa.
+
+## O que NÃO muda
+
+- Nenhuma mudança em server functions, queries, layout do admin, autorização, ou lógica de fila.
+- Animações específicas de componentes (cards, modais) continuam funcionando — só removemos a animação aplicada globalmente em toda troca de rota.
