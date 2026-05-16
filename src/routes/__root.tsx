@@ -1,5 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+  PersistQueryClientProvider,
+  type Persister,
+} from "@tanstack/react-query-persist-client";
+import {
   Outlet,
   Link,
   createRootRouteWithContext,
@@ -69,7 +73,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const Route = createRootRouteWithContext<{
+  queryClient: QueryClient;
+  persister: Persister | null;
+  cacheBuster: string;
+}>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -115,15 +123,49 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Chaves de query que NÃO devem ser persistidas em localStorage
+// (têm cache próprio ou são polling de jobs em tempo real)
+const NON_PERSISTED_PREFIXES = new Set([
+  "profile",
+  "is-admin",
+  "sim-job",
+  "simulado-queue",
+]);
+
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
+  const { queryClient, persister, cacheBuster } = Route.useRouteContext();
+
+  if (!persister) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Outlet />
+          <Toaster />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+  }
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: 24 * 60 * 60 * 1000, // 24h
+        buster: cacheBuster,
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => {
+            const root = String(query.queryKey?.[0] ?? "");
+            if (NON_PERSISTED_PREFIXES.has(root)) return false;
+            return query.state.status === "success";
+          },
+        },
+      }}
+    >
       <AuthProvider>
         <Outlet />
         <Toaster />
       </AuthProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

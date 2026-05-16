@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, ChevronLeft, ChevronRight, Flag, Check, X, FileText, ListChecks } from "lucide-react";
@@ -45,6 +45,7 @@ function PraticaPage() {
   const id = slug;
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const completoFn = useServerFn(getSimuladoCompleto);
   const salvarFn = useServerFn(salvarResposta);
   const finalFn = useServerFn(finalizarTentativa);
@@ -117,6 +118,10 @@ function PraticaPage() {
     mutationFn: () => finalFn({ data: { tentativaId: tentativaId! } }),
     onSuccess: () => {
       try { sessionStorage.removeItem(idxKey); sessionStorage.removeItem(respKey); } catch {}
+      queryClient.invalidateQueries({ queryKey: ["simulado-overview", id] });
+      queryClient.invalidateQueries({ queryKey: ["simulado-historico", id] });
+      queryClient.invalidateQueries({ queryKey: ["minhas-tentativas"] });
+      queryClient.invalidateQueries({ queryKey: ["progresso-usuario"] });
       navigate({ to: "/simulados/$slug/resultado/$tentativaId", params: { slug: sim.data?.simulado.slug ?? slug, tentativaId: tentativaId! } });
     },
   });
