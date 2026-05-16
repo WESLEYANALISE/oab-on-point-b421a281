@@ -1,36 +1,35 @@
-## Por que existe o delay
+## Problema
 
-Em `src/routes/_app.tsx` o `<Outlet />` está envolto assim:
+Ao recarregar / navegar entre páginas, o cabeçalho mostra "Estudante" por uma fração de segundo antes de trocar para o nome real (Wesley). Mesma coisa pode acontecer com avatar e checagem de admin.
 
-```tsx
-<div key={pathname} className="animate-route-fade">
-  <Outlet />
-</div>
-```
+## Causa
 
-Isso causa dois problemas que somados produzem o atraso visível mesmo quando a URL já mudou:
+Em `src/hooks/use-auth.tsx`, o `useProfile()` é um `useQuery` que só busca o perfil **depois** que o `useAuth` confirma a sessão. Enquanto isso `profile` é `undefined`, e `HomeGreeting` cai no fallback `"Estudante"`. Quando a query resolve, troca pro nome real — gerando o "flash".
 
-1. **`key={pathname}` força remount total** da árvore da rota a cada navegação. Quando você volta para `/`, a home não é apenas reexibida — ela é **desmontada e remontada do zero**: todos os `useEffect`, queries, componentes pesados (Hero, CountdownExame, FaseCard com imagens, lista de notícias, ferramentas) precisam ser reconstruídos antes do primeiro pixel aparecer.
-
-2. **`animate-route-fade`** (definida em `src/styles.css:171`) aplica `animation: route-fade 180ms ease-out both` no elemento recém-montado. O `both` mantém o estado inicial (`opacity: 0`) até a animação começar, então o conteúdo da próxima tela fica **invisível por ~180 ms** depois de o URL já ter trocado.
-
-A `_app.admin.tsx` também contribui um pouco porque, ao **entrar** no admin, faz uma verificação async de admin. Mas ao **sair** ela não roda — então a causa do delay descrito (sair de `/admin/simulados` para `/` ou voltar) é o remount + fade acima.
+O cache do React Query é em memória, então toda vez que a aba recarrega (ou o componente é remontado) ele começa do zero, mesmo que o usuário já esteja logado.
 
 ## Plano
 
-Mudanças mínimas, só em UI/presentation:
+Persistir o mínimo necessário do perfil no `localStorage` para que o primeiro render já tenha o nome/avatar corretos — sem mudar lógica de auth, RLS ou nada de backend.
 
-1. **`src/routes/_app.tsx`** — remover o wrapper `<div key={pathname} className="animate-route-fade">` e deixar o `<Outlet />` direto dentro do `<main>`. TanStack Router já faz o swap eficiente das rotas; sem o `key`, a home (e qualquer página já montada anteriormente em cache de componente) reaparece instantaneamente.
+### 1. `src/hooks/use-auth.tsx`
+- Criar helpers `readCachedProfile(userId)` / `writeCachedProfile(userId, profile)` que leem/gravam `localStorage` na chave `oab:profile:<userId>` (apenas campos públicos: `display_name`, `avatar_url`, `onboarding_completo`, etc — nada sensível).
+- No `useProfile`, usar `initialData` lendo do cache local quando existe para o `user.id` atual. Isso faz o primeiro render já ter o perfil correto.
+- No `queryFn`, após carregar do Supabase, salvar no cache local.
+- No `onAuthStateChange`, quando `event === "SIGNED_OUT"` ou troca de usuário, limpar a chave antiga do localStorage.
 
-2. **`src/styles.css`** — manter a classe `.animate-route-fade` e o keyframe (podem estar sendo usados em outros lugares de animação leve), mas **não usar mais por padrão na shell de rotas**. Sem custo adicional.
+### 2. `src/components/home/HomeGreeting.tsx`
+- Quando `profile` ainda for `undefined` (sem cache e sem dado), renderizar um placeholder neutro (skeleton de 1 linha) em vez de "Estudante", pra evitar flash mesmo em primeiro login.
 
-3. **(opcional, mesma direção)** No `_app.admin.simulados.tsx`, o `refetchInterval: 5_000` continua rodando enquanto o admin está aberto, o que é correto — mas garantir que ao desmontar a página de admin o polling pare (já para automaticamente porque o componente desmonta). Nenhuma mudança necessária aqui; mantenho a observação só para registro.
-
-## Resultado esperado
-
-Apertar "Voltar" ou "Início" em `/admin/simulados` (ou em qualquer rota) leva à tela de destino **imediatamente**, sem fade de 180 ms e sem reconstruir a árvore do zero. A navegação passa a parecer nativa.
+### 3. `src/hooks/use-admin.ts` (verificar)
+- Mesmo padrão se ele também exibe estado intermediário que cause flash de UI admin (ler arquivo e aplicar cache equivalente apenas se necessário).
 
 ## O que NÃO muda
 
-- Nenhuma mudança em server functions, queries, layout do admin, autorização, ou lógica de fila.
-- Animações específicas de componentes (cards, modais) continuam funcionando — só removemos a animação aplicada globalmente em toda troca de rota.
+- Nenhuma mudança em RLS, migrations, server functions, autenticação, ou rotas.
+- Nenhuma mudança em queries do Supabase além de adicionar leitura/escrita do cache local.
+- O cache local é só uma otimização de UI; a fonte de verdade continua sendo o Supabase.
+
+## Resultado
+
+Após o primeiro login, todas as navegações e reloads mostram o nome/avatar real instantaneamente — sem passar por "Estudante".
