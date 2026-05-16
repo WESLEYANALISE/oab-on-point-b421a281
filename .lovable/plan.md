@@ -1,56 +1,45 @@
-## Objetivo
+## Por que está lento
 
-Trazer as bibliotecas do projeto antigo (`izspjvegxdfgkgibpyst`) para o Supabase do **OAB NA RISCA** (`ajbzwnzbuukwjaydfqui`), com estrutura + dados, e montar a tela `/biblioteca`.
+Diagnóstico do `/biblioteca` e `/biblioteca/$slug`:
 
-## Escopo desta etapa
+1. **Payload gigante**: a listagem usa `select("*")`. A tabela `BIBLIOTECA-ESTUDOS` tem 490 livros com o campo `Sobre` enorme (textos longos). Cada clique baixa centenas de KB inúteis — só precisamos de capa, título, autor e link.
+2. **Sem preload no hover**: o router não está com `defaultPreload: "intent"`, então a busca só começa **depois** do clique.
+3. **Sem cache entre visitas**: `staleTime` padrão é 0 → toda vez que você volta na categoria, refaz a query inteira.
+4. **UI vazia enquanto carrega**: só aparece o texto "Carregando…", o que parece travado. Sem skeleton, o usuário sente lentidão extra.
+5. **Imagens externas pesadas** (Amazon, Google Books) sem `decoding="async"` e sem priorização — somam ao tempo percebido.
 
-Importar as **6 bibliotecas principais** que existem no projeto antigo (a "Biblioteca da OAB" não tem tabela própria lá — vou tratar depois quando você definir a fonte):
+## Plano de otimização
 
-| Tabela | Livros |
-|---|---|
-| BIBLIOTECA-CLASSICOS | 29 |
-| BIBLIOTECA-ESTUDOS | 490 |
-| BIBLIOTECA-ORATORIA | 8 |
-| BIBLIOTECA-LIDERANÇA | 10 |
-| BIBLIOTECA-POLITICA | a confirmar |
-| BIBLIOTECA-FORA-DA-TOGA | 285 |
+### 1. Router: pré-carregar no hover
+`src/router.tsx` — adicionar `defaultPreload: "intent"` e `defaultPreloadDelay: 50`. A query da categoria começa quando o dedo/mouse paira no card, então o clique abre instantâneo.
 
-## Passo a passo
+### 2. Loader + ensureQueryData
+`src/routes/_app.biblioteca.$slug.tsx` — mover a busca para um `loader` que chama `queryClient.ensureQueryData(...)`. Usar `useSuspenseQuery` no componente. Resultado: navegação aguarda dados já em cache, sem "flash" de loading.
 
-**1. Migration no Supabase OAB na Risca**
-Criar as 6 tabelas com o mesmo schema do projeto antigo (id BIGINT identity, area, livro, autor, link, imagem, sobre, beneficios, download, etc — BIBLIOTECA-ESTUDOS tem colunas próprias: Área, Tema, Ordem, Capa-livro, Capa-area, Download, Link, Sobre). Cada tabela com:
-- RLS habilitada
-- Política de SELECT pública (leitura aberta — são livros públicos)
-- Sem políticas de escrita (só via service role)
+### 3. Buscar só as colunas necessárias
+Trocar `select("*")` por `select("id, <capa>, <titulo>, <autor>, <link>")` dinâmico por categoria. Em Estudos isso reduz o payload em ~95% (remove o `Sobre`, `aula`, `url_capa_gerada`, etc.).
 
-**2. Importação dos dados**
-Script Node que lê o REST API do projeto antigo (anon key, leitura pública) e faz INSERT em lote no novo Supabase via service role. Importa todos os ~820 registros das 6 tabelas preservando o `id` original (para os links de capa continuarem batendo).
+### 4. Cache prolongado
+Adicionar `staleTime: 5 * 60_000` (5 min) e `gcTime: 30 * 60_000`. Re-entrar na mesma biblioteca = instantâneo, sem refetch.
 
-Observação: as URLs das capas continuam apontando para o storage do projeto antigo (`izspjvegxdfgkgibpyst.supabase.co/storage/...`). As capas vão carregar normalmente porque aquele bucket é público. **Não vou copiar arquivos de storage agora** — fica para uma etapa futura se você quiser independência total.
+### 5. Skeleton grid em vez de "Carregando…"
+Renderizar uma grade de placeholders cinza no mesmo layout (3 colunas, `aspect-[2/3]`) durante o fetch. Percepção de velocidade muda completamente.
 
-**3. UI — tela `/biblioteca`**
-Substituir o `ComingSoon` atual em `src/routes/_app.biblioteca.tsx` por:
-- Hub com **cards das 6 bibliotecas** (cada uma com capa/cor, igual ao projeto antigo)
-- Ao clicar, navega para rota filha listando os livros daquela biblioteca em grid de capas
-- Rotas filhas: `/biblioteca/classicos`, `/biblioteca/estudos`, `/biblioteca/oratoria`, `/biblioteca/lideranca`, `/biblioteca/politica`, `/biblioteca/fora-da-toga`
-- Cada card de livro mostra capa + título + autor; clique abre o `link` (flipbook) em nova aba
-- BIBLIOTECA-ESTUDOS agrupa por `Área` (são 490 livros divididos em áreas do Direito)
+### 6. Imagens
+Adicionar `decoding="async"` em todas as capas; manter `loading="lazy"` (já tem). Para o hub, reduzir count queries com `staleTime` também (5 min).
 
-Visual seguindo o design system atual (dark, gold accent, sem cores hardcoded).
+### 7. Hub (`/biblioteca`)
+Mesmo `staleTime` para `biblioteca-counts` e preload já fica garantido pelo passo 1.
 
-**4. Sem auth necessária**
-Como a leitura é pública, não precisa estar logado para ver as bibliotecas — mantém a experiência leve.
+### Resultado esperado
+- 1º clique: dados começam a chegar no hover → abertura quase instantânea.
+- Cliques seguintes: cache servido → 0 ms.
+- Payload de Estudos: de ~1.5 MB para ~80 KB.
+- UI sempre mostra o esqueleto da grade, nunca uma tela vazia.
 
-## Detalhes técnicos
+### Arquivos a editar
+- `src/router.tsx`
+- `src/routes/_app.biblioteca.tsx`
+- `src/routes/_app.biblioteca.$slug.tsx`
 
-- Migration via `supabase--migration` (uma só, com as 6 CREATE TABLE + policies)
-- Importação rodada via `code--exec` chamando REST API dos dois Supabases
-- Queries da UI via client browser (`@/integrations/supabase/client`) com TanStack Query — leitura pública não precisa de server function
-- Types do Supabase serão regenerados automaticamente após a migration
-
-## Fora de escopo (próximas etapas)
-
-- Biblioteca da OAB (não existe tabela própria no projeto antigo — preciso saber a fonte)
-- Tabelas auxiliares: resumos por capítulo, leitura interativa, plano de leitura, favoritos, contribuições, notificações de novos livros, biblioteca iniciante, bibliotecas Português / Pesquisa Científica
-- Copiar imagens para o storage do OAB na Risca
-- Geração de novas capas com IA
+Posso implementar?
