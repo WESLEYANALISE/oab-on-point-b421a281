@@ -1,32 +1,56 @@
-## Diagnóstico
+## Objetivo
 
-- A data do exame hoje está fixa no código (`Domingo, 23 de setembro de 2026`) e o contador só aparece depois que o JavaScript carrega no navegador.
-- Por isso, em alguns momentos a área pode parecer “sumir” ou piscar, principalmente durante carregamento/recarregamento.
-- Consultei o Supabase conectado e, neste momento, o schema `public` não retorna nenhuma tabela. Isso significa que o app ainda não consegue buscar dados reais dessas funções pelo Supabase até as tabelas existirem/estarem acessíveis no projeto conectado.
+Trazer as bibliotecas do projeto antigo (`izspjvegxdfgkgibpyst`) para o Supabase do **OAB NA RISCA** (`ajbzwnzbuukwjaydfqui`), com estrutura + dados, e montar a tela `/biblioteca`.
 
-## Plano de implementação
+## Escopo desta etapa
 
-1. **Estabilizar a data do exame na tela**
-   - Ajustar o componente do calendário/contador para já renderizar um valor inicial imediatamente.
-   - Evitar estado inicial vazio que deixa a área invisível no primeiro carregamento.
-   - Centralizar a data do exame em um único arquivo/fonte para não ter divergência entre contador e texto da data.
+Importar as **6 bibliotecas principais** que existem no projeto antigo (a "Biblioteca da OAB" não tem tabela própria lá — vou tratar depois quando você definir a fonte):
 
-2. **Preparar conexão da home com Supabase**
-   - Criar funções de leitura via TanStack `createServerFn`, sem expor chave privada no frontend.
-   - Buscar dados das seções principais: aulas interativas, plano de estudo, ferramentas de estudo, ferramentas em carrossel, pratique, biblioteca e notícias.
-   - Manter fallback visual com os dados atuais do app caso uma tabela esteja vazia ou ainda não exista, para a tela não quebrar.
+| Tabela | Livros |
+|---|---|
+| BIBLIOTECA-CLASSICOS | 29 |
+| BIBLIOTECA-ESTUDOS | 490 |
+| BIBLIOTECA-ORATORIA | 8 |
+| BIBLIOTECA-LIDERANÇA | 10 |
+| BIBLIOTECA-POLITICA | a confirmar |
+| BIBLIOTECA-FORA-DA-TOGA | 285 |
 
-3. **Conectar cada card à tabela correspondente**
-   - Substituir arrays fixos da home por dados vindos do Supabase quando disponíveis.
-   - Preservar o layout atual: dois cards no topo, grid 2x2 em ferramentas de estudo, carrossel de ferramentas, pratique e explorar biblioteca.
+## Passo a passo
 
-4. **Verificar tabelas e permissões**
-   - Como a consulta atual mostrou zero tabelas no schema `public`, vou precisar validar os nomes reais das tabelas depois que estiverem disponíveis no projeto conectado.
-   - Se as tabelas tiverem RLS ativo, revisar as políticas para garantir que o app consiga ler apenas o que deve ser público ou do usuário logado.
+**1. Migration no Supabase OAB na Risca**
+Criar as 6 tabelas com o mesmo schema do projeto antigo (id BIGINT identity, area, livro, autor, link, imagem, sobre, beneficios, download, etc — BIBLIOTECA-ESTUDOS tem colunas próprias: Área, Tema, Ordem, Capa-livro, Capa-area, Download, Link, Sobre). Cada tabela com:
+- RLS habilitada
+- Política de SELECT pública (leitura aberta — são livros públicos)
+- Sem políticas de escrita (só via service role)
+
+**2. Importação dos dados**
+Script Node que lê o REST API do projeto antigo (anon key, leitura pública) e faz INSERT em lote no novo Supabase via service role. Importa todos os ~820 registros das 6 tabelas preservando o `id` original (para os links de capa continuarem batendo).
+
+Observação: as URLs das capas continuam apontando para o storage do projeto antigo (`izspjvegxdfgkgibpyst.supabase.co/storage/...`). As capas vão carregar normalmente porque aquele bucket é público. **Não vou copiar arquivos de storage agora** — fica para uma etapa futura se você quiser independência total.
+
+**3. UI — tela `/biblioteca`**
+Substituir o `ComingSoon` atual em `src/routes/_app.biblioteca.tsx` por:
+- Hub com **cards das 6 bibliotecas** (cada uma com capa/cor, igual ao projeto antigo)
+- Ao clicar, navega para rota filha listando os livros daquela biblioteca em grid de capas
+- Rotas filhas: `/biblioteca/classicos`, `/biblioteca/estudos`, `/biblioteca/oratoria`, `/biblioteca/lideranca`, `/biblioteca/politica`, `/biblioteca/fora-da-toga`
+- Cada card de livro mostra capa + título + autor; clique abre o `link` (flipbook) em nova aba
+- BIBLIOTECA-ESTUDOS agrupa por `Área` (são 490 livros divididos em áreas do Direito)
+
+Visual seguindo o design system atual (dark, gold accent, sem cores hardcoded).
+
+**4. Sem auth necessária**
+Como a leitura é pública, não precisa estar logado para ver as bibliotecas — mantém a experiência leve.
 
 ## Detalhes técnicos
 
-- Não vou editar `src/integrations/supabase/types.ts` manualmente.
-- Para dados públicos da home, usarei leitura segura no servidor com projeção de colunas necessárias.
-- Para dados pessoais, como progresso e plano de estudo do usuário, usarei autenticação antes de buscar os registros.
-- Se for necessário criar/ajustar tabelas, isso deverá ser feito por migration do Supabase antes do código final depender delas.
+- Migration via `supabase--migration` (uma só, com as 6 CREATE TABLE + policies)
+- Importação rodada via `code--exec` chamando REST API dos dois Supabases
+- Queries da UI via client browser (`@/integrations/supabase/client`) com TanStack Query — leitura pública não precisa de server function
+- Types do Supabase serão regenerados automaticamente após a migration
+
+## Fora de escopo (próximas etapas)
+
+- Biblioteca da OAB (não existe tabela própria no projeto antigo — preciso saber a fonte)
+- Tabelas auxiliares: resumos por capítulo, leitura interativa, plano de leitura, favoritos, contribuições, notificações de novos livros, biblioteca iniciante, bibliotecas Português / Pesquisa Científica
+- Copiar imagens para o storage do OAB na Risca
+- Geração de novas capas com IA
