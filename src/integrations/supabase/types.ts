@@ -328,7 +328,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_biblioteca_areas: { Args: { _slug: string }; Returns: Json }
+      get_biblioteca_book: {
+        Args: { _id: number; _slug: string }
+        Returns: {
+          area: string
+          autor: string
+          capa: string
+          download: string
+          id: number
+          link: string
+          sobre: string
+          titulo: string
+        }[]
+      }
+      get_biblioteca_books: {
+        Args: {
+          _area?: string
+          _limit?: number
+          _offset?: number
+          _slug: string
+        }
+        Returns: {
+          area: string
+          autor: string
+          capa: string
+          id: number
+          titulo: string
+        }[]
+      }
+      get_biblioteca_counts: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
