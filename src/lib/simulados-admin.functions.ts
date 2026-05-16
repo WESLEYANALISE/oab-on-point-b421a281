@@ -239,7 +239,7 @@ export const iniciarGeracao = createServerFn({ method: "POST" })
 
     const prova = await supabaseAdmin
       .from("provas_oab")
-      .select("numero, titulo")
+      .select("numero, titulo, ano")
       .eq("numero", job.data.prova_numero)
       .single();
     if (prova.error) throw new Error(prova.error.message);
@@ -252,6 +252,7 @@ export const iniciarGeracao = createServerFn({ method: "POST" })
       .insert({
         prova_numero: prova.data.numero,
         titulo: `Simulado ${prova.data.titulo}`,
+        ano: prova.data.ano,
         status: "gerando",
         gerado_por: userId,
       })
