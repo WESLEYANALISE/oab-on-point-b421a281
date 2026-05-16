@@ -264,6 +264,21 @@ function AdminSimulados() {
                     Auditar
                   </Button>
                 )}
+                {status === "pronto" && !naFila && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={reextrair.isPending}
+                    onClick={() => {
+                      if (confirm(`Reextrair questões que falharam na prova ${p.numero}?`))
+                        reextrair.mutate(p.numero);
+                    }}
+                    title="Tenta reextrair questões marcadas como falhou_extracao"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Reextrair falhas
+                  </Button>
+                )}
                 {!naFila && (
                   <Button
                     size="sm"
