@@ -1,125 +1,71 @@
-## Objetivo
+## Diagnóstico da falha (Prova 46)
 
-Criar a área completa de **Simulados OAB**:
+O registro do simulado 46 está em `status: 'gerando'` com `erro_msg: null`. Isso significa que o `try/catch` **nunca rodou o catch** — ou seja, o Worker foi morto pelo limite de tempo da Cloudflare antes do Mistral responder. A combinação OCR (prova + gabarito) + chat completion num único request, em PDFs grandes, estoura o tempo do edge runtime. Sem retorno, o front mostra "falha" e o registro fica zumbi.
 
-- **Admin** (você): nova seção "Admin" no menu lateral, onde escolhe uma prova OAB já catalogada e dispara a geração de um simulado via **Mistral**. A Mistral lê o PDF da prova e do gabarito, extrai as 80 questões com alternativas, resposta correta e matéria, e salva tudo no Supabase.
-- **Usuário comum**: vê na lista todos os simulados já gerados, faz o simulado respondendo questão por questão, recebe feedback com nota total, acertos, erros e desempenho por matéria.
-
----
-
-## 1. Banco de dados (novas tabelas)
-
-### `user_roles` (controle de admin)
-- `id`, `user_id`, `role` (enum: `admin`, `user`), `created_at`
-- Função `has_role(_user_id, _role)` SECURITY DEFINER
-- RLS: usuário vê o próprio papel; só admin insere/deleta
-- **Seed**: insere `admin` para o seu e-mail (`wn7corporation@gmail.com`)
-
-### `simulados`
-- `id`, `prova_numero` (ref à prova OAB), `titulo` (ex: "Simulado 46º Exame"), `total_questoes`, `status` (`gerando` | `pronto` | `erro`), `erro_msg`, `gerado_por` (user_id admin), `created_at`
-- RLS: leitura pública pra todos os autenticados; insert/update só admin
-
-### `simulado_questoes`
-- `id`, `simulado_id`, `numero` (1-80), `enunciado` (texto), `materia` (ex: "Direito Civil"), `alternativas` (JSONB: `{A,B,C,D}`), `resposta_correta` (`A`|`B`|`C`|`D`), `justificativa` (opcional)
-- RLS: leitura pra autenticados; insert/update só admin
-
-### `simulado_tentativas`
-- `id`, `user_id`, `simulado_id`, `iniciado_em`, `concluido_em` (nullable), `respostas` (JSONB: `{ "1": "A", "2": "C", ... }`), `acertos`, `total`, `por_materia` (JSONB)
-- RLS: cada usuário só vê/edita suas próprias tentativas
+A correção exige quebrar o fluxo em **etapas curtas, persistidas em DB, com polling do client** — que é exatamente o que o usuário pediu (prévia → confirmar → logs em tempo real).
 
 ---
 
-## 2. Integração Mistral
+## Arquitetura proposta
 
-Vamos usar a **API oficial da Mistral** com dois endpoints:
-1. **Mistral OCR** (`mistral-ocr-latest`) — extrai o texto/markdown completo do PDF da prova e do gabarito.
-2. **Mistral Chat** (`mistral-large-latest`) — recebe o texto extraído e devolve as 80 questões em JSON estruturado (enunciado, alternativas, resposta correta, matéria) usando o gabarito como referência.
+Fluxo em 3 etapas, cada uma um server fn curto (cabe no limite do Worker), com progresso salvo no DB:
 
-Precisa do segredo **`MISTRAL_API_KEY`** — vou pedir pra você cadastrar depois que aprovar o plano.
+```text
+[Admin clica Gerar]
+   │
+   ▼
+1) prepararSimulado(provaNumero)
+   • OCR dos 2 PDFs via Mistral
+   • Extrai contagem de questões + matérias detectadas (regex no markdown)
+   • Salva job em 'simulado_jobs' com etapa=preview, ocr_prova, ocr_gabarito, total_estimado
+   • Retorna prévia → modal de confirmação
+   │
+   ▼
+[Admin confirma a prévia]
+   │
+   ▼
+2) iniciarGeracao(jobId)
+   • Marca etapa=gerando, batches=N (ex.: 8 batches de ~10 questões)
+   • Retorna imediatamente — UI começa a polar
+   │
+   ▼
+3) processarBatch(jobId, batchIndex)  ← chamado em loop pelo CLIENT
+   • Pega slice do OCR, chama Mistral chat só pra esse intervalo
+   • Insere questões no DB, append log, atualiza progresso/ETA
+   • Retorna { proximo: batchIndex+1 | null }
+   │
+   ▼
+[Quando proximo=null → status=pronto]
+```
 
----
-
-## 3. Server functions (TanStack)
-
-Todas em `src/lib/simulados.functions.ts`:
-
-- `listSimulados()` — lista simulados prontos (autenticado)
-- `getSimulado(id)` — retorna simulado + questões (sem revelar resposta correta antes de submeter)
-- `iniciarTentativa(simuladoId)` — cria/retorna tentativa em andamento
-- `salvarResposta(tentativaId, numeroQuestao, alternativa)` — salva resposta parcial
-- `finalizarTentativa(tentativaId)` — calcula acertos/erros, por matéria, marca como concluída
-- `gerarSimulado(provaNumero)` — **só admin** — dispara o pipeline Mistral (OCR → parsing → insert). Roda em background, marca status `gerando` → `pronto`/`erro`.
-
-Todas usam `requireSupabaseAuth`. As de admin verificam `has_role(userId, 'admin')` e retornam 403 se não for.
-
----
-
-## 4. Telas
-
-### Usuário comum
-
-**`/simulados`** — Lista de simulados prontos (cards com número do exame, nº de questões, botão "Começar"). Filtra por status `pronto`.
-
-**`/simulados/$id`** — Tela de prática:
-- Header com cronômetro, número da questão atual (ex: "Questão 12 de 80")
-- Enunciado + 4 alternativas (A/B/C/D) clicáveis
-- Botões: "Anterior", "Próxima", "Finalizar"
-- Auto-save da resposta a cada clique
-- Sidebar/grid mostrando o status de cada questão (respondida/em branco)
-
-**`/simulados/$id/resultado/$tentativaId`** — Resultado:
-- Nota total (ex: "62 de 80 — 77,5%")
-- Gráfico de barras por matéria (acertos/total)
-- Lista revisável: cada questão com sua resposta, gabarito, e marcador certo/errado
-
-### Admin
-
-**`/admin`** — Hub do admin (cards de áreas administráveis; por enquanto só "Simulados")
-
-**`/admin/simulados`** — Gerenciar simulados:
-- Lista de provas OAB disponíveis (já no banco) com status: "Sem simulado" / "Gerando…" / "Pronto" / "Erro"
-- Botão "Gerar simulado" em cada uma → chama `gerarSimulado(numero)`
-- Tabela com simulados já gerados (editar/excluir)
+Cada batch dura ~5–15s (dentro do limite do Worker). O client faz `useQuery` polando `getJobStatus(jobId)` a cada 1.5s pra renderizar logs e barra de progresso ao vivo.
 
 ---
 
-## 5. Menu lateral (sidebar)
+## Mudanças
 
-Adicionar novo grupo **"Admin"** (só aparece se `has_role(user, 'admin')` for true) com:
-- `/admin` — Painel admin
-- `/admin/simulados` — Gerar simulados
+### Banco
+- Nova tabela `simulado_jobs`: `id`, `simulado_id`, `prova_numero`, `etapa` ('preview'|'gerando'|'pronto'|'erro'), `ocr_prova` (text), `ocr_gabarito` (text), `total_estimado`, `materias_detectadas` (jsonb), `batch_atual`, `batches_total`, `questoes_processadas`, `logs` (jsonb array de `{ts, nivel, msg}`), `iniciado_em`, `concluido_em`, `erro_msg`, `gerado_por`. RLS: admin gerencia.
+- Limpar o registro órfão `prova_numero=46, status='gerando'`.
 
-Mesmo bloco aparece no `MenuDrawer` (mobile).
+### Server functions (`src/lib/simulados-admin.functions.ts`)
+- `prepararSimulado({ provaNumero })` — OCR + contagem + cria job preview.
+- `iniciarGeracao({ jobId })` — cria registro em `simulados`, marca job como `gerando`.
+- `processarBatch({ jobId, batchIndex })` — processa um intervalo de questões, append log/progresso.
+- `getJobStatus({ jobId })` — leitura leve pro polling.
+- `cancelarJob({ jobId })` — limpa job + simulado parcial.
 
----
+### UI Admin (`src/routes/_app.admin.simulados.tsx`)
+- Botão **Gerar** abre modal com loading "Lendo PDFs…" → chama `prepararSimulado`.
+- Mostra **prévia**: nº de questões detectadas, matérias previstas, tempo estimado, botões **Confirmar** / **Cancelar**.
+- Ao confirmar: chama `iniciarGeracao` e dispara loop client-side `processarBatch` até `proximo=null`, com `useQuery` polando `getJobStatus`.
+- Painel de logs ao vivo (lista rolável de mensagens) + barra de progresso + contador "X / Y questões" + ETA calculado pela média de tempo dos batches anteriores.
 
-## 6. Fluxo da geração (passo a passo)
-
-1. Admin clica "Gerar simulado" na prova nº 46
-2. Server function cria registro em `simulados` com status `gerando`
-3. Dispara em background:
-   a. Baixa o PDF da prova e do gabarito (URLs já estão em `provas_oab`)
-   b. Manda os dois PDFs pra Mistral OCR → recebe markdown
-   c. Manda o markdown pra Mistral Chat com prompt estruturado pedindo JSON com 80 questões
-   d. Valida o JSON (Zod), insere as 80 linhas em `simulado_questoes`
-   e. Atualiza `simulados.status = 'pronto'`
-4. Se falhar, salva `status = 'erro'` + `erro_msg`
-5. Frontend do admin faz polling a cada 3s pra atualizar status
-
----
-
-## 7. Confirmações necessárias antes de implementar
-
-1. **E-mail admin**: vou usar `wn7corporation@gmail.com` (o e-mail logado atualmente). Confirma?
-2. **MISTRAL_API_KEY**: vou pedir o segredo via tool depois que você aprovar o plano. Você precisa criar a chave em https://console.mistral.ai/api-keys/
-3. **Escopo de geração**: por enquanto só **1ª fase (80 questões objetivas)**. Sem 2ª fase (peças/discursivas) — fica pra depois.
+### Esconder BottomNav fora da home
+Em `src/routes/_app.tsx`, trocar `{!isBiblioteca && <BottomNav />}` por exibição apenas em `/inicio` (ou raiz `/`). Ajustar também `pb-20` pra só aplicar quando o nav está visível. Confirmar qual é a rota de "Início" (provavelmente `/inicio`).
 
 ---
 
-## 8. O que NÃO entra agora (pra não inchar)
+## Pergunta pra confirmar antes de implementar
 
-- Pagamento/plano premium pra simulados
-- Ranking entre usuários
-- Simulado por matéria isolada (todos são do exame inteiro)
-- Geração de questões inéditas (só extração das oficiais)
-- Cronômetro com bloqueio rígido (vai ter cronômetro visual, mas não impede continuar)
+A rota da home é `/inicio` mesmo? E quando o usuário estiver dentro de "Matérias", "Provas", "Menu" (que também são botões do nav inferior), o nav deve sumir também — confirmando: **só aparece na home, em todas as outras telas some**?

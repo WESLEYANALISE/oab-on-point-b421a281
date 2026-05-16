@@ -17,6 +17,8 @@ function AppLayout() {
   const { user, loading: authLoading } = useAuth();
   const { data: profile } = useProfile();
   const isBiblioteca = pathname.startsWith("/biblioteca");
+  const isHome = pathname === "/";
+  const showBottomNav = isHome;
   const reduceMotion = useReducedMotion();
 
   // Redireciona para login somente após a sessão ser conhecida e ausente.
@@ -39,7 +41,7 @@ function AppLayout() {
       <DesktopSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         {!isBiblioteca && <MobileHeader />}
-        <main className={`flex-1 ${isBiblioteca ? "" : "pb-20 md:pb-0"} overflow-x-hidden`}>
+        <main className={`flex-1 ${showBottomNav ? "pb-20 md:pb-0" : ""} ${isBiblioteca ? "" : ""} overflow-x-hidden`}>
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={pathname}
@@ -53,7 +55,7 @@ function AppLayout() {
             </motion.div>
           </AnimatePresence>
         </main>
-        {!isBiblioteca && <BottomNav />}
+        {showBottomNav && <BottomNav />}
       </div>
     </div>
   );
