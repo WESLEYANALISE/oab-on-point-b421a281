@@ -32,12 +32,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    let lastUserId: string | null | undefined = undefined;
     // onAuthStateChange fires immediately with INITIAL_SESSION (from localStorage),
     // so we don't need to await getSession() — that avoids the blank-spinner delay.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       setLoading(false);
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      const uid = s?.user?.id ?? null;
+      // Só invalida perfil quando o usuário REALMENTE muda (login/logout/troca),
+      // não em refresh de token nem em re-emissão da sessão inicial.
+      if (lastUserId !== undefined && uid !== lastUserId) {
+        queryClient.invalidateQueries({ queryKey: ["profile"] });
+      }
+      lastUserId = uid;
     });
     return () => subscription.unsubscribe();
   }, [queryClient]);
@@ -58,7 +65,11 @@ export function useProfile() {
   return useQuery({
     queryKey: ["profile", user?.id],
     enabled: !!user,
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     queryFn: async (): Promise<Profile | null> => {
       if (!user) return null;
       const { data, error } = await supabase
