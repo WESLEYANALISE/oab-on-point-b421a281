@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Download, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { PROVAS_OAB_CATALOGO } from "@/data/provas-oab-catalogo";
 
 export const Route = createFileRoute("/_app/provas/$numero")({
   head: ({ params }) => ({
@@ -57,8 +58,13 @@ function PdfButton({
 
 function ProvaDetalhePage() {
   const { numero } = Route.useParams();
+  const cachedProva: ProvaFull | null = (() => {
+    const prova = PROVAS_OAB_CATALOGO.find((p) => p.numero === Number(numero));
+    return prova ? { ...prova, oab_source_url: null } : null;
+  })();
   const { data, isLoading, error } = useQuery<ProvaFull | null>({
     queryKey: ["provas-oab", "detalhe", numero],
+    initialData: cachedProva,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("provas_oab")
@@ -68,7 +74,10 @@ function ProvaDetalhePage() {
       if (error) throw error;
       return (data as ProvaFull | null) ?? null;
     },
-    staleTime: 5 * 60_000,
+    staleTime: 30 * 60_000,
+    gcTime: 60 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   return (
