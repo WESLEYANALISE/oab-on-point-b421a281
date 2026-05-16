@@ -264,7 +264,7 @@ function TabsSwitch({ aba, setAba }: { aba: Aba; setAba: (a: Aba) => void }) {
       ref={containerRef}
       role="tablist"
       aria-label="Modo de leitura"
-      className="relative mb-6 inline-flex items-center gap-1 rounded-full border border-border bg-card/60 p-1 backdrop-blur-sm"
+      className="relative mb-6 flex w-full items-center gap-1 rounded-full border border-border bg-card/60 p-1 backdrop-blur-sm"
     >
       <span
         aria-hidden
