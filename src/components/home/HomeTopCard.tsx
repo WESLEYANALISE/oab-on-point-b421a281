@@ -61,8 +61,21 @@ export function HomeTopCard() {
         <ChevronRight className="h-4 w-4 text-gold/70 shrink-0 transition-transform group-hover:translate-x-0.5" />
       </Link>
 
-      {/* Linha 2: countdown inline + data */}
-      <div className="relative border-t border-primary-foreground/12 px-3.5 py-2.5 md:px-5 md:py-3 flex items-center justify-between gap-3">
+      {/* Linha 2: rótulo "Próximo exame" + countdown + atalho calendário */}
+      <div className="relative border-t border-primary-foreground/12 px-3.5 py-2.5 md:px-5 md:py-3">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <p className="text-[9px] uppercase tracking-[0.22em] text-primary-foreground/60 font-semibold leading-none">
+            Próximo exame · {EXAM_SHORT}
+          </p>
+          <Link
+            to="/oab/calendario"
+            className="inline-flex items-center gap-1 text-[10px] md:text-[11px] font-semibold text-gold/90 hover:text-gold whitespace-nowrap"
+          >
+            <Calendar className="h-3 w-3" />
+            Ver calendário
+            <ChevronRight className="h-3 w-3" />
+          </Link>
+        </div>
         <div className="flex items-baseline gap-1.5 md:gap-2 tabular-nums" suppressHydrationWarning>
           <Stat n={t.d} l="dias" big />
           <Sep />
@@ -70,14 +83,6 @@ export function HomeTopCard() {
           <Sep />
           <Stat n={t.m} l="min" />
         </div>
-        <Link
-          to="/oab/calendario"
-          className="inline-flex items-center gap-1.5 text-[11px] md:text-xs font-medium text-primary-foreground/80 hover:text-primary-foreground whitespace-nowrap"
-        >
-          <Calendar className="h-3.5 w-3.5 text-gold" />
-          <span className="hidden xs:inline">{EXAM_SHORT}</span>
-          <span className="xs:hidden">{EXAM_SHORT}</span>
-        </Link>
       </div>
     </div>
   );
