@@ -105,48 +105,8 @@
 
 
 @layer base {
-  @font-face {
-    font-family: "Fraunces";
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: url("https://fonts.gstatic.com/s/fraunces/v37/6NUh8FyLNQOQZAnv9bYEvDiIdE9Ea92uemAk.woff2") format("woff2");
-  }
-  @font-face {
-    font-family: "Fraunces";
-    font-style: normal;
-    font-weight: 600;
-    font-display: swap;
-    src: url("https://fonts.gstatic.com/s/fraunces/v37/6NUh8FyLNQOQZAnv9bYEvDiIdE9Ea92uemAk.woff2") format("woff2");
-  }
-  @font-face {
-    font-family: "Fraunces";
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url("https://fonts.gstatic.com/s/fraunces/v37/6NUh8FyLNQOQZAnv9bYEvDiIdE9Ea92uemAk.woff2") format("woff2");
-  }
-  @font-face {
-    font-family: "Inter Tight";
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    src: url("https://fonts.gstatic.com/s/intertight/v9/NGSnv5HMAFg6IuGlBNMjxJEL2VmU3NS7Z2mjDw-qXA.ttf") format("truetype");
-  }
-  @font-face {
-    font-family: "Inter Tight";
-    font-style: normal;
-    font-weight: 600;
-    font-display: swap;
-    src: url("https://fonts.gstatic.com/s/intertight/v9/NGSnv5HMAFg6IuGlBNMjxJEL2VmU3NS7Z2mj0QiqXA.ttf") format("truetype");
-  }
-  @font-face {
-    font-family: "Inter Tight";
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url("https://fonts.gstatic.com/s/intertight/v9/NGSnv5HMAFg6IuGlBNMjxJEL2VmU3NS7Z2mj6AiqXA.ttf") format("truetype");
-  }
+  /* Fonts loaded via Google Fonts @import at the top of this file. */
+
 
   * {
     border-color: var(--color-border);
