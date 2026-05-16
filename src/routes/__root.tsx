@@ -90,7 +90,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://ajbzwnzbuukwjaydfqui.supabase.co", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://ajbzwnzbuukwjaydfqui.supabase.co" },
-      { rel: "icon", href: "/favicon.ico" },
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),
