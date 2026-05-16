@@ -26,8 +26,8 @@ export function HomeGreeting() {
           >
             {greet ?? "\u00a0"}
           </p>
-          <p className="font-display font-semibold text-[17px] md:text-xl leading-tight tracking-tight truncate mt-1">
-            {firstName}
+          <p className="font-display font-semibold text-[17px] md:text-xl leading-tight tracking-tight truncate mt-1 min-h-[22px]">
+            {firstName || <span className="inline-block h-4 w-24 rounded bg-white/10 animate-pulse align-middle" />}
           </p>
           <p className="text-[11px] text-primary-foreground/70 mt-0.5 truncate">Foco no 46º Exame OAB</p>
         </div>
