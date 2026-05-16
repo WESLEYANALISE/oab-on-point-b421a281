@@ -3,10 +3,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Loader2, Sparkles, Trash2, CheckCircle2, AlertCircle, Clock } from "lucide-react";
-import { listProvasComStatus, gerarSimulado, excluirSimulado } from "@/lib/simulados-admin.functions";
+import {
+  listProvasComStatus,
+  gerarSimulado,
+  excluirSimulado,
+} from "@/lib/simulados-admin.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Route = createFileRoute("/_app/admin/simulados")({
   component: AdminSimulados,
@@ -14,13 +19,18 @@ export const Route = createFileRoute("/_app/admin/simulados")({
 
 function AdminSimulados() {
   const qc = useQueryClient();
+  const { session } = useAuth();
   const listFn = useServerFn(listProvasComStatus);
   const gerarFn = useServerFn(gerarSimulado);
   const delFn = useServerFn(excluirSimulado);
+  const authHeaders = session?.access_token
+    ? { Authorization: `Bearer ${session.access_token}` }
+    : undefined;
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-provas"],
-    queryFn: () => listFn(),
+    enabled: !!authHeaders,
+    queryFn: () => listFn({ headers: authHeaders }),
     refetchInterval: (q) => {
       const list = q.state.data as Awaited<ReturnType<typeof listFn>> | undefined;
       const algum = list?.some((p) => p.simulado?.status === "gerando");
@@ -31,7 +41,10 @@ function AdminSimulados() {
   const [gerandoNum, setGerandoNum] = useState<number | null>(null);
 
   const gerar = useMutation({
-    mutationFn: (provaNumero: number) => gerarFn({ data: { provaNumero } }),
+    mutationFn: (provaNumero: number) => {
+      if (!authHeaders) throw new Error("Sessão expirada. Entre novamente.");
+      return gerarFn({ data: { provaNumero }, headers: authHeaders });
+    },
     onMutate: (n) => setGerandoNum(n),
     onSuccess: () => {
       toast.success("Simulado gerado com sucesso!");
@@ -43,7 +56,10 @@ function AdminSimulados() {
   });
 
   const excluir = useMutation({
-    mutationFn: (id: string) => delFn({ data: { id } }),
+    mutationFn: (id: string) => {
+      if (!authHeaders) throw new Error("Sessão expirada. Entre novamente.");
+      return delFn({ data: { id }, headers: authHeaders });
+    },
     onSuccess: () => {
       toast.success("Simulado excluído");
       qc.invalidateQueries({ queryKey: ["admin-provas"] });
@@ -77,7 +93,9 @@ function AdminSimulados() {
                   <div className="flex items-center gap-2 mt-1 text-xs">
                     <StatusBadge status={status} />
                     {p.simulado?.total_questoes ? (
-                      <span className="text-muted-foreground">· {p.simulado.total_questoes} questões</span>
+                      <span className="text-muted-foreground">
+                        · {p.simulado.total_questoes} questões
+                      </span>
                     ) : null}
                     {!p.prova_1fase_url || !p.gabarito_1fase_url ? (
                       <span className="text-muted-foreground">· PDF ausente</span>
@@ -105,11 +123,17 @@ function AdminSimulados() {
                     onClick={() => gerar.mutate(p.numero)}
                   >
                     {gerandoNum === p.numero || status === "gerando" ? (
-                      <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Gerando…</>
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Gerando…
+                      </>
                     ) : status === "pronto" ? (
-                      <><Sparkles className="h-4 w-4 mr-1" /> Regenerar</>
+                      <>
+                        <Sparkles className="h-4 w-4 mr-1" /> Regenerar
+                      </>
                     ) : (
-                      <><Sparkles className="h-4 w-4 mr-1" /> Gerar</>
+                      <>
+                        <Sparkles className="h-4 w-4 mr-1" /> Gerar
+                      </>
                     )}
                   </Button>
                 </div>
@@ -124,10 +148,22 @@ function AdminSimulados() {
 
 function StatusBadge({ status }: { status?: string | null }) {
   if (status === "pronto")
-    return <span className="inline-flex items-center gap-1 text-green-600"><CheckCircle2 className="h-3 w-3" /> Pronto</span>;
+    return (
+      <span className="inline-flex items-center gap-1 text-green-600">
+        <CheckCircle2 className="h-3 w-3" /> Pronto
+      </span>
+    );
   if (status === "gerando")
-    return <span className="inline-flex items-center gap-1 text-primary"><Clock className="h-3 w-3" /> Gerando</span>;
+    return (
+      <span className="inline-flex items-center gap-1 text-primary">
+        <Clock className="h-3 w-3" /> Gerando
+      </span>
+    );
   if (status === "erro")
-    return <span className="inline-flex items-center gap-1 text-destructive"><AlertCircle className="h-3 w-3" /> Erro</span>;
+    return (
+      <span className="inline-flex items-center gap-1 text-destructive">
+        <AlertCircle className="h-3 w-3" /> Erro
+      </span>
+    );
   return <span className="text-muted-foreground">Sem simulado</span>;
 }
