@@ -1,15 +1,21 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { BookOpen, Mic, Users, Vote, Briefcase, GraduationCap } from "lucide-react";
+import estudosImg from "@/assets/biblio-estudos.jpg";
+import classicosImg from "@/assets/biblio-classicos.jpg";
+import oratoriaImg from "@/assets/biblio-oratoria.jpg";
+import liderancaImg from "@/assets/biblio-lideranca.jpg";
+import politicaImg from "@/assets/biblio-politica.jpg";
+import foraDaTogaImg from "@/assets/biblio-fora-da-toga.jpg";
 
 const BIBLIOTECAS = [
-  { slug: "estudos", title: "Biblioteca de Estudos", table: "BIBLIOTECA-ESTUDOS", icon: GraduationCap, accent: "from-amber-500/20 to-amber-700/10" },
-  { slug: "classicos", title: "Clássicos do Direito", table: "BIBLIOTECA-CLASSICOS", icon: BookOpen, accent: "from-indigo-500/20 to-indigo-700/10" },
-  { slug: "oratoria", title: "Oratória", table: "BIBLIOTECA-ORATORIA", icon: Mic, accent: "from-rose-500/20 to-rose-700/10" },
-  { slug: "lideranca", title: "Liderança", table: "BIBLIOTECA-LIDERANÇA", icon: Users, accent: "from-emerald-500/20 to-emerald-700/10" },
-  { slug: "politica", title: "Política", table: "BIBLIOTECA-POLITICA", icon: Vote, accent: "from-sky-500/20 to-sky-700/10" },
-  { slug: "fora-da-toga", title: "Fora da Toga", table: "BIBLIOTECA-FORA-DA-TOGA", icon: Briefcase, accent: "from-fuchsia-500/20 to-fuchsia-700/10" },
+  { slug: "estudos", title: "Biblioteca de Estudos", subtitle: "Resumos e materiais por área", table: "BIBLIOTECA-ESTUDOS", cover: estudosImg },
+  { slug: "classicos", title: "Clássicos do Direito", subtitle: "Obras fundamentais", table: "BIBLIOTECA-CLASSICOS", cover: classicosImg },
+  { slug: "oratoria", title: "Oratória", subtitle: "Comunicação e argumentação", table: "BIBLIOTECA-ORATORIA", cover: oratoriaImg },
+  { slug: "lideranca", title: "Liderança", subtitle: "Gestão e influência", table: "BIBLIOTECA-LIDERANÇA", cover: liderancaImg },
+  { slug: "politica", title: "Política", subtitle: "Pensamento político e jurídico", table: "BIBLIOTECA-POLITICA", cover: politicaImg },
+  { slug: "fora-da-toga", title: "Fora da Toga", subtitle: "Leituras complementares", table: "BIBLIOTECA-FORA-DA-TOGA", cover: foraDaTogaImg },
 ] as const;
 
 export const Route = createFileRoute("/_app/biblioteca")({
@@ -18,6 +24,7 @@ export const Route = createFileRoute("/_app/biblioteca")({
 });
 
 function BibliotecaHub() {
+  const navigate = useNavigate();
   const { data: counts } = useQuery({
     queryKey: ["biblioteca-counts"],
     queryFn: async () => {
@@ -36,27 +43,54 @@ function BibliotecaHub() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-6 pb-24">
-      <h1 className="text-2xl font-bold mb-1 text-foreground">Biblioteca</h1>
-      <p className="text-sm text-muted-foreground mb-6">Livros, resumos e leituras essenciais.</p>
-      <div className="grid grid-cols-2 gap-3">
-        {BIBLIOTECAS.map((b) => {
-          const Icon = b.icon;
-          return (
-            <Link
-              key={b.slug}
-              to="/biblioteca/$slug"
-              params={{ slug: b.slug }}
-              className={`relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br ${b.accent} p-4 aspect-square flex flex-col justify-between hover:scale-[1.02] transition-transform`}
-            >
-              <Icon className="w-7 h-7 text-foreground/80" />
-              <div>
-                <div className="text-sm font-semibold text-foreground leading-tight">{b.title}</div>
-                <div className="text-xs text-muted-foreground mt-1">{counts?.[b.slug] ?? "—"} livros</div>
-              </div>
-            </Link>
-          );
-        })}
+    <div className="min-h-screen bg-background">
+      {/* Header próprio da biblioteca */}
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
+          <button
+            onClick={() => navigate({ to: "/" })}
+            className="p-2 -ml-2 rounded-full hover:bg-muted"
+            aria-label="Voltar"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-lg font-bold text-foreground leading-tight">Biblioteca</h1>
+            <p className="text-xs text-muted-foreground">Livros, resumos e leituras</p>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-3">
+        <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden bg-card">
+          {BIBLIOTECAS.map((b) => (
+            <li key={b.slug}>
+              <Link
+                to="/biblioteca/$slug"
+                params={{ slug: b.slug }}
+                className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors"
+              >
+                <img
+                  src={b.cover}
+                  alt={b.title}
+                  width={64}
+                  height={64}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-16 h-16 rounded-lg object-cover flex-shrink-0 border border-border"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold text-foreground leading-tight">{b.title}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{b.subtitle}</div>
+                  <div className="text-[11px] text-muted-foreground/80 mt-1">
+                    {counts?.[b.slug] ?? "—"} livros
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
