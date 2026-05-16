@@ -22,8 +22,7 @@ export const Route = createFileRoute("/_app/")({
   component: AreaOABPage,
 });
 
-// Data fixa do exame — string estática evita mismatch de fuso na hidratação
-const EXAM_DATE_LABEL = "Quarta-feira, 23 de setembro de 2026";
+
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit", month: "short", timeZone: "America/Sao_Paulo",
