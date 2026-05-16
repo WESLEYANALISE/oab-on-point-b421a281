@@ -65,7 +65,7 @@ function ResumoTimeline() {
                 {c.ordem}
               </span>
               <Link
-                to="/resumos/$livroId/capitulo/$ordem"
+                to="/resumos/capitulo/$livroId/$ordem"
                 params={{ livroId, ordem: String(c.ordem) }}
                 target="_blank"
                 rel="noopener noreferrer"
