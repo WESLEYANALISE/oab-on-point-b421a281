@@ -19,7 +19,6 @@ import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
 import { Route as AppSimuladosRouteImport } from './routes/_app.simulados'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppResumosRouteImport } from './routes/_app.resumos'
-import { Route as AppQuestoesRouteImport } from './routes/_app.questoes'
 import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
 import { Route as AppPlanoEstudoRouteImport } from './routes/_app.plano-estudo'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
@@ -93,11 +92,6 @@ const AppRetaFinalRoute = AppRetaFinalRouteImport.update({
 const AppResumosRoute = AppResumosRouteImport.update({
   id: '/resumos',
   path: '/resumos',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppQuestoesRoute = AppQuestoesRouteImport.update({
-  id: '/questoes',
-  path: '/questoes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProgressoRoute = AppProgressoRouteImport.update({
@@ -245,7 +239,6 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AppPerfilRoute
   '/plano-estudo': typeof AppPlanoEstudoRoute
   '/progresso': typeof AppProgressoRoute
-  '/questoes': typeof AppQuestoesRoute
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/simulados': typeof AppSimuladosRoute
@@ -280,7 +273,6 @@ export interface FileRoutesByTo {
   '/perfil': typeof AppPerfilRoute
   '/plano-estudo': typeof AppPlanoEstudoRoute
   '/progresso': typeof AppProgressoRoute
-  '/questoes': typeof AppQuestoesRoute
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/simulados': typeof AppSimuladosRoute
@@ -317,7 +309,6 @@ export interface FileRoutesById {
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/plano-estudo': typeof AppPlanoEstudoRoute
   '/_app/progresso': typeof AppProgressoRoute
-  '/_app/questoes': typeof AppQuestoesRoute
   '/_app/resumos': typeof AppResumosRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/_app/simulados': typeof AppSimuladosRoute
@@ -357,7 +348,6 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/plano-estudo'
     | '/progresso'
-    | '/questoes'
     | '/resumos'
     | '/reta-final'
     | '/simulados'
@@ -392,7 +382,6 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/plano-estudo'
     | '/progresso'
-    | '/questoes'
     | '/resumos'
     | '/reta-final'
     | '/simulados'
@@ -428,7 +417,6 @@ export interface FileRouteTypes {
     | '/_app/perfil'
     | '/_app/plano-estudo'
     | '/_app/progresso'
-    | '/_app/questoes'
     | '/_app/resumos'
     | '/_app/reta-final'
     | '/_app/simulados'
@@ -528,13 +516,6 @@ declare module '@tanstack/react-router' {
       path: '/resumos'
       fullPath: '/resumos'
       preLoaderRoute: typeof AppResumosRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/questoes': {
-      id: '/_app/questoes'
-      path: '/questoes'
-      fullPath: '/questoes'
-      preLoaderRoute: typeof AppQuestoesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/progresso': {
@@ -794,7 +775,6 @@ interface AppRouteChildren {
   AppPerfilRoute: typeof AppPerfilRoute
   AppPlanoEstudoRoute: typeof AppPlanoEstudoRoute
   AppProgressoRoute: typeof AppProgressoRoute
-  AppQuestoesRoute: typeof AppQuestoesRoute
   AppResumosRoute: typeof AppResumosRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
   AppSimuladosRoute: typeof AppSimuladosRoute
@@ -820,7 +800,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppPerfilRoute: AppPerfilRoute,
   AppPlanoEstudoRoute: AppPlanoEstudoRoute,
   AppProgressoRoute: AppProgressoRoute,
-  AppQuestoesRoute: AppQuestoesRoute,
   AppResumosRoute: AppResumosRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
   AppSimuladosRoute: AppSimuladosRoute,
@@ -846,3 +825,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
