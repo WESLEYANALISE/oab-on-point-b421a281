@@ -30,9 +30,13 @@ import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
+import { Route as AppAdminRouteImport } from './routes/_app.admin'
+import { Route as AppSimuladosIndexRouteImport } from './routes/_app.simulados.index'
 import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
+import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
 import { Route as ApiPublicSeedProvasRouteImport } from './routes/api.public.seed-provas'
+import { Route as AppSimuladosIdRouteImport } from './routes/_app.simulados.$id'
 import { Route as AppProvasNumeroRouteImport } from './routes/_app.provas.$numero'
 import { Route as AppOabSegundaFaseRouteImport } from './routes/_app.oab.segunda-fase'
 import { Route as AppOabPrimeiraFaseRouteImport } from './routes/_app.oab.primeira-fase'
@@ -43,9 +47,11 @@ import { Route as AppOabCalendarioRouteImport } from './routes/_app.oab.calendar
 import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
+import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
 import { Route as AppBibliotecaSlugIndexRouteImport } from './routes/_app.biblioteca.$slug.index'
 import { Route as AppBibliotecaSlugBookIdRouteImport } from './routes/_app.biblioteca.$slug.$bookId'
 import { Route as AppBibliotecaSlugBookIdIndexRouteImport } from './routes/_app.biblioteca.$slug.$bookId.index'
+import { Route as AppSimuladosIdResultadoTentativaIdRouteImport } from './routes/_app.simulados.$id.resultado.$tentativaId'
 import { Route as AppBibliotecaSlugBookIdLerRouteImport } from './routes/_app.biblioteca.$slug.$bookId.ler'
 
 const SignupRoute = SignupRouteImport.update({
@@ -152,6 +158,16 @@ const AppAssistenteRoute = AppAssistenteRouteImport.update({
   path: '/assistente',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSimuladosIndexRoute = AppSimuladosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppSimuladosRoute,
+} as any)
 const AppProvasIndexRoute = AppProvasIndexRouteImport.update({
   id: '/provas/',
   path: '/provas/',
@@ -162,10 +178,20 @@ const AppBibliotecaIndexRoute = AppBibliotecaIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppBibliotecaRoute,
 } as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const ApiPublicSeedProvasRoute = ApiPublicSeedProvasRouteImport.update({
   id: '/api/public/seed-provas',
   path: '/api/public/seed-provas',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppSimuladosIdRoute = AppSimuladosIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppSimuladosRoute,
 } as any)
 const AppProvasNumeroRoute = AppProvasNumeroRouteImport.update({
   id: '/provas/$numero',
@@ -217,6 +243,11 @@ const AppBibliotecaSlugRoute = AppBibliotecaSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => AppBibliotecaRoute,
 } as any)
+const AppAdminSimuladosRoute = AppAdminSimuladosRouteImport.update({
+  id: '/simulados',
+  path: '/simulados',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppBibliotecaSlugIndexRoute = AppBibliotecaSlugIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -233,6 +264,12 @@ const AppBibliotecaSlugBookIdIndexRoute =
     path: '/',
     getParentRoute: () => AppBibliotecaSlugBookIdRoute,
   } as any)
+const AppSimuladosIdResultadoTentativaIdRoute =
+  AppSimuladosIdResultadoTentativaIdRouteImport.update({
+    id: '/resultado/$tentativaId',
+    path: '/resultado/$tentativaId',
+    getParentRoute: () => AppSimuladosIdRoute,
+  } as any)
 const AppBibliotecaSlugBookIdLerRoute =
   AppBibliotecaSlugBookIdLerRouteImport.update({
     id: '/ler',
@@ -246,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/admin': typeof AppAdminRouteWithChildren
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
@@ -259,8 +297,9 @@ export interface FileRoutesByFullPath {
   '/progresso': typeof AppProgressoRoute
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
-  '/simulados': typeof AppSimuladosRoute
+  '/simulados': typeof AppSimuladosRouteWithChildren
   '/vade-mecum': typeof AppVadeMecumRoute
+  '/admin/simulados': typeof AppAdminSimuladosRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
@@ -271,12 +310,16 @@ export interface FileRoutesByFullPath {
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
+  '/simulados/$id': typeof AppSimuladosIdRouteWithChildren
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
+  '/admin/': typeof AppAdminIndexRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/provas/': typeof AppProvasIndexRoute
+  '/simulados/': typeof AppSimuladosIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
+  '/simulados/$id/resultado/$tentativaId': typeof AppSimuladosIdResultadoTentativaIdRoute
   '/biblioteca/$slug/$bookId/': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -296,9 +339,9 @@ export interface FileRoutesByTo {
   '/progresso': typeof AppProgressoRoute
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
-  '/simulados': typeof AppSimuladosRoute
   '/vade-mecum': typeof AppVadeMecumRoute
   '/': typeof AppIndexRoute
+  '/admin/simulados': typeof AppAdminSimuladosRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
   '/oab/calendario': typeof AppOabCalendarioRoute
@@ -308,11 +351,15 @@ export interface FileRoutesByTo {
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
+  '/simulados/$id': typeof AppSimuladosIdRouteWithChildren
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
+  '/admin': typeof AppAdminIndexRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
   '/provas': typeof AppProvasIndexRoute
+  '/simulados': typeof AppSimuladosIndexRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
+  '/simulados/$id/resultado/$tentativaId': typeof AppSimuladosIdResultadoTentativaIdRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRoutesById {
@@ -322,6 +369,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/assistente': typeof AppAssistenteRoute
   '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRoute
@@ -335,9 +383,10 @@ export interface FileRoutesById {
   '/_app/progresso': typeof AppProgressoRoute
   '/_app/resumos': typeof AppResumosRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
-  '/_app/simulados': typeof AppSimuladosRoute
+  '/_app/simulados': typeof AppSimuladosRouteWithChildren
   '/_app/vade-mecum': typeof AppVadeMecumRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/admin/simulados': typeof AppAdminSimuladosRoute
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
   '/_app/noticias/$id': typeof AppNoticiasIdRoute
@@ -348,12 +397,16 @@ export interface FileRoutesById {
   '/_app/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/_app/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/_app/provas/$numero': typeof AppProvasNumeroRoute
+  '/_app/simulados/$id': typeof AppSimuladosIdRouteWithChildren
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
+  '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/provas/': typeof AppProvasIndexRoute
+  '/_app/simulados/': typeof AppSimuladosIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/_app/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
+  '/_app/simulados/$id/resultado/$tentativaId': typeof AppSimuladosIdResultadoTentativaIdRoute
   '/_app/biblioteca/$slug/$bookId/': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -364,6 +417,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/reset-password'
     | '/signup'
+    | '/admin'
     | '/assistente'
     | '/audioaulas'
     | '/aulas'
@@ -379,6 +433,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/simulados'
     | '/vade-mecum'
+    | '/admin/simulados'
     | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
@@ -389,12 +444,16 @@ export interface FileRouteTypes {
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
     | '/provas/$numero'
+    | '/simulados/$id'
     | '/api/public/seed-provas'
+    | '/admin/'
     | '/biblioteca/'
     | '/provas/'
+    | '/simulados/'
     | '/biblioteca/$slug/$bookId'
     | '/biblioteca/$slug/'
     | '/biblioteca/$slug/$bookId/ler'
+    | '/simulados/$id/resultado/$tentativaId'
     | '/biblioteca/$slug/$bookId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -414,9 +473,9 @@ export interface FileRouteTypes {
     | '/progresso'
     | '/resumos'
     | '/reta-final'
-    | '/simulados'
     | '/vade-mecum'
     | '/'
+    | '/admin/simulados'
     | '/materias/$slug'
     | '/noticias/$id'
     | '/oab/calendario'
@@ -426,11 +485,15 @@ export interface FileRouteTypes {
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
     | '/provas/$numero'
+    | '/simulados/$id'
     | '/api/public/seed-provas'
+    | '/admin'
     | '/biblioteca'
     | '/provas'
+    | '/simulados'
     | '/biblioteca/$slug'
     | '/biblioteca/$slug/$bookId/ler'
+    | '/simulados/$id/resultado/$tentativaId'
     | '/biblioteca/$slug/$bookId'
   id:
     | '__root__'
@@ -439,6 +502,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/reset-password'
     | '/signup'
+    | '/_app/admin'
     | '/_app/assistente'
     | '/_app/audioaulas'
     | '/_app/aulas'
@@ -455,6 +519,7 @@ export interface FileRouteTypes {
     | '/_app/simulados'
     | '/_app/vade-mecum'
     | '/_app/'
+    | '/_app/admin/simulados'
     | '/_app/biblioteca/$slug'
     | '/_app/materias/$slug'
     | '/_app/noticias/$id'
@@ -465,12 +530,16 @@ export interface FileRouteTypes {
     | '/_app/oab/primeira-fase'
     | '/_app/oab/segunda-fase'
     | '/_app/provas/$numero'
+    | '/_app/simulados/$id'
     | '/api/public/seed-provas'
+    | '/_app/admin/'
     | '/_app/biblioteca/'
     | '/_app/provas/'
+    | '/_app/simulados/'
     | '/_app/biblioteca/$slug/$bookId'
     | '/_app/biblioteca/$slug/'
     | '/_app/biblioteca/$slug/$bookId/ler'
+    | '/_app/simulados/$id/resultado/$tentativaId'
     | '/_app/biblioteca/$slug/$bookId/'
   fileRoutesById: FileRoutesById
 }
@@ -632,6 +701,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssistenteRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/simulados/': {
+      id: '/_app/simulados/'
+      path: '/'
+      fullPath: '/simulados/'
+      preLoaderRoute: typeof AppSimuladosIndexRouteImport
+      parentRoute: typeof AppSimuladosRoute
+    }
     '/_app/provas/': {
       id: '/_app/provas/'
       path: '/provas'
@@ -646,12 +729,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaIndexRouteImport
       parentRoute: typeof AppBibliotecaRoute
     }
+    '/_app/admin/': {
+      id: '/_app/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/api/public/seed-provas': {
       id: '/api/public/seed-provas'
       path: '/api/public/seed-provas'
       fullPath: '/api/public/seed-provas'
       preLoaderRoute: typeof ApiPublicSeedProvasRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/simulados/$id': {
+      id: '/_app/simulados/$id'
+      path: '/$id'
+      fullPath: '/simulados/$id'
+      preLoaderRoute: typeof AppSimuladosIdRouteImport
+      parentRoute: typeof AppSimuladosRoute
     }
     '/_app/provas/$numero': {
       id: '/_app/provas/$numero'
@@ -723,6 +820,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugRouteImport
       parentRoute: typeof AppBibliotecaRoute
     }
+    '/_app/admin/simulados': {
+      id: '/_app/admin/simulados'
+      path: '/simulados'
+      fullPath: '/admin/simulados'
+      preLoaderRoute: typeof AppAdminSimuladosRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/biblioteca/$slug/': {
       id: '/_app/biblioteca/$slug/'
       path: '/'
@@ -744,6 +848,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugBookIdIndexRouteImport
       parentRoute: typeof AppBibliotecaSlugBookIdRoute
     }
+    '/_app/simulados/$id/resultado/$tentativaId': {
+      id: '/_app/simulados/$id/resultado/$tentativaId'
+      path: '/resultado/$tentativaId'
+      fullPath: '/simulados/$id/resultado/$tentativaId'
+      preLoaderRoute: typeof AppSimuladosIdResultadoTentativaIdRouteImport
+      parentRoute: typeof AppSimuladosIdRoute
+    }
     '/_app/biblioteca/$slug/$bookId/ler': {
       id: '/_app/biblioteca/$slug/$bookId/ler'
       path: '/ler'
@@ -753,6 +864,20 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AppAdminRouteChildren {
+  AppAdminSimuladosRoute: typeof AppAdminSimuladosRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminSimuladosRoute: AppAdminSimuladosRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
 
 interface AppBibliotecaSlugBookIdRouteChildren {
   AppBibliotecaSlugBookIdLerRoute: typeof AppBibliotecaSlugBookIdLerRoute
@@ -821,7 +946,35 @@ const AppNoticiasRouteWithChildren = AppNoticiasRoute._addFileChildren(
   AppNoticiasRouteChildren,
 )
 
+interface AppSimuladosIdRouteChildren {
+  AppSimuladosIdResultadoTentativaIdRoute: typeof AppSimuladosIdResultadoTentativaIdRoute
+}
+
+const AppSimuladosIdRouteChildren: AppSimuladosIdRouteChildren = {
+  AppSimuladosIdResultadoTentativaIdRoute:
+    AppSimuladosIdResultadoTentativaIdRoute,
+}
+
+const AppSimuladosIdRouteWithChildren = AppSimuladosIdRoute._addFileChildren(
+  AppSimuladosIdRouteChildren,
+)
+
+interface AppSimuladosRouteChildren {
+  AppSimuladosIdRoute: typeof AppSimuladosIdRouteWithChildren
+  AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
+}
+
+const AppSimuladosRouteChildren: AppSimuladosRouteChildren = {
+  AppSimuladosIdRoute: AppSimuladosIdRouteWithChildren,
+  AppSimuladosIndexRoute: AppSimuladosIndexRoute,
+}
+
+const AppSimuladosRouteWithChildren = AppSimuladosRoute._addFileChildren(
+  AppSimuladosRouteChildren,
+)
+
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAssistenteRoute: typeof AppAssistenteRoute
   AppAudioaulasRoute: typeof AppAudioaulasRoute
   AppAulasRoute: typeof AppAulasRoute
@@ -835,7 +988,7 @@ interface AppRouteChildren {
   AppProgressoRoute: typeof AppProgressoRoute
   AppResumosRoute: typeof AppResumosRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
-  AppSimuladosRoute: typeof AppSimuladosRoute
+  AppSimuladosRoute: typeof AppSimuladosRouteWithChildren
   AppVadeMecumRoute: typeof AppVadeMecumRoute
   AppIndexRoute: typeof AppIndexRoute
   AppOabCalendarioRoute: typeof AppOabCalendarioRoute
@@ -849,6 +1002,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRouteWithChildren,
   AppAssistenteRoute: AppAssistenteRoute,
   AppAudioaulasRoute: AppAudioaulasRoute,
   AppAulasRoute: AppAulasRoute,
@@ -862,7 +1016,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProgressoRoute: AppProgressoRoute,
   AppResumosRoute: AppResumosRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
-  AppSimuladosRoute: AppSimuladosRoute,
+  AppSimuladosRoute: AppSimuladosRouteWithChildren,
   AppVadeMecumRoute: AppVadeMecumRoute,
   AppIndexRoute: AppIndexRoute,
   AppOabCalendarioRoute: AppOabCalendarioRoute,
