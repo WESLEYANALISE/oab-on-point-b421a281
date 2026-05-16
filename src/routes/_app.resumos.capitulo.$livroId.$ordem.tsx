@@ -95,8 +95,8 @@ function CapituloView() {
       </header>
 
       <article
-        className="prose prose-sm md:prose-base max-w-none dark:prose-invert prose-img:rounded-lg prose-img:mx-auto prose-headings:font-display prose-headings:text-foreground prose-h1:text-2xl prose-h2:text-xl prose-h2:mt-8 prose-h2:mb-3 prose-h2:pb-1 prose-h2:border-b prose-h2:border-border/50 prose-h3:text-lg prose-h3:mt-6 prose-h3:text-gold prose-strong:text-foreground prose-strong:font-semibold prose-a:text-primary prose-p:leading-relaxed prose-p:my-4 prose-li:my-1 prose-blockquote:border-l-gold prose-blockquote:text-muted-foreground prose-hr:border-border"
-        style={{ fontSize: `${scale}em` }}
+        className="markdown-body max-w-none"
+        style={{ fontSize: `${scale}rem` }}
       >
         <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
           {atual.conteudo_markdown ?? ""}
