@@ -2,23 +2,24 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useState } from "react";
-import { BIB_MAP, livrosQueryOptions } from "@/lib/biblioteca";
+import { livroQueryOptions } from "@/lib/biblioteca";
 
 export const Route = createFileRoute("/_app/biblioteca/$slug/$bookId/ler")({
   head: () => ({ meta: [{ title: "Leitor · OAB na Risca" }] }),
+  loader: ({ params, context }) => {
+    context.queryClient.prefetchQuery(livroQueryOptions(params.slug, params.bookId));
+  },
   component: BookReader,
 });
 
 function BookReader() {
   const { slug, bookId } = Route.useParams();
   const navigate = useNavigate();
-  const cfg = BIB_MAP[slug];
-  const { data: livros } = useQuery(livrosQueryOptions(slug));
+  const { data: livro } = useQuery(livroQueryOptions(slug, bookId));
   const [iframeFailed, setIframeFailed] = useState(false);
 
-  const livro = livros?.find((l) => String(l.id) === bookId);
-  const titulo = livro && cfg ? ((livro[cfg.tituloCol] as string) ?? "Livro") : "Livro";
-  const link = livro && cfg ? (livro[cfg.linkCol] as string | null) : null;
+  const titulo = livro?.titulo ?? "Livro";
+  const link = livro?.link ?? null;
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">

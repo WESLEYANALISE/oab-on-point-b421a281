@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ChevronRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { countsQueryOptions } from "@/lib/biblioteca";
 import estudosImg from "@/assets/biblio-estudos.jpg";
 import classicosImg from "@/assets/biblio-classicos.jpg";
 import oratoriaImg from "@/assets/biblio-oratoria.jpg";
@@ -10,41 +10,28 @@ import politicaImg from "@/assets/biblio-politica.jpg";
 import foraDaTogaImg from "@/assets/biblio-fora-da-toga.jpg";
 
 const BIBLIOTECAS = [
-  { slug: "estudos", title: "Biblioteca de Estudos", subtitle: "Resumos e materiais por área", table: "BIBLIOTECA-ESTUDOS", cover: estudosImg },
-  { slug: "classicos", title: "Clássicos do Direito", subtitle: "Obras fundamentais", table: "BIBLIOTECA-CLASSICOS", cover: classicosImg },
-  { slug: "oratoria", title: "Oratória", subtitle: "Comunicação e argumentação", table: "BIBLIOTECA-ORATORIA", cover: oratoriaImg },
-  { slug: "lideranca", title: "Liderança", subtitle: "Gestão e influência", table: "BIBLIOTECA-LIDERANÇA", cover: liderancaImg },
-  { slug: "politica", title: "Política", subtitle: "Pensamento político e jurídico", table: "BIBLIOTECA-POLITICA", cover: politicaImg },
-  { slug: "fora-da-toga", title: "Fora da Toga", subtitle: "Leituras complementares", table: "BIBLIOTECA-FORA-DA-TOGA", cover: foraDaTogaImg },
+  { slug: "estudos", title: "Biblioteca de Estudos", subtitle: "Resumos e materiais por área", cover: estudosImg },
+  { slug: "classicos", title: "Clássicos do Direito", subtitle: "Obras fundamentais", cover: classicosImg },
+  { slug: "oratoria", title: "Oratória", subtitle: "Comunicação e argumentação", cover: oratoriaImg },
+  { slug: "lideranca", title: "Liderança", subtitle: "Gestão e influência", cover: liderancaImg },
+  { slug: "politica", title: "Política", subtitle: "Pensamento político e jurídico", cover: politicaImg },
+  { slug: "fora-da-toga", title: "Fora da Toga", subtitle: "Leituras complementares", cover: foraDaTogaImg },
 ] as const;
 
 export const Route = createFileRoute("/_app/biblioteca/")({
   head: () => ({ meta: [{ title: "Biblioteca · OAB na Risca" }] }),
+  loader: ({ context }) => {
+    context.queryClient.prefetchQuery(countsQueryOptions());
+  },
   component: BibliotecaHub,
 });
 
 function BibliotecaHub() {
   const navigate = useNavigate();
-  const { data: counts } = useQuery({
-    queryKey: ["biblioteca-counts"],
-    queryFn: async () => {
-      const out: Record<string, number> = {};
-      await Promise.all(
-        BIBLIOTECAS.map(async (b) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { count } = await (supabase as any).from(b.table).select("id", { count: "exact", head: true });
-          out[b.slug] = count ?? 0;
-        }),
-      );
-      return out;
-    },
-    staleTime: 5 * 60_000,
-    gcTime: 30 * 60_000,
-  });
+  const { data: counts } = useQuery(countsQueryOptions());
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header próprio da biblioteca */}
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
         <div className="container mx-auto px-4 py-3 flex items-center gap-3">
           <button
@@ -68,6 +55,7 @@ function BibliotecaHub() {
               <Link
                 to="/biblioteca/$slug"
                 params={{ slug: b.slug }}
+                preload={false}
                 className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors"
               >
                 <img

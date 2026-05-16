@@ -1,9 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen, Download } from "lucide-react";
-import { BIB_MAP, livrosQueryOptions } from "@/lib/biblioteca";
+import { BIB_MAP, livroQueryOptions } from "@/lib/biblioteca";
 
 export const Route = createFileRoute("/_app/biblioteca/$slug/$bookId/")({
+  loader: ({ params, context }) => {
+    context.queryClient.prefetchQuery(livroQueryOptions(params.slug, params.bookId));
+  },
   component: BookDetail,
 });
 
@@ -11,7 +14,7 @@ function BookDetail() {
   const { slug, bookId } = Route.useParams();
   const navigate = useNavigate();
   const cfg = BIB_MAP[slug];
-  const { data: livros } = useQuery(livrosQueryOptions(slug));
+  const { data: livro, isLoading } = useQuery(livroQueryOptions(slug, bookId));
 
   if (!cfg) {
     return (
@@ -21,13 +24,12 @@ function BookDetail() {
     );
   }
 
-  const livro = livros?.find((l) => String(l.id) === bookId);
-  const titulo = livro ? ((livro[cfg.tituloCol] as string) ?? "Sem título") : "Carregando…";
-  const autor = livro && cfg.autorCol ? (livro[cfg.autorCol] as string | null) : null;
-  const capa = livro ? (livro[cfg.capaCol] as string | null) : null;
-  const sobre = livro ? (livro[cfg.sobreCol] as string | null) : null;
-  const link = livro ? (livro[cfg.linkCol] as string | null) : null;
-  const download = livro ? (livro[cfg.downloadCol] as string | null) : null;
+  const titulo = livro?.titulo ?? (isLoading ? "Carregando…" : "Sem título");
+  const autor = livro?.autor ?? null;
+  const capa = livro?.capa ?? null;
+  const sobre = livro?.sobre ?? null;
+  const link = livro?.link ?? null;
+  const download = livro?.download ?? null;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -48,7 +50,7 @@ function BookDetail() {
         <div className="flex gap-4 mb-5">
           <div className="w-28 h-40 rounded-lg overflow-hidden bg-muted border border-border flex-shrink-0 shadow-lg">
             {capa ? (
-              <img src={capa} alt={titulo} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+              <img src={capa} alt={titulo} width={112} height={160} loading="eager" decoding="async" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground p-2 text-center">{titulo}</div>
             )}
