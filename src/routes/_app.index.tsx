@@ -46,15 +46,16 @@ function EstudoCard({ item }: { item: Estudo }) {
   return (
     <Link
       to={item.to}
-      className={`group relative overflow-hidden rounded-2xl bg-card border ${item.border} p-4 min-h-[150px] flex flex-col justify-between hover:-translate-y-0.5 transition-all`}
+      className={`group relative overflow-hidden rounded-3xl bg-card border ${item.border} p-4 min-h-[160px] flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all`}
     >
-      <div className={`h-10 w-10 rounded-xl grid place-items-center ${item.cor}`}>
+      <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gold/[0.04] blur-2xl pointer-events-none" />
+      <div className={`h-11 w-11 rounded-2xl grid place-items-center ${item.cor}`}>
         <Icon className="h-5 w-5" strokeWidth={2} />
       </div>
       <div>
-        <p className="font-display text-lg leading-tight">{item.label}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{item.descricao}</p>
-        <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-gold group-hover:gap-1.5 transition-all">
+        <p className="font-display font-semibold text-xl leading-tight tracking-tight">{item.label}</p>
+        <p className="text-[11px] text-muted-foreground/90 mt-1 line-clamp-2 leading-snug">{item.descricao}</p>
+        <span className="inline-flex items-center gap-1 mt-2.5 text-xs font-semibold text-gold group-hover:gap-1.5 transition-all">
           {item.cta} <ArrowRight className="h-3 w-3" />
         </span>
       </div>
