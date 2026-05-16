@@ -1,11 +1,12 @@
-import { Link, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { Scale, Search, Bell, ArrowLeft, Home } from "lucide-react";
+import { resolverVoltar } from "@/lib/voltar";
 
 export function MobileHeader() {
   const { pathname } = useLocation();
-  const router = useRouter();
   const navigate = useNavigate();
   const isHome = pathname === "/";
+  const destinoVoltar = resolverVoltar(pathname);
 
   return (
     <header className="md:hidden sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
@@ -20,12 +21,10 @@ export function MobileHeader() {
             </div>
           </Link>
         ) : (
-          <button
-            type="button"
-            onClick={() => {
-              if (window.history.length > 1) router.history.back();
-              else router.navigate({ to: "/" });
-            }}
+          <Link
+            to={destinoVoltar as "/"}
+            preload="intent"
+            preloadDelay={0}
             className="inline-flex items-center gap-2 pl-2 pr-3.5 h-10 rounded-full bg-muted/70 border border-border text-sm font-medium text-foreground hover:bg-muted active:scale-[0.97] transition"
             aria-label="Voltar"
           >
@@ -33,7 +32,7 @@ export function MobileHeader() {
               <ArrowLeft className="h-4 w-4" />
             </span>
             Voltar
-          </button>
+          </Link>
         )}
         <div className="flex items-center gap-1">
           {isHome ? (
