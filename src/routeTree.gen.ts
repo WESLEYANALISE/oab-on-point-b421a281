@@ -32,6 +32,7 @@ import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
 import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
+import { Route as AppProvasNumeroRouteImport } from './routes/_app.provas.$numero'
 import { Route as AppOabSegundaFaseRouteImport } from './routes/_app.oab.segunda-fase'
 import { Route as AppOabPrimeiraFaseRouteImport } from './routes/_app.oab.primeira-fase'
 import { Route as AppOabPecaModeloRouteImport } from './routes/_app.oab.peca-modelo'
@@ -160,6 +161,11 @@ const AppBibliotecaIndexRoute = AppBibliotecaIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppBibliotecaRoute,
 } as any)
+const AppProvasNumeroRoute = AppProvasNumeroRouteImport.update({
+  id: '/provas/$numero',
+  path: '/provas/$numero',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOabSegundaFaseRoute = AppOabSegundaFaseRouteImport.update({
   id: '/oab/segunda-fase',
   path: '/oab/segunda-fase',
@@ -258,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
+  '/provas/$numero': typeof AppProvasNumeroRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/provas/': typeof AppProvasIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
@@ -293,6 +300,7 @@ export interface FileRoutesByTo {
   '/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
+  '/provas/$numero': typeof AppProvasNumeroRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
   '/provas': typeof AppProvasIndexRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/_app/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/_app/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/_app/oab/segunda-fase': typeof AppOabSegundaFaseRoute
+  '/_app/provas/$numero': typeof AppProvasNumeroRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/provas/': typeof AppProvasIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
@@ -370,6 +379,7 @@ export interface FileRouteTypes {
     | '/oab/peca-modelo'
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
+    | '/provas/$numero'
     | '/biblioteca/'
     | '/provas/'
     | '/biblioteca/$slug/$bookId'
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/oab/peca-modelo'
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
+    | '/provas/$numero'
     | '/biblioteca'
     | '/provas'
     | '/biblioteca/$slug'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/_app/oab/peca-modelo'
     | '/_app/oab/primeira-fase'
     | '/_app/oab/segunda-fase'
+    | '/_app/provas/$numero'
     | '/_app/biblioteca/'
     | '/_app/provas/'
     | '/_app/biblioteca/$slug/$bookId'
@@ -620,6 +632,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/biblioteca/'
       preLoaderRoute: typeof AppBibliotecaIndexRouteImport
       parentRoute: typeof AppBibliotecaRoute
+    }
+    '/_app/provas/$numero': {
+      id: '/_app/provas/$numero'
+      path: '/provas/$numero'
+      fullPath: '/provas/$numero'
+      preLoaderRoute: typeof AppProvasNumeroRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/oab/segunda-fase': {
       id: '/_app/oab/segunda-fase'
@@ -805,6 +824,7 @@ interface AppRouteChildren {
   AppOabPecaModeloRoute: typeof AppOabPecaModeloRoute
   AppOabPrimeiraFaseRoute: typeof AppOabPrimeiraFaseRoute
   AppOabSegundaFaseRoute: typeof AppOabSegundaFaseRoute
+  AppProvasNumeroRoute: typeof AppProvasNumeroRoute
   AppProvasIndexRoute: typeof AppProvasIndexRoute
 }
 
@@ -831,6 +851,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOabPecaModeloRoute: AppOabPecaModeloRoute,
   AppOabPrimeiraFaseRoute: AppOabPrimeiraFaseRoute,
   AppOabSegundaFaseRoute: AppOabSegundaFaseRoute,
+  AppProvasNumeroRoute: AppProvasNumeroRoute,
   AppProvasIndexRoute: AppProvasIndexRoute,
 }
 
