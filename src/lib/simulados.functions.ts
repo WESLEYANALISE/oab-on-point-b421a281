@@ -501,3 +501,103 @@ export const getEditalResumo = createServerFn({ method: "POST" })
 
     return { conteudo: resumo, fonte: "gerado" as const };
   });
+
+// ============ Raio-X global (todos os simulados) ============
+export const getRaioXGlobal = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const [simRes, qsRes] = await Promise.all([
+      supabase.from("simulados").select("id, prova_numero").eq("status", "pronto"),
+      supabase.from("simulado_questoes").select("simulado_id, materia, status"),
+    ]);
+    if (simRes.error) throw new Error(simRes.error.message);
+    if (qsRes.error) throw new Error(qsRes.error.message);
+    const provasValidas = new Set((simRes.data ?? []).map((s) => s.id));
+    const totalSimulados = provasValidas.size;
+    const contagem: Record<string, number> = {};
+    let totalQ = 0;
+    for (const q of qsRes.data ?? []) {
+      if (!provasValidas.has(q.simulado_id)) continue;
+      if ((q as { status?: string }).status === "falhou_extracao") continue;
+      const m = q.materia ?? "Sem matéria";
+      contagem[m] = (contagem[m] ?? 0) + 1;
+      totalQ += 1;
+    }
+    const materias = Object.entries(contagem)
+      .map(([materia, qtd]) => ({
+        materia,
+        qtd,
+        pct: totalQ ? Math.round((qtd / totalQ) * 100) : 0,
+        mediaPorProva: totalSimulados ? Math.round((qtd / totalSimulados) * 10) / 10 : 0,
+      }))
+      .sort((a, b) => b.qtd - a.qtd);
+    return { totalSimulados, totalQuestoes: totalQ, materias };
+  });
+
+// ============ Progresso do usuário (todas as tentativas finalizadas) ============
+export const getProgressoUsuario = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const tentRes = await supabase
+      .from("simulado_tentativas")
+      .select("id, simulado_id, acertos, total, por_materia, iniciado_em, concluido_em")
+      .eq("user_id", userId)
+      .not("concluido_em", "is", null)
+      .order("concluido_em", { ascending: false });
+    if (tentRes.error) throw new Error(tentRes.error.message);
+    const tentativas = tentRes.data ?? [];
+    const simIds = Array.from(new Set(tentativas.map((t) => t.simulado_id)));
+    const simsRes = simIds.length
+      ? await supabase.from("simulados").select("id, prova_numero, titulo").in("id", simIds)
+      : { data: [], error: null as null };
+    if (simsRes.error) throw new Error(simsRes.error.message);
+    const simMap = new Map((simsRes.data ?? []).map((s) => [s.id, s]));
+
+    const porMateria: Record<string, { acertos: number; total: number }> = {};
+    let totalAcertos = 0;
+    let totalQ = 0;
+    for (const t of tentativas) {
+      totalAcertos += t.acertos ?? 0;
+      totalQ += t.total ?? 0;
+      const pm = (t.por_materia as Record<string, { acertos: number; total: number }>) ?? {};
+      for (const [m, v] of Object.entries(pm)) {
+        porMateria[m] ??= { acertos: 0, total: 0 };
+        porMateria[m].acertos += v.acertos;
+        porMateria[m].total += v.total;
+      }
+    }
+    const materias = Object.entries(porMateria)
+      .map(([materia, v]) => ({
+        materia,
+        acertos: v.acertos,
+        total: v.total,
+        pct: v.total ? Math.round((v.acertos / v.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.pct - a.pct);
+
+    const historico = tentativas.map((t) => {
+      const sim = simMap.get(t.simulado_id);
+      return {
+        id: t.id,
+        simuladoId: t.simulado_id,
+        provaNumero: sim?.prova_numero ?? null,
+        titulo: sim?.titulo ?? "Simulado",
+        slug: sim ? makeSimuladoSlug(sim) : null,
+        acertos: t.acertos,
+        total: t.total,
+        pct: t.total ? Math.round(((t.acertos ?? 0) / t.total) * 100) : 0,
+        concluido_em: t.concluido_em,
+      };
+    });
+
+    return {
+      totalTentativas: tentativas.length,
+      totalAcertos,
+      totalQuestoes: totalQ,
+      pctGeral: totalQ ? Math.round((totalAcertos / totalQ) * 100) : 0,
+      materias,
+      historico,
+    };
+  });
