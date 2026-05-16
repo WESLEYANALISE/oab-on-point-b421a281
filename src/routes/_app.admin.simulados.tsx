@@ -2,11 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Sparkles, Trash2, CheckCircle2, AlertCircle, Clock, ListPlus, Eye, ShieldAlert } from "lucide-react";
+import { Sparkles, Trash2, CheckCircle2, AlertCircle, Clock, ListPlus, Eye, ShieldAlert, RefreshCw } from "lucide-react";
 import {
   listProvasComStatus,
   excluirSimulado,
   auditarEReextrair,
+  reextrairFalhas,
 } from "@/lib/simulados-admin.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ function AdminSimulados() {
   const listFn = useServerFn(listProvasComStatus);
   const delFn = useServerFn(excluirSimulado);
   const auditFn = useServerFn(auditarEReextrair);
+  const reextFn = useServerFn(reextrairFalhas);
   const authHeaders = session?.access_token
     ? { Authorization: `Bearer ${session.access_token}` }
     : undefined;
@@ -104,6 +106,25 @@ function AdminSimulados() {
     },
     onError: (e, n) =>
       toast.error(e instanceof Error ? e.message : "Falhou", { id: `audit-${n}` }),
+  });
+
+  const reextrair = useMutation({
+    mutationFn: (provaNumero: number) => {
+      if (!authHeaders) throw new Error("Sessão expirada. Entre novamente.");
+      return reextFn({ data: { provaNumero }, headers: authHeaders });
+    },
+    onMutate: (n) => {
+      toast.loading(`Reextraindo falhas da prova ${n}…`, { id: `reext-${n}` });
+    },
+    onSuccess: (r, n) => {
+      toast.success(
+        `Prova ${n}: ${r.reextraidas}/${r.tentadas} reextraídas · ${r.restantes} ainda sem extração`,
+        { id: `reext-${n}`, duration: 6000 },
+      );
+      qc.invalidateQueries({ queryKey: ["admin-provas"] });
+    },
+    onError: (e, n) =>
+      toast.error(e instanceof Error ? e.message : "Falhou", { id: `reext-${n}` }),
   });
 
   const filaPositionOf = (n: number): number | null => {
@@ -241,6 +262,21 @@ function AdminSimulados() {
                   >
                     <ShieldAlert className="h-4 w-4 mr-1" />
                     Auditar
+                  </Button>
+                )}
+                {status === "pronto" && !naFila && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={reextrair.isPending}
+                    onClick={() => {
+                      if (confirm(`Reextrair questões que falharam na prova ${p.numero}?`))
+                        reextrair.mutate(p.numero);
+                    }}
+                    title="Tenta reextrair questões marcadas como falhou_extracao"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Reextrair falhas
                   </Button>
                 )}
                 {!naFila && (

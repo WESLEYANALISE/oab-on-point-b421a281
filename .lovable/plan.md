@@ -1,75 +1,65 @@
-## Causa raiz da invenção
+## Diagnóstico
 
-O OCR do Mistral está OK (cada prova gera ~105.000 caracteres de texto). O problema está em `src/lib/simulados-admin.functions.ts`, função `extrairQuestoes()`:
+Confirmei no banco e nos logs do job: **todas as 80 questões dos simulados 45 e 46 estão marcadas como `falhou_extracao`** (por isso o "Raio-X" mostra "Sem matéria 80 · 100%" e na prática a questão aparece como "não disponível"). Os simulados 40–44 nem têm mais linhas em `simulados`.
 
-```ts
-${ocrProva.slice(0, 90000)}   // ← linha 412
+### Causa raiz
+
+O Mistral OCR não escreve "Questão 1", "Questão 2"… nos PDFs novos. Ele usa cabeçalhos Markdown:
+
+```text
+# 1
+Os irmãos, Matilde, advogada…
+
+# 2
+Helena concluiu seu mestrado…
 ```
 
-O texto é **truncado em 90.000 caracteres** antes de ser enviado ao Gemini. As questões 68–80 das provas ficam fora do trecho enviado. O prompt pede "extraia as questões 68 a 80" mas o documento que chega ao Gemini não as contém — então o Gemini **alucina** enunciados padronizados ("Município Beta… IPVA…", "sociedade empresária Theta Ltda…") em vez de retornar vazio.
+Mas o pipeline novo (após o ajuste anti-alucinação) só procura por marcadores que casem com a regex:
 
-Confirmações no banco:
-- Todas as 7 provas têm OCR > 100k chars (não cabe nos 90k).
-- 100% das questões inventadas estão na faixa 60–80 de cada prova.
-- Hoje as 80 questões estão marcadas `status='ok'` (não dá pra distinguir verdadeiras de inventadas pela coluna status).
+```ts
+/quest[ãa]o\s*(\d{1,3})\b/gi   // src/lib/simulados-admin.functions.ts:395
+```
 
-## Correções no pipeline (nunca mais inventar)
+Resultado: `indexQuestionPositions` devolve mapa vazio → `sliceOcrForRange` devolve trecho vazio → todas as questões são reportadas como "OCR não contém marcador 'Questão' para: 1, 2, 3…" (exatamente o que está no log do job) → nada é extraído → todas viram placeholder `falhou_extracao`.
 
-### 1) Eliminar o truncamento — enviar só a janela certa
-Em `extrairQuestoes()`, antes de chamar o Gemini:
-- localizar no `ocrProva` as posições dos marcadores `Questão <n>` para cada número do lote;
-- recortar a janela `[inicio-200 .. fim+200]` do OCR original;
-- se a janela passar de 90k, dividir o lote em sub-lotes menores (re-chamar `geminiExtractJson` para cada metade) em vez de truncar.
+Os jobs antigos (10:35 do 45, 19:45 do 46) ainda funcionavam porque mandavam o OCR inteiro para o Gemini sem janelas — depois do fix anti-invenção essa rota deixou de existir.
 
-Assim o Gemini sempre recebe **o texto literal** das questões pedidas.
+## Correção
 
-### 2) Reforçar o prompt anti-alucinação
-Trocar o `user` prompt de `extrairQuestoes` por:
+### 1. Reconhecer todos os marcadores de questão no OCR (src/lib/simulados-admin.functions.ts)
 
-> "Extraia apenas questões que aparecem LITERALMENTE no texto abaixo. Se uma questão pedida não estiver presente, OMITA-A do JSON (não invente, não reformule, não complete). Copie enunciado e alternativas como aparecem no documento."
+Reescrever `indexQuestionPositions` para detectar, **no começo da linha**:
 
-E no `system`: "É proibido criar conteúdo. Toda questão retornada deve poder ser encontrada palavra por palavra no texto fornecido."
+- `# N`, `## N`, `### N` (formato real do Mistral)
+- `Questão N` / `QUESTÃO N`
+- `N.` ou `N)` seguidos de espaço (fallback prudente)
 
-### 3) Validador anti-invenção (server-side)
-Após o Gemini responder, antes de inserir em `simulado_questoes`:
-- Tomar os primeiros 60 caracteres significativos do `enunciado` retornado.
-- Procurar no `ocrProva` original (sem truncar).
-- Se não encontrar (normalizando espaços/acentos), descartar a questão e logar `"invenção descartada na Q<n>"`.
+Ignorar matches dentro de "Lei nº 12", "Art. 5", "ADI 3.510" etc. usando a âncora de início de linha (`^` com `/m`) e exigindo que o número esteja em 1–80 e em sequência crescente quando possível.
 
-Isso transforma o sistema em fail-safe: questão inventada nunca chega ao banco.
+### 2. Reextrair os simulados quebrados
 
-### 4) Validar distribuição final do edital OAB
-Em `validarFinal`, antes de marcar etapa `pronto`, conferir:
-- Ética ≥ 7 e ≤ 9
-- Filosofia do Direito ≥ 1 e ≤ 3
-- Total `ok` ≥ 70 de 80
+Adicionar uma server function `reextrairFalhas(provaNumero)` (gêmea da `auditarEReextrair` que já existe) que:
 
-Se reprovar, marcar etapa `erro` com mensagem clara em vez de finalizar.
+- carrega o último job `pronto` com `ocr_prova` salvo;
+- pega da tabela `simulado_questoes` todos os `numero` com `status='falhou_extracao'`;
+- apaga esses placeholders;
+- chama `extrairQuestoes` (agora com o índice corrigido) para esse mesmo conjunto;
+- reinsere com `status='ok'` (ou `anulada` quando o gabarito marca), ou recria placeholder se mesmo assim falhar;
+- recalcula `simulados.total_questoes`.
 
-## Limpeza dos simulados já existentes
+### 3. Botão "Reextrair falhas" no admin
 
-### 5) Detectar e marcar as questões inventadas atuais
-Criar uma server function admin `marcarInventadas(prova_numero)` que:
-1. Lê `simulado_jobs.ocr_prova` da prova.
-2. Para cada questão `status='ok'`, testa se um trecho do enunciado aparece no OCR original (mesma checagem do passo 3).
-3. As que falharem viram `status='falhou_extracao'` com `enunciado='Esta questão precisa ser reextraída.'` e `materia=null`.
+Em `src/routes/_app.admin.simulados.tsx`, ao lado do botão "Auditar" já existente, adicionar **"Reextrair falhas"** (ícone `RefreshCw`) que dispara a função acima. Mostrar toast com `{reextraidas, restantes}`.
 
-Roda uma vez por prova (40 a 46). Resultado esperado: 50–80 questões reclassificadas no total.
+Sem mudança de UI no app do aluno — a tela de simulado já trata `status='falhou_extracao'` corretamente; assim que as questões voltarem como `ok`, o Raio-X passa a mostrar matérias reais e a prática mostra o enunciado.
 
-### 6) Reprocessar os números marcados
-Adicionar botão admin "Reextrair faltantes desta prova" que chama o pipeline novo (passos 1–4) apenas para os números cujo `status != 'ok'`. As corretas que já existem ficam intocadas.
+### 4. Fluxo para o usuário
 
-### 7) Excluir do raio-X tudo que não for `status='ok'`
-Em `ExamesTab` e na agregação por matéria do raio-X, filtrar `status = 'ok'`. Enquanto as provas não forem reextraídas, o raio-X mostra menos questões mas só as verdadeiras — o ranking de Ética vs Tributário volta ao normal automaticamente.
+1. Implemento a correção.
+2. Você vai em `/admin/simulados` e clica em **"Reextrair falhas"** nos simulados 45 e 46.
+3. Em ~1–2 min as 80 questões reais voltam, o Raio-X é recalculado automaticamente e a prática volta a abrir.
 
-## Ordem de execução proposta
+## Arquivos tocados
 
-1. Aplicar as 4 correções no pipeline (`extrairQuestoes`, prompt, validador, validação final).
-2. Adicionar filtro `status='ok'` no raio-X.
-3. Rodar `marcarInventadas` nas 7 provas (40–46).
-4. Você revisa o admin e dispara "Reextrair faltantes" prova por prova.
-
-## O que preciso confirmar
-
-1. Posso adicionar a server function `marcarInventadas` e o botão admin de re-extração, ou prefere que eu rode tudo automaticamente pelas 7 provas?
-2. Mantenho a coluna `status` atual (`ok` / `falhou_extracao` / `anulada`) ou crio um novo valor `inventada` para diferenciar as detectadas agora das que falharam por OCR?
+- `src/lib/simulados-admin.functions.ts` — `indexQuestionPositions` + nova `reextrairFalhas`.
+- `src/routes/_app.admin.simulados.tsx` — botão "Reextrair falhas".
