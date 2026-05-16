@@ -52,7 +52,7 @@ export function CountdownExame({
     : `flex items-stretch ${s.gap}`;
 
   return (
-    <div className={containerCls} suppressHydrationWarning>
+    <div className={`relative ${containerCls} overflow-hidden`} suppressHydrationWarning>
       {items.map((i) => (
         <div
           key={i.l}
@@ -69,6 +69,7 @@ export function CountdownExame({
           </p>
         </div>
       ))}
+      <span aria-hidden className="countdown-shimmer" />
     </div>
   );
 }
