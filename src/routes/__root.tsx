@@ -76,9 +76,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Plataforma de preparação para o Exame da OAB — aulas interativas, resumos, flashcards, questões e simulados." },
       { name: "author", content: "OAB na Risca" },
       { property: "og:title", content: "OAB na Risca" },
-      { property: "og:description", content: "Estude para a OAB na precisão — aulas, resumos, flashcards, questões, simulados e assistente IA." },
+      { property: "og:description", content: "Plataforma de preparação para o Exame da OAB — aulas interativas, resumos, flashcards, questões e simulados." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "OAB na Risca" },
+      { name: "twitter:description", content: "Plataforma de preparação para o Exame da OAB — aulas interativas, resumos, flashcards, questões e simulados." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/13bad6b0-c106-4357-ad63-a95a956ace86/id-preview-b3f8a8a6--7143ea90-be27-484f-9f3e-f50d2fa31549.lovable.app-1778897437936.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/13bad6b0-c106-4357-ad63-a95a956ace86/id-preview-b3f8a8a6--7143ea90-be27-484f-9f3e-f50d2fa31549.lovable.app-1778897437936.png" },
     ],
     links: [
       {
