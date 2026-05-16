@@ -19,7 +19,9 @@ import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
 import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
 import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
+import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
+import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
 import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
@@ -73,9 +75,19 @@ const AppFlashcardsRoute = AppFlashcardsRouteImport.update({
   path: '/flashcards',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBibliotecaRoute = AppBibliotecaRouteImport.update({
+  id: '/biblioteca',
+  path: '/biblioteca',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAulasRoute = AppAulasRouteImport.update({
   id: '/aulas',
   path: '/aulas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAudioaulasRoute = AppAudioaulasRouteImport.update({
+  id: '/audioaulas',
+  path: '/audioaulas',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAssistenteRoute = AppAssistenteRouteImport.update({
@@ -97,7 +109,9 @@ const AppMateriasSlugRoute = AppMateriasSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/assistente': typeof AppAssistenteRoute
+  '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
+  '/biblioteca': typeof AppBibliotecaRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
@@ -111,7 +125,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/assistente': typeof AppAssistenteRoute
+  '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
+  '/biblioteca': typeof AppBibliotecaRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
@@ -128,7 +144,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_app/assistente': typeof AppAssistenteRoute
+  '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRoute
+  '/_app/biblioteca': typeof AppBibliotecaRoute
   '/_app/flashcards': typeof AppFlashcardsRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/noticias': typeof AppNoticiasRouteWithChildren
@@ -146,7 +164,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/assistente'
+    | '/audioaulas'
     | '/aulas'
+    | '/biblioteca'
     | '/flashcards'
     | '/materias'
     | '/noticias'
@@ -160,7 +180,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/assistente'
+    | '/audioaulas'
     | '/aulas'
+    | '/biblioteca'
     | '/flashcards'
     | '/materias'
     | '/noticias'
@@ -176,7 +198,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_app/assistente'
+    | '/_app/audioaulas'
     | '/_app/aulas'
+    | '/_app/biblioteca'
     | '/_app/flashcards'
     | '/_app/materias'
     | '/_app/noticias'
@@ -266,11 +290,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFlashcardsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/biblioteca': {
+      id: '/_app/biblioteca'
+      path: '/biblioteca'
+      fullPath: '/biblioteca'
+      preLoaderRoute: typeof AppBibliotecaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/aulas': {
       id: '/_app/aulas'
       path: '/aulas'
       fullPath: '/aulas'
       preLoaderRoute: typeof AppAulasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/audioaulas': {
+      id: '/_app/audioaulas'
+      path: '/audioaulas'
+      fullPath: '/audioaulas'
+      preLoaderRoute: typeof AppAudioaulasRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/assistente': {
@@ -323,7 +361,9 @@ const AppNoticiasRouteWithChildren = AppNoticiasRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAssistenteRoute: typeof AppAssistenteRoute
+  AppAudioaulasRoute: typeof AppAudioaulasRoute
   AppAulasRoute: typeof AppAulasRoute
+  AppBibliotecaRoute: typeof AppBibliotecaRoute
   AppFlashcardsRoute: typeof AppFlashcardsRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
@@ -337,7 +377,9 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAssistenteRoute: AppAssistenteRoute,
+  AppAudioaulasRoute: AppAudioaulasRoute,
   AppAulasRoute: AppAulasRoute,
+  AppBibliotecaRoute: AppBibliotecaRoute,
   AppFlashcardsRoute: AppFlashcardsRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
   AppNoticiasRoute: AppNoticiasRouteWithChildren,
