@@ -11,7 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppSimuladosRouteImport } from './routes/_app.simulados'
+import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
+import { Route as AppResumosRouteImport } from './routes/_app.resumos'
+import { Route as AppQuestoesRouteImport } from './routes/_app.questoes'
+import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
+import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
+import { Route as AppAulasRouteImport } from './routes/_app.aulas'
+import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
+import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 
 const AppRoute = AppRouteImport.update({
@@ -23,10 +32,55 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSimuladosRoute = AppSimuladosRouteImport.update({
+  id: '/simulados',
+  path: '/simulados',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRetaFinalRoute = AppRetaFinalRouteImport.update({
+  id: '/reta-final',
+  path: '/reta-final',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppResumosRoute = AppResumosRouteImport.update({
+  id: '/resumos',
+  path: '/resumos',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQuestoesRoute = AppQuestoesRouteImport.update({
+  id: '/questoes',
+  path: '/questoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNoticiasRoute = AppNoticiasRouteImport.update({
+  id: '/noticias',
+  path: '/noticias',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMateriasRoute = AppMateriasRouteImport.update({
   id: '/materias',
   path: '/materias',
   getParentRoute: () => AppRoute,
+} as any)
+const AppFlashcardsRoute = AppFlashcardsRouteImport.update({
+  id: '/flashcards',
+  path: '/flashcards',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAulasRoute = AppAulasRouteImport.update({
+  id: '/aulas',
+  path: '/aulas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssistenteRoute = AppAssistenteRouteImport.update({
+  id: '/assistente',
+  path: '/assistente',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNoticiasIdRoute = AppNoticiasIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppNoticiasRoute,
 } as any)
 const AppMateriasSlugRoute = AppMateriasSlugRouteImport.update({
   id: '/$slug',
@@ -36,32 +90,92 @@ const AppMateriasSlugRoute = AppMateriasSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/assistente': typeof AppAssistenteRoute
+  '/aulas': typeof AppAulasRoute
+  '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
+  '/noticias': typeof AppNoticiasRouteWithChildren
+  '/questoes': typeof AppQuestoesRoute
+  '/resumos': typeof AppResumosRoute
+  '/reta-final': typeof AppRetaFinalRoute
+  '/simulados': typeof AppSimuladosRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
+  '/noticias/$id': typeof AppNoticiasIdRoute
 }
 export interface FileRoutesByTo {
+  '/assistente': typeof AppAssistenteRoute
+  '/aulas': typeof AppAulasRoute
+  '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
+  '/noticias': typeof AppNoticiasRouteWithChildren
+  '/questoes': typeof AppQuestoesRoute
+  '/resumos': typeof AppResumosRoute
+  '/reta-final': typeof AppRetaFinalRoute
+  '/simulados': typeof AppSimuladosRoute
   '/': typeof AppIndexRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
+  '/noticias/$id': typeof AppNoticiasIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_app/assistente': typeof AppAssistenteRoute
+  '/_app/aulas': typeof AppAulasRoute
+  '/_app/flashcards': typeof AppFlashcardsRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
+  '/_app/noticias': typeof AppNoticiasRouteWithChildren
+  '/_app/questoes': typeof AppQuestoesRoute
+  '/_app/resumos': typeof AppResumosRoute
+  '/_app/reta-final': typeof AppRetaFinalRoute
+  '/_app/simulados': typeof AppSimuladosRoute
   '/_app/': typeof AppIndexRoute
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
+  '/_app/noticias/$id': typeof AppNoticiasIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/materias' | '/materias/$slug'
+  fullPaths:
+    | '/'
+    | '/assistente'
+    | '/aulas'
+    | '/flashcards'
+    | '/materias'
+    | '/noticias'
+    | '/questoes'
+    | '/resumos'
+    | '/reta-final'
+    | '/simulados'
+    | '/materias/$slug'
+    | '/noticias/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/materias' | '/' | '/materias/$slug'
+  to:
+    | '/assistente'
+    | '/aulas'
+    | '/flashcards'
+    | '/materias'
+    | '/noticias'
+    | '/questoes'
+    | '/resumos'
+    | '/reta-final'
+    | '/simulados'
+    | '/'
+    | '/materias/$slug'
+    | '/noticias/$id'
   id:
     | '__root__'
     | '/_app'
+    | '/_app/assistente'
+    | '/_app/aulas'
+    | '/_app/flashcards'
     | '/_app/materias'
+    | '/_app/noticias'
+    | '/_app/questoes'
+    | '/_app/resumos'
+    | '/_app/reta-final'
+    | '/_app/simulados'
     | '/_app/'
     | '/_app/materias/$slug'
+    | '/_app/noticias/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -84,12 +198,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/simulados': {
+      id: '/_app/simulados'
+      path: '/simulados'
+      fullPath: '/simulados'
+      preLoaderRoute: typeof AppSimuladosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/reta-final': {
+      id: '/_app/reta-final'
+      path: '/reta-final'
+      fullPath: '/reta-final'
+      preLoaderRoute: typeof AppRetaFinalRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/resumos': {
+      id: '/_app/resumos'
+      path: '/resumos'
+      fullPath: '/resumos'
+      preLoaderRoute: typeof AppResumosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/questoes': {
+      id: '/_app/questoes'
+      path: '/questoes'
+      fullPath: '/questoes'
+      preLoaderRoute: typeof AppQuestoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/noticias': {
+      id: '/_app/noticias'
+      path: '/noticias'
+      fullPath: '/noticias'
+      preLoaderRoute: typeof AppNoticiasRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/materias': {
       id: '/_app/materias'
       path: '/materias'
       fullPath: '/materias'
       preLoaderRoute: typeof AppMateriasRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/flashcards': {
+      id: '/_app/flashcards'
+      path: '/flashcards'
+      fullPath: '/flashcards'
+      preLoaderRoute: typeof AppFlashcardsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/aulas': {
+      id: '/_app/aulas'
+      path: '/aulas'
+      fullPath: '/aulas'
+      preLoaderRoute: typeof AppAulasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/assistente': {
+      id: '/_app/assistente'
+      path: '/assistente'
+      fullPath: '/assistente'
+      preLoaderRoute: typeof AppAssistenteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/noticias/$id': {
+      id: '/_app/noticias/$id'
+      path: '/$id'
+      fullPath: '/noticias/$id'
+      preLoaderRoute: typeof AppNoticiasIdRouteImport
+      parentRoute: typeof AppNoticiasRoute
     }
     '/_app/materias/$slug': {
       id: '/_app/materias/$slug'
@@ -113,13 +290,41 @@ const AppMateriasRouteWithChildren = AppMateriasRoute._addFileChildren(
   AppMateriasRouteChildren,
 )
 
+interface AppNoticiasRouteChildren {
+  AppNoticiasIdRoute: typeof AppNoticiasIdRoute
+}
+
+const AppNoticiasRouteChildren: AppNoticiasRouteChildren = {
+  AppNoticiasIdRoute: AppNoticiasIdRoute,
+}
+
+const AppNoticiasRouteWithChildren = AppNoticiasRoute._addFileChildren(
+  AppNoticiasRouteChildren,
+)
+
 interface AppRouteChildren {
+  AppAssistenteRoute: typeof AppAssistenteRoute
+  AppAulasRoute: typeof AppAulasRoute
+  AppFlashcardsRoute: typeof AppFlashcardsRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
+  AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
+  AppQuestoesRoute: typeof AppQuestoesRoute
+  AppResumosRoute: typeof AppResumosRoute
+  AppRetaFinalRoute: typeof AppRetaFinalRoute
+  AppSimuladosRoute: typeof AppSimuladosRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAssistenteRoute: AppAssistenteRoute,
+  AppAulasRoute: AppAulasRoute,
+  AppFlashcardsRoute: AppFlashcardsRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
+  AppNoticiasRoute: AppNoticiasRouteWithChildren,
+  AppQuestoesRoute: AppQuestoesRoute,
+  AppResumosRoute: AppResumosRoute,
+  AppRetaFinalRoute: AppRetaFinalRoute,
+  AppSimuladosRoute: AppSimuladosRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -131,3 +336,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
