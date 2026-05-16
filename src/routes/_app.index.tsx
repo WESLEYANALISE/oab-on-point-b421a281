@@ -135,48 +135,25 @@ function HomePage() {
     <div className="space-y-10 md:space-y-14 pb-10">
       <HomeHero />
 
-      {/* Aulas Interativas — card destaque */}
+      {/* Aulas Interativas — card compacto */}
       <section className="px-4 md:px-10 max-w-6xl">
         <Link
           to="/aulas"
-          className="group block relative overflow-hidden rounded-2xl bg-gradient-toga text-primary-foreground p-5 md:p-7 min-h-[180px] hover:shadow-xl transition-all"
+          className="group block relative overflow-hidden rounded-2xl bg-gradient-toga text-primary-foreground p-4 md:p-5 hover:shadow-xl transition-all"
         >
-          <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-gold/15 blur-3xl" />
-          <div className="absolute inset-0 opacity-[0.05]" style={{
-            backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
-            backgroundSize: "20px 20px",
-          }} />
-          <div className="relative flex items-start gap-4">
-            <div className="h-12 w-12 rounded-xl bg-primary-foreground/15 border border-primary-foreground/20 grid place-items-center shrink-0">
-              <BookOpen className="h-6 w-6" />
+          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gold/15 blur-3xl" />
+          <div className="relative flex items-center gap-3">
+            <div className="h-11 w-11 rounded-xl bg-primary-foreground/15 border border-primary-foreground/20 grid place-items-center shrink-0">
+              <BookOpen className="h-5 w-5" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-display text-2xl md:text-3xl leading-tight">
-                Aulas <span className="text-gold">Interativas</span>
-              </h2>
-              <p className="text-primary-foreground/75 text-sm mt-1">
-                Slides, quiz no meio da aula e seu progresso por matéria.
-              </p>
-            </div>
-          </div>
-
-          <div className="relative mt-5 pt-4 border-t border-primary-foreground/15">
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-gold font-semibold mb-2">
-              <Flame className="h-3 w-3" /> Continue de onde parou
-            </div>
-            <div className="flex items-end justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-display text-lg leading-tight truncate">Ética Profissional · Aula 4</p>
-                <p className="text-xs text-primary-foreground/70 mt-0.5 truncate">Honorários advocatícios — fixação</p>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-gold font-semibold">Aulas Interativas</p>
+              <p className="font-display text-base leading-tight truncate mt-0.5">Ética Profissional · Aula 4</p>
+              <div className="mt-2 h-1 rounded-full bg-primary-foreground/10 overflow-hidden">
+                <div className="h-full w-[62%] bg-gold" />
               </div>
-              <span className="inline-flex items-center gap-1.5 text-sm text-gold font-semibold group-hover:gap-2 transition-all">
-                Retomar <ArrowRight className="h-4 w-4" />
-              </span>
             </div>
-            <div className="mt-3 h-1.5 rounded-full bg-primary-foreground/10 overflow-hidden">
-              <div className="h-full w-[62%] bg-gold" />
-            </div>
-            <p className="text-[11px] text-primary-foreground/60 mt-1.5">62% concluído</p>
+            <ArrowRight className="h-4 w-4 text-gold shrink-0 group-hover:translate-x-0.5 transition-transform" />
           </div>
         </Link>
       </section>
