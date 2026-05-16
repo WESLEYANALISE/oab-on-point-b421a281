@@ -17,29 +17,6 @@ function ResumoTimeline() {
     queryFn: () => fn({ data: { resumo_livro_id: livroId } }),
     staleTime: 60_000,
   });
-  const [gerandoPdf, setGerandoPdf] = useState(false);
-
-  async function baixarPdf() {
-    if (!data) return;
-    setGerandoPdf(true);
-    const tid = toast.loading("Preparando seu PDF…");
-    try {
-      const { gerarPdfResumo } = await import("@/lib/pdf-resumo");
-      await gerarPdfResumo(
-        { titulo: data.livro.titulo, autor: data.livro.autor },
-        data.capitulos.map((c) => ({
-          ordem: c.ordem,
-          titulo: c.titulo,
-          conteudo_markdown: c.conteudo_markdown,
-        })),
-      );
-      toast.success("PDF baixado!", { id: tid });
-    } catch (e: any) {
-      toast.error("Não foi possível gerar o PDF.", { id: tid, description: e?.message });
-    } finally {
-      setGerandoPdf(false);
-    }
-  }
 
   if (isPending || !data) {
     return (
