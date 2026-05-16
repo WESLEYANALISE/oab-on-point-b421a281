@@ -135,27 +135,49 @@ function HomePage() {
     <div className="space-y-10 md:space-y-14 pb-10">
       <HomeHero />
 
-      {/* Aulas Interativas — card compacto */}
+      {/* Aulas Interativas + Plano de Estudo — dois cards compactos */}
       <section className="px-4 md:px-10 max-w-6xl">
-        <Link
-          to="/aulas"
-          className="group block relative overflow-hidden rounded-2xl bg-gradient-toga text-primary-foreground p-4 md:p-5 hover:shadow-xl transition-all"
-        >
-          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gold/15 blur-3xl" />
-          <div className="relative flex items-center gap-3">
-            <div className="h-11 w-11 rounded-xl bg-primary-foreground/15 border border-primary-foreground/20 grid place-items-center shrink-0">
-              <BookOpen className="h-5 w-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-gold font-semibold">Aulas Interativas</p>
-              <p className="font-display text-base leading-tight truncate mt-0.5">Ética Profissional · Aula 4</p>
-              <div className="mt-2 h-1 rounded-full bg-primary-foreground/10 overflow-hidden">
-                <div className="h-full w-[62%] bg-gold" />
+        <div className="grid grid-cols-2 gap-3">
+          <Link
+            to="/aulas"
+            className="group relative overflow-hidden rounded-2xl bg-gradient-toga text-primary-foreground p-4 hover:shadow-xl transition-all"
+          >
+            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gold/15 blur-3xl" />
+            <div className="relative flex flex-col h-full min-h-[130px]">
+              <div className="h-10 w-10 rounded-xl bg-primary-foreground/15 border border-primary-foreground/20 grid place-items-center">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-gold font-semibold mt-3">Aulas Interativas</p>
+              <p className="font-display text-sm leading-tight truncate mt-0.5">Ética · Aula 4</p>
+              <div className="mt-auto pt-3">
+                <div className="h-1 rounded-full bg-primary-foreground/10 overflow-hidden">
+                  <div className="h-full w-[62%] bg-gold" />
+                </div>
+                <p className="text-[10px] text-primary-foreground/60 mt-1.5">62% concluído</p>
               </div>
             </div>
-            <ArrowRight className="h-4 w-4 text-gold shrink-0 group-hover:translate-x-0.5 transition-transform" />
-          </div>
-        </Link>
+          </Link>
+
+          <Link
+            to="/plano-estudo"
+            className="group relative overflow-hidden rounded-2xl bg-card border border-gold/20 p-4 hover:-translate-y-0.5 transition-all"
+          >
+            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gold/10 blur-3xl" />
+            <div className="relative flex flex-col h-full min-h-[130px]">
+              <div className="h-10 w-10 rounded-xl bg-gold/15 text-gold grid place-items-center">
+                <ClipboardList className="h-5 w-5" />
+              </div>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-gold font-semibold mt-3">Plano de Estudo</p>
+              <p className="font-display text-sm leading-tight truncate mt-0.5">Meta da semana</p>
+              <div className="mt-auto pt-3">
+                <div className="h-1 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full w-[35%] bg-gold" />
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1.5">3 de 8 tarefas</p>
+              </div>
+            </div>
+          </Link>
+        </div>
       </section>
 
       {/* Estudos aprofundados — 2x2 */}
