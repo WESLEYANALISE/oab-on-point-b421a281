@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
 import { Route as AppSimuladosRouteImport } from './routes/_app.simulados'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppResumosRouteImport } from './routes/_app.resumos'
@@ -33,6 +34,11 @@ const AppRoute = AppRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVadeMecumRoute = AppVadeMecumRouteImport.update({
+  id: '/vade-mecum',
+  path: '/vade-mecum',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSimuladosRoute = AppSimuladosRouteImport.update({
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/simulados': typeof AppSimuladosRoute
+  '/vade-mecum': typeof AppVadeMecumRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
 }
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/resumos': typeof AppResumosRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/simulados': typeof AppSimuladosRoute
+  '/vade-mecum': typeof AppVadeMecumRoute
   '/': typeof AppIndexRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
@@ -155,6 +163,7 @@ export interface FileRoutesById {
   '/_app/resumos': typeof AppResumosRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/_app/simulados': typeof AppSimuladosRoute
+  '/_app/vade-mecum': typeof AppVadeMecumRoute
   '/_app/': typeof AppIndexRoute
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
   '/_app/noticias/$id': typeof AppNoticiasIdRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
     | '/resumos'
     | '/reta-final'
     | '/simulados'
+    | '/vade-mecum'
     | '/materias/$slug'
     | '/noticias/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/resumos'
     | '/reta-final'
     | '/simulados'
+    | '/vade-mecum'
     | '/'
     | '/materias/$slug'
     | '/noticias/$id'
@@ -209,6 +220,7 @@ export interface FileRouteTypes {
     | '/_app/resumos'
     | '/_app/reta-final'
     | '/_app/simulados'
+    | '/_app/vade-mecum'
     | '/_app/'
     | '/_app/materias/$slug'
     | '/_app/noticias/$id'
@@ -232,6 +244,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/vade-mecum': {
+      id: '/_app/vade-mecum'
+      path: '/vade-mecum'
+      fullPath: '/vade-mecum'
+      preLoaderRoute: typeof AppVadeMecumRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/simulados': {
@@ -372,6 +391,7 @@ interface AppRouteChildren {
   AppResumosRoute: typeof AppResumosRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
   AppSimuladosRoute: typeof AppSimuladosRoute
+  AppVadeMecumRoute: typeof AppVadeMecumRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -388,6 +408,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppResumosRoute: AppResumosRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
   AppSimuladosRoute: AppSimuladosRoute,
+  AppVadeMecumRoute: AppVadeMecumRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -399,3 +420,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
