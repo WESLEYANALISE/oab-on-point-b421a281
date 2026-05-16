@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useState } from "react";
-import { BIB_MAP, livrosQueryOptions } from "./_app.biblioteca.$slug";
+import { BIB_MAP, livrosQueryOptions } from "@/lib/biblioteca";
 
 export const Route = createFileRoute("/_app/biblioteca/$slug/$bookId/ler")({
   head: () => ({ meta: [{ title: "Leitor · OAB na Risca" }] }),
