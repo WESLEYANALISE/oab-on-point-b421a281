@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, BookOpen, FileText, Layers, ClipboardList, Target, Sparkles, Newspaper, Award, Scale, Calendar, TrendingUp, Settings, Library, Headphones, User, Crown, ChevronRight, LogOut, HelpCircle } from "lucide-react";
+import { Menu, Home, BookOpen, FileText, Layers, ClipboardList, Target, Sparkles, Newspaper, Award, Scale, Calendar, TrendingUp, Settings, Library, Headphones, User, Crown, ChevronRight, LogOut, HelpCircle, ShieldCheck } from "lucide-react";
+import { useIsAdmin } from "@/hooks/use-admin";
 
-const groups = [
+const baseGroups = [
   {
     label: "Navegar",
     items: [
@@ -45,9 +46,19 @@ const accountItems = [
   { to: "/planos", label: "Ver planos", sub: "Upgrade e assinatura", icon: Crown, accent: "bg-primary/15 text-primary" },
 ] as const;
 
+const adminGroup = {
+  label: "Admin",
+  items: [
+    { to: "/admin", label: "Painel admin", icon: ShieldCheck },
+    { to: "/admin/simulados", label: "Gerar simulados", icon: Target },
+  ],
+} as const;
+
 export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const { data: isAdmin } = useIsAdmin();
+  const groups = isAdmin ? [...baseGroups, adminGroup] : baseGroups;
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
