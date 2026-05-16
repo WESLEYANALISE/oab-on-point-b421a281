@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, BookOpen } from "lucide-react";
 import { BIB_MAP, livrosQueryOptions, areasQueryOptions, countsQueryOptions } from "@/lib/biblioteca";
 
 const PAGE_SIZE = 60;
