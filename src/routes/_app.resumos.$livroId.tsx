@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, Loader2, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, BookOpen, Loader2, ChevronRight, Download } from "lucide-react";
 import { obterLivroResumo } from "@/lib/resumos.functions";
 import { normalizarTitulo } from "@/lib/titulo";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/resumos/$livroId")({
   component: ResumoTimeline,
@@ -17,6 +19,29 @@ function ResumoTimeline() {
     queryFn: () => fn({ data: { resumo_livro_id: livroId } }),
     staleTime: 60_000,
   });
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+
+  async function baixarPdf() {
+    if (!data) return;
+    setGerandoPdf(true);
+    const tid = toast.loading("Preparando seu PDF…");
+    try {
+      const { gerarPdfResumo } = await import("@/lib/pdf-resumo");
+      await gerarPdfResumo(
+        { titulo: data.livro.titulo, autor: data.livro.autor },
+        data.capitulos.map((c) => ({
+          ordem: c.ordem,
+          titulo: c.titulo,
+          conteudo_markdown: c.conteudo_markdown,
+        })),
+      );
+      toast.success("PDF baixado!", { id: tid });
+    } catch (e: any) {
+      toast.error("Não foi possível gerar o PDF.", { id: tid, description: e?.message });
+    } finally {
+      setGerandoPdf(false);
+    }
+  }
 
   if (isPending || !data) {
     return (
@@ -47,12 +72,27 @@ function ResumoTimeline() {
             className="w-16 md:w-20 aspect-[3/4] object-cover rounded-md flex-shrink-0"
           />
         )}
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="font-display text-xl md:text-3xl leading-tight">{data.livro.titulo}</h1>
           {data.livro.autor && <p className="text-sm text-muted-foreground">{data.livro.autor}</p>}
           <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
             <BookOpen className="h-3 w-3" /> {capitulos.length} capítulos
           </p>
+          {capitulos.length > 0 && (
+            <button
+              type="button"
+              onClick={baixarPdf}
+              disabled={gerandoPdf}
+              className="mt-3 inline-flex items-center gap-2 rounded-full border border-gold/40 bg-gradient-to-br from-[oklch(0.28_0.07_18)] to-[oklch(0.19_0.04_18)] px-4 py-1.5 text-xs font-display font-semibold text-gold hover:border-gold/70 hover:shadow-[0_4px_14px_-4px_oklch(0.78_0.13_80/0.55)] transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {gerandoPdf ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              {gerandoPdf ? "Gerando PDF…" : "Baixar resumo em PDF"}
+            </button>
+          )}
         </div>
       </header>
 
