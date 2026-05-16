@@ -69,14 +69,14 @@ function AreaOABPage() {
       </section>
 
       {/* ===== Atalhos ===== */}
-      <section className="px-4 md:px-10">
+      <section className="px-4 md:px-8">
         <SectionTitle icon={Zap} eyebrow="Acesso rápido" title="Seus Atalhos OAB" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 md:gap-3">
           {ATALHOS.map(({ label, icon: Icon, to }) => (
             <Link
               key={label}
               to={to}
-              className="group relative overflow-hidden rounded-2xl border border-gold/15 bg-gradient-to-br from-[oklch(0.32_0.08_18)] to-[oklch(0.21_0.05_18)] p-3 min-h-[84px] flex flex-col items-start justify-between hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30"
+              className="group relative overflow-hidden rounded-2xl border border-gold/15 bg-gradient-to-br from-[oklch(0.32_0.08_18)] to-[oklch(0.21_0.05_18)] p-3 min-h-[84px] md:min-h-[92px] flex flex-col items-start justify-between hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30"
             >
               <div className="h-9 w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center">
                 <Icon className="h-4 w-4 text-gold" strokeWidth={2} />
