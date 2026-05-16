@@ -312,9 +312,7 @@ function ProgressModal({
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="text-xs uppercase tracking-widest text-muted-foreground">{etapaLabel}</p>
-            <h2 className="font-display text-xl mt-1">
-              {isOcr ? "Lendo PDFs…" : `${feitas} / ${total} questões`}
-            </h2>
+            <h2 className="font-display text-xl mt-1">{headerTitle}</h2>
           </div>
           {(concluido || erro) && (
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
@@ -324,7 +322,7 @@ function ProgressModal({
         </div>
 
         <div className="h-2 rounded-full bg-muted overflow-hidden mb-2 relative">
-          {isOcr && !erro ? (
+          {indeterminado && !erro ? (
             <div className="absolute inset-y-0 left-0 w-1/3 bg-primary animate-[shimmer_1.5s_ease-in-out_infinite] rounded-full" />
           ) : (
             <div
@@ -335,11 +333,17 @@ function ProgressModal({
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mb-4">
           <span>
-            {isOcr
-              ? "Aguarde, OCR pode levar até 60s…"
-              : `Lote ${job?.batch_atual ?? 0} / ${job?.batches_total ?? 0} · ${pct}%`}
+            {job?.etapa === "ocr"
+              ? "OCR pode levar até 60s…"
+              : job?.etapa === "analisando"
+                ? "Detectando total de questões e gabarito oficial…"
+                : job?.etapa === "validando"
+                  ? `Revalidando… ${feitas}/${total} questões`
+                  : `Lote ${job?.batch_atual ?? 0} / ${job?.batches_total ?? 0} · ${pct}%`}
           </span>
-          {!isOcr && eta !== null && !concluido && !erro && <span>~{eta}s restantes</span>}
+          {!indeterminado && eta !== null && !concluido && !erro && job?.etapa === "gerando" && (
+            <span>~{eta}s restantes</span>
+          )}
         </div>
 
         <div
