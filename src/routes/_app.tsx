@@ -44,13 +44,26 @@ function AppLayout() {
   // Renderiza nada para evitar flash do shell.
   if (!user) return null;
 
+  const reduceMotion = useReducedMotion();
+
   return (
     <div className="min-h-screen flex bg-background text-foreground">
       <DesktopSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         {!isBiblioteca && <MobileHeader />}
-        <main className={`flex-1 ${isBiblioteca ? "" : "pb-20 md:pb-0"}`}>
-          <Outlet />
+        <main className={`flex-1 ${isBiblioteca ? "" : "pb-20 md:pb-0"} overflow-x-hidden`}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={pathname}
+              initial={reduceMotion ? false : { x: -24, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={reduceMotion ? { opacity: 0 } : { x: 24, opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="will-change-transform"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
         {!isBiblioteca && <BottomNav />}
       </div>
