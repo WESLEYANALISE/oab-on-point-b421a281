@@ -301,7 +301,7 @@ export const getSimuladoOverview = createServerFn({ method: "POST" })
         .maybeSingle(),
       supabase
         .from("simulado_questoes")
-        .select("materia")
+        .select("materia, status")
         .eq("simulado_id", simuladoId),
       supabase
         .from("simulado_tentativas")
@@ -315,9 +315,13 @@ export const getSimuladoOverview = createServerFn({ method: "POST" })
     ]);
     if (qs.error) throw new Error(qs.error.message);
 
-    const total = qs.data?.length ?? 0;
+    // Raio-X ignora questões que falharam na extração
+    const questoesValidas = (qs.data ?? []).filter(
+      (q) => (q as { status?: string }).status !== "falhou_extracao",
+    );
+    const total = questoesValidas.length;
     const contagem: Record<string, number> = {};
-    for (const q of qs.data ?? []) {
+    for (const q of questoesValidas) {
       const m = q.materia ?? "Sem matéria";
       contagem[m] = (contagem[m] ?? 0) + 1;
     }
