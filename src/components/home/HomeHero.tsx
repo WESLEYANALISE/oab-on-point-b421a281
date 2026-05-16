@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, Sparkles, Award, Target } from "lucide-react";
-import { CountdownExame } from "./CountdownExame";
+import { CountdownExame } from "@/components/shared/CountdownExame";
 
 export function HomeHero() {
   return (
