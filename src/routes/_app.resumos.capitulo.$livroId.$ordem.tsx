@@ -2,11 +2,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Minus, Plus, Type } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { obterLivroResumo } from "@/lib/resumos.functions";
 import { normalizarTitulo } from "@/lib/titulo";
+import { useFontScale } from "@/hooks/use-font-scale";
 
 export const Route = createFileRoute("/_app/resumos/capitulo/$livroId/$ordem")({
   component: CapituloView,
