@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, BookOpen, FileText, Layers, ClipboardList, Target, Sparkles, Newspaper, Award, Scale, ShieldCheck } from "lucide-react";
+import { Home, BookOpen, FileText, Layers, Target, Sparkles, Newspaper, Award, Scale, ShieldCheck, Minus, Plus, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsAdmin } from "@/hooks/use-admin";
+import { useFontScale } from "@/hooks/use-font-scale";
 
 const baseGroups = [
   {
