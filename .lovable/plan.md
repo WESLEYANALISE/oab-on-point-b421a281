@@ -1,121 +1,129 @@
-# 1ª Fase OAB — Hub de estudo
+## Visão geral
 
-Transformar a rota `/_app/oab/primeira-fase` (hoje apenas `ComingSoon`) num hub completo, hierárquico e elegante.
+Criar a função **Blogger** — um feed de artigos diários com dicas sobre OAB. Conteúdo dinâmico no Supabase, capas geradas por IA (fotográficas), 10 artigos iniciais já populados e um painel admin para você publicar/editar novos posts.
 
-## Estrutura da página
+## Arquitetura
 
-```text
-┌──────────────────────────────────────────────┐
-│ HERO (gradient-toga)                         │
-│ ← Voltar                                     │
-│ 1ª FASE OAB                                  │
-│ "Frase motivacional do dia"                  │
-│                                              │
-│ [🔥 12 dias seguidos] [🎯 74% acerto]        │
-│ [📚 38% do edital]   [⏱ 22h esta semana]    │
-└──────────────────────────────────────────────┘
+- **Banco**: tabela `blog_posts` no Supabase, leitura pública dos publicados, escrita só para admin (RLS via `has_role`).
+- **Storage**: bucket público `blog-capas` para as imagens geradas pela IA.
+- **Geração de texto e capa**: feita por mim agora (no momento da implementação) — para cada um dos 10 temas, gero o conteúdo em markdown e a imagem em estilo fotográfico realista, faço upload no bucket e o INSERT na tabela.
+- **Frontend**: 3 rotas no app + 1 card na Home + 1 item no menu lateral.
+- **Animação**: usa o `animate-slide-in-right` global já existente.
 
-┌──────────────────────────────────────────────┐
-│ MEU PLANO DE ESTUDO                          │
-│ Escolha duração: [15] [30] [45] [60] [90][365]│
-│ Horas por dia:   [— 2h +]   Estudo hoje: 2h  │
-│ ▸ Próxima sessão: Direito Civil · 45 min     │
-│ [Ver plano completo →]                        │
-└──────────────────────────────────────────────┘
+## Banco de dados (migration)
 
-┌──────────────────────────────────────────────┐
-│ TRILHA DE ESTUDO                             │
-│                                              │
-│ ●═══════════════════ (timeline vertical)     │
-│ │                                            │
-│ │ ┌────────────────────────────────────┐    │
-│ │ │ 🎬 AULAS (card principal grande)   │    │
-│ │ │ Videoaulas por matéria · 46º exame │    │
-│ │ │ [Continuar de onde parou →]        │    │
-│ │ └────────────────────────────────────┘    │
-│ │                                            │
-│ ● ┌──────────────────┐                       │
-│ │ │ 📖 O que estudar │                       │
-│ │ └──────────────────┘                       │
-│ │                                            │
-│ ● ┌──────────────────┐                       │
-│ │ │ 🃏 Flashcards    │                       │
-│ │ └──────────────────┘                       │
-│ │                                            │
-│ ● ┌──────────────────┐                       │
-│ │ │ ✍ Questões       │                       │
-│ │ └──────────────────┘                       │
-│ │                                            │
-│ ● ┌──────────────────┐                       │
-│ │ │ 📕 Caderno erros │                       │
-│ │ └──────────────────┘                       │
-│ │                                            │
-│ ● ┌──────────────────┐                       │
-│   │ 🔁 Reforço       │                       │
-│   └──────────────────┘                       │
-└──────────────────────────────────────────────┘
+Tabela `blog_posts`:
+- `id` uuid
+- `slug` text único
+- `titulo` text
+- `subtitulo` text
+- `categoria` text (ex.: "Organização", "Estratégia", "Mente", "Conteúdo", "Reta final")
+- `tempo_leitura_min` int
+- `capa_url` text
+- `resumo` text (2–3 linhas, usado nos cards)
+- `conteudo_md` text (markdown completo)
+- `tags` text[]
+- `publicado` bool
+- `publicado_em` timestamptz
+- `created_at`, `updated_at`, `autor_id` uuid
 
-┌──────────────────────────────────────────────┐
-│ MEU PROGRESSO          [aba: Matérias|Geral] │
-│ Barras de % por matéria do edital            │
-│ + Streak chart (últimos 14 dias)             │
-└──────────────────────────────────────────────┘
+RLS:
+- SELECT público quando `publicado = true`
+- ALL para admin (`has_role(auth.uid(), 'admin')`)
+
+Bucket `blog-capas` (public). Policies de upload/update/delete restritas a admin.
+
+## Temas dos 10 primeiros artigos
+
+Baseados em pautas já consolidadas em blogs como JurisHand, Damásio, ProvaDaOrdem, Estuda Aqui, Debate Direito e Blog Exame OAB — reescritos do nosso jeito (linguagem direta, foco no aluno do app, sem clichê de cursinho).
+
+1. **Como montar um cronograma realista para a 1ª fase em 60 dias** — Organização
+2. **As 5 matérias que mais caem no Exame de Ordem (e como priorizar)** — Estratégia
+3. **Lei seca x doutrina: o equilíbrio que aprova** — Estudo
+4. **Técnica do funil: como resolver questões da FGV sem cair em pegadinha** — Estratégia
+5. **Revisão espaçada aplicada ao Direito: por que reler não funciona** — Estudo
+6. **Como controlar a ansiedade na semana da prova** — Mente
+7. **O dia da prova: checklist completo de quem passa de primeira** — Reta final
+8. **Ética Profissional: a matéria mais subestimada (e mais decisiva)** — Conteúdo
+9. **Erros que reprovam: os 7 vícios de estudo mais comuns** — Estudo
+10. **Como usar provas anteriores como melhor professor particular** — Estratégia
+
+Cada artigo terá ~700–900 palavras, intro com hook, 3–5 subtítulos, exemplos práticos, bullets de checklist e um fechamento com CTA pro app (ex.: "veja o plano de estudo personalizado dentro do Hub da 1ª Fase").
+
+## Capas (estilo fotográfico realista)
+
+Prompt-base comum para coerência visual:
+> Fotografia editorial realista, iluminação natural cálida, profundidade de campo suave, paleta vinho/dourado/marfim, ambiente jurídico discreto (livros, mesa de madeira, balança, caderno), sem texto, sem logos, 16:9.
+
+Cada tema recebe um sujeito-foco distinto (mesa de estudos com calendário, lei seca aberta, advogado segurando caneta, mão escrevendo, balança ao fundo desfocado, etc.) para não ficarem repetidas.
+
+## Rotas e telas
+
+```
+src/routes/_app.blog.tsx              -> /blog          feed (lista + filtros por categoria)
+src/routes/_app.blog.$slug.tsx        -> /blog/:slug    artigo (markdown renderizado)
+src/routes/_app.admin.blog.tsx        -> /admin/blog    painel admin (lista + form criar/editar)
 ```
 
-## Implementação
+**/blog (feed)**
+- Hero compacto "Blogger OAB" com tagline.
+- Chips de categoria (filtro).
+- Post em destaque (último publicado) + grid responsivo dos demais.
+- Cada card: capa, categoria, título, resumo, tempo de leitura, data.
 
-**Arquivos novos**
-- `src/routes/_app.oab.primeira-fase.tsx` — substitui o `ComingSoon`. Página inteira.
-- `src/components/primeira-fase/StatsHero.tsx` — header com streak, % acerto, % edital, horas semanais, frase motivacional rotativa.
-- `src/components/primeira-fase/PlanoCard.tsx` — selector de duração (15/30/45/60/90/365 dias) + stepper de horas/dia + preview da próxima sessão.
-- `src/components/primeira-fase/TrilhaTimeline.tsx` — timeline vertical com card grande "Aulas" no topo e demais cards em sequência conectados por linha.
-- `src/components/primeira-fase/ProgressoTabs.tsx` — alternância "Matérias / Geral" com barras de progresso e mini-chart de streak.
-- `src/lib/plano-estudo.ts` — gera distribuição de matérias/dia a partir das 17 matérias do edital (`MATERIAS_OAB_46`), duração e horas/dia. Função pura, sem backend.
-- `src/lib/streak.ts` — persistência local (`localStorage`) de dias acessados, último acesso, frase motivacional do dia.
-- `src/routes/_app.oab.caderno-erros.tsx` — placeholder funcional (lista de questões erradas, vazio por enquanto).
-- `src/routes/_app.oab.reforco.tsx` — placeholder funcional (matérias com menor % de acerto).
+**/blog/:slug (artigo)**
+- Capa full-bleed no topo, com gradiente para legibilidade.
+- Título, subtítulo, categoria, tempo de leitura, data.
+- Conteúdo em markdown (`react-markdown` + `remark-gfm` + `@tailwindcss/typography` `prose`).
+- Bloco final com CTA para "1ª Fase OAB" e sugestão de 2 artigos relacionados (mesma categoria).
+- Botão voltar e compartilhar.
 
-**Arquivos editados**
-- `src/components/layout/DesktopSidebar.tsx` e `src/components/layout/MenuDrawer.tsx`: opcional, adicionar atalho "1ª Fase" se já não estiver.
+**/admin/blog (painel)**
+- Lista de posts (publicados/rascunhos) com ações editar/publicar/despublicar/excluir.
+- Form: título, subtítulo, slug (gerado do título), categoria (select), resumo, conteúdo (textarea markdown com preview ao lado), upload de capa (ou colar URL), tags, toggle publicado.
+- Visível só se `has_role` = admin (gate via server fn).
 
-## Comportamento das funções
+## Navegação
 
-**Streak** (`src/lib/streak.ts`)
-- Lê `localStorage["pf_streak"]` no mount: `{ dias: number, ultimoAcesso: ISODate }`.
-- Se `ultimoAcesso` é ontem → `dias + 1`. Se é hoje → mantém. Se > 1 dia → reseta para 1.
-- Salva e devolve `dias`.
+- **Home**: novo card "Blogger" na grade de atalhos, ícone `Newspaper`, abre `/blog`.
+- **DesktopSidebar** e **MenuDrawer**: novo item "Blog" com ícone, posicionado depois de "Biblioteca".
+- Admin no menu (visível só para admin) → link extra "Gerenciar blog".
 
-**% acerto** — agrega de `simulado_tentativas` (já existe) via Supabase: soma `acertos / total` das últimas 30 tentativas. Server fn `getStatsPrimeiraFase()` com `requireSupabaseAuth`.
+## Camada de dados / server functions
 
-**% edital** — derivado do localStorage de matérias marcadas como "estudadas" (campo novo) ou heurística simples: nº de matérias com pelo menos 1 tentativa / 17.
+`src/lib/blog.functions.ts`:
+- `listBlogPosts({ categoria?, limit?, offset? })` — público (admin client, filtra `publicado=true`).
+- `getBlogPost({ slug })` — público.
+- `getRelatedPosts({ slug, categoria, limit })` — público.
 
-**Plano de estudo** (`src/lib/plano-estudo.ts`)
-- Input: `{ dias: 15|30|45|60|90|365, horasPorDia: number }`.
-- Output: array `{ data: Date, materia: Materia, minutos: number, tipo: "aula"|"questoes"|"revisao" }[]`.
-- Distribui as 17 matérias proporcionalmente ao peso `questoes.max` no exame.
-- Persiste escolha em `localStorage["pf_plano"]` para a próxima sessão sempre aparecer na home.
+`src/lib/blog-admin.functions.ts`:
+- `adminListAllPosts()` — `requireSupabaseAuth` + checagem `has_role`.
+- `adminUpsertPost(input)` — idem.
+- `adminDeletePost({ id })` — idem.
+- `adminUploadCapa(formData)` — upload no bucket `blog-capas`.
 
-**Frases motivacionais** — array de 30 frases em `src/lib/motivacao.ts`, seleção determinística por dia do ano.
+## Componentes novos
 
-## Links dos cards da trilha
+- `src/components/blog/PostCard.tsx`
+- `src/components/blog/FeaturedPost.tsx`
+- `src/components/blog/CategoriaChips.tsx`
+- `src/components/blog/MarkdownView.tsx` (react-markdown configurado com estilo `prose`)
+- `src/components/blog/admin/PostForm.tsx`
 
-- Aulas → `/aulas`
-- O que estudar → `/oab/o-que-estudar`
-- Flashcards → `/flashcards`
-- Questões → `/provas` (banco de questões por prova)
-- Caderno de erros → `/oab/caderno-erros` (novo)
-- Reforço → `/oab/reforco` (novo)
+## Dependências
 
-## Estilo
+Adicionar: `react-markdown`, `remark-gfm`, `@tailwindcss/typography` (plugin).
 
-- Paleta: `bg-gradient-toga` para o hero (igual ao top card da home).
-- Cards: `border-gold/15`, `bg-card` ou `bg-gradient-to-br` em vinho para o card principal de Aulas.
-- Timeline: linha vertical `bg-gold/25` à esquerda com bolinhas douradas `bg-gold` em cada card.
-- Numerais tabulares para os stats. Animação leve `hover:-translate-y-0.5` nos cards.
-- Mobile-first 390px, com grid `md:grid-cols-2` na timeline a partir do tablet (mantendo Aulas full-width no topo).
+## Seed dos 10 artigos
 
-## Fora de escopo desta entrega
+Após aprovar o plano e rodar a migration, eu:
+1. Para cada tema, gero a capa via `imagegen` (fotográfico realista, 16:9), salvo em `/tmp` e faço upload para `blog-capas/<slug>.jpg` retornando a URL pública.
+2. Escrevo o conteúdo markdown completo de cada artigo (700–900 palavras).
+3. Insiro todos os 10 registros já com `publicado=true` e `publicado_em=now()`.
 
-- Persistência do plano de estudo em Supabase (fica em localStorage por enquanto).
-- IA gerando plano dinâmico — distribuição é determinística baseada no peso das matérias.
-- Implementação completa do Caderno de erros e Reforço (entram como rotas funcionais com layout pronto, mas listagem real virá depois).
+## Fora de escopo (para depois)
+
+- Comentários, likes, contagem de visualizações.
+- Newsletter / envio diário.
+- SEO server-side específico por post (vamos adicionar `head()` por slug já no MVP, mas sem `og:image` dinâmico avançado — usa a `capa_url`).
+- Editor WYSIWYG (vai ser textarea markdown com preview).
