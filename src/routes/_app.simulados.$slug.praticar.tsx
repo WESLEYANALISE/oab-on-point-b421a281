@@ -2,12 +2,24 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Loader2, ChevronLeft, ChevronRight, Flag, Check, X, FileText, ListChecks } from "lucide-react";
 import { getSimuladoCompleto, salvarResposta, finalizarTentativa } from "@/lib/simulados.functions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { isUuid } from "@/lib/simulado-slug";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_app/simulados/$slug/praticar")({
   head: () => ({ meta: [{ title: `Simulado — OAB na Risca` }] }),
@@ -98,6 +110,7 @@ function PraticaPage() {
     mutationFn: ({ numero, alt }: { numero: number; alt: Alt }) =>
       salvarFn({ data: { tentativaId: tentativaId!, numero, alternativa: alt } }),
     retry: 2,
+    onError: () => toast.error("Não foi possível salvar sua resposta. Tente de novo."),
   });
 
   const finalMut = useMutation({
@@ -300,17 +313,35 @@ function PraticaPage() {
               {estado?.alt ? "Responder" : "Ver alternativas"}
             </Button>
           ) : ehUltima ? (
-            <Button
-              className="flex-1 bg-gradient-gold text-gold-foreground"
-              onClick={() => finalMut.mutate()}
-              disabled={finalMut.isPending}
-            >
-              {finalMut.isPending ? (
-                <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Finalizando…</>
-              ) : (
-                <><Flag className="h-4 w-4 mr-1" /> Finalizar simulado</>
-              )}
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  className="flex-1 bg-gradient-gold text-gold-foreground"
+                  disabled={finalMut.isPending}
+                >
+                  {finalMut.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Finalizando…</>
+                  ) : (
+                    <><Flag className="h-4 w-4 mr-1" /> Finalizar simulado</>
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Finalizar este simulado?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Você respondeu {respondidasN} de {totalQ} questões. Após finalizar
+                    não será possível alterar suas respostas. Quer continuar?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Voltar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => finalMut.mutate()}>
+                    Sim, finalizar
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           ) : (
             <Button className="flex-1" onClick={() => irPara(idx + 1)}>
               Próxima questão <ChevronRight className="h-4 w-4 ml-1" />

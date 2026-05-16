@@ -40,26 +40,6 @@ export const listSimulados = createServerFn({ method: "GET" })
     }));
   });
 
-// ============ Detalhe (com gabarito para feedback instantâneo) ============
-export const getSimulado = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string }) => simuladoRefSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const simuladoId = await resolveSimuladoId(supabase, data.id);
-    const [sim, qs] = await Promise.all([
-      supabase.from("simulados").select("*").eq("id", simuladoId).maybeSingle(),
-      supabase
-        .from("simulado_questoes")
-        .select("id, numero, enunciado, materia, alternativas, resposta_correta")
-        .eq("simulado_id", simuladoId)
-        .order("numero", { ascending: true }),
-    ]);
-    if (sim.error) throw new Error(sim.error.message);
-    if (qs.error) throw new Error(qs.error.message);
-    if (!sim.data) throw new Error("Simulado não encontrado");
-    return { simulado: sim.data, questoes: qs.data ?? [] };
-  });
 
 // ============ Tudo o que a prática precisa em UMA chamada ============
 // Retorna simulado + questões + id de uma tentativa já em andamento

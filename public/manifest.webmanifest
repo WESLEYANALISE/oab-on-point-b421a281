@@ -1,0 +1,11 @@
+{
+  "name": "OAB na Risca",
+  "short_name": "OAB na Risca",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a0f0a",
+  "theme_color": "#1a0f0a",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "any", "type": "image/x-icon" }
+  ]
+}
