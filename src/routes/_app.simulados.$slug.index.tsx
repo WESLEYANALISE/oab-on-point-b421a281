@@ -260,20 +260,29 @@ function Edital({ provaNumero, editalUrl }: { provaNumero: number; editalUrl: st
   const fn = useServerFn(getEditalResumo);
   const q = useQuery({
     queryKey: ["edital-resumo", provaNumero],
-    queryFn: () => fn({ data: { provaNumero } }),
+    queryFn: async () => {
+      // Timeout de UI de 35s — se o LLM travar, devolve null e mostra fallback.
+      return await Promise.race([
+        fn({ data: { provaNumero } }),
+        new Promise<{ conteudo: null; fonte: "timeout" }>((resolve) =>
+          setTimeout(() => resolve({ conteudo: null, fonte: "timeout" }), 35_000),
+        ),
+      ]);
+    },
     staleTime: Infinity,
     enabled: !!editalUrl,
+    retry: 1,
   });
   const [secaoAtiva, setSecaoAtiva] = useState(0);
 
   if (!editalUrl) return <Vazio mensagem="Edital ainda não disponível." />;
-  if (q.isLoading) {
+  if (q.isLoading || q.isFetching) {
     return (
       <div className="rounded-xl border border-border bg-card p-8 text-center">
         <Loader2 className="h-6 w-6 mx-auto animate-spin text-muted-foreground mb-2" />
         <p className="text-sm font-medium">Estruturando o edital…</p>
         <p className="text-xs text-muted-foreground mt-1">
-          Isto pode levar alguns segundos na primeira abertura. Depois fica salvo.
+          Pode levar alguns segundos. Depois fica salvo.
         </p>
       </div>
     );
@@ -287,16 +296,23 @@ function Edital({ provaNumero, editalUrl }: { provaNumero: number; editalUrl: st
           <div className="flex-1">
             <p className="text-sm font-medium">Não foi possível estruturar o edital agora.</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Você ainda pode abrir o PDF oficial:
+              {q.data?.fonte === "timeout"
+                ? "O serviço demorou demais para responder. Tente novamente em alguns segundos."
+                : "Você ainda pode abrir o PDF oficial."}
             </p>
-            <a
-              href={editalUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-flex items-center gap-2 text-sm text-primary hover:underline"
-            >
-              <ExternalLink className="h-4 w-4" /> Abrir edital oficial
-            </a>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => q.refetch()} disabled={q.isFetching}>
+                <RotateCcw className="h-4 w-4 mr-1.5" /> Tentar novamente
+              </Button>
+              <a
+                href={editalUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-primary hover:underline px-2"
+              >
+                <ExternalLink className="h-4 w-4" /> Abrir edital oficial
+              </a>
+            </div>
           </div>
         </div>
       </div>
