@@ -1,61 +1,77 @@
-## Diagnóstico
+## Objetivo
 
-**1. Contagem regressiva sumindo (mostrando "--")**
-`src/components/shared/CountdownExame.tsx` inicializa o estado como `null` e só calcula os números dentro de `useEffect`. Durante o SSR e a primeira pintura no cliente o componente renderiza `--`. Como o texto é branco (`text-primary-foreground`) sobre o fundo bordô e em fonte enorme (`text-5xl/6xl`), os traços aparecem como “barras brancas” — exatamente o que aparece no print. Se a hidratação demora ou um listener sai do ar, o componente fica preso no placeholder.
+Refazer `src/routes/_app.index.tsx` (rota `/`) com o layout exato da "Área OAB" mostrado nos prints e descrito no MD: countdown, Fases do Exame, Atalhos, Notícias e Ferramentas de estudo. Paleta vinho/dourado já existente. Mobile-first (390×844).
 
-**2. Fonte "estranha" dos títulos**
-Os títulos de seção ("Ferramentas de estudo", "Explorar Biblioteca", "Teste seus conhecimentos") e os labels de card ("Resumos", "Biblioteca", "Hórus") usam `font-display: Instrument Serif` — uma serifa fina e condensada que destoa do resto da UI escura + dourada e dá um ar “artigo de revista” em vez de “produto jurídico sério”.
+## Estrutura da página (`_app.index.tsx`)
 
-**3. Home com hierarquia pouco premium**
-Hero apertado, eyebrow do contador pequeno demais, contador sem caixas/separadores, cards de “Ferramentas de estudo” chapados, "Aulas Interativas" e "Plano de Estudo" sem peso visual de destaque. Falta refinamento e respiração.
+```
+Header compacto (ÁREA OAB + Buscar)
+  ↓
+CountdownHero (46º EOU · Calendário · DIAS HRS MIN · data por extenso)
+  ↓
+SectionHeader "Fases do Exame"
+  Grid 2 col: card 1ª Fase + card 2ª Fase (capas geradas, badge OAB, CTA dourado)
+  ↓
+SectionHeader "Seus Atalhos OAB"
+  Grid 4 col: Biblioteca · Simulados · Questões · Videoaulas
+  ↓
+SectionHeader "Notícias da OAB" + pílula "Ver todas"
+  Carrossel embla horizontal com getNoticias() existente
+  ↓
+SectionHeader "Ferramentas de estudo"
+  Grid 2 col x 4 linhas: 1ª Fase · 2ª Fase · O que estudar · Calendário OAB ·
+                          Cronograma · Flashcards · Peça-modelo
+```
 
----
+## Capas (gerar com IA)
 
-## Plano
+- `src/assets/oab-primeira-fase-cover.webp` — alvo dourado com flechas, livros jurídicos ao fundo, tom vinho escuro, cinematográfico.
+- `src/assets/oab-segunda-fase-cover.webp` — advogado jovem de terno escrevendo numa peça, mesa de madeira, luz quente.
+- Proporção 3:4, importadas como ES module, `loading="eager"` no LCP.
 
-### 1. Corrigir o contador (`CountdownExame.tsx`)
-- Inicializar `useState` com `diff()` direto (lazy initializer) em vez de `null`, para o número aparecer já na primeira pintura.
-- Manter `suppressHydrationWarning` (o valor varia entre server e client por causa do `Date.now()`).
-- Acrescentar fallback visual: cada dígito em uma “lapidação” (caixa arredondada com leve borda dourada) para parar de parecer “barras brancas” mesmo se algum dia o número não carregar.
-- Atualizar a cada 30s (granularidade de minuto).
+## Rotas placeholder "Em breve"
 
-### 2. Substituir a tipografia de display
-- Trocar `--font-display` de **Instrument Serif** para **Fraunces** (serifa moderna, geométrica, com peso 600/700 para títulos) — transmite seriedade jurídica + elegância editorial sem parecer datada.
-- Manter `Inter Tight` para corpo.
-- Ajustar `letter-spacing` e `font-weight` dos títulos para um look mais editorial-premium (`tracking-tight`, `font-semibold`).
-- Carregar a fonte via `@font-face` no `src/styles.css` (Google Fonts), com `font-display: swap`.
+Criar arquivos novos enxutos (cada um com `head()` próprio e card centralizado "Em breve · voltar"):
 
-### 3. Refinar o hero (`HomeHero.tsx`)
-- Aumentar respiração interna (padding maior em mobile).
-- Eyebrow "42º Exame · 1ª fase" com mais contraste do dourado e leve glow.
-- Contador em caixas: cada bloco (DIAS / HRS / MIN) num cartão translúcido (`bg-primary-foreground/8` + `border-primary-foreground/15` + `backdrop-blur`) para virar um elemento icônico do app.
-- Data do exame numa linha com selo dourado discreto.
-- Botão "Calendário" maior e com hover/press states melhores.
+- `src/routes/_app.oab.primeira-fase.tsx` → `/oab/primeira-fase`
+- `src/routes/_app.oab.segunda-fase.tsx` → `/oab/segunda-fase`
+- `src/routes/_app.oab.o-que-estudar.tsx` → `/oab/o-que-estudar`
+- `src/routes/_app.oab.calendario.tsx` → `/oab/calendario`
+- `src/routes/_app.oab.cronograma.tsx` → `/oab/cronograma`
+- `src/routes/_app.oab.peca-modelo.tsx` → `/oab/peca-modelo`
 
-### 4. Refinar a home (`_app.index.tsx`)
-- Aumentar espaçamento vertical entre seções no mobile (`space-y-12`).
-- Padronizar todos os cards principais com cantos `rounded-3xl`, borda mais sutil, sombra interna fraca, e leve gradiente diagonal para dar profundidade.
-- Cards "Aulas Interativas" / "Plano de Estudo": adicionar ícone maior, melhorar barra de progresso (altura 2px, brilho dourado no preenchimento).
-- Cards "Ferramentas de estudo" (Resumos, Biblioteca, Audioaulas, Hórus): ícone num pill maior, label em Fraunces 600, descrição em Inter 12px com mais contraste; CTA dourado com seta animada no hover.
-- Carrossel "Ferramentas": gradientes mais ricos por categoria, micro-tag "NOVO/PRO" quando fizer sentido (decisão futura).
-- "Pratique": linhas mais respiradas, ícones com fundo gradient + sombra colorida fraca.
+Componente único reutilizado `EmBrevePage({ titulo, descricao })` em `src/components/oab/EmBrevePage.tsx`.
 
-### 5. Atualizar `SectionHeader`
-- Eyebrow em dourado (`text-gold/80`) em vez de muted, para criar ritmo visual nas seções.
-- Título com Fraunces 600, `text-2xl`/`md:text-[28px]`, `tracking-tight`.
+Atalhos do "Seus Atalhos OAB" reaproveitam rotas já existentes:
+- Biblioteca → `/biblioteca`
+- Simulados → `/simulados`
+- Questões → `/questoes`
+- Videoaulas → `/aulas`
 
----
+Flashcards no grid de ferramentas → `/flashcards` (já existe).
 
-## Arquivos afetados
-- `src/components/shared/CountdownExame.tsx` — fix do bug + caixas estilizadas
-- `src/components/home/HomeHero.tsx` — refinamento visual
-- `src/components/shared/SectionHeader.tsx` — eyebrow dourado, ajuste tipográfico
-- `src/routes/_app.index.tsx` — espaçamento, cantos, refinos dos cards
-- `src/styles.css` — substituir `--font-display` por Fraunces + `@font-face`
+## Componentes novos
 
----
+- `src/components/oab/OABHeader.tsx` — header compacto com Voltar (oculto na home), título ÁREA OAB + Gavel, botão Buscar (dispara evento `open-pesquisar-sheet`, mesmo padrão atual).
+- `src/components/oab/OABCountdownHero.tsx` — refatora o `CountdownExame` atual para o visual exato do print (badge dourado "46º EOU", botão Calendário, 3 blocos grandes DIAS/HRS/MIN, divisor, linha com data por extenso). Mantém o lazy init que já corrigimos.
+- `src/components/oab/OABFasesGrid.tsx` — 2 cards 3:4 com capa, badge "OAB", gradiente preto na base, CTA circular dourado.
+- `src/components/oab/OABAtalhosGrid.tsx` — 4 botões quadrados, gradiente vinho, ícone num quadrado dourado.
+- `src/components/oab/OABNoticiasSection.tsx` — usa `getNoticias()` atual + embla carousel, badge fonte azul, badge data inferior.
+- `src/components/oab/OABFerramentasGrid.tsx` — 2 col, ícone + título + subtítulo.
 
-## Pontos técnicos
-- O bug do contador é resolvido fazendo `useState(() => diff())` (lazy init) — `diff()` é puro e funciona tanto no server quanto no client. O `suppressHydrationWarning` já existente cobre a diferença esperada entre os dois momentos.
-- Fraunces tem variações de "softness" e "opsz"; vamos usar o arquivo estático weight 600 para evitar peso desnecessário no bundle.
-- Nenhuma alteração de dados/Supabase. Mudanças 100% de frontend/apresentação.
+Todos consumindo tokens semânticos de `src/styles.css` (vinho `--background`, `--primary`, `--gold`, `--gold-foreground`, `--font-display`). Sem cores hardcoded.
+
+## Arquivos editados
+
+- `src/routes/_app.index.tsx` — substituído pelo novo layout (remove cards "Aulas Interativas", "Plano de Estudo", "Ferramentas de estudo" antigos).
+- `src/styles.css` — adicionar 1–2 tokens se faltarem (`--vinho-card`, `--gold-soft`). Fonte Playfair Display garantida via `@import`.
+
+## O que NÃO entra (conforme respostas)
+
+- Sem cron / edge function / tabela `noticias_oab_cache` — Notícias usam dados já existentes do app.
+- Sem nova lógica de Supabase além do que já existe.
+- Sem tabela `oab_calendario` — countdown usa a data do próximo exame já configurada no `CountdownExame` (constante existente).
+
+## Verificação
+
+Após implementar: abrir o preview no viewport 390×844, comparar cada seção contra `image-19.png` e `image-20.png`, ajustar espaçamentos/raio/sombras até bater. Conferir build limpo (sem imports quebrados nas novas rotas).
