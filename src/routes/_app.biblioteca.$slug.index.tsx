@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, ChevronRight, BookOpen } from "lucide-react";
-import { BIB_MAP, livrosQueryOptions, areasQueryOptions, countsQueryOptions } from "@/lib/biblioteca";
+import { ArrowLeft, ChevronRight, BookOpen, Clock, ArrowDownAZ } from "lucide-react";
+import { BIB_MAP, livrosQueryOptions, areasQueryOptions, countsQueryOptions, type SortMode } from "@/lib/biblioteca";
 
 const PAGE_SIZE = 60;
 
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_app/biblioteca/$slug/")({
     if (BIB_MAP[params.slug]?.hasAreas) {
       context.queryClient.prefetchQuery(areasQueryOptions(params.slug));
     } else {
-      context.queryClient.prefetchQuery(livrosQueryOptions(params.slug, null, PAGE_SIZE, 0));
+      context.queryClient.prefetchQuery(livrosQueryOptions(params.slug, null, PAGE_SIZE, 0, "cronologica"));
     }
   },
   component: BibliotecaList,
@@ -23,12 +23,13 @@ function BibliotecaList() {
   const cfg = BIB_MAP[slug];
   const [area, setArea] = useState<string | null>(null);
   const [limit, setLimit] = useState(PAGE_SIZE);
+  const [sort, setSort] = useState<SortMode>("cronologica");
 
   const showAreas = cfg.hasAreas && area === null;
 
   const { data: areas, isLoading: areasLoading } = useQuery(areasQueryOptions(slug));
   const { data: livros, isLoading: livrosLoading } = useQuery({
-    ...livrosQueryOptions(slug, area, limit, 0),
+    ...livrosQueryOptions(slug, area, limit, 0, sort),
     enabled: !showAreas,
   });
   const { data: counts } = useQuery(countsQueryOptions());
@@ -38,6 +39,7 @@ function BibliotecaList() {
     if (cfg.hasAreas && area !== null) {
       setArea(null);
       setLimit(PAGE_SIZE);
+      setSort("cronologica");
     } else {
       navigate({ to: "/biblioteca" });
     }
