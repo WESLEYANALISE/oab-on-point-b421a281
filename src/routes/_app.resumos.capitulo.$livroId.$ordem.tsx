@@ -188,54 +188,64 @@ function CapituloView() {
         )}
       </div>
 
-      <nav className="mt-10 pt-5 border-t border-border grid grid-cols-3 items-stretch gap-2">
-        {prev ? (
-          <Link
-            to="/resumos/capitulo/$livroId/$ordem"
-            params={{ livroId, ordem: String(prev.ordem) }}
-            className="group flex items-center gap-2 rounded-xl border border-border bg-card/50 hover:border-gold/40 hover:bg-card transition px-3 py-2.5 min-w-0"
-          >
-            <ChevronLeft className="h-4 w-4 shrink-0 text-gold" />
-            <span className="text-left min-w-0">
-              <span className="block text-[9px] uppercase tracking-wider text-muted-foreground">Anterior</span>
-              <span className="block text-xs font-display truncate text-foreground">{normalizarTitulo(prev.titulo)}</span>
-            </span>
-          </Link>
-        ) : (
-          <span aria-hidden />
-        )}
+      {/* espaçador para o conteúdo não ficar atrás do rodapé fixo */}
+      <div className="h-24" aria-hidden />
 
-        <button
-          type="button"
-          onClick={baixarPdf}
-          disabled={gerandoPdf}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-gold/40 bg-gradient-toga text-gold font-display font-semibold text-xs uppercase tracking-wider px-3 py-2.5 hover:border-gold/70 hover:shadow-[0_4px_18px_-4px_oklch(0.78_0.13_80/0.6)] transition disabled:opacity-60 disabled:cursor-not-allowed"
-          aria-label="Baixar resumo em PDF"
-        >
-          {gerandoPdf ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 backdrop-blur-md shadow-[0_-6px_22px_-10px_rgba(0,0,0,0.55)]"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="max-w-3xl mx-auto px-3 md:px-6 py-2.5 grid grid-cols-3 items-stretch gap-2">
+          {prev ? (
+            <Link
+              to="/resumos/capitulo/$livroId/$ordem"
+              params={{ livroId, ordem: String(prev.ordem) }}
+              className="group flex items-center gap-2 rounded-xl border border-border bg-card/60 hover:border-gold/40 hover:bg-card transition px-3 py-2 min-w-0"
+            >
+              <ChevronLeft className="h-4 w-4 shrink-0 text-gold" />
+              <span className="text-left min-w-0 hidden sm:block">
+                <span className="block text-[9px] uppercase tracking-wider text-muted-foreground">Anterior</span>
+                <span className="block text-xs font-display truncate text-foreground">{normalizarTitulo(prev.titulo)}</span>
+              </span>
+              <span className="sm:hidden text-[10px] uppercase tracking-wider text-muted-foreground">Anterior</span>
+            </Link>
           ) : (
-            <Download className="h-4 w-4" />
+            <span aria-hidden />
           )}
-          <span className="hidden sm:inline">{gerandoPdf ? "Gerando…" : "Baixar PDF"}</span>
-          <span className="sm:hidden">PDF</span>
-        </button>
 
-        {next ? (
-          <Link
-            to="/resumos/capitulo/$livroId/$ordem"
-            params={{ livroId, ordem: String(next.ordem) }}
-            className="group flex items-center gap-2 rounded-xl border border-border bg-card/50 hover:border-gold/40 hover:bg-card transition px-3 py-2.5 min-w-0 justify-end"
+          <button
+            type="button"
+            onClick={baixarPdf}
+            disabled={gerandoPdf}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-gold/40 bg-gradient-toga text-gold font-display font-semibold text-xs uppercase tracking-wider px-3 py-2 hover:border-gold/70 hover:shadow-[0_4px_18px_-4px_oklch(0.78_0.13_80/0.6)] transition disabled:opacity-60 disabled:cursor-not-allowed"
+            aria-label="Baixar resumo em PDF"
           >
-            <span className="text-right min-w-0">
-              <span className="block text-[9px] uppercase tracking-wider text-muted-foreground">Próximo</span>
-              <span className="block text-xs font-display truncate text-foreground">{normalizarTitulo(next.titulo)}</span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-gold" />
-          </Link>
-        ) : (
-          <span aria-hidden />
-        )}
+            {gerandoPdf ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            <span className="hidden sm:inline">{gerandoPdf ? "Gerando…" : "Baixar PDF"}</span>
+            <span className="sm:hidden">PDF</span>
+          </button>
+
+          {next ? (
+            <Link
+              to="/resumos/capitulo/$livroId/$ordem"
+              params={{ livroId, ordem: String(next.ordem) }}
+              className="group flex items-center gap-2 rounded-xl border border-border bg-card/60 hover:border-gold/40 hover:bg-card transition px-3 py-2 min-w-0 justify-end"
+            >
+              <span className="text-right min-w-0 hidden sm:block">
+                <span className="block text-[9px] uppercase tracking-wider text-muted-foreground">Próximo</span>
+                <span className="block text-xs font-display truncate text-foreground">{normalizarTitulo(next.titulo)}</span>
+              </span>
+              <span className="sm:hidden text-[10px] uppercase tracking-wider text-muted-foreground">Próximo</span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-gold" />
+            </Link>
+          ) : (
+            <span aria-hidden />
+          )}
+        </div>
       </nav>
     </div>
   );
