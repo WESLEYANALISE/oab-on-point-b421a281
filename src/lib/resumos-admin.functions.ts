@@ -299,7 +299,9 @@ export const gerarPreviaResumo = createServerFn({ method: "POST" })
     }
 
     try {
-      const ocr = await mistralOcrFull(apiKey, livro.pdfUrl);
+      // Drive `/view` não é PDF — baixa e republica em storage público
+      const pdfPublicUrl = await ensurePublicPdfUrl(data.slug, data.livro_id, livro.pdfUrl);
+      const ocr = await mistralOcrFull(apiKey, pdfPublicUrl);
 
       // upload de imagens por página e reescrita do markdown
       const paginas: Array<{ index: number; markdown: string }> = [];
