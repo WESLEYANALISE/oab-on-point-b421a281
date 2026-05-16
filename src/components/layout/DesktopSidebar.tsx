@@ -63,7 +63,7 @@ export function DesktopSidebar() {
           </div>
         </Link>
       </div>
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+      <nav className="flex-1 overflow-y-auto scrollbar-hide px-3 py-4 space-y-5">
         {groups.map((g) => (
           <div key={g.label}>
             <p className="px-3 mb-2 text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/50 font-semibold">{g.label}</p>
