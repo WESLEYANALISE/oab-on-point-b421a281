@@ -69,7 +69,7 @@ export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
           </SheetTitle>
         </SheetHeader>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* Conta — topo destacado */}
           <div className="space-y-2">
             {accountItems.map(({ to, label, sub, icon: Icon, accent }) => (
