@@ -35,7 +35,6 @@ import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
 import { Route as ApiPublicSeedProvasRouteImport } from './routes/api.public.seed-provas'
-import { Route as AppSimuladosIdRouteImport } from './routes/_app.simulados.$id'
 import { Route as AppProvasNumeroRouteImport } from './routes/_app.provas.$numero'
 import { Route as AppOabSegundaFaseRouteImport } from './routes/_app.oab.segunda-fase'
 import { Route as AppOabPrimeiraFaseRouteImport } from './routes/_app.oab.primeira-fase'
@@ -48,6 +47,7 @@ import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slu
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
 import { Route as AppBibliotecaSlugIndexRouteImport } from './routes/_app.biblioteca.$slug.index'
+import { Route as AppSimuladosIdPraticarRouteImport } from './routes/_app.simulados.$id.praticar'
 import { Route as AppBibliotecaSlugBookIdRouteImport } from './routes/_app.biblioteca.$slug.$bookId'
 import { Route as AppBibliotecaSlugBookIdIndexRouteImport } from './routes/_app.biblioteca.$slug.$bookId.index'
 import { Route as AppSimuladosIdResultadoTentativaIdRouteImport } from './routes/_app.simulados.$id.resultado.$tentativaId'
@@ -182,11 +182,6 @@ const ApiPublicSeedProvasRoute = ApiPublicSeedProvasRouteImport.update({
   path: '/api/public/seed-provas',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppSimuladosIdRoute = AppSimuladosIdRouteImport.update({
-  id: '/simulados/$id',
-  path: '/simulados/$id',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppProvasNumeroRoute = AppProvasNumeroRouteImport.update({
   id: '/provas/$numero',
   path: '/provas/$numero',
@@ -247,6 +242,11 @@ const AppBibliotecaSlugIndexRoute = AppBibliotecaSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppBibliotecaSlugRoute,
 } as any)
+const AppSimuladosIdPraticarRoute = AppSimuladosIdPraticarRouteImport.update({
+  id: '/simulados/$id/praticar',
+  path: '/simulados/$id/praticar',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBibliotecaSlugBookIdRoute = AppBibliotecaSlugBookIdRouteImport.update({
   id: '/$bookId',
   path: '/$bookId',
@@ -260,9 +260,9 @@ const AppBibliotecaSlugBookIdIndexRoute =
   } as any)
 const AppSimuladosIdResultadoTentativaIdRoute =
   AppSimuladosIdResultadoTentativaIdRouteImport.update({
-    id: '/resultado/$tentativaId',
-    path: '/resultado/$tentativaId',
-    getParentRoute: () => AppSimuladosIdRoute,
+    id: '/simulados/$id/resultado/$tentativaId',
+    path: '/simulados/$id/resultado/$tentativaId',
+    getParentRoute: () => AppRoute,
   } as any)
 const AppBibliotecaSlugBookIdLerRoute =
   AppBibliotecaSlugBookIdLerRouteImport.update({
@@ -303,13 +303,13 @@ export interface FileRoutesByFullPath {
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
-  '/simulados/$id': typeof AppSimuladosIdRouteWithChildren
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/admin/': typeof AppAdminIndexRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/provas/': typeof AppProvasIndexRoute
   '/simulados/': typeof AppSimuladosIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
+  '/simulados/$id/praticar': typeof AppSimuladosIdPraticarRoute
   '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/simulados/$id/resultado/$tentativaId': typeof AppSimuladosIdResultadoTentativaIdRoute
@@ -344,12 +344,12 @@ export interface FileRoutesByTo {
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
-  '/simulados/$id': typeof AppSimuladosIdRouteWithChildren
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/admin': typeof AppAdminIndexRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
   '/provas': typeof AppProvasIndexRoute
   '/simulados': typeof AppSimuladosIndexRoute
+  '/simulados/$id/praticar': typeof AppSimuladosIdPraticarRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/simulados/$id/resultado/$tentativaId': typeof AppSimuladosIdResultadoTentativaIdRoute
@@ -389,13 +389,13 @@ export interface FileRoutesById {
   '/_app/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/_app/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/_app/provas/$numero': typeof AppProvasNumeroRoute
-  '/_app/simulados/$id': typeof AppSimuladosIdRouteWithChildren
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/provas/': typeof AppProvasIndexRoute
   '/_app/simulados/': typeof AppSimuladosIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
+  '/_app/simulados/$id/praticar': typeof AppSimuladosIdPraticarRoute
   '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/_app/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/_app/simulados/$id/resultado/$tentativaId': typeof AppSimuladosIdResultadoTentativaIdRoute
@@ -435,13 +435,13 @@ export interface FileRouteTypes {
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
     | '/provas/$numero'
-    | '/simulados/$id'
     | '/api/public/seed-provas'
     | '/admin/'
     | '/biblioteca/'
     | '/provas/'
     | '/simulados/'
     | '/biblioteca/$slug/$bookId'
+    | '/simulados/$id/praticar'
     | '/biblioteca/$slug/'
     | '/biblioteca/$slug/$bookId/ler'
     | '/simulados/$id/resultado/$tentativaId'
@@ -476,12 +476,12 @@ export interface FileRouteTypes {
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
     | '/provas/$numero'
-    | '/simulados/$id'
     | '/api/public/seed-provas'
     | '/admin'
     | '/biblioteca'
     | '/provas'
     | '/simulados'
+    | '/simulados/$id/praticar'
     | '/biblioteca/$slug'
     | '/biblioteca/$slug/$bookId/ler'
     | '/simulados/$id/resultado/$tentativaId'
@@ -520,13 +520,13 @@ export interface FileRouteTypes {
     | '/_app/oab/primeira-fase'
     | '/_app/oab/segunda-fase'
     | '/_app/provas/$numero'
-    | '/_app/simulados/$id'
     | '/api/public/seed-provas'
     | '/_app/admin/'
     | '/_app/biblioteca/'
     | '/_app/provas/'
     | '/_app/simulados/'
     | '/_app/biblioteca/$slug/$bookId'
+    | '/_app/simulados/$id/praticar'
     | '/_app/biblioteca/$slug/'
     | '/_app/biblioteca/$slug/$bookId/ler'
     | '/_app/simulados/$id/resultado/$tentativaId'
@@ -726,13 +726,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSeedProvasRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/simulados/$id': {
-      id: '/_app/simulados/$id'
-      path: '/simulados/$id'
-      fullPath: '/simulados/$id'
-      preLoaderRoute: typeof AppSimuladosIdRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/provas/$numero': {
       id: '/_app/provas/$numero'
       path: '/provas/$numero'
@@ -817,6 +810,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugIndexRouteImport
       parentRoute: typeof AppBibliotecaSlugRoute
     }
+    '/_app/simulados/$id/praticar': {
+      id: '/_app/simulados/$id/praticar'
+      path: '/simulados/$id/praticar'
+      fullPath: '/simulados/$id/praticar'
+      preLoaderRoute: typeof AppSimuladosIdPraticarRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/biblioteca/$slug/$bookId': {
       id: '/_app/biblioteca/$slug/$bookId'
       path: '/$bookId'
@@ -833,10 +833,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/simulados/$id/resultado/$tentativaId': {
       id: '/_app/simulados/$id/resultado/$tentativaId'
-      path: '/resultado/$tentativaId'
+      path: '/simulados/$id/resultado/$tentativaId'
       fullPath: '/simulados/$id/resultado/$tentativaId'
       preLoaderRoute: typeof AppSimuladosIdResultadoTentativaIdRouteImport
-      parentRoute: typeof AppSimuladosIdRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/biblioteca/$slug/$bookId/ler': {
       id: '/_app/biblioteca/$slug/$bookId/ler'
@@ -929,19 +929,6 @@ const AppNoticiasRouteWithChildren = AppNoticiasRoute._addFileChildren(
   AppNoticiasRouteChildren,
 )
 
-interface AppSimuladosIdRouteChildren {
-  AppSimuladosIdResultadoTentativaIdRoute: typeof AppSimuladosIdResultadoTentativaIdRoute
-}
-
-const AppSimuladosIdRouteChildren: AppSimuladosIdRouteChildren = {
-  AppSimuladosIdResultadoTentativaIdRoute:
-    AppSimuladosIdResultadoTentativaIdRoute,
-}
-
-const AppSimuladosIdRouteWithChildren = AppSimuladosIdRoute._addFileChildren(
-  AppSimuladosIdRouteChildren,
-)
-
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAssistenteRoute: typeof AppAssistenteRoute
@@ -966,9 +953,10 @@ interface AppRouteChildren {
   AppOabPrimeiraFaseRoute: typeof AppOabPrimeiraFaseRoute
   AppOabSegundaFaseRoute: typeof AppOabSegundaFaseRoute
   AppProvasNumeroRoute: typeof AppProvasNumeroRoute
-  AppSimuladosIdRoute: typeof AppSimuladosIdRouteWithChildren
   AppProvasIndexRoute: typeof AppProvasIndexRoute
   AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
+  AppSimuladosIdPraticarRoute: typeof AppSimuladosIdPraticarRoute
+  AppSimuladosIdResultadoTentativaIdRoute: typeof AppSimuladosIdResultadoTentativaIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -995,9 +983,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppOabPrimeiraFaseRoute: AppOabPrimeiraFaseRoute,
   AppOabSegundaFaseRoute: AppOabSegundaFaseRoute,
   AppProvasNumeroRoute: AppProvasNumeroRoute,
-  AppSimuladosIdRoute: AppSimuladosIdRouteWithChildren,
   AppProvasIndexRoute: AppProvasIndexRoute,
   AppSimuladosIndexRoute: AppSimuladosIndexRoute,
+  AppSimuladosIdPraticarRoute: AppSimuladosIdPraticarRoute,
+  AppSimuladosIdResultadoTentativaIdRoute:
+    AppSimuladosIdResultadoTentativaIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -1013,3 +1003,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
