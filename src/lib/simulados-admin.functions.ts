@@ -389,13 +389,17 @@ function normalizeForMatch(s: string): string {
     .trim();
 }
 
-// Indexa as posições de "Questão N" no OCR
+// Indexa as posições dos marcadores de questão no OCR.
+// O Mistral OCR escreve no formato Markdown "# N", "## N" — não "Questão N".
+// Também aceitamos "Questão N" / "QUESTÃO N" como fallback.
 function indexQuestionPositions(ocr: string): Map<number, number> {
   const positions = new Map<number, number>();
-  const re = /quest[ãa]o\s*(\d{1,3})\b/gi;
+  // ^ (início de linha, modo multiline) + (cabeçalho Markdown OU "Questão") + número (1-80)
+  const re = /^[ \t]*(?:#{1,6}[ \t]*(\d{1,3})[ \t]*$|quest[ãa]o[ \t]*(\d{1,3})\b)/gim;
   let m: RegExpExecArray | null;
   while ((m = re.exec(ocr)) !== null) {
-    const n = Number(m[1]);
+    const n = Number(m[1] ?? m[2]);
+    if (n < 1 || n > 80) continue;
     if (!positions.has(n)) positions.set(n, m.index);
   }
   return positions;
