@@ -601,8 +601,8 @@ ${trecho.slice(0, 90000)}`;
     }
   };
 
-  // Quebra `numeros` em grupos de no máx. 10 questões (janelas pequenas = menos chance de Gemini "completar")
-  const GROUP = 10;
+  // Quebra `numeros` em grupos de no máx. 5 questões (janelas pequenas = mais assertivo)
+  const GROUP = 5;
   for (let i = 0; i < numeros.length; i += GROUP) {
     const grupo = numeros.slice(i, i + GROUP);
     if (grupo.every((n) => validasMap.has(n))) continue;
