@@ -241,7 +241,7 @@ function CapituloView() {
 
           <button
             type="button"
-            onClick={baixarPdf}
+            onClick={() => setPdfDialogAberto(true)}
             disabled={gerandoPdf}
             className="flex items-center justify-center gap-1.5 rounded-xl border border-gold/40 bg-gradient-toga text-gold font-display font-semibold text-xs uppercase tracking-wider px-3 py-2 hover:border-gold/70 hover:shadow-[0_4px_18px_-4px_oklch(0.78_0.13_80/0.6)] transition disabled:opacity-60 disabled:cursor-not-allowed"
             aria-label="Baixar resumo em PDF"
