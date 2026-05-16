@@ -1,129 +1,88 @@
-## Visão Geral
+## Objetivo
 
-Criar duas frentes ligadas pelo mesmo dado:
-
-1. **Aba pública `/resumos`** — usuário navega pelos livros da biblioteca que já têm resumos gerados e lê capítulo por capítulo.
-2. **Ferramenta admin `/admin/resumos`** — lista todos os livros da biblioteca, permite gerar uma **prévia do sumário** (você confere e ajusta) e depois disparar a **geração completa** dos resumos didáticos com Mistral (OCR do PDF) + Gemini (estruturação e enriquecimento).
-
-Cada item do sumário vira **um resumo (uma "aula")**. Se houver "Parte I" e "Parte II" do mesmo tema, são mescladas em um único capítulo. Imagens relevantes do PDF são extraídas e exibidas no conteúdo.
+1. Reorganizar `/admin/resumos` em **navegação por área** (lista → detalhe), em vez de mostrar todas as áreas empilhadas com chips no topo.
+2. Tornar o card de cada livro **mobile-first**, garantindo que o botão "Gerar prévia" sempre apareça (hoje fica cortado fora da tela no 390px).
+3. Passar uma **revisão de responsividade no app inteiro** focada nos pontos onde o conteúdo encosta na borda ou some no mobile.
 
 ---
 
-## Banco de Dados
+## 1. Tela `/admin/resumos` — navegação por área
 
-Hoje algumas tabelas (`BIBLIOTECA-CLASSICOS`, `LIDERANÇA`, `ORATORIA`, `POLITICA`) já têm `resumo_capitulos jsonb`, `analise_status`, etc., e outras (`ESTUDOS`, `FORA-DA-TOGA`) não. Para padronizar sem mexer nas 6 tabelas, criar duas tabelas novas:
+**Estado atual:** chips de área no topo + todas as áreas listadas verticalmente.
 
-**`resumo_livros`** (1 linha por livro)
-- `id uuid pk`
-- `biblioteca_slug text` (`estudos | classicos | oratoria | lideranca | politica | fora-da-toga`)
-- `livro_id bigint` (FK lógica para a tabela da biblioteca correspondente)
-- `titulo`, `autor`, `capa`, `area` (snapshot)
-- `pdf_url text` (resolvido de `download`/`link`)
-- `status text` (`sem_previa | previa_pronta | gerando | concluido | erro`)
-- `previa jsonb` (lista ordenada `{ ordem, titulo, partes:[{label, pagina_inicio, pagina_fim}], incluir:boolean }`)
-- `erro_msg`, `created_at`, `updated_at`
-- Unique `(biblioteca_slug, livro_id)`
-
-**`resumo_capitulos`** (1 linha por capítulo gerado)
-- `id uuid pk`
-- `resumo_livro_id uuid fk`
-- `ordem int`, `titulo text`, `slug text`
-- `conteudo_markdown text` (texto didático final)
-- `imagens jsonb` (`[{url, legenda, pagina}]`)
-- `status text` (`pendente | gerando | ok | erro`)
-- `created_at`, `updated_at`
-
-**RLS**
-- `resumo_livros` / `resumo_capitulos`: leitura pública (`SELECT true`), escrita restrita a `has_role(auth.uid(),'admin')`.
-
-**Storage**
-- Reutilizar bucket `provas-oab` ou criar novo bucket público `resumos-imagens` para as imagens extraídas dos PDFs.
-
----
-
-## Backend (TanStack server functions)
-
-Novo arquivo `src/lib/resumos-admin.functions.ts` (admin) e `src/lib/resumos.functions.ts` (público).
-
-**Admin (`requireSupabaseAuth` + checagem `admin`):**
-- `listarLivrosParaResumo()` — UNION das 6 tabelas da biblioteca + `LEFT JOIN resumo_livros` para mostrar status atual.
-- `gerarPreviaResumo({ slug, livro_id })`
-  1. Baixa o PDF (campo `download` ou `link`).
-  2. Mistral OCR → texto bruto + páginas + imagens.
-  3. Gemini com prompt específico: "extraia o sumário; agrupe Parte I/II do mesmo tema; devolva JSON ordenado".
-  4. Salva em `resumo_livros.previa`, status `previa_pronta`.
-- `atualizarPrevia({ resumo_livro_id, previa })` — admin marca/desmarca capítulos, edita títulos.
-- `gerarResumosCompletos({ resumo_livro_id })` — para cada capítulo marcado:
-  1. Recorta texto bruto pelas páginas indicadas.
-  2. Gemini passo 1: estrutura o conteúdo em markdown.
-  3. Gemini passo 2: enriquece em tom de professor (explicação didática, exemplos, destaques).
-  4. Extrai imagens das páginas correspondentes (Mistral entrega imagens base64) → upload no Storage → grava `imagens`.
-  5. Insere em `resumo_capitulos`.
-  Processa em fila/lotes para não estourar timeout (mesmo padrão do `simulado-queue.ts`).
-- `regerarCapitulo({ capitulo_id })` — refaz só um.
-
-**Público:**
-- `listarLivrosComResumo()` — filtra `resumo_livros.status='concluido'`, agrupa por `biblioteca_slug`/`area`.
-- `obterLivroResumo(resumo_livro_id)` — capítulos ordenados.
-
-**Secrets:** já existem `MISTRAL_API_KEY` e `GEMINI_API_KEY`. Reaproveitar.
-
----
-
-## Frontend
-
-**Rotas novas/alteradas**
-
-- `src/routes/_app.resumos.tsx` — substitui o `ComingSoon` por uma página com:
-  - Grid de livros que possuem resumo (capa + título + autor + nº de capítulos).
-  - Filtros por biblioteca/área.
-- `src/routes/_app.resumos.$livroId.tsx` — leitor: sidebar com sumário (capítulos), conteúdo em markdown, imagens inline, navegação anterior/próximo.
-- `src/routes/_app.admin.resumos.tsx` — painel admin:
-  - Tabela de livros com status (`sem prévia | prévia pronta | gerando | concluído | erro`).
-  - Botão **"Gerar prévia"** por livro.
-  - Modal/drawer com a prévia editável (checkbox por item, edição de título, merge manual de partes), botão **"Gerar resumos completos"**.
-  - Barra de progresso por livro durante a geração.
-  - Botão "Regerar capítulo" dentro do livro já concluído.
-- Adicionar card de "Resumos" em `_app.admin.index.tsx`.
-- Adicionar link/ícone para `/resumos` na navegação principal (verificar `_app.tsx`/menu existente).
-
-**UI**
-- Reaproveitar componentes do projeto (`Card`, `Button`, `Drawer`, `Progress`).
-- Renderização markdown: usar `react-markdown` (se já existir) ou adicionar.
-
----
-
-## Fluxo do admin (resumo)
+**Novo fluxo:**
 
 ```text
-1. Admin abre /admin/resumos
-2. Vê lista de livros da biblioteca (todas as 6 tabelas)
-3. Clica "Gerar prévia" em um livro
-   -> Mistral OCR + Gemini extrai sumário
-   -> Status vira "prévia pronta"
-4. Admin abre a prévia, marca/desmarca capítulos, ajusta títulos
-5. Admin clica "Gerar resumos completos"
-   -> Fila processa capítulo por capítulo
-   -> Cada capítulo: texto didático + imagens
-6. Status vira "concluído" -> aparece em /resumos para todos
+[ /admin/resumos ]                  ← lista de áreas
+  Direito Civil          56  >
+  Direito Constitucional 38  >
+  Direito Penal          42  >
+  ...
+
+  ↓ clicar em uma área
+
+[ /admin/resumos?area=Direito+Civil ]  ← livros da área
+  ← Voltar para áreas
+  Busca por título
+  [card livro 1]
+  [card livro 2]
+  ...
 ```
+
+- Tudo na mesma rota usando estado local (`area` selecionada). Sem criar arquivo de rota novo.
+- Header da tela de detalhe mostra o nome da área + botão "voltar".
+- Busca por título só aparece dentro da área (procurar em 838 livros sem filtro não faz sentido).
+- Lista de áreas: cards verticais grandes, fáceis de tocar no mobile, com contagem de livros e indicador de progresso (`X com resumo / Y total`).
+
+---
+
+## 2. Card do livro responsivo
+
+**Problema atual:** linha em flex horizontal com capa + título + ações empilha tudo na mesma row → no 390px o botão "Gerar prévia" sai da tela.
+
+**Layout novo:**
+
+```text
+Mobile (< 640px):
+┌──────────────────────────────┐
+│ [capa]  Título do livro      │
+│         status · 0/0 cap.    │
+│ ──────────────────────────── │
+│ [   Gerar prévia        ]    │  ← botão full-width
+│ [refazer] [excluir]          │
+└──────────────────────────────┘
+
+Desktop (≥ 640px): igual hoje, tudo na mesma linha.
+```
+
+- Ações descem para uma segunda linha no mobile, ocupando largura total.
+- Botão principal vira `w-full` em telas pequenas.
+- Texto de erro com `break-words` em vez de `truncate` para o admin ver a mensagem.
+
+---
+
+## 3. Revisão de responsividade do app
+
+Varrer e ajustar os pontos críticos em mobile (390px), sem mexer em desktop:
+
+- **`/admin/resumos`** (este redesign).
+- **`AdminLayout` / `_app.admin.tsx`** — padding lateral consistente, mensagem de "acesso negado" centralizada.
+- **`MobileHeader` + páginas com header próprio** (Voltar / Início) — garantir que não sobreponham conteúdo.
+- **`/admin/simulados`** — mesmo padrão de botões e tabela longa que pode estourar.
+- **`/oab/o-que-estudar`** — barras de progresso, busca e cards expansíveis no 390px.
+- **`/resumos` (público)** e **`/resumos/$livroId`** — grade de cards e sidebar de capítulos viram drawer no mobile.
+- **`/biblioteca/$slug`** — grids que devem cair pra 2 colunas em <400px.
+- **`HomeGreeting` / `HomeHero`** — saudação não pode ficar maior que a viewport.
+
+Critério aceito: nenhuma página tem scroll horizontal no 390px, nenhum botão de ação primária fica fora da tela ou cortado, todo texto longo quebra (break-words) em vez de empurrar layout.
 
 ---
 
 ## Detalhes técnicos
 
-- **OCR e tamanho de PDF**: Mistral OCR endpoint `pixtral`/`mistral-ocr`. Truncar/paginar se PDF for grande. Cachear `ocr_texto` em coluna extra de `resumo_livros` para não reprocessar entre prévia e geração final.
-- **Mescla Parte I/II**: heurística no prompt do Gemini + normalização (regex `parte\s+(i|ii|1|2)`).
-- **Imagens**: Mistral OCR retorna imagens por página em base64. Filtrar por tamanho mínimo e excluir logos/cabeçalhos repetidos.
-- **Timeouts**: processar capítulos em background com mesmo padrão do `simulado-queue.ts` (job table opcional `resumo_jobs` se a fila ficar complexa; na 1ª versão dá pra fazer batch sequencial dentro do server function chamando-se em loop pelo client).
-- **Idempotência**: regerar um capítulo deve sobrescrever a linha existente (`upsert` por `(resumo_livro_id, ordem)`).
-
----
-
-## Entregáveis por etapa
-
-1. Migrations (`resumo_livros`, `resumo_capitulos`, RLS, bucket de imagens).
-2. Server functions admin + público.
-3. Página admin com prévia editável e geração.
-4. Página pública `/resumos` + leitor `/resumos/$id`.
-5. Card "Resumos" no admin home + entrada na navegação principal.
+- Arquivo principal: `src/routes/_app.admin.resumos.tsx`.
+  - Trocar `chips de área` + lista única por dois "modos" (lista de áreas / livros da área) controlados por `useState`.
+  - Card vira `flex-col sm:flex-row` com ações em `flex-wrap`.
+- Backend: **nenhuma mudança**. `listarLivrosParaResumo` já devolve `area`; a agregação por área é feita no client.
+- Hidratação: corrigir o mismatch SSR atual do `AdminLayout` (acesso negado vs. conteúdo) — provavelmente `useAdmin` retornando valor diferente entre server e client. Vou inspecionar e padronizar.
+- Sem nova migração, sem novo route, sem novo secret.
