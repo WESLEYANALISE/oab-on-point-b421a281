@@ -102,7 +102,7 @@ function AreaOABPage() {
         <SectionTitle icon={Compass} eyebrow="Sua jornada completa" title="Fases do Exame" />
         <div className="grid grid-cols-2 gap-3">
           <FaseCard to="/oab/primeira-fase" label="1ª Fase" sub="Prova objetiva" cover={primeiraFaseCover} lcp />
-          <FaseCard to="/oab/segunda-fase" label="2ª Fase" sub="Prático-profissional" cover={segundaFaseCover} />
+          <FaseCard to="/oab/segunda-fase" label="2ª Fase" sub="Prático-profissional" cover={segundaFaseCover} shineDelay="1.2s" />
         </div>
       </section>
 
