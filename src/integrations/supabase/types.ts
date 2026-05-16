@@ -378,6 +378,7 @@ export type Database = {
           gabarito_1fase_url: string | null
           id: number
           numero: number
+          numero_romano: string | null
           oab_exame_id: string | null
           oab_source_url: string | null
           prova_1fase_url: string | null
@@ -390,6 +391,7 @@ export type Database = {
           gabarito_1fase_url?: string | null
           id?: number
           numero: number
+          numero_romano?: string | null
           oab_exame_id?: string | null
           oab_source_url?: string | null
           prova_1fase_url?: string | null
@@ -402,6 +404,7 @@ export type Database = {
           gabarito_1fase_url?: string | null
           id?: number
           numero?: number
+          numero_romano?: string | null
           oab_exame_id?: string | null
           oab_source_url?: string | null
           prova_1fase_url?: string | null
@@ -627,6 +630,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      int_to_roman: { Args: { num: number }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user"
