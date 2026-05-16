@@ -29,7 +29,7 @@ export function BottomNav() {
                 to={to}
                 className={cn(
                   "flex flex-col items-center gap-1 py-2 text-[11px] transition-colors",
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                  active ? "text-primary" : "text-foreground hover:text-primary",
                 )}
               >
                 <Icon className={cn("h-5 w-5", active && "stroke-[2.4]")} />
@@ -50,7 +50,7 @@ export function BottomNav() {
           </Link>
           <span className={cn(
             "absolute left-1/2 -translate-x-1/2 bottom-1.5 text-[11px] font-medium",
-            isActive("/progresso") ? "text-primary" : "text-muted-foreground",
+            isActive("/progresso") ? "text-primary" : "text-foreground",
           )}>
             Progresso
           </span>
@@ -64,7 +64,7 @@ export function BottomNav() {
                 to={to}
                 className={cn(
                   "flex flex-col items-center gap-1 py-2 text-[11px] transition-colors",
-                  active ? "text-primary" : "text-muted-foreground hover:text-foreground",
+                  active ? "text-primary" : "text-foreground hover:text-primary",
                 )}
               >
                 <Icon className={cn("h-5 w-5", active && "stroke-[2.4]")} />
