@@ -6,8 +6,10 @@ import { Loader2, ChevronLeft, ChevronRight, Flag, Check, X, FileText, ListCheck
 import { getSimuladoCompleto, salvarResposta, finalizarTentativa } from "@/lib/simulados.functions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
+import { isUuid } from "@/lib/simulado-slug";
 
-export const Route = createFileRoute("/_app/simulados/$id/praticar")({
+export const Route = createFileRoute("/_app/simulados/$slug/praticar")({
   head: () => ({ meta: [{ title: `Simulado — OAB na Risca` }] }),
   component: PraticaPage,
 });
@@ -27,7 +29,9 @@ function loadPersisted<T>(key: string, fallback: T): T {
 }
 
 function PraticaPage() {
-  const { id } = Route.useParams();
+  const { slug } = Route.useParams();
+  const id = slug;
+  const { user } = useAuth();
   const navigate = useNavigate();
   const completoFn = useServerFn(getSimuladoCompleto);
   const salvarFn = useServerFn(salvarResposta);
@@ -41,7 +45,15 @@ function PraticaPage() {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
+    enabled: !!user,
   });
+
+  useEffect(() => {
+    const canonical = sim.data?.simulado.slug;
+    if (canonical && isUuid(slug)) {
+      navigate({ to: "/simulados/$slug/praticar", params: { slug: canonical }, replace: true });
+    }
+  }, [navigate, sim.data?.simulado.slug, slug]);
 
   const idxKey = `sim:${id}:idx`;
   const respKey = `sim:${id}:resp`;
@@ -92,7 +104,7 @@ function PraticaPage() {
     mutationFn: () => finalFn({ data: { tentativaId: tentativaId! } }),
     onSuccess: () => {
       try { sessionStorage.removeItem(idxKey); sessionStorage.removeItem(respKey); } catch {}
-      navigate({ to: "/simulados/$id/resultado/$tentativaId", params: { id, tentativaId: tentativaId! } });
+      navigate({ to: "/simulados/$slug/resultado/$tentativaId", params: { slug: sim.data?.simulado.slug ?? slug, tentativaId: tentativaId! } });
     },
   });
 

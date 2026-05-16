@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Target, ChevronRight } from "lucide-react";
 import { listSimulados } from "@/lib/simulados.functions";
 
@@ -16,6 +16,7 @@ export const Route = createFileRoute("/_app/simulados/")({
 
 function SimuladosPage() {
   const fetchFn = useServerFn(listSimulados);
+  const queryClient = useQueryClient();
   const { data } = useQuery({
     queryKey: ["simulados-list"],
     queryFn: () => fetchFn(),
@@ -45,8 +46,12 @@ function SimuladosPage() {
           {data.map((s) => (
             <li key={s.id}>
               <Link
-                to="/simulados/$id"
-                params={{ id: s.id }}
+                to="/simulados/$slug"
+                params={{ slug: s.slug }}
+                onClick={() => {
+                  queryClient.setQueryData(["simulado-card", s.slug], s);
+                  queryClient.setQueryData(["simulado-card", s.id], s);
+                }}
                 className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors"
               >
                 <div className="h-12 w-12 rounded-lg bg-gradient-gold grid place-items-center text-gold-foreground">

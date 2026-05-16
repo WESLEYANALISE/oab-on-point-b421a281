@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Loader2,
   FileText,
@@ -26,8 +26,10 @@ import {
 } from "@/lib/simulados.functions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { isUuid } from "@/lib/simulado-slug";
 
-export const Route = createFileRoute("/_app/simulados/$id/")({
+export const Route = createFileRoute("/_app/simulados/$slug/")({
   head: () => ({ meta: [{ title: "Simulado — OAB na Risca" }] }),
   component: OverviewPage,
 });
@@ -35,12 +37,20 @@ export const Route = createFileRoute("/_app/simulados/$id/")({
 type Aba = "materiais" | "edital" | "raiox" | "desempenho";
 
 function OverviewPage() {
-  const { id } = Route.useParams();
+  const { slug } = Route.useParams();
+  const id = slug;
+  const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const overviewFn = useServerFn(getSimuladoOverview);
   const completoFn = useServerFn(getSimuladoCompleto);
   const historicoFn = useServerFn(listMinhasTentativas);
+  const card = queryClient.getQueryData<{
+    prova_numero: number;
+    titulo: string;
+    total_questoes: number;
+    ano: number | null;
+  }>(["simulado-card", slug]);
 
   const [aba, setAba] = useState<Aba>("materiais");
 
@@ -49,14 +59,22 @@ function OverviewPage() {
     queryFn: () => overviewFn({ data: { id } }),
     staleTime: 5 * 60_000,
     refetchOnWindowFocus: false,
+    enabled: !!user,
   });
+
+  useEffect(() => {
+    const canonical = overview.data?.simulado.slug;
+    if (canonical && isUuid(slug)) {
+      navigate({ to: "/simulados/$slug", params: { slug: canonical }, replace: true });
+    }
+  }, [navigate, overview.data?.simulado.slug, slug]);
   // Histórico só carrega quando a aba "Desempenho" é aberta
   const historico = useQuery({
     queryKey: ["simulado-historico", id],
     queryFn: () => historicoFn({ data: { simuladoId: id } }),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
-    enabled: aba === "desempenho",
+    enabled: !!user && aba === "desempenho",
   });
 
   // Ao clicar em "Começar/Continuar", buscamos TUDO em uma chamada e
@@ -65,7 +83,8 @@ function OverviewPage() {
     mutationFn: () => completoFn({ data: { id } }),
     onSuccess: (data) => {
       queryClient.setQueryData(["simulado-completo", id], data);
-      navigate({ to: "/simulados/$id/praticar", params: { id } });
+      queryClient.setQueryData(["simulado-completo", data.simulado.slug], data);
+      navigate({ to: "/simulados/$slug/praticar", params: { slug: data.simulado.slug } });
     },
   });
 
@@ -78,10 +97,34 @@ function OverviewPage() {
     });
   }
 
+  if (overview.isError) {
+    return <div className="p-6 text-center text-muted-foreground">Não foi possível abrir este simulado agora.</div>;
+  }
+
   if (!overview.data) {
     return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando…
+      <div className="px-4 md:px-8 py-5 pb-28 max-w-3xl mx-auto animate-fade-in">
+        <header className="mb-5">
+          <p className="text-xs text-muted-foreground">
+            Exame da Ordem{card?.ano ? ` · ${card.ano}` : ""}
+          </p>
+          <h1 className="font-display text-3xl md:text-4xl mt-1">
+            {card ? `${card.prova_numero}º Exame da Ordem` : "Simulado OAB"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Simulado{card ? ` · ${card.total_questoes} questões` : ""}
+          </p>
+        </header>
+        <div className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-xl mb-5 text-xs">
+          {["Materiais", "Edital", "Raio-X", "Desempenho"].map((label, index) => (
+            <div key={label} className={cn("h-14 rounded-lg bg-card/70", index === 0 && "shadow-sm")} />
+          ))}
+        </div>
+        <div className="grid gap-3">
+          <div className="h-20 rounded-xl border border-border bg-card/70" />
+          <div className="h-20 rounded-xl border border-border bg-card/50" />
+          <div className="h-20 rounded-xl border border-border bg-card/40" />
+        </div>
       </div>
     );
   }
@@ -478,11 +521,11 @@ function Desempenho({
           return (
             <li key={t.id}>
               {t.status === "finalizado" ? (
-                <Link to="/simulados/$id/resultado/$tentativaId" params={{ id: simuladoId, tentativaId: t.id }}>
+                <Link to="/simulados/$slug/resultado/$tentativaId" params={{ slug: simuladoId, tentativaId: t.id }}>
                   {content}
                 </Link>
               ) : t.status === "em-andamento" ? (
-                <Link to="/simulados/$id/praticar" params={{ id: simuladoId }}>
+                <Link to="/simulados/$slug/praticar" params={{ slug: simuladoId }}>
                   {content}
                 </Link>
               ) : (

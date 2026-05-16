@@ -5,13 +5,13 @@ import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 import { getResultado } from "@/lib/simulados.functions";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_app/simulados/$id/resultado/$tentativaId")({
+export const Route = createFileRoute("/_app/simulados/$slug/resultado/$tentativaId")({
   head: () => ({ meta: [{ title: "Resultado — OAB na Risca" }] }),
   component: ResultadoPage,
 });
 
 function ResultadoPage() {
-  const { id, tentativaId } = Route.useParams();
+  const { tentativaId } = Route.useParams();
   const fn = useServerFn(getResultado);
   const { data, isLoading } = useQuery({
     queryKey: ["resultado", tentativaId],

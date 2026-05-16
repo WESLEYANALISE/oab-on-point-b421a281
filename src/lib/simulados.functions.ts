@@ -1,6 +1,27 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isUuid, makeSimuladoSlug, provaNumeroFromSimuladoSlug } from "@/lib/simulado-slug";
+
+const simuladoRefSchema = z.object({ id: z.string().min(1).max(180) });
+
+async function resolveSimuladoId(
+  supabase: { from: (table: string) => any },
+  idOrSlug: string,
+) {
+  if (isUuid(idOrSlug)) return idOrSlug;
+  const provaNumero = provaNumeroFromSimuladoSlug(idOrSlug);
+  if (!provaNumero) throw new Error("Simulado não encontrado");
+  const { data, error } = await supabase
+    .from("simulados")
+    .select("id")
+    .eq("prova_numero", provaNumero)
+    .eq("status", "pronto")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data?.id) throw new Error("Simulado não encontrado");
+  return data.id as string;
+}
 
 // ============ Listagem ============
 export const listSimulados = createServerFn({ method: "GET" })
@@ -13,21 +34,25 @@ export const listSimulados = createServerFn({ method: "GET" })
       .eq("status", "pronto")
       .order("prova_numero", { ascending: false });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (data ?? []).map((simulado) => ({
+      ...simulado,
+      slug: makeSimuladoSlug(simulado),
+    }));
   });
 
 // ============ Detalhe (com gabarito para feedback instantâneo) ============
 export const getSimulado = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { id: string }) => simuladoRefSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    const simuladoId = await resolveSimuladoId(supabase, data.id);
     const [sim, qs] = await Promise.all([
-      supabase.from("simulados").select("*").eq("id", data.id).maybeSingle(),
+      supabase.from("simulados").select("*").eq("id", simuladoId).maybeSingle(),
       supabase
         .from("simulado_questoes")
         .select("id, numero, enunciado, materia, alternativas, resposta_correta")
-        .eq("simulado_id", data.id)
+        .eq("simulado_id", simuladoId)
         .order("numero", { ascending: true }),
     ]);
     if (sim.error) throw new Error(sim.error.message);
@@ -41,25 +66,26 @@ export const getSimulado = createServerFn({ method: "POST" })
 // (ou cria uma nova) + respostas já salvas, evitando 2 roundtrips.
 export const getSimuladoCompleto = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { id: string }) => simuladoRefSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const simuladoId = await resolveSimuladoId(supabase, data.id);
     const [sim, qs, existing] = await Promise.all([
       supabase
         .from("simulados")
         .select("id, prova_numero, titulo, total_questoes, ano")
-        .eq("id", data.id)
+        .eq("id", simuladoId)
         .maybeSingle(),
       supabase
         .from("simulado_questoes")
         .select("id, numero, enunciado, materia, alternativas, resposta_correta")
-        .eq("simulado_id", data.id)
+        .eq("simulado_id", simuladoId)
         .order("numero", { ascending: true }),
       supabase
         .from("simulado_tentativas")
         .select("id, respostas")
         .eq("user_id", userId)
-        .eq("simulado_id", data.id)
+        .eq("simulado_id", simuladoId)
         .is("concluido_em", null)
         .order("iniciado_em", { ascending: false })
         .limit(1)
@@ -77,7 +103,7 @@ export const getSimuladoCompleto = createServerFn({ method: "POST" })
         .from("simulado_tentativas")
         .insert({
           user_id: userId,
-          simulado_id: data.id,
+          simulado_id: simuladoId,
           total: qs.data?.length ?? 0,
         })
         .select("id")
@@ -86,7 +112,7 @@ export const getSimuladoCompleto = createServerFn({ method: "POST" })
       tentativaId = ins.data.id;
     }
     return {
-      simulado: sim.data,
+      simulado: { ...sim.data, slug: makeSimuladoSlug(sim.data) },
       questoes: qs.data ?? [],
       tentativaId: tentativaId!,
       respostasSalvas,
@@ -242,13 +268,14 @@ export const getResultado = createServerFn({ method: "POST" })
 // ============ Overview (materiais + raio-x + tentativa em andamento) ============
 export const getSimuladoOverview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { id: string }) => simuladoRefSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const simuladoId = await resolveSimuladoId(supabase, data.id);
     const sim = await supabase
       .from("simulados")
       .select("id, prova_numero, titulo, total_questoes, ano, status")
-      .eq("id", data.id)
+      .eq("id", simuladoId)
       .maybeSingle();
     if (sim.error) throw new Error(sim.error.message);
     if (!sim.data) throw new Error("Simulado não encontrado");
@@ -262,12 +289,12 @@ export const getSimuladoOverview = createServerFn({ method: "POST" })
       supabase
         .from("simulado_questoes")
         .select("materia")
-        .eq("simulado_id", data.id),
+        .eq("simulado_id", simuladoId),
       supabase
         .from("simulado_tentativas")
         .select("id, iniciado_em")
         .eq("user_id", userId)
-        .eq("simulado_id", data.id)
+        .eq("simulado_id", simuladoId)
         .is("concluido_em", null)
         .order("iniciado_em", { ascending: false })
         .limit(1)
@@ -286,7 +313,7 @@ export const getSimuladoOverview = createServerFn({ method: "POST" })
       .sort((a, b) => b.qtd - a.qtd);
 
     return {
-      simulado: sim.data,
+      simulado: { ...sim.data, slug: makeSimuladoSlug(sim.data) },
       prova: prova.data ?? null,
       raioX,
       total,
@@ -298,15 +325,16 @@ export const getSimuladoOverview = createServerFn({ method: "POST" })
 export const listMinhasTentativas = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { simuladoId: string }) =>
-    z.object({ simuladoId: z.string().uuid() }).parse(d),
+    z.object({ simuladoId: z.string().min(1).max(180) }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const simuladoId = await resolveSimuladoId(supabase, data.simuladoId);
     const { data: rows, error } = await supabase
       .from("simulado_tentativas")
       .select("id, iniciado_em, concluido_em, acertos, total, por_materia, updated_at")
       .eq("user_id", userId)
-      .eq("simulado_id", data.simuladoId)
+      .eq("simulado_id", simuladoId)
       .order("iniciado_em", { ascending: false });
     if (error) throw new Error(error.message);
     const agora = Date.now();
