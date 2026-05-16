@@ -5,7 +5,7 @@ import { DesktopSidebar } from "@/components/layout/DesktopSidebar";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth, useProfile } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
+
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
