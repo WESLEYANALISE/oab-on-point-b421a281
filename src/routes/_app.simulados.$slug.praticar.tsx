@@ -110,6 +110,7 @@ function PraticaPage() {
     mutationFn: ({ numero, alt }: { numero: number; alt: Alt }) =>
       salvarFn({ data: { tentativaId: tentativaId!, numero, alternativa: alt } }),
     retry: 2,
+    onError: () => toast.error("Não foi possível salvar sua resposta. Tente de novo."),
   });
 
   const finalMut = useMutation({
