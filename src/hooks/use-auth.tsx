@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,8 +27,9 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 const PROFILE_CACHE_PREFIX = "oab:profile:";
+const LAST_UID_KEY = "oab:last-uid";
 
-function readCachedProfile(userId: string | undefined): Profile | undefined {
+function readCachedProfile(userId: string | undefined | null): Profile | undefined {
   if (!userId || typeof window === "undefined") return undefined;
   try {
     const raw = window.localStorage.getItem(PROFILE_CACHE_PREFIX + userId);
@@ -61,28 +62,74 @@ function clearCachedProfile(userId: string) {
   }
 }
 
+function readLastUid(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(LAST_UID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeLastUid(uid: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (uid) window.localStorage.setItem(LAST_UID_KEY, uid);
+    else window.localStorage.removeItem(LAST_UID_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+// Otimistic: se já temos um uid em cache, assumimos sessão até getSession confirmar.
+// Isso impede que o gate `!!user` esconda a UI no primeiro paint.
+function hasCachedSession(): boolean {
+  return !!readLastUid();
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Se já há sessão cacheada, não bloqueamos a UI — começamos com loading=false.
+  const [loading, setLoading] = useState<boolean>(() => !hasCachedSession());
   const queryClient = useQueryClient();
+  const lastUserIdRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    let lastUserId: string | null | undefined = undefined;
+    let cancelled = false;
+
+    // 1) Hidrata sessão do localStorage imediatamente.
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (cancelled) return;
+      setSession(s);
+      setLoading(false);
+      const uid = s?.user?.id ?? null;
+      writeLastUid(uid);
+      lastUserIdRef.current = uid;
+    }).catch(() => {
+      if (!cancelled) setLoading(false);
+    });
+
+    // 2) Reage a mudanças (login/logout/refresh).
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setLoading(false);
       const uid = s?.user?.id ?? null;
-      if (lastUserId !== undefined && uid !== lastUserId) {
-        // Troca de usuário ou logout: limpa o cache do anterior.
-        if (lastUserId) clearCachedProfile(lastUserId);
+      const prev = lastUserIdRef.current;
+      if (prev !== undefined && uid !== prev) {
+        if (prev) clearCachedProfile(prev);
         queryClient.invalidateQueries({ queryKey: ["profile"] });
       }
-      if (event === "SIGNED_OUT" && lastUserId) {
-        clearCachedProfile(lastUserId);
+      if (event === "SIGNED_OUT" && prev) {
+        clearCachedProfile(prev);
       }
-      lastUserId = uid;
+      writeLastUid(uid);
+      lastUserIdRef.current = uid;
     });
-    return () => subscription.unsubscribe();
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [queryClient]);
 
   return (
@@ -96,11 +143,19 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+/** Lê o perfil em cache para o usuário atual ou último uid conhecido. */
+export function readCachedProfileOptimistic(): Profile | undefined {
+  const uid = readLastUid();
+  return readCachedProfile(uid);
+}
+
 export function useProfile() {
   const { user } = useAuth();
-  const cached = readCachedProfile(user?.id);
+  // Fallback otimista: enquanto user não chega, usa último uid conhecido.
+  const effectiveUid = user?.id ?? readLastUid() ?? undefined;
+  const cached = readCachedProfile(effectiveUid);
   return useQuery({
-    queryKey: ["profile", user?.id],
+    queryKey: ["profile", effectiveUid],
     enabled: !!user,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
