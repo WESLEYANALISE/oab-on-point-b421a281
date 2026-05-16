@@ -1,0 +1,69 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { Target, Loader2, ChevronRight } from "lucide-react";
+import { listSimulados } from "@/lib/simulados.functions";
+
+export const Route = createFileRoute("/_app/simulados/")({
+  head: () => ({
+    meta: [
+      { title: "Simulados — OAB na Risca" },
+      { name: "description", content: "Simulados completos no modelo do Exame de Ordem." },
+    ],
+  }),
+  component: SimuladosPage,
+});
+
+function SimuladosPage() {
+  const fetchFn = useServerFn(listSimulados);
+  const { data, isLoading } = useQuery({
+    queryKey: ["simulados-list"],
+    queryFn: () => fetchFn(),
+  });
+
+  return (
+    <div className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
+      <header className="mb-6">
+        <h1 className="font-display text-3xl md:text-4xl">Simulados</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Pratique com simulados completos no modelo OAB. Receba o gabarito e o desempenho por matéria ao final.
+        </p>
+      </header>
+
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando…
+        </div>
+      ) : !data || data.length === 0 ? (
+        <div className="rounded-xl border border-border bg-card p-8 text-center">
+          <Target className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+          <p className="font-display text-xl">Nenhum simulado disponível ainda</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Em breve teremos simulados liberados para prática. Volte mais tarde.
+          </p>
+        </div>
+      ) : (
+        <ul className="grid gap-3 md:grid-cols-2">
+          {data.map((s) => (
+            <li key={s.id}>
+              <Link
+                to="/simulados/$id"
+                params={{ id: s.id }}
+                className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors"
+              >
+                <div className="h-12 w-12 rounded-lg bg-gradient-gold grid place-items-center text-gold-foreground">
+                  <Target className="h-6 w-6" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-display text-lg leading-tight truncate">{s.titulo}</p>
+                  <p className="text-xs text-muted-foreground">{s.total_questoes} questões</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
