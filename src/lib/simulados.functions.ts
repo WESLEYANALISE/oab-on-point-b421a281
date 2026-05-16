@@ -1,6 +1,27 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isUuid, makeSimuladoSlug, provaNumeroFromSimuladoSlug } from "@/lib/simulado-slug";
+
+const simuladoRefSchema = z.object({ id: z.string().min(1).max(180) });
+
+async function resolveSimuladoId(
+  supabase: { from: (table: string) => any },
+  idOrSlug: string,
+) {
+  if (isUuid(idOrSlug)) return idOrSlug;
+  const provaNumero = provaNumeroFromSimuladoSlug(idOrSlug);
+  if (!provaNumero) throw new Error("Simulado não encontrado");
+  const { data, error } = await supabase
+    .from("simulados")
+    .select("id")
+    .eq("prova_numero", provaNumero)
+    .eq("status", "pronto")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data?.id) throw new Error("Simulado não encontrado");
+  return data.id as string;
+}
 
 // ============ Listagem ============
 export const listSimulados = createServerFn({ method: "GET" })
@@ -13,21 +34,25 @@ export const listSimulados = createServerFn({ method: "GET" })
       .eq("status", "pronto")
       .order("prova_numero", { ascending: false });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (data ?? []).map((simulado) => ({
+      ...simulado,
+      slug: makeSimuladoSlug(simulado),
+    }));
   });
 
 // ============ Detalhe (com gabarito para feedback instantâneo) ============
 export const getSimulado = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d: { id: string }) => simuladoRefSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    const simuladoId = await resolveSimuladoId(supabase, data.id);
     const [sim, qs] = await Promise.all([
-      supabase.from("simulados").select("*").eq("id", data.id).maybeSingle(),
+      supabase.from("simulados").select("*").eq("id", simuladoId).maybeSingle(),
       supabase
         .from("simulado_questoes")
         .select("id, numero, enunciado, materia, alternativas, resposta_correta")
-        .eq("simulado_id", data.id)
+        .eq("simulado_id", simuladoId)
         .order("numero", { ascending: true }),
     ]);
     if (sim.error) throw new Error(sim.error.message);
