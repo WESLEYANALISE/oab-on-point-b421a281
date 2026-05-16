@@ -116,7 +116,7 @@ function CapituloView() {
         style={{ fontSize: `${scale}rem` }}
       >
         <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-          {atual.conteudo_markdown ?? ""}
+          {conteudoFormatado}
         </ReactMarkdown>
       </article>
 
