@@ -10,6 +10,10 @@ export const Route = createFileRoute("/api/public/seed-provas")({
         const debugId = url.searchParams.get("debug");
         const apenasNumero = url.searchParams.get("numero");
         try {
+          if (url.searchParams.get("exames") === "1") {
+            const exames = await debugListarExames();
+            return Response.json({ count: exames.length, exames });
+          }
           if (debugId) {
             const arquivos = await debugListarArquivos(debugId);
             return Response.json({ arquivos });
