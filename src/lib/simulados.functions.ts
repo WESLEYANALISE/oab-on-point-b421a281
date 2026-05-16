@@ -9,14 +9,14 @@ export const listSimulados = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("simulados")
-      .select("id, prova_numero, titulo, total_questoes, status, created_at")
+      .select("id, prova_numero, titulo, total_questoes, status, ano, created_at")
       .eq("status", "pronto")
       .order("prova_numero", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
   });
 
-// ============ Detalhe (sem revelar respostas) ============
+// ============ Detalhe (com gabarito para feedback instantâneo) ============
 export const getSimulado = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
@@ -26,7 +26,7 @@ export const getSimulado = createServerFn({ method: "POST" })
       supabase.from("simulados").select("*").eq("id", data.id).maybeSingle(),
       supabase
         .from("simulado_questoes")
-        .select("id, numero, enunciado, materia, alternativas")
+        .select("id, numero, enunciado, materia, alternativas, resposta_correta")
         .eq("simulado_id", data.id)
         .order("numero", { ascending: true }),
     ]);
