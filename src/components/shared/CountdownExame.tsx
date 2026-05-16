@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
-const EXAM_DATE = new Date("2026-09-23T08:00:00-03:00");
+// Próxima prova oficial do candidato: 2ª fase do 46º Exame de Ordem Unificado.
+// A FGV ainda não divulgou a data oficial — previsão com base no padrão histórico
+// (~2 meses após a 1ª fase, aplicada em 03/05/2026). Atualize quando sair o edital.
+// Fonte: https://examedeordem.oab.org.br/EditaisProvas?NumeroExame=46
+const EXAM_DATE = new Date("2026-07-05T08:00:00-03:00");
 
 function diff() {
   const ms = EXAM_DATE.getTime() - Date.now();
