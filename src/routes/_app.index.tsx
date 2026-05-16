@@ -115,11 +115,9 @@ function HomePage() {
       </section>
 
       {/* Ferramentas de estudo */}
-      <section className="max-w-6xl">
-        <div className="px-4 md:px-10">
-          <SectionHeader eyebrow="Ferramentas" title="Ferramentas de estudo" />
-        </div>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
+      <section className="px-4 md:px-10 max-w-6xl">
+        <SectionHeader eyebrow="Ferramentas" title="Ferramentas de estudo" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {FERRAMENTAS.map((item) => <FerramentaCard key={item.key} item={item} />)}
         </div>
       </section>
