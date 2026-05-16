@@ -33,10 +33,12 @@ function AdminSimulados() {
     ? { Authorization: `Bearer ${session.access_token}` }
     : undefined;
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ["admin-provas"],
     enabled: !!authHeaders,
     queryFn: () => listFn({ headers: authHeaders }),
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
   });
 
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
