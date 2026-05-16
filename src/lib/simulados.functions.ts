@@ -215,7 +215,7 @@ export const finalizarTentativa = createServerFn({ method: "POST" })
       .eq("id", data.tentativaId)
       .eq("user_id", userId);
     if (upd.error) throw new Error(upd.error.message);
-    return { acertos, total: qs?.length ?? 0, porMateria };
+    return { acertos, total: (qs ?? []).filter((q) => (q as { status?: string }).status !== "falhou_extracao").length, porMateria };
   });
 
 // ============ Resultado (com respostas corretas reveladas) ============
