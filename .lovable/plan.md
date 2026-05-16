@@ -1,71 +1,77 @@
-## Objetivo
-Tornar a geração de simulados confiável: detectar com precisão **quantas questões existem na prova** e **extrair o gabarito oficial** primeiro, depois extrair todas as questões garantindo que cada uma tenha a resposta correta vinda do gabarito.
+# Tela de Overview do Simulado
 
-## Problema atual
-- A contagem de questões usa um regex fraco que falha quando o OCR formata diferente, e cai num fallback de `80`.
-- O Gemini extrai questões + resposta no mesmo passo. Se ele "achar" uma resposta sem confirmar no gabarito, salva errado.
-- Se um lote retornar menos que o esperado, hoje há retry — mas se o `total_estimado` estiver errado, nunca alcança o real.
+Antes de iniciar a prática, o usuário verá uma tela com tudo sobre aquela prova. O botão "Começar simulado" é o último passo.
 
-## Nova estrutura do fluxo
+## Fluxo novo
 
-```
-iniciarJob (instantâneo)
-   └─> executarOcr (Mistral PDF prova + gabarito)
-         └─> analisarProva (NOVO — Gemini)
-               ├─ conta números reais de questões na prova
-               └─ extrai mapa {numero -> letra} do gabarito oficial
-         └─> processarBatch (loop, com gabarito já em mãos)
-               └─ extrai enunciado + alternativas
-               └─ injeta resposta_correta vinda do mapa do gabarito
-         └─> validarFinal (NOVO)
-               └─ checa se todas as N questões foram salvas; se faltar, refaz só as faltantes
+```text
+/simulados (lista)
+   └─ clica em um simulado
+      └─ /simulados/$id  (NOVA tela overview — tabs)
+            ├─ Materiais   → PDF da prova · Gabarito · Edital (link oficial)
+            ├─ Edital      → texto estruturado em sumário navegável
+            ├─ Raio-X      → questões por matéria (gráfico/lista)
+            ├─ Desempenho  → histórico das tentativas do usuário
+            └─ [ Começar / Continuar simulado ]  →  /simulados/$id/praticar
 ```
 
-### 1. Etapa nova: `analisarProva`
-- Roda **uma vez**, depois do OCR, antes de qualquer batch.
-- Chama o Gemini com prompt focado **só em duas coisas**:
-  1. `total_questoes`: número total real (lendo o texto OCR completo).
-  2. `gabarito`: array `[{ numero, letra }]` extraído do texto do gabarito.
-- Salva em `simulado_jobs`:
-  - `total_estimado` ← `total_questoes` (passa a ser real, não estimativa).
-  - novo campo `gabarito_oficial jsonb` ← `{ "1": "A", "2": "C", ... }`.
-- Loga: `"Prova tem X questões. Gabarito com Y respostas extraído."`
-- Se `X !== Y`, loga aviso mas segue (gabarito ainda pode ter falhas pontuais).
+A tela de questões atual (`_app.simulados.$id.tsx`) é movida para `_app.simulados.$id.praticar.tsx` — sem mudanças no fluxo de resposta.
 
-### 2. Mudança em `processarBatch`
-- Recebe o mapa do gabarito do job e injeta a `resposta_correta` correta **após** o Gemini extrair enunciado/alternativas.
-- Prompt do Gemini fica mais simples: pede só enunciado, alternativas e matéria — **não pede mais resposta**.
-- Se uma questão extraída não tem entrada no gabarito, descarta e marca para retry.
-- Retry continua existindo (3 tentativas pedindo números específicos).
+## Conteúdo de cada aba
 
-### 3. Etapa nova: `validarFinal`
-- Roda automaticamente após o último batch.
-- Conta `simulado_questoes` no banco vs `total_estimado`.
-- Se faltarem, dispara um lote extra direcionado aos números ausentes.
-- Só marca `status = "pronto"` quando `count === total_estimado`.
-- Se após 3 tentativas ainda faltar, marca pronto com aviso no log: `"Pronto com X de Y questões — Z não puderam ser extraídas: [lista]"`.
+**Materiais**
+- Cards com link/download direto para `prova_1fase_url`, `gabarito_1fase_url` e `edital_url` (já existem em `provas_oab`, joinado pelo `prova_numero`).
+- Abre em nova aba; ícone de download.
 
-### 4. Mudança no UI (`ProgressModal`)
-- Adicionar uma fase visual antes dos lotes: **"Analisando prova e gabarito…"** (shimmer).
-- Mostrar no header: `"68 / 80 questões — 12 faltando, refazendo…"` quando estiver em revalidação.
+**Edital (estruturado)**
+- Server fn baixa o PDF do `edital_url`, extrai o texto e usa o Lovable AI Gateway pra gerar um sumário em JSON: seções, datas-chave, requisitos, taxas, cronograma, observações.
+- Resultado fica em cache numa nova tabela `provas_oab_edital_resumo (prova_numero, conteudo jsonb, gerado_em)` — gera 1 vez, depois serve do cache.
+- UI: sumário lateral clicável + conteúdo da seção; badge "Fonte oficial" com link pro PDF.
 
-## Mudança de banco
+**Raio-X**
+- Agrega `simulado_questoes` por matéria daquele simulado: total de questões, % do total, lista das matérias ordenadas.
+- Barra horizontal por matéria + total geral.
 
-Adicionar coluna em `simulado_jobs`:
-- `gabarito_oficial jsonb DEFAULT '{}'::jsonb` — mapa `{ "1": "A", "2": "C", ... }`.
+**Desempenho**
+- Lista todas as `simulado_tentativas` do usuário pra esse `simulado_id`:
+  - Status: Em andamento · Finalizado · Abandonado (sem atividade > 7 dias e não concluído).
+  - Acertos / total, % e duração.
+  - Melhores e piores matérias (a partir de `por_materia`).
+- Resumo no topo: média de acertos, melhor matéria, matéria a reforçar.
 
-## Arquivos afetados
+**Rodapé fixo**
+- Se existe tentativa em andamento: **Continuar simulado**.
+- Senão: **Começar simulado** (cria tentativa e navega pra `/praticar`).
 
-- `supabase/migrations/...` — nova coluna `gabarito_oficial`.
-- `src/lib/simulados-admin.functions.ts`:
-  - nova server-fn `analisarProva`.
-  - `executarOcr` para de chutar total; só faz OCR e dispara `analisarProva`.
-  - `processarBatch` usa o gabarito do job em vez de pedir resposta ao Gemini.
-  - nova server-fn `validarFinal`.
-- `src/routes/_app.admin.simulados.tsx` (`ProgressModal`):
-  - orquestra `iniciarJob → executarOcr → analisarProva → loop processarBatch → validarFinal`.
-  - mostra fase de análise e estado de revalidação.
+## Detalhes técnicos
 
-## Pontos a confirmar
-1. Se faltar 1–2 questões mesmo após retries, **marcar como pronto com aviso** ou **bloquear o simulado como `erro`**?
-2. Quer botão "Tentar de novo as faltantes" no card admin do simulado quando ficar incompleto?
+- **Rotas**
+  - `src/routes/_app.simulados.$id.tsx` → vira a tela overview (tabs).
+  - `src/routes/_app.simulados.$id.praticar.tsx` → conteúdo atual de resposta de questões (move o arquivo).
+  - Atualizar `navigate({to: "/simulados/$id/resultado/..."})` segue igual.
+
+- **Migration**
+  ```sql
+  create table public.provas_oab_edital_resumo (
+    prova_numero int primary key references public.provas_oab(numero) on delete cascade,
+    conteudo jsonb not null,
+    gerado_em timestamptz not null default now()
+  );
+  alter table public.provas_oab_edital_resumo enable row level security;
+  create policy "leitura pública do resumo de edital"
+    on public.provas_oab_edital_resumo for select using (true);
+  ```
+  (Escrita só via service role, dentro da server fn de geração.)
+
+- **Server functions novas em `src/lib/simulados.functions.ts`**
+  - `getSimuladoOverview({id})` → `{ simulado, prova: {prova_1fase_url, gabarito_1fase_url, edital_url}, raioX: [{materia,total,pct}], tentativaEmAndamento? }`
+  - `listMinhasTentativas({simuladoId})` → tentativas do user com status derivado.
+  - `getEditalResumo({provaNumero})` → cache-or-generate; usa Lovable AI Gateway (`google/gemini-3-flash-preview`) com schema JSON pra estruturar.
+
+- **Reaproveitamento**
+  - `iniciarTentativa` já reaproveita tentativa em aberto → usado pelo botão "Começar/Continuar".
+  - Persistência em `sessionStorage` da prática segue intacta.
+
+## Escopo desta entrega
+
+Foco em criar a tela overview funcional com Materiais, Raio-X, Desempenho e botão de iniciar. **Edital estruturado** entra na mesma entrega (com cache); se a extração falhar, a aba mostra fallback com link pro PDF oficial.

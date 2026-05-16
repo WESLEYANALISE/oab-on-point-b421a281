@@ -7,7 +7,7 @@ import { getSimulado, iniciarTentativa, salvarResposta, finalizarTentativa } fro
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-export const Route = createFileRoute("/_app/simulados/$id")({
+export const Route = createFileRoute("/_app/simulados/$id/praticar")({
   head: () => ({ meta: [{ title: `Simulado — OAB na Risca` }] }),
   component: PraticaPage,
 });
