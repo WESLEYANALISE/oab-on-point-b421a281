@@ -76,9 +76,7 @@ function AdminSimulados() {
         </p>
       </header>
 
-      {(
-
-        <ul className="divide-y divide-border rounded-xl border border-border bg-card">
+      <ul className="divide-y divide-border rounded-xl border border-border bg-card">
           {(data ?? []).map((p) => {
             const status = p.simulado?.status;
             const podeGerar = !!p.prova_1fase_url && !!p.gabarito_1fase_url && status !== "gerando";
@@ -136,8 +134,7 @@ function AdminSimulados() {
               </li>
             );
           })}
-        </ul>
-      )}
+      </ul>
 
       {activeJobId && (
         <ProgressModal
