@@ -45,6 +45,12 @@ function OverviewPage() {
   const overviewFn = useServerFn(getSimuladoOverview);
   const completoFn = useServerFn(getSimuladoCompleto);
   const historicoFn = useServerFn(listMinhasTentativas);
+  const card = queryClient.getQueryData<{
+    prova_numero: number;
+    titulo: string;
+    total_questoes: number;
+    ano: number | null;
+  }>(["simulado-card", slug]);
 
   const [aba, setAba] = useState<Aba>("materiais");
 
@@ -97,8 +103,28 @@ function OverviewPage() {
 
   if (!overview.data) {
     return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando…
+      <div className="px-4 md:px-8 py-5 pb-28 max-w-3xl mx-auto animate-fade-in">
+        <header className="mb-5">
+          <p className="text-xs text-muted-foreground">
+            Exame da Ordem{card?.ano ? ` · ${card.ano}` : ""}
+          </p>
+          <h1 className="font-display text-3xl md:text-4xl mt-1">
+            {card ? `${card.prova_numero}º Exame da Ordem` : "Simulado OAB"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Simulado{card ? ` · ${card.total_questoes} questões` : ""}
+          </p>
+        </header>
+        <div className="grid grid-cols-4 gap-1 p-1 bg-muted rounded-xl mb-5 text-xs">
+          {["Materiais", "Edital", "Raio-X", "Desempenho"].map((label, index) => (
+            <div key={label} className={cn("h-14 rounded-lg bg-card/70", index === 0 && "shadow-sm")} />
+          ))}
+        </div>
+        <div className="grid gap-3">
+          <div className="h-20 rounded-xl border border-border bg-card/70" />
+          <div className="h-20 rounded-xl border border-border bg-card/50" />
+          <div className="h-20 rounded-xl border border-border bg-card/40" />
+        </div>
       </div>
     );
   }
