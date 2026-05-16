@@ -87,7 +87,7 @@ async function listarExames(): Promise<Array<{ id: string; titulo: string }>> {
 }
 
 async function listarArquivos(exameId: string): Promise<Arquivo[]> {
-  const res = await fetch(`${OAB_BASE}/EditaisProvas?NumeroExame=${exameId}`);
+  const res = await fetch(`${OAB_BASE}/EditaisProvas?NumeroExame=${exameId}`, { headers: { "User-Agent": UA, "Accept": "text/html" } });
   const html = await res.text();
   const arquivos: Arquivo[] = [];
   const anchorRe = /<a\s+[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
