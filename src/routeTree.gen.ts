@@ -26,6 +26,7 @@ import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
+import { Route as ApiAdminImportBibliotecasRouteImport } from './routes/api/admin.import-bibliotecas'
 import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 
@@ -113,6 +114,12 @@ const AppAssistenteRoute = AppAssistenteRouteImport.update({
   path: '/assistente',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiAdminImportBibliotecasRoute =
+  ApiAdminImportBibliotecasRouteImport.update({
+    id: '/api/admin/import-bibliotecas',
+    path: '/api/admin/import-bibliotecas',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppNoticiasIdRoute = AppNoticiasIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -143,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/vade-mecum': typeof AppVadeMecumRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
+  '/api/admin/import-bibliotecas': typeof ApiAdminImportBibliotecasRoute
 }
 export interface FileRoutesByTo {
   '/assistente': typeof AppAssistenteRoute
@@ -163,6 +171,7 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
+  '/api/admin/import-bibliotecas': typeof ApiAdminImportBibliotecasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -185,6 +194,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
   '/_app/noticias/$id': typeof AppNoticiasIdRoute
+  '/api/admin/import-bibliotecas': typeof ApiAdminImportBibliotecasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/vade-mecum'
     | '/materias/$slug'
     | '/noticias/$id'
+    | '/api/admin/import-bibliotecas'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/assistente'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/'
     | '/materias/$slug'
     | '/noticias/$id'
+    | '/api/admin/import-bibliotecas'
   id:
     | '__root__'
     | '/_app'
@@ -248,10 +260,12 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/materias/$slug'
     | '/_app/noticias/$id'
+    | '/api/admin/import-bibliotecas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  ApiAdminImportBibliotecasRoute: typeof ApiAdminImportBibliotecasRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -375,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssistenteRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/admin/import-bibliotecas': {
+      id: '/api/admin/import-bibliotecas'
+      path: '/api/admin/import-bibliotecas'
+      fullPath: '/api/admin/import-bibliotecas'
+      preLoaderRoute: typeof ApiAdminImportBibliotecasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/noticias/$id': {
       id: '/_app/noticias/$id'
       path: '/$id'
@@ -458,6 +479,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  ApiAdminImportBibliotecasRoute: ApiAdminImportBibliotecasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

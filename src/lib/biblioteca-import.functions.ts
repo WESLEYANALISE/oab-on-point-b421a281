@@ -52,12 +52,14 @@ export const importBibliotecas = createServerFn({ method: "POST" }).handler(asyn
       for (const c of t.cols) out[c] = r[c] ?? null;
       return out;
     });
-    // wipe existing then insert (idempotent re-runs)
-    await supabaseAdmin.from(t.name).delete().neq("id", -1);
-    // chunked insert
+    const tbl = supabaseAdmin.from(t.name as never) as never as {
+      delete: () => { neq: (c: string, v: number) => Promise<{ error: { message: string } | null }> };
+      insert: (rows: unknown[]) => Promise<{ error: { message: string } | null }>;
+    };
+    await tbl.delete().neq("id", -1);
     for (let i = 0; i < filtered.length; i += 200) {
       const chunk = filtered.slice(i, i + 200);
-      const { error } = await supabaseAdmin.from(t.name).insert(chunk);
+      const { error } = await tbl.insert(chunk);
       if (error) throw new Error(`insert ${t.name} chunk ${i}: ${error.message}`);
     }
     results[t.name] = filtered.length;
