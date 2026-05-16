@@ -181,3 +181,195 @@ export const getResultado = createServerFn({ method: "POST" })
     if (qs.error) throw new Error(qs.error.message);
     return { tentativa: t.data, simulado: sim.data, questoes: qs.data ?? [] };
   });
+
+// ============ Overview (materiais + raio-x + tentativa em andamento) ============
+export const getSimuladoOverview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const sim = await supabase
+      .from("simulados")
+      .select("id, prova_numero, titulo, total_questoes, ano, status")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (sim.error) throw new Error(sim.error.message);
+    if (!sim.data) throw new Error("Simulado não encontrado");
+
+    const [prova, qs, andamento] = await Promise.all([
+      supabase
+        .from("provas_oab")
+        .select("numero, edital_url, prova_1fase_url, gabarito_1fase_url, oab_source_url")
+        .eq("numero", sim.data.prova_numero)
+        .maybeSingle(),
+      supabase
+        .from("simulado_questoes")
+        .select("materia")
+        .eq("simulado_id", data.id),
+      supabase
+        .from("simulado_tentativas")
+        .select("id, iniciado_em")
+        .eq("user_id", userId)
+        .eq("simulado_id", data.id)
+        .is("concluido_em", null)
+        .order("iniciado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (qs.error) throw new Error(qs.error.message);
+
+    const total = qs.data?.length ?? 0;
+    const contagem: Record<string, number> = {};
+    for (const q of qs.data ?? []) {
+      const m = q.materia ?? "Sem matéria";
+      contagem[m] = (contagem[m] ?? 0) + 1;
+    }
+    const raioX = Object.entries(contagem)
+      .map(([materia, qtd]) => ({ materia, qtd, pct: total ? Math.round((qtd / total) * 100) : 0 }))
+      .sort((a, b) => b.qtd - a.qtd);
+
+    return {
+      simulado: sim.data,
+      prova: prova.data ?? null,
+      raioX,
+      total,
+      tentativaEmAndamento: andamento.data?.id ?? null,
+    };
+  });
+
+// ============ Histórico de tentativas do usuário ============
+export const listMinhasTentativas = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { simuladoId: string }) =>
+    z.object({ simuladoId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: rows, error } = await supabase
+      .from("simulado_tentativas")
+      .select("id, iniciado_em, concluido_em, acertos, total, por_materia, updated_at")
+      .eq("user_id", userId)
+      .eq("simulado_id", data.simuladoId)
+      .order("iniciado_em", { ascending: false });
+    if (error) throw new Error(error.message);
+    const agora = Date.now();
+    const SETE_DIAS = 7 * 24 * 60 * 60 * 1000;
+    return (rows ?? []).map((t) => {
+      let status: "finalizado" | "em-andamento" | "abandonado" = "em-andamento";
+      if (t.concluido_em) status = "finalizado";
+      else if (agora - new Date(t.updated_at).getTime() > SETE_DIAS) status = "abandonado";
+      return {
+        id: t.id,
+        iniciado_em: t.iniciado_em,
+        concluido_em: t.concluido_em,
+        acertos: t.acertos,
+        total: t.total,
+        por_materia: (t.por_materia as Record<string, { acertos: number; total: number }>) ?? {},
+        status,
+      };
+    });
+  });
+
+// ============ Resumo estruturado do edital (cache-or-generate) ============
+type EditalResumo = {
+  resumo: string;
+  cronograma: Array<{ data: string; titulo: string }>;
+  taxas: Array<{ descricao: string; valor: string }>;
+  requisitos: string[];
+  secoes: Array<{ titulo: string; conteudo: string }>;
+};
+
+export const getEditalResumo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { provaNumero: number }) =>
+    z.object({ provaNumero: z.number().int().positive() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Cache hit
+    const cached = await supabaseAdmin
+      .from("provas_oab_edital_resumo")
+      .select("conteudo, gerado_em")
+      .eq("prova_numero", data.provaNumero)
+      .maybeSingle();
+    if (cached.data) {
+      return { conteudo: cached.data.conteudo as EditalResumo, fonte: "cache" as const };
+    }
+
+    // Busca URL do edital
+    const prova = await supabaseAdmin
+      .from("provas_oab")
+      .select("edital_url")
+      .eq("numero", data.provaNumero)
+      .maybeSingle();
+    const url = prova.data?.edital_url;
+    if (!url) {
+      return { conteudo: null, fonte: "sem-edital" as const };
+    }
+
+    // OCR via Mistral (suporta PDF por URL)
+    let markdown = "";
+    try {
+      const ocr = await fetch("https://api.mistral.ai/v1/ocr", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.MISTRAL_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "mistral-ocr-latest",
+          document: { type: "document_url", document_url: url },
+        }),
+      });
+      if (!ocr.ok) throw new Error(`OCR ${ocr.status}`);
+      const ocrJson = (await ocr.json()) as { pages?: Array<{ markdown?: string }> };
+      markdown = (ocrJson.pages ?? []).map((p) => p.markdown ?? "").join("\n\n");
+    } catch (e) {
+      console.error("[edital] OCR falhou:", e);
+      return { conteudo: null, fonte: "erro-ocr" as const };
+    }
+
+    if (!markdown.trim()) return { conteudo: null, fonte: "vazio" as const };
+
+    // Estrutura com Lovable AI Gateway (Gemini)
+    let resumo: EditalResumo | null = null;
+    try {
+      const ai = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "system",
+              content:
+                "Você organiza editais da OAB em JSON estruturado em português do Brasil. Seja conciso e fiel ao texto.",
+            },
+            {
+              role: "user",
+              content: `Organize o edital abaixo em JSON com as chaves: resumo (3-5 frases), cronograma (array de {data, titulo}), taxas (array de {descricao, valor}), requisitos (array de strings), secoes (array de {titulo, conteudo} cobrindo os principais tópicos: inscrição, prova objetiva, prova prático-profissional, recursos, resultado, vagas para PcD, e outros relevantes). Responda SOMENTE com JSON válido.\n\nEDITAL:\n${markdown.slice(0, 60000)}`,
+            },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      });
+      if (!ai.ok) throw new Error(`AI ${ai.status}`);
+      const aiJson = (await ai.json()) as { choices?: Array<{ message?: { content?: string } }> };
+      const content = aiJson.choices?.[0]?.message?.content ?? "{}";
+      resumo = JSON.parse(content) as EditalResumo;
+    } catch (e) {
+      console.error("[edital] AI falhou:", e);
+      return { conteudo: null, fonte: "erro-ai" as const };
+    }
+
+    // Persiste cache
+    await supabaseAdmin
+      .from("provas_oab_edital_resumo")
+      .upsert({ prova_numero: data.provaNumero, conteudo: resumo });
+
+    return { conteudo: resumo, fonte: "gerado" as const };
+  });
