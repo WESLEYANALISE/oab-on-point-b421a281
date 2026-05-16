@@ -417,35 +417,40 @@ export const getEditalResumo = createServerFn({ method: "POST" })
 
     if (!markdown.trim()) return { conteudo: null, fonte: "vazio" as const };
 
-    // Estrutura: tenta Gemini (Lovable AI Gateway); fallback Mistral
+    // Estrutura: Gemini direto (API do usuário); fallback Mistral
     const prompt = `Organize o edital abaixo em JSON com as chaves: resumo (3-5 frases), cronograma (array de {data, titulo}), taxas (array de {descricao, valor}), requisitos (array de strings), secoes (array de {titulo, conteudo} cobrindo os principais tópicos: inscrição, prova objetiva, prova prático-profissional, recursos, resultado, vagas para PcD, e outros relevantes). Responda SOMENTE com JSON válido.\n\nEDITAL:\n${markdown.slice(0, 60000)}`;
     const system =
       "Você organiza editais da OAB em JSON estruturado em português do Brasil. Seja conciso e fiel ao texto.";
 
     async function tryGemini(): Promise<string | null> {
+      const key = process.env.GEMINI_API_KEY;
+      if (!key) {
+        console.error("[edital] GEMINI_API_KEY ausente");
+        return null;
+      }
+      const model = "gemini-2.5-flash";
       try {
-        const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
+        const r = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: system }] },
+              contents: [{ role: "user", parts: [{ text: prompt }] }],
+              generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
+            }),
           },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              { role: "system", content: system },
-              { role: "user", content: prompt },
-            ],
-            response_format: { type: "json_object" },
-          }),
-        });
+        );
         if (!r.ok) {
           const body = await r.text().catch(() => "");
-          console.error("[edital] Gemini falhou:", r.status, body.slice(0, 300));
+          console.error("[edital] Gemini falhou:", r.status, body.slice(0, 400));
           return null;
         }
-        const j = (await r.json()) as { choices?: Array<{ message?: { content?: string } }> };
-        return j.choices?.[0]?.message?.content ?? null;
+        const j = (await r.json()) as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
+        return j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? null;
       } catch (e) {
         console.error("[edital] Gemini exceção:", e);
         return null;
