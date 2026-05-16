@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 
 export function ComingSoon({ title, subtitle }: { title: string; subtitle: string }) {
@@ -9,14 +9,9 @@ export function ComingSoon({ title, subtitle }: { title: string; subtitle: strin
       </div>
       <h1 className="font-display text-4xl md:text-5xl leading-tight">{title}</h1>
       <p className="mt-4 text-muted-foreground">{subtitle}</p>
-      <p className="mt-8 text-xs uppercase tracking-[0.2em] text-muted-foreground/70">Disponível em breve · Fase 2 do roadmap</p>
+      <p className="mt-8 text-xs uppercase tracking-[0.2em] text-muted-foreground/70">Em construção · próxima fase do roadmap</p>
       <Link to="/" className="inline-block mt-6 text-primary hover:underline text-sm font-medium">Voltar ao início</Link>
     </div>
   );
 }
 
-export const makeComingSoonRoute = (path: string, title: string, subtitle: string) =>
-  createFileRoute(path as any)({
-    head: () => ({ meta: [{ title: `${title} — OAB na Risca` }, { name: "description", content: subtitle }] }),
-    component: () => <ComingSoon title={title} subtitle={subtitle} />,
-  });
