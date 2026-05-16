@@ -46,15 +46,16 @@ function EstudoCard({ item }: { item: Estudo }) {
   return (
     <Link
       to={item.to}
-      className={`group relative overflow-hidden rounded-2xl bg-card border ${item.border} p-4 min-h-[150px] flex flex-col justify-between hover:-translate-y-0.5 transition-all`}
+      className={`group relative overflow-hidden rounded-3xl bg-card border ${item.border} p-4 min-h-[160px] flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all`}
     >
-      <div className={`h-10 w-10 rounded-xl grid place-items-center ${item.cor}`}>
+      <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gold/[0.04] blur-2xl pointer-events-none" />
+      <div className={`h-11 w-11 rounded-2xl grid place-items-center ${item.cor}`}>
         <Icon className="h-5 w-5" strokeWidth={2} />
       </div>
       <div>
-        <p className="font-display text-lg leading-tight">{item.label}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{item.descricao}</p>
-        <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-gold group-hover:gap-1.5 transition-all">
+        <p className="font-display font-semibold text-xl leading-tight tracking-tight">{item.label}</p>
+        <p className="text-[11px] text-muted-foreground/90 mt-1 line-clamp-2 leading-snug">{item.descricao}</p>
+        <span className="inline-flex items-center gap-1 mt-2.5 text-xs font-semibold text-gold group-hover:gap-1.5 transition-all">
           {item.cta} <ArrowRight className="h-3 w-3" />
         </span>
       </div>
@@ -113,14 +114,14 @@ function PraticaRow({ item }: { item: Pratica }) {
   return (
     <Link
       to={item.to}
-      className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card hover:bg-secondary transition-colors"
+      className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-border bg-card hover:bg-secondary hover:border-gold/20 transition-colors"
     >
-      <div className={`h-12 w-12 rounded-xl grid place-items-center shrink-0 ${item.cor}`}>
+      <div className={`h-12 w-12 rounded-2xl grid place-items-center shrink-0 ${item.cor} shadow-lg shadow-black/20`}>
         <Icon className="h-6 w-6" strokeWidth={2} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-display text-lg leading-tight">{item.label}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{item.sub}</p>
+        <p className="font-display font-semibold text-lg leading-tight tracking-tight">{item.label}</p>
+        <p className="text-[11px] text-muted-foreground/90 mt-0.5 truncate">{item.sub}</p>
       </div>
       <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
     </Link>
@@ -134,7 +135,7 @@ function HomePage() {
   const outras = noticias.filter((n) => n.id !== destaque.id).slice(0, 4);
 
   return (
-    <div className="space-y-10 md:space-y-14 pb-10">
+    <div className="space-y-8 md:space-y-14 pb-10">
       <HomeHero />
 
       {/* Aulas Interativas + Plano de Estudo — dois cards compactos */}
@@ -142,40 +143,40 @@ function HomePage() {
         <div className="grid grid-cols-2 gap-3">
           <Link
             to="/aulas"
-            className="group relative overflow-hidden rounded-2xl bg-gradient-toga text-primary-foreground p-4 hover:shadow-xl transition-all"
+            className="group relative overflow-hidden rounded-3xl bg-gradient-toga text-primary-foreground p-4 hover:shadow-xl hover:shadow-primary/20 transition-all"
           >
-            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gold/15 blur-3xl" />
-            <div className="relative flex flex-col h-full min-h-[130px]">
-              <div className="h-10 w-10 rounded-xl bg-primary-foreground/15 border border-primary-foreground/20 grid place-items-center">
+            <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-gold/20 blur-3xl" />
+            <div className="relative flex flex-col h-full min-h-[140px]">
+              <div className="h-11 w-11 rounded-2xl bg-primary-foreground/15 border border-primary-foreground/25 grid place-items-center backdrop-blur">
                 <BookOpen className="h-5 w-5" />
               </div>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-gold font-semibold mt-3">Aulas Interativas</p>
-              <p className="font-display text-sm leading-tight truncate mt-0.5">Ética · Aula 4</p>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-gold font-semibold mt-3">Aulas Interativas</p>
+              <p className="font-display font-semibold text-[15px] leading-tight truncate mt-0.5 tracking-tight">Ética · Aula 4</p>
               <div className="mt-auto pt-3">
-                <div className="h-1 rounded-full bg-primary-foreground/10 overflow-hidden">
-                  <div className="h-full w-[62%] bg-gold" />
+                <div className="h-1.5 rounded-full bg-primary-foreground/10 overflow-hidden">
+                  <div className="h-full w-[62%] bg-gold shadow-[0_0_12px_oklch(0.78_0.13_80/0.6)]" />
                 </div>
-                <p className="text-[10px] text-primary-foreground/60 mt-1.5">62% concluído</p>
+                <p className="text-[10px] text-primary-foreground/70 mt-1.5 font-medium">62% concluído</p>
               </div>
             </div>
           </Link>
 
           <Link
             to="/plano-estudo"
-            className="group relative overflow-hidden rounded-2xl bg-card border border-gold/20 p-4 hover:-translate-y-0.5 transition-all"
+            className="group relative overflow-hidden rounded-3xl bg-card border border-gold/20 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all"
           >
-            <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gold/10 blur-3xl" />
-            <div className="relative flex flex-col h-full min-h-[130px]">
-              <div className="h-10 w-10 rounded-xl bg-gold/15 text-gold grid place-items-center">
+            <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-gold/10 blur-3xl" />
+            <div className="relative flex flex-col h-full min-h-[140px]">
+              <div className="h-11 w-11 rounded-2xl bg-gold/15 text-gold grid place-items-center">
                 <ClipboardList className="h-5 w-5" />
               </div>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-gold font-semibold mt-3">Plano de Estudo</p>
-              <p className="font-display text-sm leading-tight truncate mt-0.5">Meta da semana</p>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-gold font-semibold mt-3">Plano de Estudo</p>
+              <p className="font-display font-semibold text-[15px] leading-tight truncate mt-0.5 tracking-tight">Meta da semana</p>
               <div className="mt-auto pt-3">
-                <div className="h-1 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full w-[35%] bg-gold" />
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div className="h-full w-[35%] bg-gold shadow-[0_0_12px_oklch(0.78_0.13_80/0.6)]" />
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-1.5">3 de 8 tarefas</p>
+                <p className="text-[10px] text-muted-foreground mt-1.5 font-medium">3 de 8 tarefas</p>
               </div>
             </div>
           </Link>
