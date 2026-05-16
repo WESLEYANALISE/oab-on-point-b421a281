@@ -996,3 +996,112 @@ export const auditarEReextrair = createServerFn({ method: "POST" })
       restantes: restantes.length,
     };
   });
+
+// ============ REEXTRAIR FALHAS ============
+// Pega questões marcadas como "falhou_extracao" e tenta reextrair com o pipeline atual.
+export const reextrairFalhas = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { provaNumero: number }) =>
+    z.object({ provaNumero: z.number().int().positive() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const jobRes = await supabaseAdmin
+      .from("simulado_jobs")
+      .select("id, simulado_id, ocr_prova, gabarito_oficial")
+      .eq("prova_numero", data.provaNumero)
+      .not("simulado_id", "is", null)
+      .not("ocr_prova", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (jobRes.error) throw new Error(jobRes.error.message);
+    if (!jobRes.data || !jobRes.data.simulado_id || !jobRes.data.ocr_prova) {
+      throw new Error("Não há job com OCR salvo para esta prova.");
+    }
+    const job = jobRes.data;
+    const simuladoId = job.simulado_id as string;
+    const ocr = job.ocr_prova as string;
+    const gabarito = normalizeGabarito(job.gabarito_oficial);
+
+    // 1) Lista os números marcados como falhou_extracao
+    const qs = await supabaseAdmin
+      .from("simulado_questoes")
+      .select("numero")
+      .eq("simulado_id", simuladoId)
+      .eq("status", "falhou_extracao");
+    if (qs.error) throw new Error(qs.error.message);
+    const numeros = (qs.data ?? []).map((r) => r.numero as number).sort((a, b) => a - b);
+
+    await appendLog(job.id, "info", `Reextração: ${numeros.length} questão(ões) com status=falhou_extracao.`);
+    if (numeros.length === 0) return { tentadas: 0, reextraidas: 0, restantes: 0 };
+
+    // 2) Apaga placeholders
+    const del = await supabaseAdmin
+      .from("simulado_questoes")
+      .delete()
+      .eq("simulado_id", simuladoId)
+      .in("numero", numeros);
+    if (del.error) throw new Error(del.error.message);
+
+    // 3) Tenta extrair de novo (com o índice de marcadores corrigido)
+    const validas = await extrairQuestoes(job.id, ocr, numeros, gabarito);
+
+    if (validas.length > 0) {
+      const rows = validas.map((q) => {
+        const g = gabarito[String(q.numero)];
+        const anulada = !!g?.anulada;
+        return {
+          simulado_id: simuladoId,
+          numero: q.numero,
+          enunciado: q.enunciado,
+          materia: q.materia,
+          alternativas: q.alternativas,
+          resposta_correta: anulada ? null : (g?.letra ?? null),
+          status: anulada ? "anulada" : "ok",
+          nota_oficial: g?.nota ?? null,
+        };
+      });
+      const ins = await supabaseAdmin.from("simulado_questoes").insert(rows);
+      if (ins.error) throw new Error(ins.error.message);
+    }
+
+    // 4) Recria placeholders para o que ainda faltou
+    const validasNums = new Set(validas.map((v) => v.numero));
+    const restantes = numeros.filter((n) => !validasNums.has(n));
+    if (restantes.length > 0) {
+      const placeholders = restantes.map((n) => ({
+        simulado_id: simuladoId,
+        numero: n,
+        enunciado: "Esta questão não pôde ser extraída do PDF oficial.",
+        materia: null as string | null,
+        alternativas: { A: "—", B: "—", C: "—", D: "—" },
+        resposta_correta: null as string | null,
+        status: "falhou_extracao",
+        nota_oficial: null as string | null,
+      }));
+      const ins2 = await supabaseAdmin.from("simulado_questoes").insert(placeholders);
+      if (ins2.error) throw new Error(ins2.error.message);
+    }
+
+    // 5) Recalcula total
+    const cnt = await supabaseAdmin
+      .from("simulado_questoes")
+      .select("numero", { count: "exact", head: true })
+      .eq("simulado_id", simuladoId)
+      .neq("status", "falhou_extracao");
+    await supabaseAdmin
+      .from("simulados")
+      .update({ total_questoes: cnt.count ?? 0 })
+      .eq("id", simuladoId);
+
+    await appendLog(
+      job.id,
+      "ok",
+      `Reextração concluída: ${validas.length} reextraída(s), ${restantes.length} ainda falhou.`,
+    );
+
+    return { tentadas: numeros.length, reextraidas: validas.length, restantes: restantes.length };
+  });
