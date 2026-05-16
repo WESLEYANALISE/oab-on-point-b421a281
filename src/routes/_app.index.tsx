@@ -35,6 +35,7 @@ function formatNoticiaDate(iso: string) {
 
 const ATALHOS = [
   { label: "Biblioteca", icon: Library,    to: "/biblioteca" as const },
+  { label: "Resumos",    icon: FileText,   to: "/resumos" as const },
   { label: "Simulados",  icon: Trophy,     to: "/simulados" as const },
   { label: "Provas",     icon: FileText,   to: "/provas" as const },
   { label: "Videoaulas", icon: Video,      to: "/aulas" as const },
