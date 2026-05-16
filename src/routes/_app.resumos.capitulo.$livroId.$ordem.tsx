@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState, useRef, useLayoutEffect } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Minus, Plus, Type, AlertCircle } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Minus, Plus, Type, AlertCircle, Download } from "lucide-react";
+import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -35,6 +36,29 @@ function CapituloView() {
   });
 
   const [aba, setAba] = useState<Aba>("resumo");
+  const [gerandoPdf, setGerandoPdf] = useState(false);
+
+  async function baixarPdf() {
+    if (!data) return;
+    setGerandoPdf(true);
+    const tid = toast.loading("Preparando seu PDF…");
+    try {
+      const { gerarPdfResumo } = await import("@/lib/pdf-resumo");
+      await gerarPdfResumo(
+        { titulo: data.livro.titulo, autor: data.livro.autor },
+        data.capitulos.map((c) => ({
+          ordem: c.ordem,
+          titulo: c.titulo,
+          conteudo_markdown: c.conteudo_markdown,
+        })),
+      );
+      toast.success("PDF baixado!", { id: tid });
+    } catch (e: any) {
+      toast.error("Não foi possível gerar o PDF.", { id: tid, description: e?.message });
+    } finally {
+      setGerandoPdf(false);
+    }
+  }
 
   // reset para Resumo ao trocar de capítulo
   const ordemRef = useRef(ordemNum);
@@ -164,36 +188,53 @@ function CapituloView() {
         )}
       </div>
 
-      <nav className="mt-10 pt-6 border-t border-border flex justify-between gap-3">
+      <nav className="mt-10 pt-5 border-t border-border grid grid-cols-3 items-stretch gap-2">
         {prev ? (
           <Link
             to="/resumos/capitulo/$livroId/$ordem"
             params={{ livroId, ordem: String(prev.ordem) }}
-            className="inline-flex items-start gap-2 text-sm text-muted-foreground hover:text-foreground max-w-[45%]"
+            className="group flex items-center gap-2 rounded-xl border border-border bg-card/50 hover:border-gold/40 hover:bg-card transition px-3 py-2.5 min-w-0"
           >
-            <ChevronLeft className="h-4 w-4 mt-0.5 shrink-0" />
+            <ChevronLeft className="h-4 w-4 shrink-0 text-gold" />
             <span className="text-left min-w-0">
-              <span className="block text-[10px] uppercase">Anterior</span>
-              <span className="block truncate">{normalizarTitulo(prev.titulo)}</span>
+              <span className="block text-[9px] uppercase tracking-wider text-muted-foreground">Anterior</span>
+              <span className="block text-xs font-display truncate text-foreground">{normalizarTitulo(prev.titulo)}</span>
             </span>
           </Link>
         ) : (
-          <span />
+          <span aria-hidden />
         )}
+
+        <button
+          type="button"
+          onClick={baixarPdf}
+          disabled={gerandoPdf}
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-gold/40 bg-gradient-toga text-gold font-display font-semibold text-xs uppercase tracking-wider px-3 py-2.5 hover:border-gold/70 hover:shadow-[0_4px_18px_-4px_oklch(0.78_0.13_80/0.6)] transition disabled:opacity-60 disabled:cursor-not-allowed"
+          aria-label="Baixar resumo em PDF"
+        >
+          {gerandoPdf ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+          <span className="hidden sm:inline">{gerandoPdf ? "Gerando…" : "Baixar PDF"}</span>
+          <span className="sm:hidden">PDF</span>
+        </button>
+
         {next ? (
           <Link
             to="/resumos/capitulo/$livroId/$ordem"
             params={{ livroId, ordem: String(next.ordem) }}
-            className="inline-flex items-start gap-2 text-sm text-muted-foreground hover:text-foreground ml-auto max-w-[45%]"
+            className="group flex items-center gap-2 rounded-xl border border-border bg-card/50 hover:border-gold/40 hover:bg-card transition px-3 py-2.5 min-w-0 justify-end"
           >
             <span className="text-right min-w-0">
-              <span className="block text-[10px] uppercase">Próximo</span>
-              <span className="block truncate">{normalizarTitulo(next.titulo)}</span>
+              <span className="block text-[9px] uppercase tracking-wider text-muted-foreground">Próximo</span>
+              <span className="block text-xs font-display truncate text-foreground">{normalizarTitulo(next.titulo)}</span>
             </span>
-            <ChevronRight className="h-4 w-4 mt-0.5 shrink-0" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-gold" />
           </Link>
         ) : (
-          <span />
+          <span aria-hidden />
         )}
       </nav>
     </div>
@@ -223,7 +264,7 @@ function TabsSwitch({ aba, setAba }: { aba: Aba; setAba: (a: Aba) => void }) {
       ref={containerRef}
       role="tablist"
       aria-label="Modo de leitura"
-      className="relative mb-6 inline-flex items-center gap-1 rounded-full border border-border bg-card/60 p-1 backdrop-blur-sm"
+      className="relative mb-6 flex w-full items-center gap-1 rounded-full border border-border bg-card/60 p-1 backdrop-blur-sm"
     >
       <span
         aria-hidden
@@ -242,7 +283,7 @@ function TabsSwitch({ aba, setAba }: { aba: Aba; setAba: (a: Aba) => void }) {
             aria-selected={active}
             type="button"
             onClick={() => setAba(t.id)}
-            className={`relative z-10 px-4 py-1.5 text-xs md:text-sm font-display font-semibold rounded-full transition-colors duration-200 ${
+            className={`relative z-10 flex-1 text-center px-3 py-1.5 text-xs md:text-sm font-display font-semibold rounded-full transition-colors duration-200 ${
               active ? "text-gold" : "text-muted-foreground hover:text-foreground"
             }`}
           >
