@@ -26,6 +26,7 @@ import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
+import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
 import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
@@ -116,6 +117,11 @@ const AppAssistenteRoute = AppAssistenteRouteImport.update({
   path: '/assistente',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBibliotecaIndexRoute = AppBibliotecaIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppBibliotecaRoute,
+} as any)
 const AppNoticiasIdRoute = AppNoticiasIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
+  '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
 }
@@ -170,7 +177,6 @@ export interface FileRoutesByTo {
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
-  '/biblioteca': typeof AppBibliotecaRouteWithChildren
   '/desktop': typeof AppDesktopRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
@@ -186,6 +192,7 @@ export interface FileRoutesByTo {
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
+  '/biblioteca': typeof AppBibliotecaIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
 }
@@ -211,6 +218,7 @@ export interface FileRoutesById {
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
   '/_app/noticias/$id': typeof AppNoticiasIdRoute
+  '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/_app/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
 }
@@ -236,6 +244,7 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
+    | '/biblioteca/'
     | '/biblioteca/$slug/$bookId'
     | '/biblioteca/$slug/$bookId/ler'
   fileRoutesByTo: FileRoutesByTo
@@ -243,7 +252,6 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/audioaulas'
     | '/aulas'
-    | '/biblioteca'
     | '/desktop'
     | '/flashcards'
     | '/materias'
@@ -259,6 +267,7 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
+    | '/biblioteca'
     | '/biblioteca/$slug/$bookId'
     | '/biblioteca/$slug/$bookId/ler'
   id:
@@ -283,6 +292,7 @@ export interface FileRouteTypes {
     | '/_app/biblioteca/$slug'
     | '/_app/materias/$slug'
     | '/_app/noticias/$id'
+    | '/_app/biblioteca/'
     | '/_app/biblioteca/$slug/$bookId'
     | '/_app/biblioteca/$slug/$bookId/ler'
   fileRoutesById: FileRoutesById
@@ -412,6 +422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssistenteRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/biblioteca/': {
+      id: '/_app/biblioteca/'
+      path: '/'
+      fullPath: '/biblioteca/'
+      preLoaderRoute: typeof AppBibliotecaIndexRouteImport
+      parentRoute: typeof AppBibliotecaRoute
+    }
     '/_app/noticias/$id': {
       id: '/_app/noticias/$id'
       path: '/$id'
@@ -477,10 +494,12 @@ const AppBibliotecaSlugRouteWithChildren =
 
 interface AppBibliotecaRouteChildren {
   AppBibliotecaSlugRoute: typeof AppBibliotecaSlugRouteWithChildren
+  AppBibliotecaIndexRoute: typeof AppBibliotecaIndexRoute
 }
 
 const AppBibliotecaRouteChildren: AppBibliotecaRouteChildren = {
   AppBibliotecaSlugRoute: AppBibliotecaSlugRouteWithChildren,
+  AppBibliotecaIndexRoute: AppBibliotecaIndexRoute,
 }
 
 const AppBibliotecaRouteWithChildren = AppBibliotecaRoute._addFileChildren(
