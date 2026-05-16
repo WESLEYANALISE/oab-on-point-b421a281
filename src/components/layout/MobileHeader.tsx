@@ -4,6 +4,7 @@ import { Scale, Search, Bell, ArrowLeft, Home } from "lucide-react";
 export function MobileHeader() {
   const { pathname } = useLocation();
   const router = useRouter();
+  const navigate = useNavigate();
   const isHome = pathname === "/";
 
   return (
