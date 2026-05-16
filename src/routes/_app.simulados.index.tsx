@@ -32,11 +32,7 @@ function SimuladosPage() {
         </p>
       </header>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando…
-        </div>
-      ) : !data || data.length === 0 ? (
+      {!data || data.length === 0 ? (
         <div className="rounded-xl border border-border bg-card p-8 text-center">
           <Target className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
           <p className="font-display text-xl">Nenhum simulado disponível ainda</p>
