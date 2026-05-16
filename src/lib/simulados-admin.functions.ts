@@ -384,7 +384,7 @@ async function extrairQuestoes(
   jobId: string,
   ocrProva: string,
   numeros: number[],
-  gabarito: Record<string, string>,
+  gabarito: Record<string, GabaritoEntry>,
 ): Promise<z.infer<typeof QuestaoSchema>[]> {
   if (numeros.length === 0) return [];
   const inicio = Math.min(...numeros);
@@ -414,19 +414,57 @@ ${ocrProva.slice(0, 90000)}`;
   const validasMap = new Map<number, z.infer<typeof QuestaoSchema>>();
   const alvoSet = new Set(numeros);
 
-  const runOnce = async (prompt: string) => {
+  // Diagnóstico: marcador de cada questão presente no OCR?
+  const ocrLower = ocrProva.toLowerCase();
+  const semMarcador: number[] = [];
+  for (const n of numeros) {
+    const regex = new RegExp(`quest[aã]o\\s*${n}\\b`, "i");
+    if (!regex.test(ocrLower)) semMarcador.push(n);
+  }
+  if (semMarcador.length > 0) {
+    await appendLog(
+      jobId,
+      "info",
+      `OCR não contém marcador "Questão" para: ${semMarcador.slice(0, 10).join(", ")}${semMarcador.length > 10 ? "…" : ""}. Provável problema no PDF/OCR.`,
+    );
+  }
+
+  const runOnce = async (prompt: string): Promise<{ chars: number; recebidas: number[]; motivo?: string }> => {
     const raw = await geminiExtractJson(system, prompt);
     let parsed: { questoes?: unknown[] } = {};
-    try { parsed = JSON.parse(raw); } catch { parsed = {}; }
+    let motivo: string | undefined;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      motivo = `parse JSON falhou (primeiros 200 chars: ${raw.slice(0, 200).replace(/\s+/g, " ")})`;
+    }
+    const recebidas: number[] = [];
     for (const q of parsed.questoes ?? []) {
       const r = QuestaoSchema.safeParse(q);
-      if (r.success && alvoSet.has(r.data.numero) && gabarito[String(r.data.numero)]) {
+      if (!r.success) {
+        const issue = r.error.issues[0];
+        const path = issue?.path.join(".") ?? "?";
+        const numTentado = (q as { numero?: unknown })?.numero;
+        motivo = motivo ?? `schema rejeitou questão ${numTentado ?? "?"}: ${path} → ${issue?.message ?? "inválido"}`;
+        continue;
+      }
+      recebidas.push(r.data.numero);
+      if (alvoSet.has(r.data.numero) && hasGabaritoEntry(gabarito, r.data.numero)) {
         validasMap.set(r.data.numero, r.data);
       }
     }
+    return { chars: raw.length, recebidas, motivo };
   };
 
-  await runOnce(user);
+  try {
+    const first = await runOnce(user);
+    if (first.motivo && validasMap.size === 0) {
+      await appendLog(jobId, "info", `Diagnóstico 1ª tentativa: ${first.motivo}`);
+    }
+  } catch (err) {
+    const m = err instanceof Error ? err.message : String(err);
+    await appendLog(jobId, "info", `1ª tentativa falhou: ${m}`);
+  }
 
   // Retry para faltantes
   for (let tentativa = 1; tentativa <= 3; tentativa++) {
@@ -442,7 +480,17 @@ ${ocrProva.slice(0, 90000)}`;
 ===== PROVA =====
 ${ocrProva.slice(0, 90000)}`;
     try {
-      await runOnce(retryPrompt);
+      const r = await runOnce(retryPrompt);
+      const aindaFaltam = faltantes.filter((n) => !validasMap.has(n));
+      if (aindaFaltam.length > 0) {
+        const recebeuOutras = r.recebidas.filter((n) => !faltantes.includes(n));
+        const detalhe = r.motivo
+          ? r.motivo
+          : recebeuOutras.length > 0
+          ? `Gemini devolveu questões erradas (${recebeuOutras.slice(0, 5).join(", ")}) em vez das pedidas`
+          : `Gemini devolveu ${r.chars} chars sem questões válidas`;
+        await appendLog(jobId, "info", `Retentativa ${tentativa}: ${detalhe}`);
+      }
     } catch (err) {
       const m = err instanceof Error ? err.message : String(err);
       await appendLog(jobId, "info", `Retentativa ${tentativa} falhou: ${m}`);
