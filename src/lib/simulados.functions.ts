@@ -58,7 +58,7 @@ export const getSimuladoCompleto = createServerFn({ method: "POST" })
         .maybeSingle(),
       supabase
         .from("simulado_questoes")
-        .select("id, numero, enunciado, materia, alternativas, resposta_correta")
+        .select("id, numero, enunciado, materia, alternativas, resposta_correta, status, nota_oficial")
         .eq("simulado_id", simuladoId)
         .order("numero", { ascending: true }),
       supabase
