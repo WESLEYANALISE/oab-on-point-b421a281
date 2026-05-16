@@ -79,17 +79,19 @@ function FerramentaCard({ item }: { item: Ferramenta }) {
   return (
     <Link
       to={item.to}
-      className="snap-start shrink-0 w-[180px] rounded-2xl overflow-hidden border border-border bg-card hover:-translate-y-0.5 transition-all"
+      className={`snap-start shrink-0 w-[160px] relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br ${item.cover} p-4 min-h-[150px] flex flex-col justify-between text-left hover:-translate-y-0.5 transition-all`}
     >
-      <div className={`relative h-[120px] bg-gradient-to-br ${item.cover} grid place-items-center`}>
-        <Icon className="h-12 w-12 text-foreground/80" strokeWidth={1.5} />
-        <div className="absolute top-2 right-2 h-7 w-7 rounded-full bg-background/60 backdrop-blur grid place-items-center">
+      <div className="flex items-start justify-between">
+        <div className="h-10 w-10 rounded-xl bg-background/40 backdrop-blur grid place-items-center">
+          <Icon className="h-5 w-5 text-foreground" strokeWidth={2} />
+        </div>
+        <div className="h-7 w-7 rounded-full bg-background/40 backdrop-blur grid place-items-center">
           <ChevronRight className="h-4 w-4" />
         </div>
       </div>
-      <div className="p-3">
-        <p className="font-display text-base leading-tight">{item.label}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{item.sub}</p>
+      <div className="text-left">
+        <p className="font-display text-base leading-tight text-left">{item.label}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5 truncate text-left">{item.sub}</p>
       </div>
     </Link>
   );
