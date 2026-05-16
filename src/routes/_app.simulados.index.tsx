@@ -53,8 +53,12 @@ function SimuladosPage() {
                   <Target className="h-6 w-6" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-display text-lg leading-tight truncate">{s.titulo}</p>
-                  <p className="text-xs text-muted-foreground">{s.total_questoes} questões</p>
+                  <p className="font-display text-lg leading-tight truncate">
+                    {s.prova_numero}º Exame da Ordem
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Simulado · {s.total_questoes} questões{s.ano ? ` · ${s.ano}` : ""}
+                  </p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </Link>
