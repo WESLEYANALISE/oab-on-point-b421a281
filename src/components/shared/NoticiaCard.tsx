@@ -3,6 +3,12 @@ import type { Noticia } from "@/data/noticias";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+function formatBR(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${String(d).padStart(2, "0")} de ${MESES[m - 1]}`;
+}
+
 const categoriaCor: Record<Noticia["categoria"], string> = {
   OAB: "bg-primary text-primary-foreground",
   STF: "bg-secondary text-secondary-foreground",
