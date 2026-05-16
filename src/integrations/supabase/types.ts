@@ -421,6 +421,7 @@ export type Database = {
           created_at: string
           erro_msg: string | null
           etapa: string
+          gabarito_oficial: Json
           gerado_por: string | null
           id: string
           iniciado_em: string | null
@@ -441,6 +442,7 @@ export type Database = {
           created_at?: string
           erro_msg?: string | null
           etapa?: string
+          gabarito_oficial?: Json
           gerado_por?: string | null
           id?: string
           iniciado_em?: string | null
@@ -461,6 +463,7 @@ export type Database = {
           created_at?: string
           erro_msg?: string | null
           etapa?: string
+          gabarito_oficial?: Json
           gerado_por?: string | null
           id?: string
           iniciado_em?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.simulado_jobs ADD COLUMN IF NOT EXISTS gabarito_oficial jsonb NOT NULL DEFAULT '{}'::jsonb;
