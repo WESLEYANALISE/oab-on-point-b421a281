@@ -136,4 +136,32 @@
   .bg-gradient-gold {
     background-image: linear-gradient(135deg, oklch(0.74 0.12 78) 0%, oklch(0.82 0.13 82) 100%);
   }
+
+  /* Countdown shimmer — passa um reflexo diagonal pelos 3 boxes a cada 7s */
+  @keyframes countdown-shimmer {
+    0%   { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+    8%   { opacity: 1; }
+    35%  { opacity: 1; }
+    45%  { transform: translateX(320%) skewX(-18deg); opacity: 0; }
+    100% { transform: translateX(320%) skewX(-18deg); opacity: 0; }
+  }
+  .countdown-shimmer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 30%;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklab, white 18%, transparent) 45%,
+      color-mix(in oklab, white 42%, transparent) 50%,
+      color-mix(in oklab, white 18%, transparent) 55%,
+      transparent 100%
+    );
+    animation: countdown-shimmer 7s ease-in-out infinite;
+    mix-blend-mode: screen;
+  }
 }
+
