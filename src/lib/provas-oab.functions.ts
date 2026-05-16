@@ -157,48 +157,58 @@ function classificar(arquivos: Arquivo[]): {
 
   for (const a of arquivos) {
     const t = a.titulo.toLowerCase();
+    const semData = t.replace(/^\d{2}\/\d{2}\/\d{4}\s*-\s*/, "").trim();
 
-    // 1ª fase
-    if (!prova1 && /prova\b.*1[ªa]\s*fase|prova\s*objetiva/.test(t)) {
-      prova1 = a.url;
-      continue;
-    }
-    if (!gabarito1 && /gabarito\s*(definitivo|preliminar)?.*1[ªa]\s*fase|gabarito\s*(definitivo|preliminar)?.*objetiv/.test(t)) {
-      gabarito1 = a.url;
-      continue;
-    }
-    if (!gabarito1 && /^gabarito/.test(t) && !/2[ªa]\s*fase/.test(t)) {
-      gabarito1 = a.url;
-      continue;
-    }
-    if (!prova1 && /^prova\b/.test(t) && !/2[ªa]\s*fase/.test(t)) {
-      prova1 = a.url;
-      continue;
-    }
-
-    // Edital
-    if (!edital && /\bedital\b/.test(t) && !/retifica/.test(t)) {
+    // Edital de Abertura (preferido)
+    if (!edital && /^edital de abertura\b/.test(semData)) {
       edital = a.url;
+      continue;
+    }
+
+    // Gabarito 1ª fase (definitivo preferido, preliminar como fallback)
+    if (/gabaritos?\s+definitivos?.*prova objetiva|gabaritos?\s+definitivos?.*1[ªa]\s*fase/.test(semData)) {
+      gabarito1 = a.url;
+      continue;
+    }
+    if (!gabarito1 && /gabaritos?\s+preliminar.*prova objetiva|gabaritos?\s+preliminar.*1[ªa]\s*fase/.test(semData)) {
+      gabarito1 = a.url;
       continue;
     }
 
     // 2ª fase por área
     let matchedArea: string | null = null;
     for (const area of AREAS_2FASE) {
-      const areaShort = area.replace(/^Direito\s+/i, "").toLowerCase();
-      if (t.includes(areaShort)) {
+      if (semData.includes(area.toLowerCase())) {
         matchedArea = area;
         break;
       }
     }
-    if (matchedArea && /2[ªa]\s*fase|prático|pratico|espelho/.test(t)) {
+    if (matchedArea) {
       const cur = provas2Map.get(matchedArea) ?? { area: matchedArea };
-      if (/espelho|padrão de resposta|padrao de resposta|gabarito/.test(t)) {
+      if (/padr[ãa]o de respostas definitivo/.test(semData)) {
+        cur.espelho_url = a.url; // definitivo sobrescreve
+      } else if (/padr[ãa]o de respostas|espelho|gabarito/.test(semData)) {
         cur.espelho_url = cur.espelho_url ?? a.url;
-      } else if (/prova/.test(t)) {
+      } else if (/caderno de provas?|prova/.test(semData)) {
         cur.prova_url = cur.prova_url ?? a.url;
       }
       provas2Map.set(matchedArea, cur);
+      continue;
+    }
+
+    // Prova 1ª fase: "Caderno de Prova - Tipo 1" (sem área entre parênteses)
+    if (!prova1 && /^caderno de prova\b.*tipo\s*1\b/.test(semData)) {
+      prova1 = a.url;
+      continue;
+    }
+    if (!prova1 && /^caderno de prova\b/.test(semData) && !/\(direito/.test(semData)) {
+      prova1 = a.url;
+      continue;
+    }
+
+    // Edital genérico como fallback
+    if (!edital && /\bedital\b/.test(semData) && !/retifica|locais|hor[áa]rio|complementar/.test(semData)) {
+      edital = a.url;
       continue;
     }
 
