@@ -10,7 +10,7 @@
  */
 
 @theme inline {
-  --font-display: "Instrument Serif", "Cormorant Garamond", ui-serif, Georgia, serif;
+  --font-display: "Fraunces", "Cormorant Garamond", ui-serif, Georgia, serif;
   --font-sans: "Inter Tight", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
