@@ -1,5 +1,5 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { useIsAdmin } from "@/hooks/use-admin";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,18 +13,17 @@ function AdminLayout() {
   const { user, loading } = useAuth();
   const { data: isAdmin, isLoading } = useIsAdmin();
   const navigate = useNavigate();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    if (loading) return;
+    if (!mounted || loading) return;
     if (!user) { navigate({ to: "/" }); return; }
     if (isAdmin === false) navigate({ to: "/" });
-  }, [loading, user, isAdmin, navigate]);
+  }, [mounted, loading, user, isAdmin, navigate]);
 
-  // Se já temos cache positivo, renderiza direto (sem flicker).
-  if (isAdmin === true) return <Outlet />;
-
-  // Só mostra "verificando" se realmente não sabemos ainda.
-  if (loading || (isLoading && isAdmin === undefined)) {
+  // Evita mismatch de hidratação: até montar no client, sempre renderiza o shell de loading.
+  if (!mounted || loading || (isLoading && isAdmin === undefined)) {
     return (
       <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
         <header className="mb-6">
@@ -47,3 +46,4 @@ function AdminLayout() {
   }
   return <Outlet />;
 }
+

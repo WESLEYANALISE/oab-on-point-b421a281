@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Sparkles, FileText, X, Eye, Trash2, RefreshCw, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import {
+  Loader2, Sparkles, FileText, X, Eye, Trash2, RefreshCw,
+  CheckCircle2, AlertCircle, Clock, ChevronRight, ArrowLeft,
+} from "lucide-react";
 import {
   listarLivrosParaResumo,
   gerarPreviaResumo,
@@ -17,16 +20,17 @@ export const Route = createFileRoute("/_app/admin/resumos")({
   component: AdminResumos,
 });
 
-const SLUG_LABEL: Record<string, string> = {
-  estudos: "Estudos",
-  classicos: "Clássicos",
-  oratoria: "Oratória",
-  lideranca: "Liderança",
-  politica: "Política",
-  "fora-da-toga": "Fora da Toga",
-};
-
 type PreviaItem = { ordem: number; titulo: string; pagina_inicio: number; pagina_fim: number; incluir: boolean };
+type Livro = {
+  slug: string;
+  livro_id: number;
+  titulo: string;
+  autor: string | null;
+  capa: string | null;
+  area: string | null;
+  pdf_url: string | null;
+  resumo: any;
+};
 
 function AdminResumos() {
   const qc = useQueryClient();
@@ -43,34 +47,34 @@ function AdminResumos() {
     staleTime: 30_000,
   });
 
-  const [filtroArea, setFiltroArea] = useState<string>("todas");
+  const [areaSelecionada, setAreaSelecionada] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [preview, setPreview] = useState<{ resumo_livro_id: string; itens: PreviaItem[] } | null>(null);
   const [gerando, setGerando] = useState<Set<string>>(new Set());
 
-  const livros = data ?? [];
-  const areas = useMemo(
-    () => Array.from(new Set(livros.map((l) => l.area).filter(Boolean))).sort() as string[],
-    [livros],
-  );
+  const livros = (data ?? []) as Livro[];
 
-  const filtrados = useMemo(() => {
-    return livros.filter((l) => {
-      if (filtroArea !== "todas" && l.area !== filtroArea) return false;
-      if (busca && !l.titulo.toLowerCase().includes(busca.toLowerCase())) return false;
-      return true;
-    });
-  }, [livros, filtroArea, busca]);
-
-  const porArea = useMemo(() => {
-    const map = new Map<string, typeof filtrados>();
-    for (const l of filtrados) {
+  const areas = useMemo(() => {
+    const map = new Map<string, { total: number; comResumo: number }>();
+    for (const l of livros) {
       const k = l.area ?? "Sem área";
-      if (!map.has(k)) map.set(k, [] as any);
-      (map.get(k) as any).push(l);
+      const cur = map.get(k) ?? { total: 0, comResumo: 0 };
+      cur.total++;
+      if (l.resumo) cur.comResumo++;
+      map.set(k, cur);
     }
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [filtrados]);
+    return Array.from(map.entries())
+      .map(([nome, v]) => ({ nome, ...v }))
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+  }, [livros]);
+
+  const livrosDaArea = useMemo(() => {
+    if (!areaSelecionada) return [];
+    return livros
+      .filter((l) => (l.area ?? "Sem área") === areaSelecionada)
+      .filter((l) => !busca || l.titulo.toLowerCase().includes(busca.toLowerCase()))
+      .sort((a, b) => a.titulo.localeCompare(b.titulo));
+  }, [livros, areaSelecionada, busca]);
 
   const previa = useMutation({
     mutationFn: (v: { slug: string; livro_id: number }) => previaFn({ data: v }),
@@ -82,7 +86,6 @@ function AdminResumos() {
     onError: (e: any) => toast.error(e?.message ?? "Erro", { id: "previa" }),
   });
 
-  // worker que processa um livro até concluir
   async function processarLivro(resumo_livro_id: string) {
     setGerando((s) => new Set(s).add(resumo_livro_id));
     try {
@@ -90,19 +93,12 @@ function AdminResumos() {
       while (safety-- > 0) {
         const r: any = await proxCapFn({ data: { resumo_livro_id } });
         qc.invalidateQueries({ queryKey: ["admin-resumos"] });
-        if (r?.done) {
-          toast.success("Resumos gerados");
-          break;
-        }
+        if (r?.done) { toast.success("Resumos gerados"); break; }
       }
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao gerar capítulo");
     } finally {
-      setGerando((s) => {
-        const n = new Set(s);
-        n.delete(resumo_livro_id);
-        return n;
-      });
+      setGerando((s) => { const n = new Set(s); n.delete(resumo_livro_id); return n; });
       qc.invalidateQueries({ queryKey: ["admin-resumos"] });
     }
   }
@@ -128,38 +124,14 @@ function AdminResumos() {
   });
 
   return (
-    <div className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
+    <div className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
       <header className="mb-6">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Painel</p>
-        <h1 className="font-display text-3xl md:text-4xl">Extração de Resumos</h1>
+        <h1 className="font-display text-2xl md:text-4xl">Extração de Resumos</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Lê o PDF do livro com o Mistral, extrai o sumário, você revisa e o Gemini gera resumos didáticos por capítulo.
         </p>
       </header>
-
-      <div className="flex flex-wrap gap-2 mb-4">
-        <button
-          onClick={() => setFiltroArea("todas")}
-          className={`text-xs px-3 py-1.5 rounded-full border ${filtroArea === "todas" ? "bg-foreground text-background" : "bg-card"}`}
-        >
-          Todas as áreas ({livros.length})
-        </button>
-        {areas.map((a) => (
-          <button
-            key={a}
-            onClick={() => setFiltroArea(a)}
-            className={`text-xs px-3 py-1.5 rounded-full border ${filtroArea === a ? "bg-foreground text-background" : "bg-card"}`}
-          >
-            {a}
-          </button>
-        ))}
-        <input
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar por título…"
-          className="ml-auto text-sm px-3 py-1.5 rounded-full border bg-card min-w-[200px]"
-        />
-      </div>
 
       {isLoading && (
         <div className="py-12 text-center text-muted-foreground inline-flex items-center gap-2">
@@ -167,96 +139,86 @@ function AdminResumos() {
         </div>
       )}
 
-      <div className="space-y-6">
-        {porArea.map(([area, itens]) => (
-          <section key={area}>
-            <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-2 px-1">
-              {area} <span className="text-muted-foreground/60">· {itens.length}</span>
-            </h2>
-            <div className="grid gap-2">
-              {itens.map((l) => {
-                const r = l.resumo as any;
-                const status: string = r?.status ?? "sem_previa";
-                const key = `${l.slug}:${l.livro_id}`;
-                const proc = r?.id && gerando.has(r.id);
-                return (
-                  <div key={key} className="flex items-center gap-3 p-3 rounded-xl border bg-card">
-                    <div className="h-14 w-10 bg-muted rounded overflow-hidden flex-shrink-0">
-                      {l.capa && <img src={l.capa} alt="" className="w-full h-full object-cover" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{l.titulo}</p>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <StatusBadge status={status} proc={!!proc} />
-                        {r && (
-                          <span className="text-xs text-muted-foreground">
-                            {r.capitulos_gerados ?? 0}/{r.total_capitulos ?? 0} capítulos
-                          </span>
-                        )}
-                        {r?.erro_msg && <span className="text-xs text-destructive truncate max-w-[300px]" title={r.erro_msg}>· {r.erro_msg}</span>}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {!l.pdf_url && <span className="text-[11px] text-muted-foreground">sem PDF</span>}
-                      {l.pdf_url && status === "sem_previa" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={previa.isPending}
-                          onClick={() => previa.mutate({ slug: l.slug, livro_id: l.livro_id })}
-                        >
-                          <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Gerar prévia
-                        </Button>
-                      )}
-                      {l.pdf_url && status === "previa_pronta" && r && (
-                        <Button size="sm" variant="outline" onClick={() => {
-                          const itensP = ((r.previa as PreviaItem[]) ?? []).map((it) => ({
-                            ordem: it.ordem,
-                            titulo: it.titulo,
-                            pagina_inicio: it.pagina_inicio,
-                            pagina_fim: it.pagina_fim,
-                            incluir: it.incluir,
-                          }));
-                          setPreview({ resumo_livro_id: r.id, itens: itensP });
-                        }}>
-                          <Eye className="h-3.5 w-3.5 mr-1.5" /> Ver prévia
-                        </Button>
-                      )}
-                      {l.pdf_url && (status === "previa_pronta" || status === "concluido" || status === "erro") && r && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={previa.isPending}
-                          title="Refazer prévia"
-                          onClick={() => previa.mutate({ slug: l.slug, livro_id: l.livro_id })}
-                        >
-                          <RefreshCw className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      {r && status === "gerando" && !proc && (
-                        <Button size="sm" onClick={() => processarLivro(r.id)}>
-                          Retomar
-                        </Button>
-                      )}
-                      {r && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            if (confirm("Excluir resumo deste livro?")) excluir.mutate(r.id);
-                          }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                    </div>
+      {!isLoading && !areaSelecionada && (
+        <div>
+          <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
+            Áreas ({areas.length})
+          </h2>
+          <ul className="grid gap-2">
+            {areas.map((a) => (
+              <li key={a.nome}>
+                <button
+                  onClick={() => { setAreaSelecionada(a.nome); setBusca(""); }}
+                  className="w-full flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-accent/40 transition text-left"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{a.nome}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {a.total} {a.total === 1 ? "livro" : "livros"} · {a.comResumo} com resumo
+                    </p>
                   </div>
-                );
-              })}
-            </div>
-          </section>
-        ))}
-      </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {!isLoading && areaSelecionada && (
+        <div>
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <button
+              onClick={() => setAreaSelecionada(null)}
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" /> Áreas
+            </button>
+            <span className="text-xs text-muted-foreground">{livrosDaArea.length} livros</span>
+          </div>
+          <h2 className="font-display text-xl md:text-2xl mb-3">{areaSelecionada}</h2>
+          <input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por título…"
+            className="w-full mb-4 text-sm px-4 py-2.5 rounded-full border bg-card"
+          />
+
+          <div className="grid gap-2">
+            {livrosDaArea.length === 0 && (
+              <p className="text-sm text-muted-foreground py-6 text-center">Nenhum livro encontrado.</p>
+            )}
+            {livrosDaArea.map((l) => {
+              const r = l.resumo as any;
+              const status: string = r?.status ?? "sem_previa";
+              const proc = r?.id && gerando.has(r.id);
+              return (
+                <LivroCard
+                  key={`${l.slug}:${l.livro_id}`}
+                  livro={l}
+                  status={status}
+                  resumo={r}
+                  proc={!!proc}
+                  previaPending={previa.isPending}
+                  onGerarPrevia={() => previa.mutate({ slug: l.slug, livro_id: l.livro_id })}
+                  onVerPrevia={() => {
+                    const itens = ((r.previa as PreviaItem[]) ?? []).map((it) => ({
+                      ordem: it.ordem,
+                      titulo: it.titulo,
+                      pagina_inicio: it.pagina_inicio,
+                      pagina_fim: it.pagina_fim,
+                      incluir: it.incluir,
+                    }));
+                    setPreview({ resumo_livro_id: r.id, itens });
+                  }}
+                  onRetomar={() => processarLivro(r.id)}
+                  onExcluir={() => { if (confirm("Excluir resumo deste livro?")) excluir.mutate(r.id); }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {preview && (
         <PreviewDrawer
@@ -267,6 +229,80 @@ function AdminResumos() {
           saving={salvarPrevia.isPending}
         />
       )}
+    </div>
+  );
+}
+
+function LivroCard({
+  livro, status, resumo, proc, previaPending,
+  onGerarPrevia, onVerPrevia, onRetomar, onExcluir,
+}: {
+  livro: Livro; status: string; resumo: any; proc: boolean; previaPending: boolean;
+  onGerarPrevia: () => void; onVerPrevia: () => void; onRetomar: () => void; onExcluir: () => void;
+}) {
+  return (
+    <div className="p-3 rounded-xl border bg-card">
+      <div className="flex items-start gap-3">
+        <div className="h-16 w-12 bg-muted rounded overflow-hidden flex-shrink-0">
+          {livro.capa && <img src={livro.capa} alt="" className="w-full h-full object-cover" />}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium break-words">{livro.titulo}</p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <StatusBadge status={status} proc={proc} />
+            {resumo && (
+              <span className="text-xs text-muted-foreground">
+                {resumo.capitulos_gerados ?? 0}/{resumo.total_capitulos ?? 0} cap.
+              </span>
+            )}
+          </div>
+          {resumo?.erro_msg && (
+            <p className="text-xs text-destructive mt-1 break-words">{resumo.erro_msg}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {!livro.pdf_url && (
+          <span className="text-[11px] text-muted-foreground self-center">sem PDF</span>
+        )}
+        {livro.pdf_url && status === "sem_previa" && (
+          <Button
+            size="sm"
+            disabled={previaPending}
+            onClick={onGerarPrevia}
+            className="flex-1 sm:flex-none"
+          >
+            <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Gerar prévia
+          </Button>
+        )}
+        {livro.pdf_url && status === "previa_pronta" && resumo && (
+          <Button size="sm" variant="outline" onClick={onVerPrevia} className="flex-1 sm:flex-none">
+            <Eye className="h-3.5 w-3.5 mr-1.5" /> Ver prévia
+          </Button>
+        )}
+        {livro.pdf_url && (status === "previa_pronta" || status === "concluido" || status === "erro") && resumo && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={previaPending}
+            title="Refazer prévia"
+            onClick={onGerarPrevia}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {resumo && status === "gerando" && !proc && (
+          <Button size="sm" onClick={onRetomar} className="flex-1 sm:flex-none">
+            Retomar
+          </Button>
+        )}
+        {resumo && (
+          <Button size="sm" variant="ghost" onClick={onExcluir}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -284,8 +320,6 @@ function StatusBadge({ status, proc }: { status: string; proc: boolean }) {
   const Icon = v.icon;
   return <span className={`text-xs inline-flex items-center gap-1 ${v.cls}`}><Icon className="h-3 w-3" /> {v.label}</span>;
 }
-
-
 
 function PreviewDrawer({
   preview, onChange, onClose, onConfirm, saving,
@@ -309,7 +343,7 @@ function PreviewDrawer({
     <div className="fixed inset-0 z-50 bg-black/50 flex items-stretch justify-end" onClick={onClose}>
       <div className="bg-background w-full max-w-xl h-full flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="p-4 border-b flex items-center justify-between">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs uppercase text-muted-foreground tracking-wider">Prévia</p>
             <h2 className="font-display text-lg">Capítulos detectados</h2>
             <p className="text-xs text-muted-foreground">{incluidos} de {preview.itens.length} selecionados</p>
@@ -344,7 +378,7 @@ function PreviewDrawer({
         <div className="p-4 border-t flex gap-2">
           <Button variant="outline" onClick={onClose} className="flex-1">Cancelar</Button>
           <Button onClick={onConfirm} disabled={saving || !incluidos} className="flex-1">
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Gerar {incluidos} resumos</>}
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Gerar {incluidos}</>}
           </Button>
         </div>
       </div>
