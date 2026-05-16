@@ -138,22 +138,38 @@ function PraticaPage() {
           <h1 className="font-display text-2xl">
             Questão {atual.numero} <span className="text-muted-foreground text-base">de {totalQ}</span>
           </h1>
-          <span className="text-xs text-muted-foreground">{respondidasN}/{totalQ} respondidas</span>
+          <span className="text-xs font-medium text-muted-foreground tabular-nums">
+            {respondidasN}/{totalQ}
+          </span>
         </div>
+
+        {/* Barra de progresso */}
+        <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-primary to-primary/70 transition-all duration-500 ease-out"
+            style={{ width: `${totalQ ? (respondidasN / totalQ) * 100 : 0}%` }}
+          />
+        </div>
+
         {atual.materia && (
-          <p className="mt-2 inline-block px-2 py-0.5 rounded-full text-[11px] bg-primary/10 text-primary font-medium">
+          <p className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] bg-primary text-primary-foreground font-semibold shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground/80" />
             {atual.materia}
           </p>
         )}
       </header>
 
       {/* Toggle Enunciado / Alternativas */}
-      <div className="grid grid-cols-2 gap-1 p-1 bg-muted rounded-full mb-4">
+      <div className="relative grid grid-cols-2 p-1 bg-muted rounded-full mb-4">
+        <div
+          className="absolute top-1 bottom-1 w-[calc(50%-0.25rem)] rounded-full bg-card shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ transform: view === "enunciado" ? "translateX(0.25rem)" : "translateX(calc(100% + 0.25rem))" }}
+        />
         <button
           onClick={() => setView("enunciado")}
           className={cn(
-            "flex items-center justify-center gap-2 py-2 rounded-full text-sm font-medium transition-colors",
-            view === "enunciado" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+            "relative z-10 flex items-center justify-center gap-2 py-2 rounded-full text-sm font-medium transition-colors duration-300",
+            view === "enunciado" ? "text-foreground" : "text-muted-foreground",
           )}
         >
           <FileText className="h-4 w-4" /> Enunciado
@@ -161,57 +177,61 @@ function PraticaPage() {
         <button
           onClick={() => setView("alternativas")}
           className={cn(
-            "flex items-center justify-center gap-2 py-2 rounded-full text-sm font-medium transition-colors",
-            view === "alternativas" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground",
+            "relative z-10 flex items-center justify-center gap-2 py-2 rounded-full text-sm font-medium transition-colors duration-300",
+            view === "alternativas" ? "text-foreground" : "text-muted-foreground",
           )}
         >
           <ListChecks className="h-4 w-4" /> Alternativas
         </button>
       </div>
 
-      <article className="rounded-xl border border-border bg-card p-5 min-h-[40vh]">
-        {view === "enunciado" ? (
-          <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{atual.enunciado}</p>
-        ) : (
-          <ul className="space-y-2">
-            {(["A", "B", "C", "D"] as const).map((letra) => {
-              const texto = (atual.alternativas as Record<string, string>)[letra];
-              const selecionada = estado?.alt === letra;
-              const ehCorreta = respondida && correta === letra;
-              const ehErrada = respondida && selecionada && correta !== letra;
-              return (
-                <li key={letra}>
-                  <button
-                    onClick={() => selecionar(letra)}
-                    disabled={respondida}
-                    className={cn(
-                      "w-full text-left flex gap-3 p-3 rounded-lg border transition-colors",
-                      ehCorreta && "border-green-500 bg-green-500/10",
-                      ehErrada && "border-destructive bg-destructive/10",
-                      !respondida && selecionada && "border-primary bg-primary/10",
-                      !respondida && !selecionada && "border-border hover:bg-accent",
-                      respondida && !ehCorreta && !ehErrada && "border-border opacity-60",
-                    )}
-                  >
-                    <span
+
+      <article className="rounded-xl border border-border bg-card p-5 min-h-[40vh] overflow-hidden">
+        <div key={view} className="animate-fade-in">
+          {view === "enunciado" ? (
+            <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{atual.enunciado}</p>
+          ) : (
+            <ul className="space-y-2">
+              {(["A", "B", "C", "D"] as const).map((letra) => {
+                const texto = (atual.alternativas as Record<string, string>)[letra];
+                const selecionada = estado?.alt === letra;
+                const ehCorreta = respondida && correta === letra;
+                const ehErrada = respondida && selecionada && correta !== letra;
+                return (
+                  <li key={letra}>
+                    <button
+                      onClick={() => selecionar(letra)}
+                      disabled={respondida}
                       className={cn(
-                        "h-7 w-7 shrink-0 rounded-full grid place-items-center text-sm font-semibold",
-                        ehCorreta && "bg-green-500 text-white",
-                        ehErrada && "bg-destructive text-destructive-foreground",
-                        !respondida && selecionada && "bg-primary text-primary-foreground",
-                        !respondida && !selecionada && "bg-muted text-foreground",
-                        respondida && !ehCorreta && !ehErrada && "bg-muted text-foreground",
+                        "w-full text-left flex gap-3 p-3 rounded-lg border transition-colors",
+                        ehCorreta && "border-green-500 bg-green-500/10",
+                        ehErrada && "border-destructive bg-destructive/10",
+                        !respondida && selecionada && "border-primary bg-primary/10",
+                        !respondida && !selecionada && "border-border hover:bg-accent",
+                        respondida && !ehCorreta && !ehErrada && "border-border opacity-60",
                       )}
                     >
-                      {ehCorreta ? <Check className="h-4 w-4" /> : ehErrada ? <X className="h-4 w-4" /> : letra}
-                    </span>
-                    <span className="text-sm leading-relaxed">{texto}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                      <span
+                        className={cn(
+                          "h-7 w-7 shrink-0 rounded-full grid place-items-center text-sm font-semibold",
+                          ehCorreta && "bg-green-500 text-white",
+                          ehErrada && "bg-destructive text-destructive-foreground",
+                          !respondida && selecionada && "bg-primary text-primary-foreground",
+                          !respondida && !selecionada && "bg-muted text-foreground",
+                          respondida && !ehCorreta && !ehErrada && "bg-muted text-foreground",
+                        )}
+                      >
+                        {ehCorreta ? <Check className="h-4 w-4" /> : ehErrada ? <X className="h-4 w-4" /> : letra}
+                      </span>
+                      <span className="text-sm leading-relaxed">{texto}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
 
         {respondida && view === "alternativas" && (
           <div
