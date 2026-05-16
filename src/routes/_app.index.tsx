@@ -114,9 +114,9 @@ function AreaOABPage() {
       </section>
 
       {/* ===== Ferramentas ===== */}
-      <section className="px-4 md:px-10">
+      <section className="px-4 md:px-8">
         <SectionTitle icon={GraduationCap} eyebrow="Plano completo de aprovação" title="Ferramentas de estudo" />
-        <div className="grid grid-cols-2 gap-2.5 md:gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-3">
           {FERRAMENTAS.map(({ label, sub, icon: Icon, to }) => (
             <Link
               key={label}
@@ -138,6 +138,33 @@ function AreaOABPage() {
   );
 }
 
+function NoticiaCardLink({ n, className = "" }: { n: ReturnType<typeof getNoticias>[number]; className?: string }) {
+  return (
+    <Link
+      to="/noticias/$id"
+      params={{ id: n.id }}
+      className={`rounded-2xl overflow-hidden border border-border bg-card hover:border-gold/30 transition-colors ${className}`}
+    >
+      <div className="relative h-28 md:h-36 bg-gradient-to-br from-[oklch(0.32_0.1_240)] via-[oklch(0.22_0.08_240)] to-[oklch(0.16_0.05_240)] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: "radial-gradient(circle at 30% 40%, oklch(0.85 0.12 80 / 0.4), transparent 60%)",
+        }} />
+        <p className="relative font-display font-bold text-2xl md:text-3xl tracking-tight text-primary-foreground/90">NOTÍCIAS</p>
+        <span className="absolute top-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-[oklch(0.45_0.18_240)] text-white text-[9px] font-bold uppercase tracking-wider">
+          {n.categoria === "OAB" || n.categoria === "Exame" ? "OAB Nacional" : n.fonte.split(" ")[0]}
+        </span>
+        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/55 text-white text-[10px] font-medium" suppressHydrationWarning>
+          <Calendar className="h-3 w-3" />
+          {formatNoticiaDate(n.data)}
+        </span>
+      </div>
+      <div className="p-3">
+        <p className="font-medium text-[13px] md:text-sm leading-snug line-clamp-3 text-foreground">{n.titulo}</p>
+      </div>
+    </Link>
+  );
+}
+
 function SectionTitle({
   icon: Icon, eyebrow, title, inline = false,
 }: { icon: typeof Sparkles; eyebrow: string; title: string; inline?: boolean }) {
@@ -147,7 +174,7 @@ function SectionTitle({
         <Icon className="h-4 w-4 md:h-4.5 md:w-4.5 text-gold" strokeWidth={2} />
       </div>
       <div className="min-w-0">
-        <h2 className="font-display font-semibold text-[19px] md:text-[26px] leading-[1.1] tracking-tight truncate">{title}</h2>
+        <h2 className="font-display font-semibold text-[19px] md:text-[24px] leading-[1.1] tracking-tight truncate">{title}</h2>
         <p className="text-[10px] md:text-[11px] text-muted-foreground mt-0.5 truncate">{eyebrow}</p>
       </div>
     </div>
@@ -160,7 +187,7 @@ function FaseCard({
   return (
     <Link
       to={to}
-      className="group relative overflow-hidden rounded-2xl border border-gold/15 aspect-[4/5] md:aspect-[3/4] block shadow-lg shadow-black/40 hover:-translate-y-0.5 transition-transform"
+      className="group relative overflow-hidden rounded-2xl border border-gold/15 aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/9] block shadow-lg shadow-black/40 hover:-translate-y-0.5 transition-transform"
     >
       <img
         src={cover}
