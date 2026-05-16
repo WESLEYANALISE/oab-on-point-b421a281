@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowLeft, ChevronRight, BookOpen, Clock, ArrowDownAZ } from "lucide-react";
 import { BIB_MAP, livrosQueryOptions, areasQueryOptions, countsQueryOptions, type SortMode } from "@/lib/biblioteca";
@@ -31,6 +31,7 @@ function BibliotecaList() {
   const { data: livros, isLoading: livrosLoading } = useQuery({
     ...livrosQueryOptions(slug, area, limit, 0, sort),
     enabled: !showAreas,
+    placeholderData: keepPreviousData,
   });
   const { data: counts } = useQuery(countsQueryOptions());
   const total = counts?.[slug];
