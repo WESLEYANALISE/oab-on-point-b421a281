@@ -8,7 +8,9 @@ import {
   listProvasComStatus,
   iniciarJob,
   executarOcr,
+  analisarProva,
   processarBatch,
+  validarFinal,
   getJobStatus,
   cancelarJob,
   excluirSimulado,
@@ -186,7 +188,9 @@ function ProgressModal({
 }) {
   const statusFn = useServerFn(getJobStatus);
   const ocrFn = useServerFn(executarOcr);
+  const analisarFn = useServerFn(analisarProva);
   const batchFn = useServerFn(processarBatch);
+  const validarFn = useServerFn(validarFinal);
   const cancelFn = useServerFn(cancelarJob);
 
   const { data: job } = useQuery({
@@ -196,7 +200,8 @@ function ProgressModal({
     refetchInterval: (q) => {
       const j = q.state.data;
       if (!j) return 1000;
-      return j.etapa === "ocr" || j.etapa === "gerando" ? 1500 : false;
+      const ativo = j.etapa === "ocr" || j.etapa === "analisando" || j.etapa === "gerando" || j.etapa === "validando";
+      return ativo ? 1500 : false;
     },
   });
 
@@ -210,6 +215,17 @@ function ProgressModal({
       toast.error(`OCR falhou: ${e instanceof Error ? e.message : "erro"}`);
     });
   }, [jobId, authHeaders, job?.etapa, ocrFn]);
+
+  // Dispara análise uma vez
+  const analisarStartedRef = useRef(false);
+  useEffect(() => {
+    if (!authHeaders || analisarStartedRef.current) return;
+    if (job?.etapa !== "analisando") return;
+    analisarStartedRef.current = true;
+    analisarFn({ data: { jobId }, headers: authHeaders }).catch((e) => {
+      toast.error(`Análise falhou: ${e instanceof Error ? e.message : "erro"}`);
+    });
+  }, [jobId, authHeaders, job?.etapa, analisarFn]);
 
   // Loop client-side de batches
   const batchingRef = useRef(false);
@@ -236,6 +252,17 @@ function ProgressModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId, authHeaders, job?.etapa]);
 
+  // Dispara validação final
+  const validarStartedRef = useRef(false);
+  useEffect(() => {
+    if (!authHeaders || validarStartedRef.current) return;
+    if (job?.etapa !== "validando") return;
+    validarStartedRef.current = true;
+    validarFn({ data: { jobId }, headers: authHeaders }).catch((e) => {
+      toast.error(`Validação falhou: ${e instanceof Error ? e.message : "erro"}`);
+    });
+  }, [jobId, authHeaders, job?.etapa, validarFn]);
+
   const cancelar = useMutation({
     mutationFn: () => {
       if (!authHeaders) throw new Error("Sessão expirada");
@@ -251,7 +278,7 @@ function ProgressModal({
 
   const total = job?.total_estimado ?? 0;
   const feitas = job?.questoes_processadas ?? 0;
-  const isOcr = job?.etapa === "ocr" || !job;
+  const indeterminado = !job || job.etapa === "ocr" || job.etapa === "analisando";
   const pct = total > 0 ? Math.min(100, Math.round((feitas / total) * 100)) : 0;
   const inicio = job?.iniciado_em ? new Date(job.iniciado_em).getTime() : Date.now();
   const decorrido = (Date.now() - inicio) / 1000;
@@ -262,12 +289,22 @@ function ProgressModal({
   const etapaLabel = !job
     ? "Conectando…"
     : job.etapa === "ocr"
-      ? "Extraindo PDFs (OCR Mistral)"
-      : job.etapa === "gerando"
-        ? "Organizando questões (Gemini)"
-        : job.etapa === "pronto"
-          ? "Concluído"
-          : "Erro";
+      ? "Lendo PDFs (OCR Mistral)"
+      : job.etapa === "analisando"
+        ? "Analisando prova e gabarito"
+        : job.etapa === "gerando"
+          ? "Extraindo questões (Gemini)"
+          : job.etapa === "validando"
+            ? "Validando e refazendo faltantes"
+            : job.etapa === "pronto"
+              ? "Concluído"
+              : "Erro";
+
+  const headerTitle = indeterminado
+    ? job?.etapa === "analisando"
+      ? "Contando questões…"
+      : "Lendo PDFs…"
+    : `${feitas} / ${total} questões`;
 
   return createPortal(
     <div className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -275,9 +312,7 @@ function ProgressModal({
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="text-xs uppercase tracking-widest text-muted-foreground">{etapaLabel}</p>
-            <h2 className="font-display text-xl mt-1">
-              {isOcr ? "Lendo PDFs…" : `${feitas} / ${total} questões`}
-            </h2>
+            <h2 className="font-display text-xl mt-1">{headerTitle}</h2>
           </div>
           {(concluido || erro) && (
             <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
@@ -287,7 +322,7 @@ function ProgressModal({
         </div>
 
         <div className="h-2 rounded-full bg-muted overflow-hidden mb-2 relative">
-          {isOcr && !erro ? (
+          {indeterminado && !erro ? (
             <div className="absolute inset-y-0 left-0 w-1/3 bg-primary animate-[shimmer_1.5s_ease-in-out_infinite] rounded-full" />
           ) : (
             <div
@@ -298,11 +333,17 @@ function ProgressModal({
         </div>
         <div className="flex justify-between text-xs text-muted-foreground mb-4">
           <span>
-            {isOcr
-              ? "Aguarde, OCR pode levar até 60s…"
-              : `Lote ${job?.batch_atual ?? 0} / ${job?.batches_total ?? 0} · ${pct}%`}
+            {job?.etapa === "ocr"
+              ? "OCR pode levar até 60s…"
+              : job?.etapa === "analisando"
+                ? "Detectando total de questões e gabarito oficial…"
+                : job?.etapa === "validando"
+                  ? `Revalidando… ${feitas}/${total} questões`
+                  : `Lote ${job?.batch_atual ?? 0} / ${job?.batches_total ?? 0} · ${pct}%`}
           </span>
-          {!isOcr && eta !== null && !concluido && !erro && <span>~{eta}s restantes</span>}
+          {!indeterminado && eta !== null && !concluido && !erro && job?.etapa === "gerando" && (
+            <span>~{eta}s restantes</span>
+          )}
         </div>
 
         <div

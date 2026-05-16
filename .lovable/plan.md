@@ -1,47 +1,71 @@
-## Problema
+## Objetivo
+Tornar a geração de simulados confiável: detectar com precisão **quantas questões existem na prova** e **extrair o gabarito oficial** primeiro, depois extrair todas as questões garantindo que cada uma tenha a resposta correta vinda do gabarito.
 
-Hoje o fluxo tem 3 modais em sequência:
+## Problema atual
+- A contagem de questões usa um regex fraco que falha quando o OCR formata diferente, e cai num fallback de `80`.
+- O Gemini extrai questões + resposta no mesmo passo. Se ele "achar" uma resposta sem confirmar no gabarito, salva errado.
+- Se um lote retornar menos que o esperado, hoje há retry — mas se o `total_estimado` estiver errado, nunca alcança o real.
 
-1. `PreparandoModal` — só spinner enquanto o OCR Mistral roda (10–60s, **sem logs**)
-2. `PreviewModal` — confirma contagem
-3. `ProgressModal` — finalmente mostra logs ao vivo
+## Nova estrutura do fluxo
 
-Resultado: você clica em "Gerar", a tela fica embaçada com um spinner mudo, e só depois de muito tempo aparece algo. Parece travada.
+```
+iniciarJob (instantâneo)
+   └─> executarOcr (Mistral PDF prova + gabarito)
+         └─> analisarProva (NOVO — Gemini)
+               ├─ conta números reais de questões na prova
+               └─ extrai mapa {numero -> letra} do gabarito oficial
+         └─> processarBatch (loop, com gabarito já em mãos)
+               └─ extrai enunciado + alternativas
+               └─ injeta resposta_correta vinda do mapa do gabarito
+         └─> validarFinal (NOVO)
+               └─ checa se todas as N questões foram salvas; se faltar, refaz só as faltantes
+```
 
-## Plano
+### 1. Etapa nova: `analisarProva`
+- Roda **uma vez**, depois do OCR, antes de qualquer batch.
+- Chama o Gemini com prompt focado **só em duas coisas**:
+  1. `total_questoes`: número total real (lendo o texto OCR completo).
+  2. `gabarito`: array `[{ numero, letra }]` extraído do texto do gabarito.
+- Salva em `simulado_jobs`:
+  - `total_estimado` ← `total_questoes` (passa a ser real, não estimativa).
+  - novo campo `gabarito_oficial jsonb` ← `{ "1": "A", "2": "C", ... }`.
+- Loga: `"Prova tem X questões. Gabarito com Y respostas extraído."`
+- Se `X !== Y`, loga aviso mas segue (gabarito ainda pode ter falhas pontuais).
 
-Unificar tudo em **um único `ProgressModal` com logs ao vivo desde o clique em "Gerar"**, eliminando o modal de prévia.
+### 2. Mudança em `processarBatch`
+- Recebe o mapa do gabarito do job e injeta a `resposta_correta` correta **após** o Gemini extrair enunciado/alternativas.
+- Prompt do Gemini fica mais simples: pede só enunciado, alternativas e matéria — **não pede mais resposta**.
+- Se uma questão extraída não tem entrada no gabarito, descarta e marca para retry.
+- Retry continua existindo (3 tentativas pedindo números específicos).
 
-### 1. Backend (`src/lib/simulados-admin.functions.ts`)
+### 3. Etapa nova: `validarFinal`
+- Roda automaticamente após o último batch.
+- Conta `simulado_questoes` no banco vs `total_estimado`.
+- Se faltarem, dispara um lote extra direcionado aos números ausentes.
+- Só marca `status = "pronto"` quando `count === total_estimado`.
+- Se após 3 tentativas ainda faltar, marca pronto com aviso no log: `"Pronto com X de Y questões — Z não puderam ser extraídas: [lista]"`.
 
-- Criar **`iniciarJob(provaNumero)`** — retorna `{ jobId }` imediatamente, sem fazer OCR. Apenas:
-  - cria/atualiza linha em `simulados` com `status='gerando'`, `etapa='ocr'`, `logs=[]`
-  - registra `provaNumero` no job
-- Criar **`executarOcr(jobId)`** — server fn separada chamada pelo cliente:
-  - baixa PDFs, chama Mistral OCR (prova + gabarito)
-  - **escreve logs incrementais** em `simulados.logs` a cada passo ("Baixando prova...", "OCR prova: 8420 chars", "OCR gabarito: 1240 chars", "Detectadas 80 questões em 6 matérias")
-  - ao terminar, grava `total_estimado`, `batches_total`, `etapa='gerando'`
-- Manter `processarBatch` e `getJobStatus` como estão (já fazem logs por lote via Gemini).
-- Remover `prepararSimulado` e `iniciarGeracao` (não são mais necessários — viram `iniciarJob` + `executarOcr`).
+### 4. Mudança no UI (`ProgressModal`)
+- Adicionar uma fase visual antes dos lotes: **"Analisando prova e gabarito…"** (shimmer).
+- Mostrar no header: `"68 / 80 questões — 12 faltando, refazendo…"` quando estiver em revalidação.
 
-### 2. Frontend (`src/routes/_app.admin.simulados.tsx`)
+## Mudança de banco
 
-- **Remover** `PreparandoModal` e `PreviewModal`.
-- Botão "Gerar" chama `iniciarJob` → recebe `jobId` → seta `activeJobId` na hora → `ProgressModal` abre imediatamente.
-- Dentro do `ProgressModal`:
-  - já no `useEffect` inicial, dispara `executarOcr(jobId)` uma vez (com guard `runningRef`)
-  - polling de `getJobStatus` a cada 1.5s mostra os logs sendo escritos em tempo real
-  - quando `etapa === 'gerando'`, o loop existente de `processarBatch` continua naturalmente
-  - header do modal mostra etapa atual: "OCR" / "Gerando questões" / "Concluído"
-- Barra de progresso fica indeterminada (animada) durante OCR; vira `feitas/total` quando começam os lotes.
-
-### 3. UX
-
-- Modal aparece em <500ms após clicar "Gerar".
-- Primeiro log visível em ~1s ("Baixando PDF da prova...").
-- Sem confirmação intermediária — se quiser cancelar, botão "Cancelar geração" continua disponível.
+Adicionar coluna em `simulado_jobs`:
+- `gabarito_oficial jsonb DEFAULT '{}'::jsonb` — mapa `{ "1": "A", "2": "C", ... }`.
 
 ## Arquivos afetados
 
-- `src/lib/simulados-admin.functions.ts` (refatorar fluxo)
-- `src/routes/_app.admin.simulados.tsx` (remover 2 modais, simplificar)
+- `supabase/migrations/...` — nova coluna `gabarito_oficial`.
+- `src/lib/simulados-admin.functions.ts`:
+  - nova server-fn `analisarProva`.
+  - `executarOcr` para de chutar total; só faz OCR e dispara `analisarProva`.
+  - `processarBatch` usa o gabarito do job em vez de pedir resposta ao Gemini.
+  - nova server-fn `validarFinal`.
+- `src/routes/_app.admin.simulados.tsx` (`ProgressModal`):
+  - orquestra `iniciarJob → executarOcr → analisarProva → loop processarBatch → validarFinal`.
+  - mostra fase de análise e estado de revalidação.
+
+## Pontos a confirmar
+1. Se faltar 1–2 questões mesmo após retries, **marcar como pronto com aviso** ou **bloquear o simulado como `erro`**?
+2. Quer botão "Tentar de novo as faltantes" no card admin do simulado quando ficar incompleto?

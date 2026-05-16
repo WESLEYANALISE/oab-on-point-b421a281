@@ -88,7 +88,6 @@ const QuestaoSchema = z.object({
     C: z.string().min(1),
     D: z.string().min(1),
   }),
-  resposta_correta: z.enum(["A", "B", "C", "D"]),
 });
 
 // ============ Lista de provas com status ============
@@ -161,7 +160,7 @@ export const iniciarJob = createServerFn({ method: "POST" })
     return { jobId: ins.data.id, titulo: prova.data.titulo };
   });
 
-// ============ ETAPA 2: Executar OCR + preparar simulado ============
+// ============ ETAPA 2: OCR (só lê PDFs) ============
 export const executarOcr = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(d))
@@ -196,23 +195,106 @@ export const executarOcr = createServerFn({ method: "POST" })
       const gabTxt = await mistralOcr(apiKey, prova.data.gabarito_1fase_url!);
       await appendLog(data.jobId, "ok", `Gabarito OCR: ${Math.round(gabTxt.length / 1000)}k caracteres extraídos`);
 
-      // Estimativa por regex
-      const matches = provaTxt.match(/Quest(ã|a)o\s+\d+|^\s*\d{1,3}[\.\)]\s/gim) ?? [];
-      const numeros = new Set<number>();
-      for (const m of matches) {
-        const n = parseInt(m.replace(/\D+/g, ""), 10);
-        if (n >= 1 && n <= 100) numeros.add(n);
+      await supabaseAdmin
+        .from("simulado_jobs")
+        .update({
+          ocr_prova: provaTxt,
+          ocr_gabarito: gabTxt,
+          etapa: "analisando",
+        })
+        .eq("id", data.jobId);
+
+      return { ok: true };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await appendLog(data.jobId, "erro", msg);
+      await supabaseAdmin
+        .from("simulado_jobs")
+        .update({ etapa: "erro", erro_msg: msg.slice(0, 500) })
+        .eq("id", data.jobId);
+      throw new Error(msg);
+    }
+  });
+
+// ============ ETAPA 2b: Analisar prova (conta total + extrai gabarito) ============
+export const analisarProva = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const job = await supabaseAdmin
+      .from("simulado_jobs")
+      .select("*")
+      .eq("id", data.jobId)
+      .single();
+    if (job.error || !job.data) throw new Error("Job não encontrado");
+    if (job.data.etapa === "gerando" || job.data.etapa === "validando" || job.data.etapa === "pronto") {
+      return { ok: true, ja: true };
+    }
+    if (job.data.etapa !== "analisando") throw new Error(`Job em etapa ${job.data.etapa}`);
+
+    const prova = await supabaseAdmin
+      .from("provas_oab")
+      .select("numero, titulo, ano")
+      .eq("numero", job.data.prova_numero)
+      .single();
+    if (prova.error || !prova.data) throw new Error("Prova não encontrada");
+
+    try {
+      await appendLog(data.jobId, "info", "Analisando prova: contando questões e extraindo gabarito oficial…");
+
+      const system =
+        "Você analisa Exames da OAB a partir de OCR. Retorne SEMPRE JSON válido. " +
+        "NUNCA invente respostas — extraia o gabarito EXATAMENTE como aparece no documento oficial.";
+
+      const userPrompt = `Analise o material abaixo e retorne EXATAMENTE este JSON:
+{
+  "total_questoes": <inteiro com o número total de questões objetivas da prova>,
+  "gabarito": [ { "numero": <int>, "letra": "A"|"B"|"C"|"D" }, ... ]
+}
+
+Regras:
+- Conte o NÚMERO REAL de questões na prova (provavelmente 80, mas pode variar).
+- O gabarito deve ter UMA entrada por questão, com a letra oficial.
+- Se uma questão foi anulada no gabarito, escolha a primeira letra listada ou "A" como fallback.
+- NÃO inclua nada além do JSON.
+
+===== PROVA =====
+${(job.data.ocr_prova ?? "").slice(0, 90000)}
+
+===== GABARITO =====
+${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
+
+      const raw = await geminiExtractJson(system, userPrompt);
+      let parsed: { total_questoes?: number; gabarito?: Array<{ numero: number; letra: string }> } = {};
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        throw new Error("Gemini retornou JSON inválido na análise");
       }
-      const totalEstimado = numeros.size > 0 ? numeros.size : 80;
 
-      const materiasPossiveis = [
-        "Ética", "Constitucional", "Civil", "Processo Civil", "Penal", "Processo Penal",
-        "Trabalho", "Tributário", "Administrativo", "Empresarial", "Filosofia",
-        "Direitos Humanos", "Internacional", "Ambiental", "Eleitoral", "ECA",
-      ];
-      const materiasDetect = materiasPossiveis.filter((m) => new RegExp(m, "i").test(provaTxt));
+      const totalQ = Number(parsed.total_questoes);
+      if (!totalQ || totalQ < 10 || totalQ > 200) {
+        throw new Error(`Total de questões inválido detectado: ${parsed.total_questoes}`);
+      }
 
-      await appendLog(data.jobId, "ok", `Detectadas ~${totalEstimado} questões em ${materiasDetect.length} matérias`);
+      const gabaritoMap: Record<string, string> = {};
+      for (const g of parsed.gabarito ?? []) {
+        const n = Number(g.numero);
+        const letra = String(g.letra ?? "").toUpperCase().trim();
+        if (n >= 1 && n <= totalQ && ["A", "B", "C", "D"].includes(letra)) {
+          gabaritoMap[String(n)] = letra;
+        }
+      }
+
+      const gabCount = Object.keys(gabaritoMap).length;
+      await appendLog(
+        data.jobId,
+        gabCount === totalQ ? "ok" : "info",
+        `Prova tem ${totalQ} questões. Gabarito com ${gabCount} respostas extraídas.${gabCount !== totalQ ? " (algumas faltam)" : ""}`,
+      );
 
       // Cria simulado (remove anterior se houver)
       await supabaseAdmin.from("simulados").delete().eq("prova_numero", prova.data.numero);
@@ -229,14 +311,12 @@ export const executarOcr = createServerFn({ method: "POST" })
         .single();
       if (sim.error) throw new Error(sim.error.message);
 
-      const batches = Math.max(1, Math.ceil(totalEstimado / BATCH_SIZE));
+      const batches = Math.max(1, Math.ceil(totalQ / BATCH_SIZE));
       await supabaseAdmin
         .from("simulado_jobs")
         .update({
-          ocr_prova: provaTxt,
-          ocr_gabarito: gabTxt,
-          total_estimado: totalEstimado,
-          materias_detectadas: materiasDetect,
+          total_estimado: totalQ,
+          gabarito_oficial: gabaritoMap,
           simulado_id: sim.data.id,
           batches_total: batches,
           batch_atual: 0,
@@ -244,12 +324,12 @@ export const executarOcr = createServerFn({ method: "POST" })
         })
         .eq("id", data.jobId);
 
-      await appendLog(data.jobId, "info", `Iniciando geração em ${batches} lotes de até ${BATCH_SIZE} questões via Gemini.`);
+      await appendLog(data.jobId, "info", `Iniciando extração em ${batches} lotes de até ${BATCH_SIZE} questões.`);
 
-      return { ok: true, simuladoId: sim.data.id, batchesTotal: batches, totalEstimado };
+      return { ok: true, total: totalQ, batches };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      await appendLog(data.jobId, "erro", msg);
+      await appendLog(data.jobId, "erro", `Falha na análise: ${msg}`);
       await supabaseAdmin
         .from("simulado_jobs")
         .update({ etapa: "erro", erro_msg: msg.slice(0, 500) })
@@ -257,6 +337,79 @@ export const executarOcr = createServerFn({ method: "POST" })
       throw new Error(msg);
     }
   });
+
+// ============ Helper: extrai questões dentro de um range ============
+async function extrairQuestoes(
+  jobId: string,
+  ocrProva: string,
+  numeros: number[],
+  gabarito: Record<string, string>,
+): Promise<z.infer<typeof QuestaoSchema>[]> {
+  if (numeros.length === 0) return [];
+  const inicio = Math.min(...numeros);
+  const fim = Math.max(...numeros);
+  const especifico = numeros.length < fim - inicio + 1;
+
+  const system =
+    "Você extrai questões objetivas do Exame da OAB a partir de markdown OCR. " +
+    "Retorne SEMPRE JSON válido. NÃO inclua a resposta correta — apenas enunciado, matérias e alternativas.";
+
+  const alvo = especifico
+    ? `as questões de números ${numeros.join(", ")}`
+    : `APENAS as questões de número ${inicio} a ${fim} (inclusivos)`;
+
+  const user = `Extraia ${alvo} do Exame abaixo.
+Cada questão deve ter:
+- numero (inteiro)
+- enunciado (texto sem as alternativas)
+- materia (uma de: "Ética e Estatuto da OAB", "Direito Constitucional", "Direito Civil", "Processo Civil", "Direito Penal", "Processo Penal", "Direito do Trabalho", "Processo do Trabalho", "Direito Tributário", "Direito Administrativo", "Direito Empresarial", "Filosofia do Direito", "Direitos Humanos", "Direito Internacional", "Direito Ambiental", "Direito Eleitoral", "ECA")
+- alternativas: { A, B, C, D } (cada uma com o texto completo da alternativa)
+
+Retorne JSON: { "questoes": [ ... ] }
+
+===== PROVA =====
+${ocrProva.slice(0, 90000)}`;
+
+  const validasMap = new Map<number, z.infer<typeof QuestaoSchema>>();
+  const alvoSet = new Set(numeros);
+
+  const runOnce = async (prompt: string) => {
+    const raw = await geminiExtractJson(system, prompt);
+    let parsed: { questoes?: unknown[] } = {};
+    try { parsed = JSON.parse(raw); } catch { parsed = {}; }
+    for (const q of parsed.questoes ?? []) {
+      const r = QuestaoSchema.safeParse(q);
+      if (r.success && alvoSet.has(r.data.numero) && gabarito[String(r.data.numero)]) {
+        validasMap.set(r.data.numero, r.data);
+      }
+    }
+  };
+
+  await runOnce(user);
+
+  // Retry para faltantes
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    const faltantes = numeros.filter((n) => !validasMap.has(n));
+    if (faltantes.length === 0) break;
+    await appendLog(
+      jobId,
+      "info",
+      `Faltam ${faltantes.length} questões (${faltantes.slice(0, 10).join(", ")}${faltantes.length > 10 ? "…" : ""}). Retentativa ${tentativa}/3…`,
+    );
+    const retryPrompt = `Extraia ESPECIFICAMENTE as questões de números ${faltantes.join(", ")} do Exame abaixo. Use o schema e regras anteriores. Retorne JSON: { "questoes": [ ... ] }
+
+===== PROVA =====
+${ocrProva.slice(0, 90000)}`;
+    try {
+      await runOnce(retryPrompt);
+    } catch (err) {
+      const m = err instanceof Error ? err.message : String(err);
+      await appendLog(jobId, "info", `Retentativa ${tentativa} falhou: ${m}`);
+    }
+  }
+
+  return Array.from(validasMap.values()).sort((a, b) => a.numero - b.numero);
+}
 
 // ============ ETAPA 3: Processar um batch ============
 export const processarBatch = createServerFn({ method: "POST" })
@@ -281,117 +434,58 @@ export const processarBatch = createServerFn({ method: "POST" })
 
     const inicio = data.batchIndex * BATCH_SIZE + 1;
     const fim = Math.min((data.batchIndex + 1) * BATCH_SIZE, job.data.total_estimado);
+    const numerosAlvo: number[] = [];
+    for (let n = inicio; n <= fim; n++) numerosAlvo.push(n);
+
+    const gabarito = (job.data.gabarito_oficial ?? {}) as Record<string, string>;
+    const simuladoId = job.data.simulado_id as string;
 
     try {
       await appendLog(data.jobId, "info", `Lote ${data.batchIndex + 1}/${job.data.batches_total}: questões ${inicio}–${fim}`);
 
-      const system = `Você extrai questões objetivas do Exame da OAB a partir de markdown OCR. Retorne SEMPRE JSON válido seguindo o schema. Não invente respostas — use SEMPRE o gabarito oficial.`;
-      const user = `Extraia APENAS as questões de número ${inicio} a ${fim} (inclusivos) do Exame abaixo.
-Cada questão deve ter:
-- numero (inteiro entre ${inicio} e ${fim})
-- enunciado (texto sem as alternativas)
-- materia (uma de: "Ética e Estatuto da OAB", "Direito Constitucional", "Direito Civil", "Processo Civil", "Direito Penal", "Processo Penal", "Direito do Trabalho", "Processo do Trabalho", "Direito Tributário", "Direito Administrativo", "Direito Empresarial", "Filosofia do Direito", "Direitos Humanos", "Direito Internacional", "Direito Ambiental", "Direito Eleitoral", "ECA")
-- alternativas: { A, B, C, D }
-- resposta_correta: "A" | "B" | "C" | "D" (do gabarito oficial)
-
-Retorne JSON: { "questoes": [ ... ] }
-
-===== PROVA =====
-${(job.data.ocr_prova ?? "").slice(0, 90000)}
-
-===== GABARITO =====
-${(job.data.ocr_gabarito ?? "").slice(0, 20000)}`;
-
-      await appendLog(data.jobId, "info", `Organizando questões via Gemini Flash Lite (lote ${data.batchIndex + 1})…`);
-      const validasMap = new Map<number, z.infer<typeof QuestaoSchema>>();
-
-      const runExtract = async (prompt: string) => {
-        const raw = await geminiExtractJson(system, prompt);
-        let parsed: { questoes?: unknown[] } = {};
-        try { parsed = JSON.parse(raw) as { questoes?: unknown[] }; } catch { parsed = {}; }
-        for (const q of parsed.questoes ?? []) {
-          const r = QuestaoSchema.safeParse(q);
-          if (r.success && r.data.numero >= inicio && r.data.numero <= fim) {
-            validasMap.set(r.data.numero, r.data);
-          }
-        }
-      };
-
-      await runExtract(user);
-
-      // Retry para números faltantes (até 3 tentativas)
-      for (let tentativa = 1; tentativa <= 3; tentativa++) {
-        const faltantes: number[] = [];
-        for (let n = inicio; n <= fim; n++) if (!validasMap.has(n)) faltantes.push(n);
-        if (faltantes.length === 0) break;
-        await appendLog(
-          data.jobId,
-          "info",
-          `Faltam ${faltantes.length} questões (${faltantes.join(", ")}). Retentativa ${tentativa}/3…`,
-        );
-        const retryPrompt = `Extraia ESPECIFICAMENTE as questões de números ${faltantes.join(", ")} do Exame abaixo. Use o mesmo schema e regras anteriores. Retorne JSON: { "questoes": [ ... ] }
-
-===== PROVA =====
-${(job.data.ocr_prova ?? "").slice(0, 90000)}
-
-===== GABARITO =====
-${(job.data.ocr_gabarito ?? "").slice(0, 20000)}`;
-        try {
-          await runExtract(retryPrompt);
-        } catch (err) {
-          const m = err instanceof Error ? err.message : String(err);
-          await appendLog(data.jobId, "info", `Retentativa ${tentativa} falhou: ${m}`);
-        }
-      }
-
-      const validas = Array.from(validasMap.values()).sort((a, b) => a.numero - b.numero);
+      const validas = await extrairQuestoes(data.jobId, job.data.ocr_prova ?? "", numerosAlvo, gabarito);
 
       if (validas.length > 0) {
-        // Remove duplicatas antes de inserir
         await supabaseAdmin
           .from("simulado_questoes")
           .delete()
-          .eq("simulado_id", job.data.simulado_id)
+          .eq("simulado_id", simuladoId)
           .in("numero", validas.map((q) => q.numero));
 
-        const simuladoId = job.data.simulado_id as string;
         const rows = validas.map((q) => ({
           simulado_id: simuladoId,
           numero: q.numero,
           enunciado: q.enunciado,
           materia: q.materia,
           alternativas: q.alternativas,
-          resposta_correta: q.resposta_correta,
+          resposta_correta: gabarito[String(q.numero)],
         }));
         const insQ = await supabaseAdmin.from("simulado_questoes").insert(rows);
         if (insQ.error) throw new Error(insQ.error.message);
       }
 
-      const novoTotal = (job.data.questoes_processadas ?? 0) + validas.length;
+      // Recount real no banco (em vez de incrementar)
+      const cnt = await supabaseAdmin
+        .from("simulado_questoes")
+        .select("numero", { count: "exact", head: true })
+        .eq("simulado_id", simuladoId);
+      const novoTotal = cnt.count ?? 0;
+
       const proximoIndex = data.batchIndex + 1;
-      const concluido = proximoIndex >= job.data.batches_total;
+      const ultimoLote = proximoIndex >= job.data.batches_total;
 
       await supabaseAdmin
         .from("simulado_jobs")
         .update({
           batch_atual: proximoIndex,
           questoes_processadas: novoTotal,
-          etapa: concluido ? "pronto" : "gerando",
-          concluido_em: concluido ? new Date().toISOString() : null,
+          etapa: ultimoLote ? "validando" : "gerando",
         })
         .eq("id", data.jobId);
 
       await appendLog(data.jobId, "ok", `Lote ${data.batchIndex + 1} concluído (+${validas.length} questões)`);
 
-      if (concluido) {
-        await supabaseAdmin
-          .from("simulados")
-          .update({ status: "pronto", total_questoes: novoTotal })
-          .eq("id", job.data.simulado_id);
-        await appendLog(data.jobId, "ok", `Simulado pronto com ${novoTotal} questões.`);
-      }
-
-      return { proximo: concluido ? null : proximoIndex, processadas: novoTotal };
+      return { proximo: ultimoLote ? null : proximoIndex, processadas: novoTotal };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       await appendLog(data.jobId, "erro", `Falha no lote ${data.batchIndex + 1}: ${msg}`);
@@ -402,7 +496,110 @@ ${(job.data.ocr_gabarito ?? "").slice(0, 20000)}`;
       await supabaseAdmin
         .from("simulados")
         .update({ status: "erro", erro_msg: msg.slice(0, 500) })
-        .eq("id", job.data.simulado_id);
+        .eq("id", simuladoId);
+      throw new Error(msg);
+    }
+  });
+
+// ============ ETAPA 4: Validar / refazer faltantes ============
+export const validarFinal = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const job = await supabaseAdmin
+      .from("simulado_jobs")
+      .select("*")
+      .eq("id", data.jobId)
+      .single();
+    if (job.error || !job.data) throw new Error("Job não encontrado");
+    if (!job.data.simulado_id) throw new Error("Simulado não vinculado");
+    if (job.data.etapa === "pronto") return { ok: true, ja: true };
+
+    const simuladoId = job.data.simulado_id as string;
+    const total = job.data.total_estimado as number;
+    const gabarito = (job.data.gabarito_oficial ?? {}) as Record<string, string>;
+
+    try {
+      // Tenta refazer faltantes até 3 vezes
+      for (let tentativa = 1; tentativa <= 3; tentativa++) {
+        const existentes = await supabaseAdmin
+          .from("simulado_questoes")
+          .select("numero")
+          .eq("simulado_id", simuladoId);
+        if (existentes.error) throw new Error(existentes.error.message);
+        const presentes = new Set((existentes.data ?? []).map((r) => r.numero));
+        const faltantes: number[] = [];
+        for (let n = 1; n <= total; n++) {
+          if (!presentes.has(n) && gabarito[String(n)]) faltantes.push(n);
+        }
+
+        if (faltantes.length === 0) break;
+
+        await appendLog(
+          data.jobId,
+          "info",
+          `Validação ${tentativa}/3: ${faltantes.length} questões ainda faltam (${faltantes.slice(0, 15).join(", ")}${faltantes.length > 15 ? "…" : ""}). Refazendo…`,
+        );
+
+        const validas = await extrairQuestoes(data.jobId, job.data.ocr_prova ?? "", faltantes, gabarito);
+        if (validas.length > 0) {
+          const rows = validas.map((q) => ({
+            simulado_id: simuladoId,
+            numero: q.numero,
+            enunciado: q.enunciado,
+            materia: q.materia,
+            alternativas: q.alternativas,
+            resposta_correta: gabarito[String(q.numero)],
+          }));
+          const ins = await supabaseAdmin.from("simulado_questoes").insert(rows);
+          if (ins.error) throw new Error(ins.error.message);
+        } else {
+          await appendLog(data.jobId, "info", `Validação ${tentativa}: Gemini não retornou questões válidas.`);
+        }
+      }
+
+      // Total final
+      const cnt = await supabaseAdmin
+        .from("simulado_questoes")
+        .select("numero", { count: "exact", head: true })
+        .eq("simulado_id", simuladoId);
+      const final = cnt.count ?? 0;
+
+      await supabaseAdmin
+        .from("simulado_jobs")
+        .update({
+          questoes_processadas: final,
+          etapa: "pronto",
+          concluido_em: new Date().toISOString(),
+        })
+        .eq("id", data.jobId);
+
+      await supabaseAdmin
+        .from("simulados")
+        .update({ status: "pronto", total_questoes: final })
+        .eq("id", simuladoId);
+
+      if (final === total) {
+        await appendLog(data.jobId, "ok", `Simulado pronto com ${final}/${total} questões.`);
+      } else {
+        await appendLog(
+          data.jobId,
+          "info",
+          `Simulado pronto com ${final}/${total} questões. ${total - final} não puderam ser extraídas após múltiplas tentativas.`,
+        );
+      }
+
+      return { ok: true, final, total };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await appendLog(data.jobId, "erro", `Falha na validação final: ${msg}`);
+      await supabaseAdmin
+        .from("simulado_jobs")
+        .update({ etapa: "erro", erro_msg: msg.slice(0, 500) })
+        .eq("id", data.jobId);
       throw new Error(msg);
     }
   });
@@ -417,7 +614,7 @@ export const getJobStatus = createServerFn({ method: "GET" })
 
     const job = await supabaseAdmin
       .from("simulado_jobs")
-      .select("id, etapa, batch_atual, batches_total, questoes_processadas, total_estimado, logs, iniciado_em, concluido_em, erro_msg, materias_detectadas")
+      .select("id, etapa, batch_atual, batches_total, questoes_processadas, total_estimado, logs, iniciado_em, concluido_em, erro_msg, materias_detectadas, gabarito_oficial")
       .eq("id", data.jobId)
       .single();
     if (job.error || !job.data) throw new Error("Job não encontrado");
