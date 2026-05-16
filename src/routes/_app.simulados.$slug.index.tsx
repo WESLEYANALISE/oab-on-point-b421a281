@@ -91,6 +91,10 @@ function OverviewPage() {
     });
   }
 
+  if (overview.isError) {
+    return <div className="p-6 text-center text-muted-foreground">Não foi possível abrir este simulado agora.</div>;
+  }
+
   if (!overview.data) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
@@ -491,11 +495,11 @@ function Desempenho({
           return (
             <li key={t.id}>
               {t.status === "finalizado" ? (
-                <Link to="/simulados/$id/resultado/$tentativaId" params={{ id: simuladoId, tentativaId: t.id }}>
+                <Link to="/simulados/$slug/resultado/$tentativaId" params={{ slug: simuladoId, tentativaId: t.id }}>
                   {content}
                 </Link>
               ) : t.status === "em-andamento" ? (
-                <Link to="/simulados/$id/praticar" params={{ id: simuladoId }}>
+                <Link to="/simulados/$slug/praticar" params={{ slug: simuladoId }}>
                   {content}
                 </Link>
               ) : (
