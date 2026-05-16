@@ -505,9 +505,11 @@ export type Database = {
           id: string
           justificativa: string | null
           materia: string | null
+          nota_oficial: string | null
           numero: number
-          resposta_correta: string
+          resposta_correta: string | null
           simulado_id: string
+          status: string
         }
         Insert: {
           alternativas: Json
@@ -516,9 +518,11 @@ export type Database = {
           id?: string
           justificativa?: string | null
           materia?: string | null
+          nota_oficial?: string | null
           numero: number
-          resposta_correta: string
+          resposta_correta?: string | null
           simulado_id: string
+          status?: string
         }
         Update: {
           alternativas?: Json
@@ -527,9 +531,11 @@ export type Database = {
           id?: string
           justificativa?: string | null
           materia?: string | null
+          nota_oficial?: string | null
           numero?: number
-          resposta_correta?: string
+          resposta_correta?: string | null
           simulado_id?: string
+          status?: string
         }
         Relationships: [
           {
