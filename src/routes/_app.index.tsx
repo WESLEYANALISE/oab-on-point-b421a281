@@ -1,255 +1,270 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { HomeHero } from "@/components/home/HomeHero";
-import { SectionHeader } from "@/components/shared/SectionHeader";
-import { MateriaCard } from "@/components/shared/MateriaCard";
-import { NoticiaCard } from "@/components/shared/NoticiaCard";
-import { getMaterias } from "@/data/materias";
-import { getNoticias } from "@/data/noticias";
 import {
-  Sparkles, ArrowRight, BookOpen, FileText, Library, Headphones, Bot,
-  Scale, Monitor, FileCheck2, Brain, ClipboardList, ChevronRight, Flame,
+  Gavel, Search, Calendar, Sparkles, ArrowRight,
+  Library, Trophy, HelpCircle, Video, Newspaper,
+  Target, FileText, BookOpen, CalendarDays, ClipboardList, Layers, ScrollText,
+  GraduationCap, Zap, Compass,
 } from "lucide-react";
+import { CountdownExame } from "@/components/shared/CountdownExame";
+import { getNoticias } from "@/data/noticias";
+import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.jpg";
+import segundaFaseCover from "@/assets/oab-segunda-fase-cover.jpg";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
     meta: [
-      { title: "OAB na Risca — Estude para o Exame de Ordem na precisão" },
-      { name: "description", content: "Aulas interativas, resumos, flashcards, banco de questões da FGV e simulados completos para a 1ª fase do Exame da OAB." },
-      { property: "og:title", content: "OAB na Risca" },
-      { property: "og:description", content: "A plataforma completa de preparação para a OAB: aulas, resumos, flashcards, questões, simulados e assistente IA." },
+      { title: "Área OAB — Exame da Ordem | OAB na Risca" },
+      { name: "description", content: "Hub central de preparação para o Exame de Ordem: contagem regressiva, 1ª e 2ª fase, atalhos, notícias e ferramentas de estudo." },
+      { property: "og:title", content: "Área OAB — OAB na Risca" },
+      { property: "og:description", content: "Tudo para sua aprovação na OAB em um só lugar." },
     ],
   }),
-  component: HomePage,
+  component: AreaOABPage,
 });
 
-// ---------- Estudos Aprofundados (2x2) ----------
-type Estudo = {
-  key: string;
-  to: string;
-  label: string;
-  descricao: string;
-  cta: string;
-  icon: typeof BookOpen;
-  cor: string; // background do ícone
-  border: string; // borda do card
-};
-
-const ESTUDOS: Estudo[] = [
-  { key: "resumos",    to: "/resumos",    label: "Resumos",    descricao: "Resumos jurídicos completos", cta: "Acessar",     icon: FileText,   cor: "bg-emerald-500/15 text-emerald-400", border: "border-emerald-500/20" },
-  { key: "biblioteca", to: "/biblioteca", label: "Biblioteca", descricao: "Acervo completo de livros",   cta: "Acessar",     icon: Library,    cor: "bg-gold/15 text-gold",               border: "border-gold/20" },
-  { key: "audioaulas", to: "/audioaulas", label: "Audioaulas", descricao: "Ouça e aprenda",              cta: "Ouvir agora", icon: Headphones, cor: "bg-violet-500/15 text-violet-300",   border: "border-violet-500/20" },
-  { key: "horus",      to: "/assistente", label: "Hórus",      descricao: "Assistente jurídico IA",      cta: "Conversar",   icon: Bot,        cor: "bg-primary/15 text-primary",         border: "border-primary/20" },
-];
-
-function EstudoCard({ item }: { item: Estudo }) {
-  const Icon = item.icon;
-  return (
-    <Link
-      to={item.to}
-      className={`group relative overflow-hidden rounded-3xl bg-card border ${item.border} p-4 min-h-[160px] flex flex-col justify-between hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all`}
-    >
-      <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gold/[0.04] blur-2xl pointer-events-none" />
-      <div className={`h-11 w-11 rounded-2xl grid place-items-center ${item.cor}`}>
-        <Icon className="h-5 w-5" strokeWidth={2} />
-      </div>
-      <div>
-        <p className="font-display font-semibold text-xl leading-tight tracking-tight">{item.label}</p>
-        <p className="text-[11px] text-muted-foreground/90 mt-1 line-clamp-2 leading-snug">{item.descricao}</p>
-        <span className="inline-flex items-center gap-1 mt-2.5 text-xs font-semibold text-gold group-hover:gap-1.5 transition-all">
-          {item.cta} <ArrowRight className="h-3 w-3" />
-        </span>
-      </div>
-    </Link>
-  );
+const EXAM_DATE = new Date("2026-09-23T08:00:00-03:00");
+function formatExamDate(d: Date) {
+  const s = d.toLocaleDateString("pt-BR", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric",
+  });
+  // Capitalize first letter of each word for the "Domingo, 21 De Junho De 2026" look
+  return s
+    .replace(/(^|\s|,)([a-záéíóúãõâêô])/g, (_, b, c) => b + c.toUpperCase());
 }
 
-// ---------- Ferramentas (carrossel com capa) ----------
-type Ferramenta = {
-  key: string; to: string; label: string; sub: string; icon: typeof Scale; cover: string;
-};
-
-const FERRAMENTAS: Ferramenta[] = [
-  { key: "vademecum", to: "/vade-mecum", label: "Vade Mecum",   sub: "Legislação completa", icon: Scale,      cover: "from-amber-700/40 via-amber-900/30 to-background" },
-  { key: "horus2",    to: "/assistente",  label: "Hórus",        sub: "Assistente jurídico", icon: Bot,        cover: "from-primary/40 via-primary/20 to-background" },
-  { key: "desktop",   to: "/desktop",     label: "Desktop",      sub: "Acesso pelo computador", icon: Monitor, cover: "from-rose-600/30 via-rose-900/20 to-background" },
-  { key: "simulado",  to: "/simulados",   label: "Simulados",    sub: "Prova completa FGV",  icon: FileCheck2, cover: "from-sky-600/30 via-sky-900/20 to-background" },
+// ------- Atalhos -------
+const ATALHOS = [
+  { label: "Biblioteca", icon: Library,    to: "/biblioteca" as const },
+  { label: "Simulados",  icon: Trophy,     to: "/simulados" as const },
+  { label: "Questões",   icon: HelpCircle, to: "/questoes" as const },
+  { label: "Videoaulas", icon: Video,      to: "/aulas" as const },
 ];
 
-function FerramentaCard({ item }: { item: Ferramenta }) {
-  const Icon = item.icon;
-  return (
-    <Link
-      to={item.to}
-      className={`snap-start shrink-0 w-[160px] relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br ${item.cover} p-4 min-h-[150px] flex flex-col justify-between text-left hover:-translate-y-0.5 transition-all`}
-    >
-      <div className="flex items-start justify-between">
-        <div className="h-10 w-10 rounded-xl bg-background/40 backdrop-blur grid place-items-center">
-          <Icon className="h-5 w-5 text-foreground" strokeWidth={2} />
-        </div>
-        <div className="h-7 w-7 rounded-full bg-background/40 backdrop-blur grid place-items-center">
-          <ChevronRight className="h-4 w-4" />
-        </div>
-      </div>
-      <div className="text-left">
-        <p className="font-display text-base leading-tight text-left">{item.label}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5 truncate text-left">{item.sub}</p>
-      </div>
-    </Link>
-  );
-}
-
-// ---------- Pratique (linhas largas) ----------
-type Pratica = {
-  key: string; to: string; label: string; sub: string; icon: typeof Brain; cor: string;
-};
-
-const PRATICAS: Pratica[] = [
-  { key: "flashcards", to: "/flashcards", label: "Flashcards", sub: "Memorize com cards inteligentes", icon: Brain,        cor: "bg-sky-500 text-white" },
-  { key: "questoes",   to: "/questoes",   label: "Questões",   sub: "Pratique com questões objetivas", icon: ClipboardList, cor: "bg-orange-500 text-white" },
-  { key: "simulados",  to: "/simulados",  label: "Simulados",  sub: "Prova completa cronometrada",     icon: FileCheck2,    cor: "bg-emerald-500 text-white" },
+// ------- Ferramentas -------
+const FERRAMENTAS = [
+  { label: "1ª Fase",        sub: "Trilhas objetivas",   icon: Target,        to: "/oab/primeira-fase" as const },
+  { label: "2ª Fase",        sub: "Peça e discursivas",  icon: FileText,      to: "/oab/segunda-fase" as const },
+  { label: "O que estudar",  sub: "Guia por edital",     icon: BookOpen,      to: "/oab/o-que-estudar" as const },
+  { label: "Calendário OAB", sub: "Datas oficiais",      icon: CalendarDays,  to: "/oab/calendario" as const },
+  { label: "Cronograma",     sub: "Plano semanal",       icon: ClipboardList, to: "/oab/cronograma" as const },
+  { label: "Flashcards",     sub: "Repetição espaçada",  icon: Layers,        to: "/flashcards" as const },
+  { label: "Peça-modelo",    sub: "Modelos comentados",  icon: ScrollText,    to: "/oab/peca-modelo" as const },
 ];
 
-function PraticaRow({ item }: { item: Pratica }) {
-  const Icon = item.icon;
-  return (
-    <Link
-      to={item.to}
-      className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-border bg-card hover:bg-secondary hover:border-gold/20 transition-colors"
-    >
-      <div className={`h-12 w-12 rounded-2xl grid place-items-center shrink-0 ${item.cor} shadow-lg shadow-black/20`}>
-        <Icon className="h-6 w-6" strokeWidth={2} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-display font-semibold text-lg leading-tight tracking-tight">{item.label}</p>
-        <p className="text-[11px] text-muted-foreground/90 mt-0.5 truncate">{item.sub}</p>
-      </div>
-      <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-    </Link>
-  );
-}
-
-function HomePage() {
-  const materias = getMaterias();
-  const noticias = getNoticias();
-  const destaque = noticias.find((n) => n.destaque) ?? noticias[0];
-  const outras = noticias.filter((n) => n.id !== destaque.id).slice(0, 4);
+function AreaOABPage() {
+  const noticias = getNoticias().slice(0, 8);
+  const dateLabel = formatExamDate(EXAM_DATE);
 
   return (
-    <div className="space-y-8 md:space-y-14 pb-10">
-      <HomeHero />
-
-      {/* Aulas Interativas + Plano de Estudo — dois cards compactos */}
-      <section className="px-4 md:px-10 max-w-6xl">
-        <div className="grid grid-cols-2 gap-3">
-          <Link
-            to="/aulas"
-            className="group relative overflow-hidden rounded-3xl bg-gradient-toga text-primary-foreground p-4 hover:shadow-xl hover:shadow-primary/20 transition-all"
-          >
-            <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-gold/20 blur-3xl" />
-            <div className="relative flex flex-col h-full min-h-[140px]">
-              <div className="h-11 w-11 rounded-2xl bg-primary-foreground/15 border border-primary-foreground/25 grid place-items-center backdrop-blur">
-                <BookOpen className="h-5 w-5" />
-              </div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-gold font-semibold mt-3">Aulas Interativas</p>
-              <p className="font-display font-semibold text-[15px] leading-tight truncate mt-0.5 tracking-tight">Ética · Aula 4</p>
-              <div className="mt-auto pt-3">
-                <div className="h-1.5 rounded-full bg-primary-foreground/10 overflow-hidden">
-                  <div className="h-full w-[62%] bg-gold shadow-[0_0_12px_oklch(0.78_0.13_80/0.6)]" />
-                </div>
-                <p className="text-[10px] text-primary-foreground/70 mt-1.5 font-medium">62% concluído</p>
-              </div>
+    <div className="pb-10 space-y-10">
+      {/* ===== Header pill (ÁREA OAB · Buscar) ===== */}
+      <header className="px-4 pt-4 md:px-10 md:pt-6 max-w-6xl">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-toga text-primary-foreground px-4 py-3.5 md:px-6 md:py-4 flex items-center justify-between gap-3 shadow-lg shadow-black/30 border border-gold/15">
+          <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
+          <div className="relative flex items-center gap-3 min-w-0">
+            <div className="h-11 w-11 rounded-2xl bg-gold/15 border border-gold/30 grid place-items-center shrink-0">
+              <Gavel className="h-5 w-5 text-gold" />
             </div>
-          </Link>
-
-          <Link
-            to="/plano-estudo"
-            className="group relative overflow-hidden rounded-3xl bg-card border border-gold/20 p-4 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all"
-          >
-            <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-gold/10 blur-3xl" />
-            <div className="relative flex flex-col h-full min-h-[140px]">
-              <div className="h-11 w-11 rounded-2xl bg-gold/15 text-gold grid place-items-center">
-                <ClipboardList className="h-5 w-5" />
-              </div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-gold font-semibold mt-3">Plano de Estudo</p>
-              <p className="font-display font-semibold text-[15px] leading-tight truncate mt-0.5 tracking-tight">Meta da semana</p>
-              <div className="mt-auto pt-3">
-                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div className="h-full w-[35%] bg-gold shadow-[0_0_12px_oklch(0.78_0.13_80/0.6)]" />
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1.5 font-medium">3 de 8 tarefas</p>
-              </div>
+            <div className="min-w-0">
+              <p className="font-display font-semibold text-base md:text-lg leading-tight tracking-tight">ÁREA OAB</p>
+              <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold mt-0.5">Exame da Ordem</p>
             </div>
-          </Link>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-pesquisar-sheet"))}
+            className="relative shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-primary-foreground/10 border border-primary-foreground/25 text-primary-foreground text-xs font-medium hover:bg-primary-foreground/20 active:scale-95 transition"
+          >
+            <Search className="h-3.5 w-3.5" /> Buscar
+          </button>
+        </div>
+      </header>
+
+      {/* ===== Countdown Hero ===== */}
+      <section className="px-4 md:px-10 max-w-6xl">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-toga text-primary-foreground p-5 md:p-7 border border-gold/15 shadow-xl shadow-black/40">
+          <div className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
+
+          <div className="relative flex items-center justify-between gap-3 mb-5">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/15 border border-gold/40 text-gold text-[10px] uppercase tracking-[0.18em] font-semibold shadow-[0_0_24px_-8px_oklch(0.78_0.13_80/0.6)]">
+              <Sparkles className="h-3 w-3" /> 46º EOU
+            </div>
+            <Link
+              to="/oab/calendario"
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-full bg-primary-foreground/10 border border-primary-foreground/25 text-primary-foreground text-xs font-medium hover:bg-primary-foreground/20 active:scale-95 transition"
+            >
+              <Calendar className="h-3.5 w-3.5" /> Calendário
+            </Link>
+          </div>
+
+          <p className="relative text-[10px] uppercase tracking-[0.24em] text-primary-foreground/70 font-semibold mb-3">
+            Faltam para o exame
+          </p>
+          <div className="relative">
+            <CountdownExame light hero />
+          </div>
+
+          <div className="relative mt-6 pt-5 border-t border-primary-foreground/15 flex items-center gap-2.5 text-primary-foreground/85">
+            <div className="h-6 w-6 rounded-full bg-gold/15 border border-gold/30 grid place-items-center shrink-0">
+              <Calendar className="h-3 w-3 text-gold" />
+            </div>
+            <p className="font-display text-sm md:text-base tracking-tight">{dateLabel}</p>
+          </div>
         </div>
       </section>
 
-      {/* Estudos aprofundados — 2x2 */}
+      {/* ===== Fases do Exame ===== */}
       <section className="px-4 md:px-10 max-w-6xl">
-        <SectionHeader eyebrow="Estudar" title="Ferramentas de estudo" />
+        <SectionTitle icon={Compass} eyebrow="Sua jornada completa" title="Fases do Exame" />
         <div className="grid grid-cols-2 gap-3">
-          {ESTUDOS.map((item) => <EstudoCard key={item.key} item={item} />)}
+          <FaseCard
+            to="/oab/primeira-fase"
+            label="1ª Fase"
+            sub="Prova objetiva"
+            cover={primeiraFaseCover}
+            lcp
+          />
+          <FaseCard
+            to="/oab/segunda-fase"
+            label="2ª Fase"
+            sub="Prático-profissional"
+            cover={segundaFaseCover}
+          />
         </div>
       </section>
 
-      {/* Ferramentas — carrossel com capa */}
-      <section className="max-w-6xl">
-        <div className="px-4 md:px-10">
-          <SectionHeader eyebrow="Ferramentas" title="Ferramentas" />
-        </div>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
-          {FERRAMENTAS.map((item) => <FerramentaCard key={item.key} item={item} />)}
-        </div>
-      </section>
-
-      {/* Pratique */}
+      {/* ===== Seus Atalhos OAB ===== */}
       <section className="px-4 md:px-10 max-w-6xl">
-        <SectionHeader eyebrow="Pratique" title="Teste seus conhecimentos" />
-        <div className="grid gap-3">
-          {PRATICAS.map((item) => <PraticaRow key={item.key} item={item} />)}
-        </div>
-      </section>
-
-      {/* Explorar Biblioteca — matérias como cards */}
-      <section className="max-w-6xl">
-        <div className="md:px-10">
-          <SectionHeader eyebrow="Biblioteca" title="Explorar Biblioteca" to="/materias" />
-        </div>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
-          {materias.map((m) => (
-            <div key={m.slug} className="snap-start"><MateriaCard materia={m} compact /></div>
+        <SectionTitle icon={Zap} eyebrow="Acesso rápido" title="Seus Atalhos OAB" />
+        <div className="grid grid-cols-4 gap-2.5 md:gap-3">
+          {ATALHOS.map(({ label, icon: Icon, to }) => (
+            <Link
+              key={label}
+              to={to}
+              className="group relative overflow-hidden rounded-2xl border border-gold/15 bg-gradient-to-br from-[oklch(0.32_0.08_18)] to-[oklch(0.21_0.05_18)] p-3 min-h-[96px] flex flex-col items-start justify-between hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30"
+            >
+              <div className="h-9 w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center">
+                <Icon className="h-4.5 w-4.5 text-gold" strokeWidth={2} />
+              </div>
+              <p className="font-display font-semibold text-sm leading-tight tracking-tight">{label}</p>
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* Notícias */}
-      <section className="px-4 md:px-10 max-w-6xl">
-        <SectionHeader eyebrow="Atualidades jurídicas" title="O que tá rolando" to="/noticias" />
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="md:col-span-2"><NoticiaCard noticia={destaque} variant="hero" /></div>
-          <div className="grid gap-3">
-            {outras.slice(0, 3).map((n) => <NoticiaCard key={n.id} noticia={n} />)}
-          </div>
+      {/* ===== Notícias da OAB ===== */}
+      <section className="max-w-6xl">
+        <div className="px-4 md:px-10 flex items-end justify-between gap-3 mb-4">
+          <SectionTitle icon={Newspaper} eyebrow="Atualidades do exame" title="Notícias da OAB" inline />
+          <Link
+            to="/noticias"
+            className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gold/15 border border-gold/35 text-gold text-xs font-semibold hover:bg-gold/25 transition"
+          >
+            Ver todas <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
+          {noticias.map((n) => (
+            <Link
+              key={n.id}
+              to="/noticias/$id"
+              params={{ id: n.id }}
+              className="snap-start shrink-0 w-[260px] rounded-2xl overflow-hidden border border-border bg-card hover:border-gold/30 transition-colors"
+            >
+              <div className="relative h-36 bg-gradient-to-br from-[oklch(0.32_0.1_240)] via-[oklch(0.22_0.08_240)] to-[oklch(0.16_0.05_240)] flex items-center justify-center overflow-hidden">
+                <div className="absolute inset-0 opacity-20" style={{
+                  backgroundImage: "radial-gradient(circle at 30% 40%, oklch(0.85 0.12 80 / 0.4), transparent 60%)",
+                }} />
+                <p className="relative font-display font-bold text-3xl tracking-tight text-primary-foreground/90">NOTÍCIAS</p>
+                <span className="absolute top-2 left-2 inline-flex items-center px-2 py-0.5 rounded-md bg-[oklch(0.45_0.18_240)] text-white text-[9px] font-bold uppercase tracking-wider">
+                  {n.categoria === "OAB" || n.categoria === "Exame" ? "OAB Nacional" : n.fonte.split(" ")[0]}
+                </span>
+                <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/55 text-white text-[10px] font-medium">
+                  <Calendar className="h-3 w-3" />
+                  {new Date(n.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "")}
+                </span>
+              </div>
+              <div className="p-3">
+                <p className="font-medium text-sm leading-snug line-clamp-3 text-foreground">{n.titulo}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* Assistente IA */}
+      {/* ===== Ferramentas de estudo ===== */}
       <section className="px-4 md:px-10 max-w-6xl">
-        <Link to="/assistente" className="block group">
-          <div className="rounded-2xl bg-secondary text-secondary-foreground p-5 md:p-10 relative overflow-hidden">
-            <div className="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-gold/20 blur-3xl" />
-            <div className="relative max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold/15 border border-gold/30 text-gold text-[11px] uppercase tracking-[0.18em] font-semibold mb-3 md:mb-4">
-                <Sparkles className="h-3 w-3" /> Assistente IA
+        <SectionTitle icon={GraduationCap} eyebrow="Plano completo de aprovação" title="Ferramentas de estudo" />
+        <div className="grid grid-cols-2 gap-2.5 md:gap-3">
+          {FERRAMENTAS.map(({ label, sub, icon: Icon, to }) => (
+            <Link
+              key={label}
+              to={to}
+              className="group relative overflow-hidden rounded-2xl border border-gold/12 bg-gradient-to-br from-[oklch(0.28_0.07_18)] to-[oklch(0.19_0.04_18)] p-3.5 min-h-[88px] flex items-start gap-3 hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30"
+            >
+              <div className="h-10 w-10 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center shrink-0">
+                <Icon className="h-5 w-5 text-gold" strokeWidth={2} />
               </div>
-              <h3 className="font-display text-2xl md:text-4xl leading-tight text-balance">Tire dúvidas com a professora jurídica 24/7</h3>
-              <p className="text-secondary-foreground/70 mt-2 md:mt-3 text-sm md:text-base">Explicações em linguagem simples, com base na CF, CC, CPC, CP e súmulas.</p>
-              <span className="inline-flex items-center gap-2 mt-4 md:mt-5 text-gold font-semibold text-sm group-hover:gap-3 transition-all">
-                Conversar agora <ArrowRight className="h-4 w-4" />
-              </span>
-            </div>
-          </div>
-        </Link>
+              <div className="min-w-0 pt-0.5">
+                <p className="font-display font-semibold text-[15px] leading-tight tracking-tight">{label}</p>
+                <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{sub}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
       </section>
     </div>
+  );
+}
+
+// ---------- helpers ----------
+function SectionTitle({
+  icon: Icon, eyebrow, title, inline = false,
+}: { icon: typeof Sparkles; eyebrow: string; title: string; inline?: boolean }) {
+  return (
+    <div className={inline ? "flex items-center gap-3" : "flex items-center gap-3 mb-4"}>
+      <div className="h-9 w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center shrink-0">
+        <Icon className="h-4.5 w-4.5 text-gold" strokeWidth={2} />
+      </div>
+      <div className="min-w-0">
+        <h2 className="font-display font-semibold text-[22px] md:text-[26px] leading-[1.05] tracking-tight">{title}</h2>
+        <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{eyebrow}</p>
+      </div>
+    </div>
+  );
+}
+
+function FaseCard({
+  to, label, sub, cover, lcp = false,
+}: { to: "/oab/primeira-fase" | "/oab/segunda-fase"; label: string; sub: string; cover: string; lcp?: boolean }) {
+  return (
+    <Link
+      to={to}
+      className="group relative overflow-hidden rounded-2xl border border-gold/15 aspect-[3/4] block shadow-lg shadow-black/40 hover:-translate-y-0.5 transition-transform"
+    >
+      <img
+        src={cover}
+        alt={label}
+        width={768}
+        height={1024}
+        loading={lcp ? "eager" : "lazy"}
+        fetchPriority={lcp ? "high" : "auto"}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
+      <span className="absolute top-2.5 left-2.5 inline-flex items-center px-2 py-0.5 rounded-md bg-gold/90 text-gold-foreground text-[10px] font-bold tracking-wider uppercase">
+        OAB
+      </span>
+      <div className="absolute inset-x-0 bottom-0 p-3 flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-display font-semibold text-xl leading-tight tracking-tight text-primary-foreground">{label}</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-gold/90 font-semibold mt-0.5 truncate">{sub}</p>
+        </div>
+        <div className="h-9 w-9 rounded-full bg-gold grid place-items-center shrink-0 shadow-lg shadow-black/40 group-hover:translate-x-0.5 transition-transform">
+          <ArrowRight className="h-4 w-4 text-gold-foreground" />
+        </div>
+      </div>
+    </Link>
   );
 }
