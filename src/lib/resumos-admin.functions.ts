@@ -193,7 +193,7 @@ export const listarLivrosParaResumo = createServerFn({ method: "GET" })
     }
     const { data: resumos } = await supabaseAdmin
       .from("resumo_livros")
-      .select("id, biblioteca_slug, livro_id, status, total_capitulos, capitulos_gerados, erro_msg, updated_at");
+      .select("id, biblioteca_slug, livro_id, status, total_capitulos, capitulos_gerados, erro_msg, updated_at, previa");
     const byKey = new Map<string, any>();
     for (const r of resumos ?? []) byKey.set(`${r.biblioteca_slug}:${r.livro_id}`, r);
     return livros

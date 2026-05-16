@@ -46,6 +46,7 @@ import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
+import { Route as AppAdminResumosRouteImport } from './routes/_app.admin.resumos'
 import { Route as AppSimuladosSlugIndexRouteImport } from './routes/_app.simulados.$slug.index'
 import { Route as AppBibliotecaSlugIndexRouteImport } from './routes/_app.biblioteca.$slug.index'
 import { Route as AppSimuladosSlugPraticarRouteImport } from './routes/_app.simulados.$slug.praticar'
@@ -238,6 +239,11 @@ const AppAdminSimuladosRoute = AppAdminSimuladosRouteImport.update({
   path: '/simulados',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminResumosRoute = AppAdminResumosRouteImport.update({
+  id: '/resumos',
+  path: '/resumos',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppSimuladosSlugIndexRoute = AppSimuladosSlugIndexRouteImport.update({
   id: '/simulados/$slug/',
   path: '/simulados/$slug/',
@@ -298,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/resumos': typeof AppResumosRouteWithChildren
   '/reta-final': typeof AppRetaFinalRoute
   '/vade-mecum': typeof AppVadeMecumRoute
+  '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/materias/$slug': typeof AppMateriasSlugRoute
@@ -341,6 +348,7 @@ export interface FileRoutesByTo {
   '/reta-final': typeof AppRetaFinalRoute
   '/vade-mecum': typeof AppVadeMecumRoute
   '/': typeof AppIndexRoute
+  '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
@@ -386,6 +394,7 @@ export interface FileRoutesById {
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/_app/vade-mecum': typeof AppVadeMecumRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
@@ -433,6 +442,7 @@ export interface FileRouteTypes {
     | '/resumos'
     | '/reta-final'
     | '/vade-mecum'
+    | '/admin/resumos'
     | '/admin/simulados'
     | '/biblioteca/$slug'
     | '/materias/$slug'
@@ -476,6 +486,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/vade-mecum'
     | '/'
+    | '/admin/resumos'
     | '/admin/simulados'
     | '/materias/$slug'
     | '/noticias/$id'
@@ -520,6 +531,7 @@ export interface FileRouteTypes {
     | '/_app/reta-final'
     | '/_app/vade-mecum'
     | '/_app/'
+    | '/_app/admin/resumos'
     | '/_app/admin/simulados'
     | '/_app/biblioteca/$slug'
     | '/_app/materias/$slug'
@@ -816,6 +828,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminSimuladosRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/resumos': {
+      id: '/_app/admin/resumos'
+      path: '/resumos'
+      fullPath: '/admin/resumos'
+      preLoaderRoute: typeof AppAdminResumosRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/simulados/$slug/': {
       id: '/_app/simulados/$slug/'
       path: '/simulados/$slug'
@@ -869,11 +888,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAdminRouteChildren {
+  AppAdminResumosRoute: typeof AppAdminResumosRoute
   AppAdminSimuladosRoute: typeof AppAdminSimuladosRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminResumosRoute: AppAdminResumosRoute,
   AppAdminSimuladosRoute: AppAdminSimuladosRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }
