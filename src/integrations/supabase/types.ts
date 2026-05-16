@@ -410,6 +410,157 @@ export type Database = {
         }
         Relationships: []
       }
+      simulado_questoes: {
+        Row: {
+          alternativas: Json
+          created_at: string
+          enunciado: string
+          id: string
+          justificativa: string | null
+          materia: string | null
+          numero: number
+          resposta_correta: string
+          simulado_id: string
+        }
+        Insert: {
+          alternativas: Json
+          created_at?: string
+          enunciado: string
+          id?: string
+          justificativa?: string | null
+          materia?: string | null
+          numero: number
+          resposta_correta: string
+          simulado_id: string
+        }
+        Update: {
+          alternativas?: Json
+          created_at?: string
+          enunciado?: string
+          id?: string
+          justificativa?: string | null
+          materia?: string | null
+          numero?: number
+          resposta_correta?: string
+          simulado_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulado_questoes_simulado_id_fkey"
+            columns: ["simulado_id"]
+            isOneToOne: false
+            referencedRelation: "simulados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulado_tentativas: {
+        Row: {
+          acertos: number
+          concluido_em: string | null
+          created_at: string
+          id: string
+          iniciado_em: string
+          por_materia: Json
+          respostas: Json
+          simulado_id: string
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acertos?: number
+          concluido_em?: string | null
+          created_at?: string
+          id?: string
+          iniciado_em?: string
+          por_materia?: Json
+          respostas?: Json
+          simulado_id: string
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acertos?: number
+          concluido_em?: string | null
+          created_at?: string
+          id?: string
+          iniciado_em?: string
+          por_materia?: Json
+          respostas?: Json
+          simulado_id?: string
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "simulado_tentativas_simulado_id_fkey"
+            columns: ["simulado_id"]
+            isOneToOne: false
+            referencedRelation: "simulados"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      simulados: {
+        Row: {
+          created_at: string
+          erro_msg: string | null
+          gerado_por: string | null
+          id: string
+          prova_numero: number
+          status: string
+          titulo: string
+          total_questoes: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          erro_msg?: string | null
+          gerado_por?: string | null
+          id?: string
+          prova_numero: number
+          status?: string
+          titulo: string
+          total_questoes?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          erro_msg?: string | null
+          gerado_por?: string | null
+          id?: string
+          prova_numero?: number
+          status?: string
+          titulo?: string
+          total_questoes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -469,8 +620,16 @@ export type Database = {
             }[]
           }
       get_biblioteca_counts: { Args: never; Returns: Json }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "user"
       status_academico: "cursando" | "formado" | "outro"
     }
     CompositeTypes: {
@@ -599,6 +758,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       status_academico: ["cursando", "formado", "outro"],
     },
   },
