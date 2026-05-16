@@ -22,7 +22,7 @@ export function CountdownExame({
   compact = false,
   hero = false,
 }: { light?: boolean; compact?: boolean; hero?: boolean }) {
-  const [t, setT] = useState<{ d: number; h: number; m: number }>(() => diff());
+  const [t, setT] = useState<{ d: number; h: number; m: number } | null>(null);
   useEffect(() => {
     setT(diff());
     const id = setInterval(() => setT(diff()), 60000);
@@ -30,17 +30,18 @@ export function CountdownExame({
   }, []);
   const variant: keyof typeof SIZES = hero ? "hero" : compact ? "compact" : "default";
   const s = SIZES[variant];
+  const display = t ?? { d: 0, h: 0, m: 0 };
   const items = [
-    { v: t.d, l: "dias" },
-    { v: t.h, l: "hrs" },
-    { v: t.m, l: "min" },
+    { v: display.d, l: "dias" },
+    { v: display.h, l: "hrs" },
+    { v: display.m, l: "min" },
   ];
   return (
-    <div className={`flex items-end ${s.gap}`}>
+    <div className={`flex items-end ${s.gap}`} suppressHydrationWarning>
       {items.map((i) => (
         <div key={i.l} className="text-center">
-          <p className={`font-sans font-bold ${s.num} leading-none tabular-nums tracking-tight ${light ? "text-primary-foreground" : ""}`}>
-            {String(i.v).padStart(2, "0")}
+          <p className={`font-sans font-bold ${s.num} leading-none tabular-nums tracking-tight ${light ? "text-primary-foreground" : ""}`} suppressHydrationWarning>
+            {t ? String(i.v).padStart(2, "0") : "--"}
           </p>
           <p className={`text-[10px] uppercase tracking-[0.18em] mt-1 ${light ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
             {i.l}
