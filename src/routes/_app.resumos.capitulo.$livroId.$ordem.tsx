@@ -17,6 +17,7 @@ export const Route = createFileRoute("/_app/resumos/capitulo/$livroId/$ordem")({
 function CapituloView() {
   const { livroId, ordem } = Route.useParams();
   const ordemNum = Number(ordem);
+  const { scale, increase, decrease, canIncrease, canDecrease } = useFontScale();
   const fn = useServerFn(obterLivroResumo);
   const { data, isPending } = useQuery({
     queryKey: ["resumo-livro", livroId],
