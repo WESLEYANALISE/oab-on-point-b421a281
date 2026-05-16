@@ -58,7 +58,7 @@ export const getSimuladoCompleto = createServerFn({ method: "POST" })
         .maybeSingle(),
       supabase
         .from("simulado_questoes")
-        .select("id, numero, enunciado, materia, alternativas, resposta_correta")
+        .select("id, numero, enunciado, materia, alternativas, resposta_correta, status, nota_oficial")
         .eq("simulado_id", simuladoId)
         .order("numero", { ascending: true }),
       supabase
@@ -186,18 +186,20 @@ export const finalizarTentativa = createServerFn({ method: "POST" })
     const respostas = (t.data.respostas as Record<string, string>) ?? {};
     const { data: qs, error: qErr } = await supabase
       .from("simulado_questoes")
-      .select("numero, materia, resposta_correta")
+      .select("numero, materia, resposta_correta, status")
       .eq("simulado_id", t.data.simulado_id);
     if (qErr) throw new Error(qErr.message);
 
     let acertos = 0;
     const porMateria: Record<string, { acertos: number; total: number }> = {};
     for (const q of qs ?? []) {
+      if ((q as { status?: string }).status === "falhou_extracao") continue;
       const m = q.materia ?? "Sem matéria";
       porMateria[m] ??= { acertos: 0, total: 0 };
       porMateria[m].total += 1;
       const r = respostas[String(q.numero)];
-      if (r && r === q.resposta_correta) {
+      const anulada = (q as { status?: string }).status === "anulada";
+      if (anulada || (r && r === q.resposta_correta)) {
         acertos += 1;
         porMateria[m].acertos += 1;
       }
@@ -206,14 +208,14 @@ export const finalizarTentativa = createServerFn({ method: "POST" })
       .from("simulado_tentativas")
       .update({
         acertos,
-        total: qs?.length ?? 0,
+        total: (qs ?? []).filter((q) => (q as { status?: string }).status !== "falhou_extracao").length,
         por_materia: porMateria,
         concluido_em: t.data.concluido_em ?? new Date().toISOString(),
       })
       .eq("id", data.tentativaId)
       .eq("user_id", userId);
     if (upd.error) throw new Error(upd.error.message);
-    return { acertos, total: qs?.length ?? 0, porMateria };
+    return { acertos, total: (qs ?? []).filter((q) => (q as { status?: string }).status !== "falhou_extracao").length, porMateria };
   });
 
 // ============ Resultado (com respostas corretas reveladas) ============
@@ -236,7 +238,7 @@ export const getResultado = createServerFn({ method: "POST" })
       supabase.from("simulados").select("titulo, prova_numero").eq("id", t.data.simulado_id).maybeSingle(),
       supabase
         .from("simulado_questoes")
-        .select("numero, enunciado, materia, alternativas, resposta_correta, justificativa")
+        .select("numero, enunciado, materia, alternativas, resposta_correta, justificativa, status, nota_oficial")
         .eq("simulado_id", t.data.simulado_id)
         .order("numero"),
     ]);

@@ -90,6 +90,34 @@ const QuestaoSchema = z.object({
   }),
 });
 
+// gabarito_oficial: { [numero]: { letra, anulada, nota } } (aceita formato antigo)
+type GabaritoEntry = { letra: "A" | "B" | "C" | "D" | null; anulada: boolean; nota: string | null };
+function normalizeGabarito(raw: unknown): Record<string, GabaritoEntry> {
+  const out: Record<string, GabaritoEntry> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof v === "string") {
+      const L = v.toUpperCase().trim();
+      out[k] = ["A", "B", "C", "D"].includes(L)
+        ? { letra: L as GabaritoEntry["letra"], anulada: false, nota: null }
+        : { letra: null, anulada: true, nota: v };
+    } else if (v && typeof v === "object") {
+      const obj = v as Record<string, unknown>;
+      const letra = typeof obj.letra === "string" ? obj.letra.toUpperCase().trim() : null;
+      out[k] = {
+        letra: letra && ["A", "B", "C", "D"].includes(letra) ? (letra as GabaritoEntry["letra"]) : null,
+        anulada: Boolean(obj.anulada),
+        nota: typeof obj.nota === "string" ? obj.nota : null,
+      };
+    }
+  }
+  return out;
+}
+function hasGabaritoEntry(g: Record<string, GabaritoEntry>, numero: number): boolean {
+  const e = g[String(numero)];
+  return !!e && (e.anulada || !!e.letra);
+}
+
 // ============ Lista de provas com status ============
 export const listProvasComStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -252,13 +280,15 @@ export const analisarProva = createServerFn({ method: "POST" })
       const userPrompt = `Analise o material abaixo e retorne EXATAMENTE este JSON:
 {
   "total_questoes": <inteiro com o número total de questões objetivas da prova>,
-  "gabarito": [ { "numero": <int>, "letra": "A"|"B"|"C"|"D" }, ... ]
+  "gabarito": [ { "numero": <int>, "letra": "A"|"B"|"C"|"D"|null, "anulada": <bool>, "nota": <string|null> }, ... ]
 }
 
 Regras:
 - Conte o NÚMERO REAL de questões na prova (provavelmente 80, mas pode variar).
-- O gabarito deve ter UMA entrada por questão, com a letra oficial.
-- Se uma questão foi anulada no gabarito, escolha a primeira letra listada ou "A" como fallback.
+- O gabarito deve ter UMA entrada por questão.
+- Se o gabarito oficial marca a questão como ANULADA / Anulada / "Recurso deferido" / "Sem resposta", retorne "letra": null, "anulada": true, e em "nota" o texto bruto (ex.: "Anulada", "Recurso deferido").
+- Se houver letra normal, retorne "letra" com A/B/C/D, "anulada": false, "nota": null.
+- NUNCA invente uma letra para questões anuladas. Anuladas DEVEM ter letra null.
 - NÃO inclua nada além do JSON.
 
 ===== PROVA =====
@@ -268,7 +298,10 @@ ${(job.data.ocr_prova ?? "").slice(0, 90000)}
 ${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
 
       const raw = await geminiExtractJson(system, userPrompt);
-      let parsed: { total_questoes?: number; gabarito?: Array<{ numero: number; letra: string }> } = {};
+      let parsed: {
+        total_questoes?: number;
+        gabarito?: Array<{ numero: number; letra?: string | null; anulada?: boolean; nota?: string | null }>;
+      } = {};
       try {
         parsed = JSON.parse(raw);
       } catch {
@@ -280,12 +313,18 @@ ${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
         throw new Error(`Total de questões inválido detectado: ${parsed.total_questoes}`);
       }
 
-      const gabaritoMap: Record<string, string> = {};
+      const gabaritoMap: Record<string, GabaritoEntry> = {};
+      let anuladasCount = 0;
       for (const g of parsed.gabarito ?? []) {
         const n = Number(g.numero);
+        if (!(n >= 1 && n <= totalQ)) continue;
         const letra = String(g.letra ?? "").toUpperCase().trim();
-        if (n >= 1 && n <= totalQ && ["A", "B", "C", "D"].includes(letra)) {
-          gabaritoMap[String(n)] = letra;
+        const anulada = Boolean(g.anulada);
+        if (anulada) {
+          gabaritoMap[String(n)] = { letra: null, anulada: true, nota: g.nota ?? "Anulada" };
+          anuladasCount++;
+        } else if (["A", "B", "C", "D"].includes(letra)) {
+          gabaritoMap[String(n)] = { letra: letra as GabaritoEntry["letra"], anulada: false, nota: null };
         }
       }
 
@@ -293,7 +332,9 @@ ${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
       await appendLog(
         data.jobId,
         gabCount === totalQ ? "ok" : "info",
-        `Prova tem ${totalQ} questões. Gabarito com ${gabCount} respostas extraídas.${gabCount !== totalQ ? " (algumas faltam)" : ""}`,
+        `Prova tem ${totalQ} questões. Gabarito com ${gabCount} respostas extraídas${
+          anuladasCount ? ` (${anuladasCount} anuladas)` : ""
+        }.${gabCount !== totalQ ? " (algumas faltam)" : ""}`,
       );
 
       // Cria simulado (remove anterior se houver)
@@ -316,7 +357,7 @@ ${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
         .from("simulado_jobs")
         .update({
           total_estimado: totalQ,
-          gabarito_oficial: gabaritoMap,
+          gabarito_oficial: gabaritoMap as never,
           simulado_id: sim.data.id,
           batches_total: batches,
           batch_atual: 0,
@@ -343,7 +384,7 @@ async function extrairQuestoes(
   jobId: string,
   ocrProva: string,
   numeros: number[],
-  gabarito: Record<string, string>,
+  gabarito: Record<string, GabaritoEntry>,
 ): Promise<z.infer<typeof QuestaoSchema>[]> {
   if (numeros.length === 0) return [];
   const inicio = Math.min(...numeros);
@@ -373,19 +414,57 @@ ${ocrProva.slice(0, 90000)}`;
   const validasMap = new Map<number, z.infer<typeof QuestaoSchema>>();
   const alvoSet = new Set(numeros);
 
-  const runOnce = async (prompt: string) => {
+  // Diagnóstico: marcador de cada questão presente no OCR?
+  const ocrLower = ocrProva.toLowerCase();
+  const semMarcador: number[] = [];
+  for (const n of numeros) {
+    const regex = new RegExp(`quest[aã]o\\s*${n}\\b`, "i");
+    if (!regex.test(ocrLower)) semMarcador.push(n);
+  }
+  if (semMarcador.length > 0) {
+    await appendLog(
+      jobId,
+      "info",
+      `OCR não contém marcador "Questão" para: ${semMarcador.slice(0, 10).join(", ")}${semMarcador.length > 10 ? "…" : ""}. Provável problema no PDF/OCR.`,
+    );
+  }
+
+  const runOnce = async (prompt: string): Promise<{ chars: number; recebidas: number[]; motivo?: string }> => {
     const raw = await geminiExtractJson(system, prompt);
     let parsed: { questoes?: unknown[] } = {};
-    try { parsed = JSON.parse(raw); } catch { parsed = {}; }
+    let motivo: string | undefined;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      motivo = `parse JSON falhou (primeiros 200 chars: ${raw.slice(0, 200).replace(/\s+/g, " ")})`;
+    }
+    const recebidas: number[] = [];
     for (const q of parsed.questoes ?? []) {
       const r = QuestaoSchema.safeParse(q);
-      if (r.success && alvoSet.has(r.data.numero) && gabarito[String(r.data.numero)]) {
+      if (!r.success) {
+        const issue = r.error.issues[0];
+        const path = issue?.path.join(".") ?? "?";
+        const numTentado = (q as { numero?: unknown })?.numero;
+        motivo = motivo ?? `schema rejeitou questão ${numTentado ?? "?"}: ${path} → ${issue?.message ?? "inválido"}`;
+        continue;
+      }
+      recebidas.push(r.data.numero);
+      if (alvoSet.has(r.data.numero) && hasGabaritoEntry(gabarito, r.data.numero)) {
         validasMap.set(r.data.numero, r.data);
       }
     }
+    return { chars: raw.length, recebidas, motivo };
   };
 
-  await runOnce(user);
+  try {
+    const first = await runOnce(user);
+    if (first.motivo && validasMap.size === 0) {
+      await appendLog(jobId, "info", `Diagnóstico 1ª tentativa: ${first.motivo}`);
+    }
+  } catch (err) {
+    const m = err instanceof Error ? err.message : String(err);
+    await appendLog(jobId, "info", `1ª tentativa falhou: ${m}`);
+  }
 
   // Retry para faltantes
   for (let tentativa = 1; tentativa <= 3; tentativa++) {
@@ -401,7 +480,17 @@ ${ocrProva.slice(0, 90000)}`;
 ===== PROVA =====
 ${ocrProva.slice(0, 90000)}`;
     try {
-      await runOnce(retryPrompt);
+      const r = await runOnce(retryPrompt);
+      const aindaFaltam = faltantes.filter((n) => !validasMap.has(n));
+      if (aindaFaltam.length > 0) {
+        const recebeuOutras = r.recebidas.filter((n) => !faltantes.includes(n));
+        const detalhe = r.motivo
+          ? r.motivo
+          : recebeuOutras.length > 0
+          ? `Gemini devolveu questões erradas (${recebeuOutras.slice(0, 5).join(", ")}) em vez das pedidas`
+          : `Gemini devolveu ${r.chars} chars sem questões válidas`;
+        await appendLog(jobId, "info", `Retentativa ${tentativa}: ${detalhe}`);
+      }
     } catch (err) {
       const m = err instanceof Error ? err.message : String(err);
       await appendLog(jobId, "info", `Retentativa ${tentativa} falhou: ${m}`);
@@ -437,7 +526,7 @@ export const processarBatch = createServerFn({ method: "POST" })
     const numerosAlvo: number[] = [];
     for (let n = inicio; n <= fim; n++) numerosAlvo.push(n);
 
-    const gabarito = (job.data.gabarito_oficial ?? {}) as Record<string, string>;
+    const gabarito = normalizeGabarito(job.data.gabarito_oficial);
     const simuladoId = job.data.simulado_id as string;
 
     try {
@@ -452,14 +541,20 @@ export const processarBatch = createServerFn({ method: "POST" })
           .eq("simulado_id", simuladoId)
           .in("numero", validas.map((q) => q.numero));
 
-        const rows = validas.map((q) => ({
-          simulado_id: simuladoId,
-          numero: q.numero,
-          enunciado: q.enunciado,
-          materia: q.materia,
-          alternativas: q.alternativas,
-          resposta_correta: gabarito[String(q.numero)],
-        }));
+        const rows = validas.map((q) => {
+          const g = gabarito[String(q.numero)];
+          const anulada = !!g?.anulada;
+          return {
+            simulado_id: simuladoId,
+            numero: q.numero,
+            enunciado: q.enunciado,
+            materia: q.materia,
+            alternativas: q.alternativas,
+            resposta_correta: anulada ? null : (g?.letra ?? null),
+            status: anulada ? "anulada" : "ok",
+            nota_oficial: g?.nota ?? null,
+          };
+        });
         const insQ = await supabaseAdmin.from("simulado_questoes").insert(rows);
         if (insQ.error) throw new Error(insQ.error.message);
       }
@@ -483,7 +578,12 @@ export const processarBatch = createServerFn({ method: "POST" })
         })
         .eq("id", data.jobId);
 
-      await appendLog(data.jobId, "ok", `Lote ${data.batchIndex + 1} concluído (+${validas.length} questões)`);
+      const anuladasLote = validas.filter((q) => gabarito[String(q.numero)]?.anulada).length;
+      await appendLog(
+        data.jobId,
+        "ok",
+        `Lote ${data.batchIndex + 1} concluído (+${validas.length} questões${anuladasLote ? `, ${anuladasLote} anuladas` : ""})`,
+      );
 
       return { proximo: ultimoLote ? null : proximoIndex, processadas: novoTotal };
     } catch (e) {
@@ -520,7 +620,7 @@ export const validarFinal = createServerFn({ method: "POST" })
 
     const simuladoId = job.data.simulado_id as string;
     const total = job.data.total_estimado as number;
-    const gabarito = (job.data.gabarito_oficial ?? {}) as Record<string, string>;
+    const gabarito = normalizeGabarito(job.data.gabarito_oficial);
 
     try {
       // Tenta refazer faltantes até 3 vezes
@@ -533,7 +633,7 @@ export const validarFinal = createServerFn({ method: "POST" })
         const presentes = new Set((existentes.data ?? []).map((r) => r.numero));
         const faltantes: number[] = [];
         for (let n = 1; n <= total; n++) {
-          if (!presentes.has(n) && gabarito[String(n)]) faltantes.push(n);
+          if (!presentes.has(n) && hasGabaritoEntry(gabarito, n)) faltantes.push(n);
         }
 
         if (faltantes.length === 0) break;
@@ -546,19 +646,64 @@ export const validarFinal = createServerFn({ method: "POST" })
 
         const validas = await extrairQuestoes(data.jobId, job.data.ocr_prova ?? "", faltantes, gabarito);
         if (validas.length > 0) {
-          const rows = validas.map((q) => ({
-            simulado_id: simuladoId,
-            numero: q.numero,
-            enunciado: q.enunciado,
-            materia: q.materia,
-            alternativas: q.alternativas,
-            resposta_correta: gabarito[String(q.numero)],
-          }));
+          const rows = validas.map((q) => {
+            const g = gabarito[String(q.numero)];
+            const anulada = !!g?.anulada;
+            return {
+              simulado_id: simuladoId,
+              numero: q.numero,
+              enunciado: q.enunciado,
+              materia: q.materia,
+              alternativas: q.alternativas,
+              resposta_correta: anulada ? null : (g?.letra ?? null),
+              status: anulada ? "anulada" : "ok",
+              nota_oficial: g?.nota ?? null,
+            };
+          });
           const ins = await supabaseAdmin.from("simulado_questoes").insert(rows);
           if (ins.error) throw new Error(ins.error.message);
         } else {
           await appendLog(data.jobId, "info", `Validação ${tentativa}: Gemini não retornou questões válidas.`);
         }
+      }
+
+      // Após retentativas, marca as ainda faltantes como falhou_extracao
+      const existentesFinal = await supabaseAdmin
+        .from("simulado_questoes")
+        .select("numero")
+        .eq("simulado_id", simuladoId);
+      const presentesFinal = new Set((existentesFinal.data ?? []).map((r) => r.numero));
+      const placeholders: Array<{
+        simulado_id: string;
+        numero: number;
+        enunciado: string;
+        materia: string | null;
+        alternativas: { A: string; B: string; C: string; D: string };
+        resposta_correta: string | null;
+        status: string;
+        nota_oficial: string | null;
+      }> = [];
+      for (let n = 1; n <= total; n++) {
+        if (!presentesFinal.has(n)) {
+          placeholders.push({
+            simulado_id: simuladoId,
+            numero: n,
+            enunciado: "Esta questão não pôde ser extraída automaticamente do PDF. Pule para a próxima.",
+            materia: null,
+            alternativas: { A: "—", B: "—", C: "—", D: "—" },
+            resposta_correta: null,
+            status: "falhou_extracao",
+            nota_oficial: null,
+          });
+        }
+      }
+      if (placeholders.length > 0) {
+        await supabaseAdmin.from("simulado_questoes").insert(placeholders);
+        await appendLog(
+          data.jobId,
+          "info",
+          `${placeholders.length} questão(ões) marcada(s) como "falhou_extracao": ${placeholders.map((p) => p.numero).join(", ")}.`,
+        );
       }
 
       // Total final
@@ -582,13 +727,14 @@ export const validarFinal = createServerFn({ method: "POST" })
         .update({ status: "pronto", total_questoes: final })
         .eq("id", simuladoId);
 
-      if (final === total) {
+      const okCount = final - placeholders.length;
+      if (placeholders.length === 0) {
         await appendLog(data.jobId, "ok", `Simulado pronto com ${final}/${total} questões.`);
       } else {
         await appendLog(
           data.jobId,
           "info",
-          `Simulado pronto com ${final}/${total} questões. ${total - final} não puderam ser extraídas após múltiplas tentativas.`,
+          `Simulado pronto: ${okCount} extraídas + ${placeholders.length} sem extração (marcadas para pular).`,
         );
       }
 

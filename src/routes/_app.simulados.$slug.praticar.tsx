@@ -159,6 +159,10 @@ function PraticaPage() {
   const estado = respostas[atual.numero];
   const respondida = !!estado?.respondida;
   const correta = atual.resposta_correta as Alt | undefined;
+  const qStatus = (atual as { status?: string }).status ?? "ok";
+  const ehAnulada = qStatus === "anulada";
+  const ehFalhou = qStatus === "falhou_extracao";
+  const especial = ehAnulada || ehFalhou;
   const ehUltima = idx === totalQ - 1;
   const numero = sim.data.simulado.prova_numero;
   const ano = sim.data.simulado.ano;
@@ -222,6 +226,21 @@ function PraticaPage() {
 
 
       <article className="rounded-xl border border-border bg-card p-5 min-h-[40vh] overflow-hidden">
+        {especial ? (
+          <div className={cn(
+            "rounded-lg p-4 text-sm",
+            ehAnulada ? "bg-green-500/10 text-green-600 border border-green-500/30" : "bg-muted text-muted-foreground border border-border",
+          )}>
+            <p className="font-semibold mb-1">
+              {ehAnulada ? "Questão anulada pela banca" : "Questão não disponível"}
+            </p>
+            <p className="leading-relaxed">
+              {ehAnulada
+                ? `Esta questão foi anulada${atual.nota_oficial ? ` (${atual.nota_oficial})` : ""} e é considerada correta para todos os candidatos. Vá para a próxima.`
+                : "Não foi possível extrair esta questão automaticamente do PDF. Pule para a próxima."}
+            </p>
+          </div>
+        ) : (
         <div key={view} className="animate-fade-in">
           {view === "enunciado" ? (
             <p className="whitespace-pre-wrap leading-relaxed text-[15px]">{atual.enunciado}</p>
@@ -266,9 +285,10 @@ function PraticaPage() {
             </ul>
           )}
         </div>
+        )}
 
 
-        {respondida && view === "alternativas" && (
+        {!especial && respondida && view === "alternativas" && (
           <div
             className={cn(
               "mt-4 rounded-lg p-3 text-sm font-medium",

@@ -15,11 +15,16 @@ function AdminLayout() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (loading || isLoading) return;
-    if (!user || !isAdmin) navigate({ to: "/" });
-  }, [loading, isLoading, user, isAdmin, navigate]);
+    if (loading) return;
+    if (!user) { navigate({ to: "/" }); return; }
+    if (isAdmin === false) navigate({ to: "/" });
+  }, [loading, user, isAdmin, navigate]);
 
-  if (loading || isLoading) {
+  // Se já temos cache positivo, renderiza direto (sem flicker).
+  if (isAdmin === true) return <Outlet />;
+
+  // Só mostra "verificando" se realmente não sabemos ainda.
+  if (loading || (isLoading && isAdmin === undefined)) {
     return (
       <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
         <header className="mb-6">
