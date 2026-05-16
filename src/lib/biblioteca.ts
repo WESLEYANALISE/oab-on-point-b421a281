@@ -38,13 +38,18 @@ export const countsQueryOptions = () =>
     gcTime: 60 * 60_000,
   });
 
+export type AreaCount = { area: string; total: number };
+
 export const areasQueryOptions = (slug: string) =>
   queryOptions({
-    queryKey: ["biblioteca-areas", slug],
+    queryKey: ["biblioteca-areas-counts", slug],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_biblioteca_areas" as never, { _slug: slug } as never);
+      const { data, error } = await supabase.rpc("get_biblioteca_areas_counts" as never, { _slug: slug } as never);
       if (error) throw error;
-      return (data ?? []) as string[];
+      return ((data ?? []) as Array<{ area: string; total: number | string }>).map((r) => ({
+        area: r.area,
+        total: Number(r.total),
+      })) as AreaCount[];
     },
     enabled: !!BIB_MAP[slug]?.hasAreas,
     staleTime: 30 * 60_000,
