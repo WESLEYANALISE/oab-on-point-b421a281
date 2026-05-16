@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, UserRound } from "lucide-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
