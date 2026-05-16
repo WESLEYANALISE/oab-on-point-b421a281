@@ -52,7 +52,7 @@ export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
       <SheetContent
-        side="right"
+        side="left"
         className="w-[88vw] max-w-sm p-0 bg-sidebar text-sidebar-foreground border-sidebar-border flex flex-col"
       >
         <SheetHeader className="px-5 py-5 border-b border-sidebar-border">
@@ -69,7 +69,7 @@ export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
           </SheetTitle>
         </SheetHeader>
 
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* Conta — topo destacado */}
           <div className="space-y-2">
             {accountItems.map(({ to, label, sub, icon: Icon, accent }) => (
