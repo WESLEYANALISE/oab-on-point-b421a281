@@ -238,7 +238,7 @@ export const getResultado = createServerFn({ method: "POST" })
       supabase.from("simulados").select("titulo, prova_numero").eq("id", t.data.simulado_id).maybeSingle(),
       supabase
         .from("simulado_questoes")
-        .select("numero, enunciado, materia, alternativas, resposta_correta, justificativa")
+        .select("numero, enunciado, materia, alternativas, resposta_correta, justificativa, status, nota_oficial")
         .eq("simulado_id", t.data.simulado_id)
         .order("numero"),
     ]);
