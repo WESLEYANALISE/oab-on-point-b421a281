@@ -46,12 +46,12 @@ import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
-import { Route as AppSimuladosIdIndexRouteImport } from './routes/_app.simulados.$id.index'
+import { Route as AppSimuladosSlugIndexRouteImport } from './routes/_app.simulados.$slug.index'
 import { Route as AppBibliotecaSlugIndexRouteImport } from './routes/_app.biblioteca.$slug.index'
-import { Route as AppSimuladosIdPraticarRouteImport } from './routes/_app.simulados.$id.praticar'
+import { Route as AppSimuladosSlugPraticarRouteImport } from './routes/_app.simulados.$slug.praticar'
 import { Route as AppBibliotecaSlugBookIdRouteImport } from './routes/_app.biblioteca.$slug.$bookId'
 import { Route as AppBibliotecaSlugBookIdIndexRouteImport } from './routes/_app.biblioteca.$slug.$bookId.index'
-import { Route as AppSimuladosIdResultadoTentativaIdRouteImport } from './routes/_app.simulados.$id.resultado.$tentativaId'
+import { Route as AppSimuladosSlugResultadoTentativaIdRouteImport } from './routes/_app.simulados.$slug.resultado.$tentativaId'
 import { Route as AppBibliotecaSlugBookIdLerRouteImport } from './routes/_app.biblioteca.$slug.$bookId.ler'
 
 const SignupRoute = SignupRouteImport.update({
@@ -238,9 +238,9 @@ const AppAdminSimuladosRoute = AppAdminSimuladosRouteImport.update({
   path: '/simulados',
   getParentRoute: () => AppAdminRoute,
 } as any)
-const AppSimuladosIdIndexRoute = AppSimuladosIdIndexRouteImport.update({
-  id: '/simulados/$id/',
-  path: '/simulados/$id/',
+const AppSimuladosSlugIndexRoute = AppSimuladosSlugIndexRouteImport.update({
+  id: '/simulados/$slug/',
+  path: '/simulados/$slug/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBibliotecaSlugIndexRoute = AppBibliotecaSlugIndexRouteImport.update({
@@ -248,11 +248,12 @@ const AppBibliotecaSlugIndexRoute = AppBibliotecaSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppBibliotecaSlugRoute,
 } as any)
-const AppSimuladosIdPraticarRoute = AppSimuladosIdPraticarRouteImport.update({
-  id: '/simulados/$id/praticar',
-  path: '/simulados/$id/praticar',
-  getParentRoute: () => AppRoute,
-} as any)
+const AppSimuladosSlugPraticarRoute =
+  AppSimuladosSlugPraticarRouteImport.update({
+    id: '/simulados/$slug/praticar',
+    path: '/simulados/$slug/praticar',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppBibliotecaSlugBookIdRoute = AppBibliotecaSlugBookIdRouteImport.update({
   id: '/$bookId',
   path: '/$bookId',
@@ -264,10 +265,10 @@ const AppBibliotecaSlugBookIdIndexRoute =
     path: '/',
     getParentRoute: () => AppBibliotecaSlugBookIdRoute,
   } as any)
-const AppSimuladosIdResultadoTentativaIdRoute =
-  AppSimuladosIdResultadoTentativaIdRouteImport.update({
-    id: '/simulados/$id/resultado/$tentativaId',
-    path: '/simulados/$id/resultado/$tentativaId',
+const AppSimuladosSlugResultadoTentativaIdRoute =
+  AppSimuladosSlugResultadoTentativaIdRouteImport.update({
+    id: '/simulados/$slug/resultado/$tentativaId',
+    path: '/simulados/$slug/resultado/$tentativaId',
     getParentRoute: () => AppRoute,
   } as any)
 const AppBibliotecaSlugBookIdLerRoute =
@@ -315,11 +316,11 @@ export interface FileRoutesByFullPath {
   '/provas/': typeof AppProvasIndexRoute
   '/simulados/': typeof AppSimuladosIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
-  '/simulados/$id/praticar': typeof AppSimuladosIdPraticarRoute
+  '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
-  '/simulados/$id/': typeof AppSimuladosIdIndexRoute
+  '/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
-  '/simulados/$id/resultado/$tentativaId': typeof AppSimuladosIdResultadoTentativaIdRoute
+  '/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
   '/biblioteca/$slug/$bookId/': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -356,11 +357,11 @@ export interface FileRoutesByTo {
   '/biblioteca': typeof AppBibliotecaIndexRoute
   '/provas': typeof AppProvasIndexRoute
   '/simulados': typeof AppSimuladosIndexRoute
-  '/simulados/$id/praticar': typeof AppSimuladosIdPraticarRoute
+  '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
-  '/simulados/$id': typeof AppSimuladosIdIndexRoute
+  '/simulados/$slug': typeof AppSimuladosSlugIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
-  '/simulados/$id/resultado/$tentativaId': typeof AppSimuladosIdResultadoTentativaIdRoute
+  '/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRoutesById {
@@ -403,11 +404,11 @@ export interface FileRoutesById {
   '/_app/provas/': typeof AppProvasIndexRoute
   '/_app/simulados/': typeof AppSimuladosIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
-  '/_app/simulados/$id/praticar': typeof AppSimuladosIdPraticarRoute
+  '/_app/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
-  '/_app/simulados/$id/': typeof AppSimuladosIdIndexRoute
+  '/_app/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
   '/_app/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
-  '/_app/simulados/$id/resultado/$tentativaId': typeof AppSimuladosIdResultadoTentativaIdRoute
+  '/_app/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
   '/_app/biblioteca/$slug/$bookId/': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -450,11 +451,11 @@ export interface FileRouteTypes {
     | '/provas/'
     | '/simulados/'
     | '/biblioteca/$slug/$bookId'
-    | '/simulados/$id/praticar'
+    | '/simulados/$slug/praticar'
     | '/biblioteca/$slug/'
-    | '/simulados/$id/'
+    | '/simulados/$slug/'
     | '/biblioteca/$slug/$bookId/ler'
-    | '/simulados/$id/resultado/$tentativaId'
+    | '/simulados/$slug/resultado/$tentativaId'
     | '/biblioteca/$slug/$bookId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -491,11 +492,11 @@ export interface FileRouteTypes {
     | '/biblioteca'
     | '/provas'
     | '/simulados'
-    | '/simulados/$id/praticar'
+    | '/simulados/$slug/praticar'
     | '/biblioteca/$slug'
-    | '/simulados/$id'
+    | '/simulados/$slug'
     | '/biblioteca/$slug/$bookId/ler'
-    | '/simulados/$id/resultado/$tentativaId'
+    | '/simulados/$slug/resultado/$tentativaId'
     | '/biblioteca/$slug/$bookId'
   id:
     | '__root__'
@@ -537,11 +538,11 @@ export interface FileRouteTypes {
     | '/_app/provas/'
     | '/_app/simulados/'
     | '/_app/biblioteca/$slug/$bookId'
-    | '/_app/simulados/$id/praticar'
+    | '/_app/simulados/$slug/praticar'
     | '/_app/biblioteca/$slug/'
-    | '/_app/simulados/$id/'
+    | '/_app/simulados/$slug/'
     | '/_app/biblioteca/$slug/$bookId/ler'
-    | '/_app/simulados/$id/resultado/$tentativaId'
+    | '/_app/simulados/$slug/resultado/$tentativaId'
     | '/_app/biblioteca/$slug/$bookId/'
   fileRoutesById: FileRoutesById
 }
@@ -815,11 +816,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminSimuladosRouteImport
       parentRoute: typeof AppAdminRoute
     }
-    '/_app/simulados/$id/': {
-      id: '/_app/simulados/$id/'
-      path: '/simulados/$id'
-      fullPath: '/simulados/$id/'
-      preLoaderRoute: typeof AppSimuladosIdIndexRouteImport
+    '/_app/simulados/$slug/': {
+      id: '/_app/simulados/$slug/'
+      path: '/simulados/$slug'
+      fullPath: '/simulados/$slug/'
+      preLoaderRoute: typeof AppSimuladosSlugIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/biblioteca/$slug/': {
@@ -829,11 +830,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugIndexRouteImport
       parentRoute: typeof AppBibliotecaSlugRoute
     }
-    '/_app/simulados/$id/praticar': {
-      id: '/_app/simulados/$id/praticar'
-      path: '/simulados/$id/praticar'
-      fullPath: '/simulados/$id/praticar'
-      preLoaderRoute: typeof AppSimuladosIdPraticarRouteImport
+    '/_app/simulados/$slug/praticar': {
+      id: '/_app/simulados/$slug/praticar'
+      path: '/simulados/$slug/praticar'
+      fullPath: '/simulados/$slug/praticar'
+      preLoaderRoute: typeof AppSimuladosSlugPraticarRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/biblioteca/$slug/$bookId': {
@@ -850,11 +851,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugBookIdIndexRouteImport
       parentRoute: typeof AppBibliotecaSlugBookIdRoute
     }
-    '/_app/simulados/$id/resultado/$tentativaId': {
-      id: '/_app/simulados/$id/resultado/$tentativaId'
-      path: '/simulados/$id/resultado/$tentativaId'
-      fullPath: '/simulados/$id/resultado/$tentativaId'
-      preLoaderRoute: typeof AppSimuladosIdResultadoTentativaIdRouteImport
+    '/_app/simulados/$slug/resultado/$tentativaId': {
+      id: '/_app/simulados/$slug/resultado/$tentativaId'
+      path: '/simulados/$slug/resultado/$tentativaId'
+      fullPath: '/simulados/$slug/resultado/$tentativaId'
+      preLoaderRoute: typeof AppSimuladosSlugResultadoTentativaIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/biblioteca/$slug/$bookId/ler': {
@@ -974,9 +975,9 @@ interface AppRouteChildren {
   AppProvasNumeroRoute: typeof AppProvasNumeroRoute
   AppProvasIndexRoute: typeof AppProvasIndexRoute
   AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
-  AppSimuladosIdPraticarRoute: typeof AppSimuladosIdPraticarRoute
-  AppSimuladosIdIndexRoute: typeof AppSimuladosIdIndexRoute
-  AppSimuladosIdResultadoTentativaIdRoute: typeof AppSimuladosIdResultadoTentativaIdRoute
+  AppSimuladosSlugPraticarRoute: typeof AppSimuladosSlugPraticarRoute
+  AppSimuladosSlugIndexRoute: typeof AppSimuladosSlugIndexRoute
+  AppSimuladosSlugResultadoTentativaIdRoute: typeof AppSimuladosSlugResultadoTentativaIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -1005,10 +1006,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppProvasNumeroRoute: AppProvasNumeroRoute,
   AppProvasIndexRoute: AppProvasIndexRoute,
   AppSimuladosIndexRoute: AppSimuladosIndexRoute,
-  AppSimuladosIdPraticarRoute: AppSimuladosIdPraticarRoute,
-  AppSimuladosIdIndexRoute: AppSimuladosIdIndexRoute,
-  AppSimuladosIdResultadoTentativaIdRoute:
-    AppSimuladosIdResultadoTentativaIdRoute,
+  AppSimuladosSlugPraticarRoute: AppSimuladosSlugPraticarRoute,
+  AppSimuladosSlugIndexRoute: AppSimuladosSlugIndexRoute,
+  AppSimuladosSlugResultadoTentativaIdRoute:
+    AppSimuladosSlugResultadoTentativaIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -1024,3 +1025,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
