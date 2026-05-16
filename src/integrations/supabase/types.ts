@@ -323,6 +323,60 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_posts: {
+        Row: {
+          autor_id: string | null
+          capa_url: string | null
+          categoria: string
+          conteudo_md: string
+          created_at: string
+          id: string
+          publicado: boolean
+          publicado_em: string | null
+          resumo: string
+          slug: string
+          subtitulo: string | null
+          tags: string[]
+          tempo_leitura_min: number
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          autor_id?: string | null
+          capa_url?: string | null
+          categoria?: string
+          conteudo_md?: string
+          created_at?: string
+          id?: string
+          publicado?: boolean
+          publicado_em?: string | null
+          resumo?: string
+          slug: string
+          subtitulo?: string | null
+          tags?: string[]
+          tempo_leitura_min?: number
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          autor_id?: string | null
+          capa_url?: string | null
+          categoria?: string
+          conteudo_md?: string
+          created_at?: string
+          id?: string
+          publicado?: boolean
+          publicado_em?: string | null
+          resumo?: string
+          slug?: string
+          subtitulo?: string | null
+          tags?: string[]
+          tempo_leitura_min?: number
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
