@@ -159,7 +159,7 @@ function BlogArticle() {
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
           <div className="mt-6 flex flex-wrap gap-2">
-            {post.tags.map((t) => (
+            {post.tags.map((t: string) => (
               <span
                 key={t}
                 className="text-[11px] px-2.5 py-1 rounded-full bg-muted text-muted-foreground"
