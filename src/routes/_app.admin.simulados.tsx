@@ -2,11 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Sparkles, Trash2, CheckCircle2, AlertCircle, Clock, ListPlus, Eye, ShieldAlert } from "lucide-react";
+import { Sparkles, Trash2, CheckCircle2, AlertCircle, Clock, ListPlus, Eye, ShieldAlert, RefreshCw } from "lucide-react";
 import {
   listProvasComStatus,
   excluirSimulado,
   auditarEReextrair,
+  reextrairFalhas,
 } from "@/lib/simulados-admin.functions";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
