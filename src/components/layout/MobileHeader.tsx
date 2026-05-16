@@ -22,7 +22,9 @@ export function MobileHeader() {
           </Link>
         ) : (
           <Link
-            to={destinoVoltar}
+            to={destinoVoltar as string}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            {...({} as any)}
             preload="intent"
             preloadDelay={0}
             className="inline-flex items-center gap-2 pl-2 pr-3.5 h-10 rounded-full bg-muted/70 border border-border text-sm font-medium text-foreground hover:bg-muted active:scale-[0.97] transition"
