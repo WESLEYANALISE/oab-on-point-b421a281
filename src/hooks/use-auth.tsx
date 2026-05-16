@@ -32,13 +32,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // onAuthStateChange fires immediately with INITIAL_SESSION (from localStorage),
+    // so we don't need to await getSession() — that avoids the blank-spinner delay.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-    });
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
       setLoading(false);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
     });
     return () => subscription.unsubscribe();
   }, [queryClient]);
@@ -59,6 +58,7 @@ export function useProfile() {
   return useQuery({
     queryKey: ["profile", user?.id],
     enabled: !!user,
+    staleTime: 30_000,
     queryFn: async (): Promise<Profile | null> => {
       if (!user) return null;
       const { data, error } = await supabase
