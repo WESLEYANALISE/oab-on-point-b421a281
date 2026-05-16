@@ -113,33 +113,69 @@ function classificar(arquivos: Arquivo[]): {
   prova1: string | null;
   gabarito1: string | null;
 } {
-  let edital: string | null = null;
-  let prova1: string | null = null;
-  let gabarito1: string | null = null;
-
-  for (const a of arquivos) {
+  // Normaliza títulos
+  const items = arquivos.map((a) => {
     const t = a.titulo.toLowerCase();
     const semData = t.replace(/^\d{2}\/\d{2}\/\d{4}\s*-\s*/, "").trim();
+    return { url: a.url, t: semData };
+  });
 
-    // pula 2ª fase
-    if (/\(direito/.test(semData)) continue;
+  const pular2aFase = (t: string) =>
+    /\(direito|prático-profissional|pratico-profissional/.test(t);
 
-    if (!edital && /^edital de abertura\b/.test(semData)) { edital = a.url; continue; }
-
-    if (/gabaritos?\s+definitivos?.*prova objetiva|gabaritos?\s+definitivos?.*1[ªa]\s*fase/.test(semData)) {
-      gabarito1 = a.url; continue;
-    }
-    if (!gabarito1 && /gabaritos?\s+preliminar.*prova objetiva|gabaritos?\s+preliminar.*1[ªa]\s*fase/.test(semData)) {
-      gabarito1 = a.url; continue;
-    }
-
-    if (!prova1 && /^caderno de prova\b.*tipo\s*1\b/.test(semData)) { prova1 = a.url; continue; }
-    if (!prova1 && /^caderno de prova\b/.test(semData)) { prova1 = a.url; continue; }
-
-    if (!edital && /\bedital\b/.test(semData) && !/retifica|locais|hor[áa]rio|complementar/.test(semData)) {
-      edital = a.url; continue;
+  // ----- EDITAL: prioridade "edital de abertura"
+  let edital: string | null = null;
+  for (const it of items) {
+    if (/^edital de abertura\b/.test(it.t)) { edital = it.url; break; }
+  }
+  if (!edital) {
+    for (const it of items) {
+      if (/\bedital\b/.test(it.t) &&
+          !/retifica|locais|hor[áa]rio|complementar|inclus[ãa]o|isen[çc][ãa]o|resultado|atendimento|aprovados/.test(it.t)) {
+        edital = it.url; break;
+      }
     }
   }
+
+  // ----- PROVA 1ª FASE: prioridade caderno tipo 1, depois caderno 01, depois caderno genérico
+  let prova1: string | null = null;
+  const candidatosProva = items.filter((it) => !pular2aFase(it.t));
+  for (const it of candidatosProva) {
+    if (/^caderno de prova\b.*tipo\s*1\b/.test(it.t)) { prova1 = it.url; break; }
+  }
+  if (!prova1) {
+    for (const it of candidatosProva) {
+      if (/^caderno de prova\s*0?1\b/.test(it.t)) { prova1 = it.url; break; }
+    }
+  }
+  if (!prova1) {
+    for (const it of candidatosProva) {
+      if (/^caderno de prova\b/.test(it.t)) { prova1 = it.url; break; }
+    }
+  }
+
+  // ----- GABARITO 1ª FASE: definitivo > preliminar > "gabarito da prova objetiva"
+  let gabarito1: string | null = null;
+  for (const it of items) {
+    if (/gabaritos?\s+definitivos?.*(prova objetiva|1[ªa]\s*fase)/.test(it.t)) {
+      gabarito1 = it.url; break;
+    }
+  }
+  if (!gabarito1) {
+    for (const it of items) {
+      if (/gabaritos?\s+preliminar.*(prova objetiva|1[ªa]\s*fase)/.test(it.t)) {
+        gabarito1 = it.url; break;
+      }
+    }
+  }
+  if (!gabarito1) {
+    for (const it of items) {
+      if (/^gabarito\b.*(prova objetiva|1[ªa]\s*fase)/.test(it.t)) {
+        gabarito1 = it.url; break;
+      }
+    }
+  }
+
   return { edital, prova1, gabarito1 };
 }
 
