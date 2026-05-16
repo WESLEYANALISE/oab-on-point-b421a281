@@ -1,12 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Minus, Plus, Type } from "lucide-react";
+import { useMemo, useState, useRef, useLayoutEffect } from "react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Minus, Plus, Type, AlertCircle } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { obterLivroResumo } from "@/lib/resumos.functions";
+import { gerarComplementoCapitulo } from "@/lib/capitulo-ai.functions";
 import { normalizarTitulo } from "@/lib/titulo";
 import { useFontScale } from "@/hooks/use-font-scale";
 
@@ -14,16 +15,33 @@ export const Route = createFileRoute("/_app/resumos/capitulo/$livroId/$ordem")({
   component: CapituloView,
 });
 
+type Aba = "resumo" | "exemplo" | "termos";
+const ABAS: { id: Aba; label: string }[] = [
+  { id: "resumo", label: "Resumo" },
+  { id: "exemplo", label: "Exemplo" },
+  { id: "termos", label: "Termos" },
+];
+
 function CapituloView() {
   const { livroId, ordem } = Route.useParams();
   const ordemNum = Number(ordem);
   const { scale, increase, decrease, canIncrease, canDecrease } = useFontScale();
   const fn = useServerFn(obterLivroResumo);
+  const gerarFn = useServerFn(gerarComplementoCapitulo);
   const { data, isPending } = useQuery({
     queryKey: ["resumo-livro", livroId],
     queryFn: () => fn({ data: { resumo_livro_id: livroId } }),
     staleTime: 60_000,
   });
+
+  const [aba, setAba] = useState<Aba>("resumo");
+
+  // reset para Resumo ao trocar de capítulo
+  const ordemRef = useRef(ordemNum);
+  if (ordemRef.current !== ordemNum) {
+    ordemRef.current = ordemNum;
+    if (aba !== "resumo") setAba("resumo");
+  }
 
   const capitulos = data?.capitulos ?? [];
   const atual = useMemo(() => capitulos.find((c) => c.ordem === ordemNum), [capitulos, ordemNum]);
@@ -34,19 +52,28 @@ function CapituloView() {
   const conteudoFormatado = useMemo(() => {
     let md = (atual?.conteudo_markdown ?? "").replace(/\r\n/g, "\n").trim();
     if (!md) return "";
-    // Remove H1 inicial repetido (mesmo texto do título do capítulo)
     md = md.replace(/^#\s+.+\n+/, "");
-    // Transforma menções a artigos em citação (blockquote) na primeira linha em que aparecerem isoladas
     md = md.replace(
       /(^|\n)((?:Art(?:igo)?\.?\s*\d+[ºoO]?[^\n]{0,400}))(\n|$)/g,
-      (_m, pre, frase, post) => {
-        // Não cita se já estiver dentro de bloco
-        if (/^[>\s]*$/.test(pre)) return `${pre}> ${frase}${post}`;
-        return `${pre}> ${frase}${post}`;
-      },
+      (_m, pre, frase, post) => `${pre}> ${frase}${post}`,
     );
     return md;
   }, [atual?.conteudo_markdown]);
+
+  const complementoQuery = useQuery({
+    queryKey: ["capitulo-ai", livroId, ordemNum, aba],
+    queryFn: () =>
+      gerarFn({
+        data: {
+          resumo_livro_id: livroId,
+          ordem: ordemNum,
+          tipo: aba as "exemplo" | "termos",
+        },
+      }),
+    enabled: aba !== "resumo" && !!atual,
+    staleTime: 1000 * 60 * 60,
+    retry: 0,
+  });
 
   if (isPending || !data) {
     return (
@@ -111,14 +138,31 @@ function CapituloView() {
         </div>
       </header>
 
-      <article
-        className="markdown-body max-w-none"
-        style={{ fontSize: `${scale}rem` }}
-      >
-        <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-          {conteudoFormatado}
-        </ReactMarkdown>
-      </article>
+      <TabsSwitch aba={aba} setAba={setAba} />
+
+      <div key={aba} className="animate-tab-fade">
+        {aba === "resumo" && (
+          <article
+            className="markdown-body max-w-none"
+            style={{ fontSize: `${scale}rem` }}
+          >
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+              {conteudoFormatado}
+            </ReactMarkdown>
+          </article>
+        )}
+
+        {aba !== "resumo" && (
+          <ComplementoView
+            isLoading={complementoQuery.isPending || complementoQuery.isFetching}
+            error={complementoQuery.error as Error | null}
+            content={complementoQuery.data?.conteudo_markdown ?? ""}
+            scale={scale}
+            tipo={aba}
+            onRetry={() => complementoQuery.refetch()}
+          />
+        )}
+      </div>
 
       <nav className="mt-10 pt-6 border-t border-border flex justify-between gap-3">
         {prev ? (
@@ -153,5 +197,115 @@ function CapituloView() {
         )}
       </nav>
     </div>
+  );
+}
+
+function TabsSwitch({ aba, setAba }: { aba: Aba; setAba: (a: Aba) => void }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const btnRefs = useRef<Record<Aba, HTMLButtonElement | null>>({
+    resumo: null,
+    exemplo: null,
+    termos: null,
+  });
+  const [indicator, setIndicator] = useState<{ left: number; width: number }>({ left: 0, width: 0 });
+
+  useLayoutEffect(() => {
+    const btn = btnRefs.current[aba];
+    const wrap = containerRef.current;
+    if (!btn || !wrap) return;
+    const wrapRect = wrap.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    setIndicator({ left: btnRect.left - wrapRect.left, width: btnRect.width });
+  }, [aba]);
+
+  return (
+    <div
+      ref={containerRef}
+      role="tablist"
+      aria-label="Modo de leitura"
+      className="relative mb-6 inline-flex items-center gap-1 rounded-full border border-border bg-card/60 p-1 backdrop-blur-sm"
+    >
+      <span
+        aria-hidden
+        className="absolute top-1 bottom-1 rounded-full bg-gradient-toga shadow-[0_4px_14px_-4px_oklch(0.78_0.13_80/0.55)] transition-[left,width] duration-300 ease-out"
+        style={{ left: indicator.left, width: indicator.width }}
+      />
+      {ABAS.map((t) => {
+        const active = aba === t.id;
+        return (
+          <button
+            key={t.id}
+            ref={(el) => {
+              btnRefs.current[t.id] = el;
+            }}
+            role="tab"
+            aria-selected={active}
+            type="button"
+            onClick={() => setAba(t.id)}
+            className={`relative z-10 px-4 py-1.5 text-xs md:text-sm font-display font-semibold rounded-full transition-colors duration-200 ${
+              active ? "text-gold" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ComplementoView({
+  isLoading,
+  error,
+  content,
+  scale,
+  tipo,
+  onRetry,
+}: {
+  isLoading: boolean;
+  error: Error | null;
+  content: string;
+  scale: number;
+  tipo: "exemplo" | "termos";
+  onRetry: () => void;
+}) {
+  if (isLoading) {
+    return (
+      <div className="py-16 text-center text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mx-auto mb-3 text-gold" />
+        <p className="text-sm">
+          {tipo === "exemplo"
+            ? "Gerando exemplo prático com IA…"
+            : "Identificando termos jurídicos…"}
+        </p>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="py-10 text-center">
+        <AlertCircle className="h-5 w-5 mx-auto mb-2 text-destructive" />
+        <p className="text-sm text-muted-foreground mb-3">
+          Não foi possível gerar agora.
+        </p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="text-xs uppercase tracking-wider text-gold border border-gold/40 hover:bg-gold/10 rounded-full px-4 py-1.5"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
+  return (
+    <article
+      className="markdown-body max-w-none"
+      style={{ fontSize: `${scale}rem` }}
+    >
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+        {content}
+      </ReactMarkdown>
+    </article>
   );
 }
