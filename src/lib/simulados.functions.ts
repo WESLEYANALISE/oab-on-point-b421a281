@@ -417,37 +417,93 @@ export const getEditalResumo = createServerFn({ method: "POST" })
 
     if (!markdown.trim()) return { conteudo: null, fonte: "vazio" as const };
 
-    // Estrutura com Lovable AI Gateway (Gemini)
+    // Estrutura: tenta Gemini (Lovable AI Gateway); fallback Mistral
+    const prompt = `Organize o edital abaixo em JSON com as chaves: resumo (3-5 frases), cronograma (array de {data, titulo}), taxas (array de {descricao, valor}), requisitos (array de strings), secoes (array de {titulo, conteudo} cobrindo os principais tópicos: inscrição, prova objetiva, prova prático-profissional, recursos, resultado, vagas para PcD, e outros relevantes). Responda SOMENTE com JSON válido.\n\nEDITAL:\n${markdown.slice(0, 60000)}`;
+    const system =
+      "Você organiza editais da OAB em JSON estruturado em português do Brasil. Seja conciso e fiel ao texto.";
+
+    async function tryGemini(): Promise<string | null> {
+      try {
+        const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: prompt },
+            ],
+            response_format: { type: "json_object" },
+          }),
+        });
+        if (!r.ok) {
+          const body = await r.text().catch(() => "");
+          console.error("[edital] Gemini falhou:", r.status, body.slice(0, 300));
+          return null;
+        }
+        const j = (await r.json()) as { choices?: Array<{ message?: { content?: string } }> };
+        return j.choices?.[0]?.message?.content ?? null;
+      } catch (e) {
+        console.error("[edital] Gemini exceção:", e);
+        return null;
+      }
+    }
+
+    async function tryMistral(): Promise<string | null> {
+      try {
+        const r = await fetch("https://api.mistral.ai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.MISTRAL_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "mistral-large-latest",
+            messages: [
+              { role: "system", content: system },
+              { role: "user", content: prompt },
+            ],
+            response_format: { type: "json_object" },
+          }),
+        });
+        if (!r.ok) {
+          const body = await r.text().catch(() => "");
+          console.error("[edital] Mistral falhou:", r.status, body.slice(0, 300));
+          return null;
+        }
+        const j = (await r.json()) as { choices?: Array<{ message?: { content?: string } }> };
+        return j.choices?.[0]?.message?.content ?? null;
+      } catch (e) {
+        console.error("[edital] Mistral exceção:", e);
+        return null;
+      }
+    }
+
+    function parseLoose(raw: string): EditalResumo | null {
+      let s = raw.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+      const start = s.search(/[\{\[]/);
+      const end = s.lastIndexOf("}");
+      if (start === -1 || end === -1) return null;
+      s = s.substring(start, end + 1);
+      try {
+        return JSON.parse(s) as EditalResumo;
+      } catch {
+        try {
+          s = s.replace(/,\s*}/g, "}").replace(/,\s*]/g, "]").replace(/[\x00-\x1F\x7F]/g, "");
+          return JSON.parse(s) as EditalResumo;
+        } catch {
+          return null;
+        }
+      }
+    }
+
     let resumo: EditalResumo | null = null;
-    try {
-      const ai = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "system",
-              content:
-                "Você organiza editais da OAB em JSON estruturado em português do Brasil. Seja conciso e fiel ao texto.",
-            },
-            {
-              role: "user",
-              content: `Organize o edital abaixo em JSON com as chaves: resumo (3-5 frases), cronograma (array de {data, titulo}), taxas (array de {descricao, valor}), requisitos (array de strings), secoes (array de {titulo, conteudo} cobrindo os principais tópicos: inscrição, prova objetiva, prova prático-profissional, recursos, resultado, vagas para PcD, e outros relevantes). Responda SOMENTE com JSON válido.\n\nEDITAL:\n${markdown.slice(0, 60000)}`,
-            },
-          ],
-          response_format: { type: "json_object" },
-        }),
-      });
-      if (!ai.ok) throw new Error(`AI ${ai.status}`);
-      const aiJson = (await ai.json()) as { choices?: Array<{ message?: { content?: string } }> };
-      const content = aiJson.choices?.[0]?.message?.content ?? "{}";
-      resumo = JSON.parse(content) as EditalResumo;
-    } catch (e) {
-      console.error("[edital] AI falhou:", e);
+    const content = (await tryGemini()) ?? (await tryMistral());
+    if (content) resumo = parseLoose(content);
+    if (!resumo) {
       return { conteudo: null, fonte: "erro-ai" as const };
     }
 
