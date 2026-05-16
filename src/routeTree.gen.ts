@@ -17,7 +17,6 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
-import { Route as AppResumosRouteImport } from './routes/_app.resumos'
 import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
 import { Route as AppPlanoEstudoRouteImport } from './routes/_app.plano-estudo'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
@@ -30,6 +29,7 @@ import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppSimuladosIndexRouteImport } from './routes/_app.simulados.index'
+import { Route as AppResumosIndexRouteImport } from './routes/_app.resumos.index'
 import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
@@ -94,11 +94,6 @@ const AppRetaFinalRoute = AppRetaFinalRouteImport.update({
   path: '/reta-final',
   getParentRoute: () => AppRoute,
 } as any)
-const AppResumosRoute = AppResumosRouteImport.update({
-  id: '/resumos',
-  path: '/resumos',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppProgressoRoute = AppProgressoRouteImport.update({
   id: '/progresso',
   path: '/progresso',
@@ -159,6 +154,11 @@ const AppSimuladosIndexRoute = AppSimuladosIndexRouteImport.update({
   path: '/simulados/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppResumosIndexRoute = AppResumosIndexRouteImport.update({
+  id: '/resumos/',
+  path: '/resumos/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProvasIndexRoute = AppProvasIndexRouteImport.update({
   id: '/provas/',
   path: '/provas/',
@@ -180,9 +180,9 @@ const ApiPublicSeedProvasRoute = ApiPublicSeedProvasRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppResumosLivroIdRoute = AppResumosLivroIdRouteImport.update({
-  id: '/$livroId',
-  path: '/$livroId',
-  getParentRoute: () => AppResumosRoute,
+  id: '/resumos/$livroId',
+  path: '/resumos/$livroId',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppProvasNumeroRoute = AppProvasNumeroRouteImport.update({
   id: '/provas/$numero',
@@ -301,7 +301,6 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AppPerfilRoute
   '/plano-estudo': typeof AppPlanoEstudoRoute
   '/progresso': typeof AppProgressoRoute
-  '/resumos': typeof AppResumosRouteWithChildren
   '/reta-final': typeof AppRetaFinalRoute
   '/vade-mecum': typeof AppVadeMecumRoute
   '/admin/resumos': typeof AppAdminResumosRoute
@@ -321,6 +320,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AppAdminIndexRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/provas/': typeof AppProvasIndexRoute
+  '/resumos/': typeof AppResumosIndexRoute
   '/simulados/': typeof AppSimuladosIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
@@ -344,7 +344,6 @@ export interface FileRoutesByTo {
   '/perfil': typeof AppPerfilRoute
   '/plano-estudo': typeof AppPlanoEstudoRoute
   '/progresso': typeof AppProgressoRoute
-  '/resumos': typeof AppResumosRouteWithChildren
   '/reta-final': typeof AppRetaFinalRoute
   '/vade-mecum': typeof AppVadeMecumRoute
   '/': typeof AppIndexRoute
@@ -364,6 +363,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AppAdminIndexRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
   '/provas': typeof AppProvasIndexRoute
+  '/resumos': typeof AppResumosIndexRoute
   '/simulados': typeof AppSimuladosIndexRoute
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
@@ -390,7 +390,6 @@ export interface FileRoutesById {
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/plano-estudo': typeof AppPlanoEstudoRoute
   '/_app/progresso': typeof AppProgressoRoute
-  '/_app/resumos': typeof AppResumosRouteWithChildren
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/_app/vade-mecum': typeof AppVadeMecumRoute
   '/_app/': typeof AppIndexRoute
@@ -411,6 +410,7 @@ export interface FileRoutesById {
   '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/provas/': typeof AppProvasIndexRoute
+  '/_app/resumos/': typeof AppResumosIndexRoute
   '/_app/simulados/': typeof AppSimuladosIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/_app/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
@@ -439,7 +439,6 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/plano-estudo'
     | '/progresso'
-    | '/resumos'
     | '/reta-final'
     | '/vade-mecum'
     | '/admin/resumos'
@@ -459,6 +458,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/biblioteca/'
     | '/provas/'
+    | '/resumos/'
     | '/simulados/'
     | '/biblioteca/$slug/$bookId'
     | '/simulados/$slug/praticar'
@@ -482,7 +482,6 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/plano-estudo'
     | '/progresso'
-    | '/resumos'
     | '/reta-final'
     | '/vade-mecum'
     | '/'
@@ -502,6 +501,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/biblioteca'
     | '/provas'
+    | '/resumos'
     | '/simulados'
     | '/simulados/$slug/praticar'
     | '/biblioteca/$slug'
@@ -527,7 +527,6 @@ export interface FileRouteTypes {
     | '/_app/perfil'
     | '/_app/plano-estudo'
     | '/_app/progresso'
-    | '/_app/resumos'
     | '/_app/reta-final'
     | '/_app/vade-mecum'
     | '/_app/'
@@ -548,6 +547,7 @@ export interface FileRouteTypes {
     | '/_app/admin/'
     | '/_app/biblioteca/'
     | '/_app/provas/'
+    | '/_app/resumos/'
     | '/_app/simulados/'
     | '/_app/biblioteca/$slug/$bookId'
     | '/_app/simulados/$slug/praticar'
@@ -623,13 +623,6 @@ declare module '@tanstack/react-router' {
       path: '/reta-final'
       fullPath: '/reta-final'
       preLoaderRoute: typeof AppRetaFinalRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/resumos': {
-      id: '/_app/resumos'
-      path: '/resumos'
-      fullPath: '/resumos'
-      preLoaderRoute: typeof AppResumosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/progresso': {
@@ -716,6 +709,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSimuladosIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/resumos/': {
+      id: '/_app/resumos/'
+      path: '/resumos'
+      fullPath: '/resumos/'
+      preLoaderRoute: typeof AppResumosIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/provas/': {
       id: '/_app/provas/'
       path: '/provas'
@@ -746,10 +746,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/resumos/$livroId': {
       id: '/_app/resumos/$livroId'
-      path: '/$livroId'
+      path: '/resumos/$livroId'
       fullPath: '/resumos/$livroId'
       preLoaderRoute: typeof AppResumosLivroIdRouteImport
-      parentRoute: typeof AppResumosRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/provas/$numero': {
       id: '/_app/provas/$numero'
@@ -970,18 +970,6 @@ const AppNoticiasRouteWithChildren = AppNoticiasRoute._addFileChildren(
   AppNoticiasRouteChildren,
 )
 
-interface AppResumosRouteChildren {
-  AppResumosLivroIdRoute: typeof AppResumosLivroIdRoute
-}
-
-const AppResumosRouteChildren: AppResumosRouteChildren = {
-  AppResumosLivroIdRoute: AppResumosLivroIdRoute,
-}
-
-const AppResumosRouteWithChildren = AppResumosRoute._addFileChildren(
-  AppResumosRouteChildren,
-)
-
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAssistenteRoute: typeof AppAssistenteRoute
@@ -994,7 +982,6 @@ interface AppRouteChildren {
   AppPerfilRoute: typeof AppPerfilRoute
   AppPlanoEstudoRoute: typeof AppPlanoEstudoRoute
   AppProgressoRoute: typeof AppProgressoRoute
-  AppResumosRoute: typeof AppResumosRouteWithChildren
   AppRetaFinalRoute: typeof AppRetaFinalRoute
   AppVadeMecumRoute: typeof AppVadeMecumRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -1005,7 +992,9 @@ interface AppRouteChildren {
   AppOabPrimeiraFaseRoute: typeof AppOabPrimeiraFaseRoute
   AppOabSegundaFaseRoute: typeof AppOabSegundaFaseRoute
   AppProvasNumeroRoute: typeof AppProvasNumeroRoute
+  AppResumosLivroIdRoute: typeof AppResumosLivroIdRoute
   AppProvasIndexRoute: typeof AppProvasIndexRoute
+  AppResumosIndexRoute: typeof AppResumosIndexRoute
   AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
   AppSimuladosSlugPraticarRoute: typeof AppSimuladosSlugPraticarRoute
   AppSimuladosSlugIndexRoute: typeof AppSimuladosSlugIndexRoute
@@ -1024,7 +1013,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppPerfilRoute: AppPerfilRoute,
   AppPlanoEstudoRoute: AppPlanoEstudoRoute,
   AppProgressoRoute: AppProgressoRoute,
-  AppResumosRoute: AppResumosRouteWithChildren,
   AppRetaFinalRoute: AppRetaFinalRoute,
   AppVadeMecumRoute: AppVadeMecumRoute,
   AppIndexRoute: AppIndexRoute,
@@ -1035,7 +1023,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppOabPrimeiraFaseRoute: AppOabPrimeiraFaseRoute,
   AppOabSegundaFaseRoute: AppOabSegundaFaseRoute,
   AppProvasNumeroRoute: AppProvasNumeroRoute,
+  AppResumosLivroIdRoute: AppResumosLivroIdRoute,
   AppProvasIndexRoute: AppProvasIndexRoute,
+  AppResumosIndexRoute: AppResumosIndexRoute,
   AppSimuladosIndexRoute: AppSimuladosIndexRoute,
   AppSimuladosSlugPraticarRoute: AppSimuladosSlugPraticarRoute,
   AppSimuladosSlugIndexRoute: AppSimuladosSlugIndexRoute,
@@ -1056,3 +1046,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
