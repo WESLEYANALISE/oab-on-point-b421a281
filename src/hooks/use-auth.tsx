@@ -26,6 +26,41 @@ const AuthContext = createContext<AuthContextValue>({
   loading: true,
 });
 
+const PROFILE_CACHE_PREFIX = "oab:profile:";
+
+function readCachedProfile(userId: string | undefined): Profile | undefined {
+  if (!userId || typeof window === "undefined") return undefined;
+  try {
+    const raw = window.localStorage.getItem(PROFILE_CACHE_PREFIX + userId);
+    if (!raw) return undefined;
+    return JSON.parse(raw) as Profile;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeCachedProfile(userId: string, profile: Profile | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (profile) {
+      window.localStorage.setItem(PROFILE_CACHE_PREFIX + userId, JSON.stringify(profile));
+    } else {
+      window.localStorage.removeItem(PROFILE_CACHE_PREFIX + userId);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function clearCachedProfile(userId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(PROFILE_CACHE_PREFIX + userId);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,16 +68,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let lastUserId: string | null | undefined = undefined;
-    // onAuthStateChange fires immediately with INITIAL_SESSION (from localStorage),
-    // so we don't need to await getSession() — that avoids the blank-spinner delay.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       setLoading(false);
       const uid = s?.user?.id ?? null;
-      // Só invalida perfil quando o usuário REALMENTE muda (login/logout/troca),
-      // não em refresh de token nem em re-emissão da sessão inicial.
       if (lastUserId !== undefined && uid !== lastUserId) {
+        // Troca de usuário ou logout: limpa o cache do anterior.
+        if (lastUserId) clearCachedProfile(lastUserId);
         queryClient.invalidateQueries({ queryKey: ["profile"] });
+      }
+      if (event === "SIGNED_OUT" && lastUserId) {
+        clearCachedProfile(lastUserId);
       }
       lastUserId = uid;
     });
@@ -62,6 +98,7 @@ export function useAuth() {
 
 export function useProfile() {
   const { user } = useAuth();
+  const cached = readCachedProfile(user?.id);
   return useQuery({
     queryKey: ["profile", user?.id],
     enabled: !!user,
@@ -70,6 +107,7 @@ export function useProfile() {
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false,
+    initialData: cached,
     queryFn: async (): Promise<Profile | null> => {
       if (!user) return null;
       const { data, error } = await supabase
@@ -78,7 +116,9 @@ export function useProfile() {
         .eq("id", user.id)
         .maybeSingle();
       if (error) throw error;
-      return data as Profile | null;
+      const profile = (data as Profile | null) ?? null;
+      if (profile) writeCachedProfile(user.id, profile);
+      return profile;
     },
   });
 }

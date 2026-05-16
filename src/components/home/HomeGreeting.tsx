@@ -5,8 +5,9 @@ import { AvatarUploader } from "@/components/profile/AvatarUploader";
 import { useProfile, greetingFor } from "@/hooks/use-auth";
 
 export function HomeGreeting() {
-  const { data: profile } = useProfile();
-  const firstName = (profile?.display_name || "").trim().split(/\s+/)[0] || "Estudante";
+  const { data: profile, isPending } = useProfile();
+  const rawFirst = (profile?.display_name || "").trim().split(/\s+/)[0];
+  const firstName = rawFirst || (isPending ? "" : "Estudante");
   // Saudação só é calculada no cliente para evitar mismatch de fuso/hidratação.
   const [greet, setGreet] = useState<string | null>(null);
   useEffect(() => {
@@ -25,8 +26,8 @@ export function HomeGreeting() {
           >
             {greet ?? "\u00a0"}
           </p>
-          <p className="font-display font-semibold text-[17px] md:text-xl leading-tight tracking-tight truncate mt-1">
-            {firstName}
+          <p className="font-display font-semibold text-[17px] md:text-xl leading-tight tracking-tight truncate mt-1 min-h-[22px]">
+            {firstName || <span className="inline-block h-4 w-24 rounded bg-white/10 animate-pulse align-middle" />}
           </p>
           <p className="text-[11px] text-primary-foreground/70 mt-0.5 truncate">Foco no 46º Exame OAB</p>
         </div>
