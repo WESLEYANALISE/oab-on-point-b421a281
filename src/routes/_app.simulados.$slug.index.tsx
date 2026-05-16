@@ -27,7 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_app/simulados/$id/")({
+export const Route = createFileRoute("/_app/simulados/$slug/")({
   head: () => ({ meta: [{ title: "Simulado — OAB na Risca" }] }),
   component: OverviewPage,
 });
