@@ -168,22 +168,7 @@ async function baixarESubir(
   }
 }
 
-/**
- * Seed do catálogo de provas da OAB.
- * Baixa edital + prova + gabarito da 1ª fase de cada exame e sobe para o
- * Supabase Storage (bucket `provas-oab`).
- *
- * Protegido pela env SEED_PROVAS_TOKEN. Aceita `apenasNumero` para
- * reprocessar um único exame.
- */
-export const seedProvasOab = createServerFn({ method: "POST" })
-  .inputValidator((input: { token: string; apenasNumero?: number; dryRun?: boolean }) => input)
-  .handler(async ({ data }) => {
-    const expectedToken = process.env.SEED_PROVAS_TOKEN;
-    if (!expectedToken || data.token !== expectedToken) {
-      throw new Error("Token inválido. Defina SEED_PROVAS_TOKEN e use-o.");
-    }
-
+export async function executarSeedProvasOab(data: { apenasNumero?: number; dryRun?: boolean } = {}) {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const exames = await listarExames();
@@ -250,4 +235,15 @@ export const seedProvasOab = createServerFn({ method: "POST" })
       erros,
       dryRun: !!data.dryRun,
     };
-  });
+}
+
+/**
+ * Seed do catálogo de provas da OAB.
+ * Baixa edital + prova + gabarito da 1ª fase de cada exame e sobe para o
+ * Supabase Storage (bucket `provas-oab`).
+ *
+ * Aceita `apenasNumero` para reprocessar um único exame.
+ */
+export const seedProvasOab = createServerFn({ method: "POST" })
+  .inputValidator((input: { apenasNumero?: number; dryRun?: boolean } | undefined) => input ?? {})
+  .handler(async ({ data }) => executarSeedProvasOab(data));

@@ -15,7 +15,7 @@ A parte de 2ª fase eu **removo** das telas e da tabela (você não pediu, e sim
 Migration pra dropar `provas_2fase` e `outros_arquivos` (não vamos usar). Mantém: `numero`, `titulo`, `ano`, `oab_exame_id`, `oab_source_url`, `edital_url`, `prova_1fase_url`, `gabarito_1fase_url`.
 
 ### 3. `seedProvasOab` passa a baixar + subir
-A server function (já protegida por `SEED_PROVAS_TOKEN`):
+A server function sem senha extra:
 1. Faz scrape do site da OAB pra achar os 3 PDFs de cada exame.
 2. Baixa cada PDF com `fetch`.
 3. Sobe pro bucket via `supabaseAdmin.storage.from('provas-oab').upload(..., { contentType: 'application/pdf', upsert: true })`.
