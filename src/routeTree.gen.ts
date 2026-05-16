@@ -32,7 +32,6 @@ import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
 import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
-import { Route as ApiPublicSeedProvasRouteImport } from './routes/api.public.seed-provas'
 import { Route as AppProvasNumeroRouteImport } from './routes/_app.provas.$numero'
 import { Route as AppOabSegundaFaseRouteImport } from './routes/_app.oab.segunda-fase'
 import { Route as AppOabPrimeiraFaseRouteImport } from './routes/_app.oab.primeira-fase'
@@ -162,11 +161,6 @@ const AppBibliotecaIndexRoute = AppBibliotecaIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppBibliotecaRoute,
 } as any)
-const ApiPublicSeedProvasRoute = ApiPublicSeedProvasRouteImport.update({
-  id: '/api/public/seed-provas',
-  path: '/api/public/seed-provas',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppProvasNumeroRoute = AppProvasNumeroRouteImport.update({
   id: '/provas/$numero',
   path: '/provas/$numero',
@@ -271,7 +265,6 @@ export interface FileRoutesByFullPath {
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
-  '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/provas/': typeof AppProvasIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
@@ -308,7 +301,6 @@ export interface FileRoutesByTo {
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
-  '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
   '/provas': typeof AppProvasIndexRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
@@ -348,7 +340,6 @@ export interface FileRoutesById {
   '/_app/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
   '/_app/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/_app/provas/$numero': typeof AppProvasNumeroRoute
-  '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/provas/': typeof AppProvasIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
@@ -389,7 +380,6 @@ export interface FileRouteTypes {
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
     | '/provas/$numero'
-    | '/api/public/seed-provas'
     | '/biblioteca/'
     | '/provas/'
     | '/biblioteca/$slug/$bookId'
@@ -426,7 +416,6 @@ export interface FileRouteTypes {
     | '/oab/primeira-fase'
     | '/oab/segunda-fase'
     | '/provas/$numero'
-    | '/api/public/seed-provas'
     | '/biblioteca'
     | '/provas'
     | '/biblioteca/$slug'
@@ -465,7 +454,6 @@ export interface FileRouteTypes {
     | '/_app/oab/primeira-fase'
     | '/_app/oab/segunda-fase'
     | '/_app/provas/$numero'
-    | '/api/public/seed-provas'
     | '/_app/biblioteca/'
     | '/_app/provas/'
     | '/_app/biblioteca/$slug/$bookId'
@@ -480,7 +468,6 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
-  ApiPublicSeedProvasRoute: typeof ApiPublicSeedProvasRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -645,13 +632,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/biblioteca/'
       preLoaderRoute: typeof AppBibliotecaIndexRouteImport
       parentRoute: typeof AppBibliotecaRoute
-    }
-    '/api/public/seed-provas': {
-      id: '/api/public/seed-provas'
-      path: '/api/public/seed-provas'
-      fullPath: '/api/public/seed-provas'
-      preLoaderRoute: typeof ApiPublicSeedProvasRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_app/provas/$numero': {
       id: '/_app/provas/$numero'
@@ -883,8 +863,17 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
-  ApiPublicSeedProvasRoute: ApiPublicSeedProvasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
