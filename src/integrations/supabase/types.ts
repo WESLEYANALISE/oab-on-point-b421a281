@@ -431,6 +431,119 @@ export type Database = {
         }
         Relationships: []
       }
+      resumo_capitulos: {
+        Row: {
+          conteudo_markdown: string | null
+          created_at: string
+          erro_msg: string | null
+          id: string
+          imagens: Json
+          ordem: number
+          resumo_livro_id: string
+          slug: string
+          status: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          conteudo_markdown?: string | null
+          created_at?: string
+          erro_msg?: string | null
+          id?: string
+          imagens?: Json
+          ordem: number
+          resumo_livro_id: string
+          slug: string
+          status?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          conteudo_markdown?: string | null
+          created_at?: string
+          erro_msg?: string | null
+          id?: string
+          imagens?: Json
+          ordem?: number
+          resumo_livro_id?: string
+          slug?: string
+          status?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resumo_capitulos_resumo_livro_id_fkey"
+            columns: ["resumo_livro_id"]
+            isOneToOne: false
+            referencedRelation: "resumo_livros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resumo_livros: {
+        Row: {
+          area: string | null
+          autor: string | null
+          biblioteca_slug: string
+          capa: string | null
+          capitulos_gerados: number
+          created_at: string
+          erro_msg: string | null
+          gerado_por: string | null
+          id: string
+          livro_id: number
+          ocr_paginas: Json | null
+          ocr_texto: string | null
+          pdf_url: string | null
+          previa: Json
+          status: string
+          titulo: string
+          total_capitulos: number
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          autor?: string | null
+          biblioteca_slug: string
+          capa?: string | null
+          capitulos_gerados?: number
+          created_at?: string
+          erro_msg?: string | null
+          gerado_por?: string | null
+          id?: string
+          livro_id: number
+          ocr_paginas?: Json | null
+          ocr_texto?: string | null
+          pdf_url?: string | null
+          previa?: Json
+          status?: string
+          titulo: string
+          total_capitulos?: number
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          autor?: string | null
+          biblioteca_slug?: string
+          capa?: string | null
+          capitulos_gerados?: number
+          created_at?: string
+          erro_msg?: string | null
+          gerado_por?: string | null
+          id?: string
+          livro_id?: number
+          ocr_paginas?: Json | null
+          ocr_texto?: string | null
+          pdf_url?: string | null
+          previa?: Json
+          status?: string
+          titulo?: string
+          total_capitulos?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       simulado_jobs: {
         Row: {
           batch_atual: number
