@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { executarSeedProvasOab, debugListarArquivos, debugListarExames } from "@/lib/provas-oab.functions";
+import { executarSeedProvasOab, debugListarArquivos, debugListarExames, debugClassificar } from "@/lib/provas-oab.functions";
 
 export const Route = createFileRoute("/api/public/seed-provas")({
   server: {
