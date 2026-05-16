@@ -121,8 +121,10 @@ export const listProvasComStatus = createServerFn({ method: "GET" })
     }));
   });
 
-// ============ ETAPA 1: Preparar (OCR + prévia) ============
-export const prepararSimulado = createServerFn({ method: "POST" })
+// ============ ETAPA 1: Criar job (instantâneo) ============
+const BATCH_SIZE = 20; // questões por batch
+
+export const iniciarJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { provaNumero: number }) =>
     z.object({ provaNumero: z.number().int().positive() }).parse(d),
@@ -130,9 +132,6 @@ export const prepararSimulado = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
-
-    const apiKey = process.env.MISTRAL_API_KEY;
-    if (!apiKey) throw new Error("MISTRAL_API_KEY não configurada");
 
     const prova = await supabase
       .from("provas_oab")
@@ -145,32 +144,59 @@ export const prepararSimulado = createServerFn({ method: "POST" })
       throw new Error("Prova ou gabarito sem PDF cadastrado");
     }
 
-    // Cria job em status preview
     const ins = await supabaseAdmin
       .from("simulado_jobs")
       .insert({
         prova_numero: prova.data.numero,
-        etapa: "preview",
+        etapa: "ocr",
         gerado_por: userId,
+        iniciado_em: new Date().toISOString(),
         logs: [
-          { ts: new Date().toISOString(), nivel: "info", msg: `Iniciando OCR de ${prova.data.titulo}` },
+          { ts: new Date().toISOString(), nivel: "info", msg: `Job criado para ${prova.data.titulo}` },
         ],
       })
       .select("id")
       .single();
     if (ins.error) throw new Error(ins.error.message);
-    const jobId = ins.data.id;
+    return { jobId: ins.data.id, titulo: prova.data.titulo };
+  });
+
+// ============ ETAPA 2: Executar OCR + preparar simulado ============
+export const executarOcr = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await assertAdmin(supabase, userId);
+
+    const apiKey = process.env.MISTRAL_API_KEY;
+    if (!apiKey) throw new Error("MISTRAL_API_KEY não configurada");
+
+    const job = await supabaseAdmin
+      .from("simulado_jobs")
+      .select("*")
+      .eq("id", data.jobId)
+      .single();
+    if (job.error || !job.data) throw new Error("Job não encontrado");
+    if (job.data.etapa !== "ocr") return { ok: true, ja: true };
+
+    const prova = await supabaseAdmin
+      .from("provas_oab")
+      .select("numero, titulo, ano, prova_1fase_url, gabarito_1fase_url")
+      .eq("numero", job.data.prova_numero)
+      .single();
+    if (prova.error || !prova.data) throw new Error("Prova não encontrada");
 
     try {
-      await appendLog(jobId, "info", "Lendo PDF da prova via Mistral OCR…");
-      const provaTxt = await mistralOcr(apiKey, prova.data.prova_1fase_url);
-      await appendLog(jobId, "ok", `Prova OCR concluído (${Math.round(provaTxt.length / 1000)}k caracteres)`);
+      await appendLog(data.jobId, "info", "Baixando e lendo PDF da prova via Mistral OCR…");
+      const provaTxt = await mistralOcr(apiKey, prova.data.prova_1fase_url!);
+      await appendLog(data.jobId, "ok", `Prova OCR: ${Math.round(provaTxt.length / 1000)}k caracteres extraídos`);
 
-      await appendLog(jobId, "info", "Lendo PDF do gabarito…");
-      const gabTxt = await mistralOcr(apiKey, prova.data.gabarito_1fase_url);
-      await appendLog(jobId, "ok", `Gabarito OCR concluído (${Math.round(gabTxt.length / 1000)}k caracteres)`);
+      await appendLog(data.jobId, "info", "Baixando e lendo PDF do gabarito…");
+      const gabTxt = await mistralOcr(apiKey, prova.data.gabarito_1fase_url!);
+      await appendLog(data.jobId, "ok", `Gabarito OCR: ${Math.round(gabTxt.length / 1000)}k caracteres extraídos`);
 
-      // Estimativa por regex: conta padrões de questão
+      // Estimativa por regex
       const matches = provaTxt.match(/Quest(ã|a)o\s+\d+|^\s*\d{1,3}[\.\)]\s/gim) ?? [];
       const numeros = new Set<number>();
       for (const m of matches) {
@@ -179,16 +205,31 @@ export const prepararSimulado = createServerFn({ method: "POST" })
       }
       const totalEstimado = numeros.size > 0 ? numeros.size : 80;
 
-      // Detecta matérias presentes no markdown (heurística simples)
       const materiasPossiveis = [
         "Ética", "Constitucional", "Civil", "Processo Civil", "Penal", "Processo Penal",
         "Trabalho", "Tributário", "Administrativo", "Empresarial", "Filosofia",
         "Direitos Humanos", "Internacional", "Ambiental", "Eleitoral", "ECA",
       ];
-      const materiasDetect = materiasPossiveis.filter((m) =>
-        new RegExp(m, "i").test(provaTxt),
-      );
+      const materiasDetect = materiasPossiveis.filter((m) => new RegExp(m, "i").test(provaTxt));
 
+      await appendLog(data.jobId, "ok", `Detectadas ~${totalEstimado} questões em ${materiasDetect.length} matérias`);
+
+      // Cria simulado (remove anterior se houver)
+      await supabaseAdmin.from("simulados").delete().eq("prova_numero", prova.data.numero);
+      const sim = await supabaseAdmin
+        .from("simulados")
+        .insert({
+          prova_numero: prova.data.numero,
+          titulo: `Simulado ${prova.data.titulo}`,
+          ano: prova.data.ano,
+          status: "gerando",
+          gerado_por: userId,
+        })
+        .select("id")
+        .single();
+      if (sim.error) throw new Error(sim.error.message);
+
+      const batches = Math.max(1, Math.ceil(totalEstimado / BATCH_SIZE));
       await supabaseAdmin
         .from("simulado_jobs")
         .update({
@@ -196,85 +237,25 @@ export const prepararSimulado = createServerFn({ method: "POST" })
           ocr_gabarito: gabTxt,
           total_estimado: totalEstimado,
           materias_detectadas: materiasDetect,
+          simulado_id: sim.data.id,
+          batches_total: batches,
+          batch_atual: 0,
+          etapa: "gerando",
         })
-        .eq("id", jobId);
+        .eq("id", data.jobId);
 
-      await appendLog(jobId, "ok", `Detectadas ~${totalEstimado} questões em ${materiasDetect.length} matérias.`);
+      await appendLog(data.jobId, "info", `Iniciando geração em ${batches} lotes de até ${BATCH_SIZE} questões via Gemini.`);
 
-      return {
-        jobId,
-        titulo: prova.data.titulo,
-        totalEstimado,
-        materiasDetectadas: materiasDetect,
-        provaNumero: prova.data.numero,
-      };
+      return { ok: true, simuladoId: sim.data.id, batchesTotal: batches, totalEstimado };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      await appendLog(jobId, "erro", msg);
+      await appendLog(data.jobId, "erro", msg);
       await supabaseAdmin
         .from("simulado_jobs")
         .update({ etapa: "erro", erro_msg: msg.slice(0, 500) })
-        .eq("id", jobId);
+        .eq("id", data.jobId);
       throw new Error(msg);
     }
-  });
-
-// ============ ETAPA 2: Confirmar e iniciar geração ============
-const BATCH_SIZE = 20; // questões por batch
-
-export const iniciarGeracao = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { jobId: string }) => z.object({ jobId: z.string().uuid() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    await assertAdmin(supabase, userId);
-
-    const job = await supabaseAdmin
-      .from("simulado_jobs")
-      .select("*")
-      .eq("id", data.jobId)
-      .single();
-    if (job.error || !job.data) throw new Error("Job não encontrado");
-    if (job.data.etapa !== "preview") throw new Error("Job já iniciado");
-
-    const prova = await supabaseAdmin
-      .from("provas_oab")
-      .select("numero, titulo, ano")
-      .eq("numero", job.data.prova_numero)
-      .single();
-    if (prova.error) throw new Error(prova.error.message);
-
-    // Remove simulado anterior dessa prova (caso regerando)
-    await supabaseAdmin.from("simulados").delete().eq("prova_numero", prova.data.numero);
-
-    const sim = await supabaseAdmin
-      .from("simulados")
-      .insert({
-        prova_numero: prova.data.numero,
-        titulo: `Simulado ${prova.data.titulo}`,
-        ano: prova.data.ano,
-        status: "gerando",
-        gerado_por: userId,
-      })
-      .select("id")
-      .single();
-    if (sim.error) throw new Error(sim.error.message);
-
-    const batches = Math.max(1, Math.ceil(job.data.total_estimado / BATCH_SIZE));
-    await supabaseAdmin
-      .from("simulado_jobs")
-      .update({
-        etapa: "gerando",
-        simulado_id: sim.data.id,
-        batches_total: batches,
-        batch_atual: 0,
-        iniciado_em: new Date().toISOString(),
-      })
-      .eq("id", data.jobId);
-
-    await appendLog(data.jobId, "info", `Geração iniciada em ${batches} lotes de até ${BATCH_SIZE} questões.`);
-
-    return { jobId: data.jobId, simuladoId: sim.data.id, batchesTotal: batches };
   });
 
 // ============ ETAPA 3: Processar um batch ============
