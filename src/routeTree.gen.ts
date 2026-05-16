@@ -37,11 +37,13 @@ import { Route as ApiPublicSeedProvasRouteImport } from './routes/api.public.see
 import { Route as AppResumosLivroIdRouteImport } from './routes/_app.resumos.$livroId'
 import { Route as AppProvasNumeroRouteImport } from './routes/_app.provas.$numero'
 import { Route as AppOabSegundaFaseRouteImport } from './routes/_app.oab.segunda-fase'
+import { Route as AppOabReforcoRouteImport } from './routes/_app.oab.reforco'
 import { Route as AppOabPrimeiraFaseRouteImport } from './routes/_app.oab.primeira-fase'
 import { Route as AppOabPecaModeloRouteImport } from './routes/_app.oab.peca-modelo'
 import { Route as AppOabOQueEstudarRouteImport } from './routes/_app.oab.o-que-estudar'
 import { Route as AppOabCronogramaRouteImport } from './routes/_app.oab.cronograma'
 import { Route as AppOabCalendarioRouteImport } from './routes/_app.oab.calendario'
+import { Route as AppOabCadernoErrosRouteImport } from './routes/_app.oab.caderno-erros'
 import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
@@ -195,6 +197,11 @@ const AppOabSegundaFaseRoute = AppOabSegundaFaseRouteImport.update({
   path: '/oab/segunda-fase',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOabReforcoRoute = AppOabReforcoRouteImport.update({
+  id: '/oab/reforco',
+  path: '/oab/reforco',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOabPrimeiraFaseRoute = AppOabPrimeiraFaseRouteImport.update({
   id: '/oab/primeira-fase',
   path: '/oab/primeira-fase',
@@ -218,6 +225,11 @@ const AppOabCronogramaRoute = AppOabCronogramaRouteImport.update({
 const AppOabCalendarioRoute = AppOabCalendarioRouteImport.update({
   id: '/oab/calendario',
   path: '/oab/calendario',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOabCadernoErrosRoute = AppOabCadernoErrosRouteImport.update({
+  id: '/oab/caderno-erros',
+  path: '/oab/caderno-erros',
   getParentRoute: () => AppRoute,
 } as any)
 const AppNoticiasIdRoute = AppNoticiasIdRouteImport.update({
@@ -315,11 +327,13 @@ export interface FileRoutesByFullPath {
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
+  '/oab/caderno-erros': typeof AppOabCadernoErrosRoute
   '/oab/calendario': typeof AppOabCalendarioRoute
   '/oab/cronograma': typeof AppOabCronogramaRoute
   '/oab/o-que-estudar': typeof AppOabOQueEstudarRoute
   '/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
+  '/oab/reforco': typeof AppOabReforcoRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
   '/resumos/$livroId': typeof AppResumosLivroIdRoute
@@ -359,11 +373,13 @@ export interface FileRoutesByTo {
   '/admin/simulados': typeof AppAdminSimuladosRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
+  '/oab/caderno-erros': typeof AppOabCadernoErrosRoute
   '/oab/calendario': typeof AppOabCalendarioRoute
   '/oab/cronograma': typeof AppOabCronogramaRoute
   '/oab/o-que-estudar': typeof AppOabOQueEstudarRoute
   '/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
+  '/oab/reforco': typeof AppOabReforcoRoute
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
   '/resumos/$livroId': typeof AppResumosLivroIdRoute
@@ -407,11 +423,13 @@ export interface FileRoutesById {
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
   '/_app/noticias/$id': typeof AppNoticiasIdRoute
+  '/_app/oab/caderno-erros': typeof AppOabCadernoErrosRoute
   '/_app/oab/calendario': typeof AppOabCalendarioRoute
   '/_app/oab/cronograma': typeof AppOabCronogramaRoute
   '/_app/oab/o-que-estudar': typeof AppOabOQueEstudarRoute
   '/_app/oab/peca-modelo': typeof AppOabPecaModeloRoute
   '/_app/oab/primeira-fase': typeof AppOabPrimeiraFaseRoute
+  '/_app/oab/reforco': typeof AppOabReforcoRoute
   '/_app/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/_app/provas/$numero': typeof AppProvasNumeroRoute
   '/_app/resumos/$livroId': typeof AppResumosLivroIdRoute
@@ -456,11 +474,13 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
+    | '/oab/caderno-erros'
     | '/oab/calendario'
     | '/oab/cronograma'
     | '/oab/o-que-estudar'
     | '/oab/peca-modelo'
     | '/oab/primeira-fase'
+    | '/oab/reforco'
     | '/oab/segunda-fase'
     | '/provas/$numero'
     | '/resumos/$livroId'
@@ -500,11 +520,13 @@ export interface FileRouteTypes {
     | '/admin/simulados'
     | '/materias/$slug'
     | '/noticias/$id'
+    | '/oab/caderno-erros'
     | '/oab/calendario'
     | '/oab/cronograma'
     | '/oab/o-que-estudar'
     | '/oab/peca-modelo'
     | '/oab/primeira-fase'
+    | '/oab/reforco'
     | '/oab/segunda-fase'
     | '/provas/$numero'
     | '/resumos/$livroId'
@@ -547,11 +569,13 @@ export interface FileRouteTypes {
     | '/_app/biblioteca/$slug'
     | '/_app/materias/$slug'
     | '/_app/noticias/$id'
+    | '/_app/oab/caderno-erros'
     | '/_app/oab/calendario'
     | '/_app/oab/cronograma'
     | '/_app/oab/o-que-estudar'
     | '/_app/oab/peca-modelo'
     | '/_app/oab/primeira-fase'
+    | '/_app/oab/reforco'
     | '/_app/oab/segunda-fase'
     | '/_app/provas/$numero'
     | '/_app/resumos/$livroId'
@@ -778,6 +802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOabSegundaFaseRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/oab/reforco': {
+      id: '/_app/oab/reforco'
+      path: '/oab/reforco'
+      fullPath: '/oab/reforco'
+      preLoaderRoute: typeof AppOabReforcoRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/oab/primeira-fase': {
       id: '/_app/oab/primeira-fase'
       path: '/oab/primeira-fase'
@@ -811,6 +842,13 @@ declare module '@tanstack/react-router' {
       path: '/oab/calendario'
       fullPath: '/oab/calendario'
       preLoaderRoute: typeof AppOabCalendarioRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/oab/caderno-erros': {
+      id: '/_app/oab/caderno-erros'
+      path: '/oab/caderno-erros'
+      fullPath: '/oab/caderno-erros'
+      preLoaderRoute: typeof AppOabCadernoErrosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/noticias/$id': {
@@ -1005,11 +1043,13 @@ interface AppRouteChildren {
   AppRetaFinalRoute: typeof AppRetaFinalRoute
   AppVadeMecumRoute: typeof AppVadeMecumRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppOabCadernoErrosRoute: typeof AppOabCadernoErrosRoute
   AppOabCalendarioRoute: typeof AppOabCalendarioRoute
   AppOabCronogramaRoute: typeof AppOabCronogramaRoute
   AppOabOQueEstudarRoute: typeof AppOabOQueEstudarRoute
   AppOabPecaModeloRoute: typeof AppOabPecaModeloRoute
   AppOabPrimeiraFaseRoute: typeof AppOabPrimeiraFaseRoute
+  AppOabReforcoRoute: typeof AppOabReforcoRoute
   AppOabSegundaFaseRoute: typeof AppOabSegundaFaseRoute
   AppProvasNumeroRoute: typeof AppProvasNumeroRoute
   AppResumosLivroIdRoute: typeof AppResumosLivroIdRoute
@@ -1037,11 +1077,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppRetaFinalRoute: AppRetaFinalRoute,
   AppVadeMecumRoute: AppVadeMecumRoute,
   AppIndexRoute: AppIndexRoute,
+  AppOabCadernoErrosRoute: AppOabCadernoErrosRoute,
   AppOabCalendarioRoute: AppOabCalendarioRoute,
   AppOabCronogramaRoute: AppOabCronogramaRoute,
   AppOabOQueEstudarRoute: AppOabOQueEstudarRoute,
   AppOabPecaModeloRoute: AppOabPecaModeloRoute,
   AppOabPrimeiraFaseRoute: AppOabPrimeiraFaseRoute,
+  AppOabReforcoRoute: AppOabReforcoRoute,
   AppOabSegundaFaseRoute: AppOabSegundaFaseRoute,
   AppProvasNumeroRoute: AppProvasNumeroRoute,
   AppResumosLivroIdRoute: AppResumosLivroIdRoute,
