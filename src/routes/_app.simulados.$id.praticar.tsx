@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Loader2, ChevronLeft, ChevronRight, Flag, Check, X, FileText, ListChecks } from "lucide-react";
-import { getSimulado, iniciarTentativa, salvarResposta, finalizarTentativa } from "@/lib/simulados.functions";
+import { getSimuladoCompleto, salvarResposta, finalizarTentativa } from "@/lib/simulados.functions";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -29,24 +29,13 @@ function loadPersisted<T>(key: string, fallback: T): T {
 function PraticaPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const getFn = useServerFn(getSimulado);
-  const iniFn = useServerFn(iniciarTentativa);
+  const completoFn = useServerFn(getSimuladoCompleto);
   const salvarFn = useServerFn(salvarResposta);
   const finalFn = useServerFn(finalizarTentativa);
 
   const sim = useQuery({
-    queryKey: ["simulado", id],
-    queryFn: () => getFn({ data: { id } }),
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-  });
-  const tentativa = useQuery({
-    queryKey: ["tentativa", id],
-    enabled: !!sim.data,
-    queryFn: () => iniFn({ data: { simuladoId: id } }),
+    queryKey: ["simulado-completo", id],
+    queryFn: () => completoFn({ data: { id } }),
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnWindowFocus: false,
@@ -62,6 +51,26 @@ function PraticaPage() {
     () => loadPersisted(respKey, {}),
   );
 
+  // Quando os dados chegam, mescla respostas já salvas no servidor (caso o
+  // usuário tenha respondido em outro dispositivo) com o estado local.
+  const respostasSalvasRaw = sim.data?.respostasSalvas;
+  const respostasSalvasKey = useMemo(
+    () => (respostasSalvasRaw ? Object.keys(respostasSalvasRaw).sort().join(",") : ""),
+    [respostasSalvasRaw],
+  );
+  useEffect(() => {
+    if (!respostasSalvasRaw) return;
+    setRespostas((prev) => {
+      const next = { ...prev };
+      for (const [n, a] of Object.entries(respostasSalvasRaw)) {
+        const num = Number(n);
+        if (!next[num]) next[num] = { alt: a as Alt, respondida: true };
+      }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [respostasSalvasKey]);
+
   useEffect(() => {
     try { sessionStorage.setItem(idxKey, JSON.stringify(idx)); } catch {}
   }, [idx, idxKey]);
@@ -71,18 +80,19 @@ function PraticaPage() {
 
   const questoes = sim.data?.questoes ?? [];
   const atual = questoes[idx];
+  const tentativaId = sim.data?.tentativaId;
 
   const salvarMut = useMutation({
     mutationFn: ({ numero, alt }: { numero: number; alt: Alt }) =>
-      salvarFn({ data: { tentativaId: tentativa.data!.id, numero, alternativa: alt } }),
+      salvarFn({ data: { tentativaId: tentativaId!, numero, alternativa: alt } }),
     retry: 2,
   });
 
   const finalMut = useMutation({
-    mutationFn: () => finalFn({ data: { tentativaId: tentativa.data!.id } }),
+    mutationFn: () => finalFn({ data: { tentativaId: tentativaId! } }),
     onSuccess: () => {
       try { sessionStorage.removeItem(idxKey); sessionStorage.removeItem(respKey); } catch {}
-      navigate({ to: "/simulados/$id/resultado/$tentativaId", params: { id, tentativaId: tentativa.data!.id } });
+      navigate({ to: "/simulados/$id/resultado/$tentativaId", params: { id, tentativaId: tentativaId! } });
     },
   });
 
@@ -94,10 +104,11 @@ function PraticaPage() {
   }
 
   function responder() {
-    if (!atual) return;
+    if (!atual || !tentativaId) return;
     const r = respostas[atual.numero];
     if (!r || r.respondida) return;
     setRespostas((prev) => ({ ...prev, [atual.numero]: { ...r, respondida: true } }));
+    // fire-and-forget — não bloqueia a UI
     salvarMut.mutate({ numero: atual.numero, alt: r.alt });
   }
 
@@ -106,8 +117,7 @@ function PraticaPage() {
     setView("enunciado");
   }
 
-  // Só mostra "Carregando" no primeiro load. Depois disso, mantém UI mesmo
-  // se houver revalidação em background (token refresh, etc.).
+  // Só mostra "Carregando" no primeiro load quando NÃO há nada em cache.
   if (!sim.data && sim.isLoading) {
     return (
       <div className="flex items-center justify-center py-20 text-muted-foreground">
@@ -265,7 +275,7 @@ function PraticaPage() {
           {!respondida ? (
             <Button
               className="flex-1"
-              disabled={(view === "alternativas" && !estado?.alt) || salvarMut.isPending}
+              disabled={view === "alternativas" && !estado?.alt}
               onClick={() => {
                 if (view === "enunciado" && !estado?.alt) {
                   setView("alternativas");
