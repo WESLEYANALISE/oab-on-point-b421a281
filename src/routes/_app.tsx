@@ -17,8 +17,9 @@ function AppLayout() {
   const { user, loading: authLoading } = useAuth();
   const { data: profile } = useProfile();
   const isBiblioteca = pathname.startsWith("/biblioteca");
+  const reduceMotion = useReducedMotion();
 
-  // Redireciona para login somente após a sessão ser conhecida.
+  // Redireciona para login somente após a sessão ser conhecida e ausente.
   useEffect(() => {
     if (authLoading) return;
     if (!user) navigate({ to: "/login" });
@@ -30,21 +31,8 @@ function AppLayout() {
     if (!profile.onboarding_completo) navigate({ to: "/onboarding" });
   }, [user, profile, navigate]);
 
-  // Só mostra spinner enquanto a sessão ainda é desconhecida.
-  // Depois disso, renderiza o shell imediatamente — dados completam em background.
-  if (authLoading) {
-    return (
-      <div className="min-h-screen grid place-items-center bg-background text-foreground">
-        <Loader2 className="h-6 w-6 text-gold animate-spin" />
-      </div>
-    );
-  }
-
-  // Sessão resolvida sem usuário: o efeito acima já está redirecionando pro /login.
-  // Renderiza nada para evitar flash do shell.
-  if (!user) return null;
-
-  const reduceMotion = useReducedMotion();
+  // Sem spinner de tela cheia: renderiza o shell imediatamente.
+  // Páginas internas mostram seus próprios skeletons enquanto dados chegam.
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">
