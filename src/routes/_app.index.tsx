@@ -60,23 +60,23 @@ function AreaOABPage() {
       </header>
 
       {/* ===== Fases do Exame ===== */}
-      <section className="px-4 md:px-10">
+      <section className="px-4 md:px-8">
         <SectionTitle icon={Compass} eyebrow="Sua jornada completa" title="Fases do Exame" />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 md:gap-4">
           <FaseCard to="/oab/primeira-fase" label="1ª Fase" sub="Prova objetiva" cover={primeiraFaseCover} lcp />
           <FaseCard to="/oab/segunda-fase" label="2ª Fase" sub="Prático-profissional" cover={segundaFaseCover} shineDelay="1.2s" />
         </div>
       </section>
 
       {/* ===== Atalhos ===== */}
-      <section className="px-4 md:px-10">
+      <section className="px-4 md:px-8">
         <SectionTitle icon={Zap} eyebrow="Acesso rápido" title="Seus Atalhos OAB" />
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 md:gap-3">
           {ATALHOS.map(({ label, icon: Icon, to }) => (
             <Link
               key={label}
               to={to}
-              className="group relative overflow-hidden rounded-2xl border border-gold/15 bg-gradient-to-br from-[oklch(0.32_0.08_18)] to-[oklch(0.21_0.05_18)] p-3 min-h-[84px] flex flex-col items-start justify-between hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30"
+              className="group relative overflow-hidden rounded-2xl border border-gold/15 bg-gradient-to-br from-[oklch(0.32_0.08_18)] to-[oklch(0.21_0.05_18)] p-3 min-h-[84px] md:min-h-[92px] flex flex-col items-start justify-between hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30"
             >
               <div className="h-9 w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center">
                 <Icon className="h-4 w-4 text-gold" strokeWidth={2} />
@@ -89,7 +89,7 @@ function AreaOABPage() {
 
       {/* ===== Notícias ===== */}
       <section>
-        <div className="px-4 md:px-10 flex items-end justify-between gap-3 mb-4">
+        <div className="px-4 md:px-8 flex items-end justify-between gap-3 mb-4">
           <SectionTitle icon={Newspaper} eyebrow="Atualidades do exame" title="Notícias da OAB" inline />
           <Link
             to="/noticias"
@@ -100,39 +100,23 @@ function AreaOABPage() {
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4 md:px-10 pb-2 snap-x snap-mandatory">
+        {/* Mobile: scroll horizontal · Desktop: grid */}
+        <div className="md:hidden flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2 snap-x snap-mandatory">
           {noticias.map((n) => (
-            <Link
-              key={n.id}
-              to="/noticias/$id"
-              params={{ id: n.id }}
-              className="snap-start shrink-0 w-[220px] md:w-[260px] rounded-2xl overflow-hidden border border-border bg-card hover:border-gold/30 transition-colors"
-            >
-              <div className="relative h-28 md:h-36 bg-gradient-to-br from-[oklch(0.32_0.1_240)] via-[oklch(0.22_0.08_240)] to-[oklch(0.16_0.05_240)] flex items-center justify-center overflow-hidden">
-                <div className="absolute inset-0 opacity-20" style={{
-                  backgroundImage: "radial-gradient(circle at 30% 40%, oklch(0.85 0.12 80 / 0.4), transparent 60%)",
-                }} />
-                <p className="relative font-display font-bold text-2xl md:text-3xl tracking-tight text-primary-foreground/90">NOTÍCIAS</p>
-                <span className="absolute top-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-[oklch(0.45_0.18_240)] text-white text-[9px] font-bold uppercase tracking-wider">
-                  {n.categoria === "OAB" || n.categoria === "Exame" ? "OAB Nacional" : n.fonte.split(" ")[0]}
-                </span>
-                <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/55 text-white text-[10px] font-medium" suppressHydrationWarning>
-                  <Calendar className="h-3 w-3" />
-                  {formatNoticiaDate(n.data)}
-                </span>
-              </div>
-              <div className="p-3">
-                <p className="font-medium text-[13px] md:text-sm leading-snug line-clamp-3 text-foreground">{n.titulo}</p>
-              </div>
-            </Link>
+            <NoticiaCardLink key={n.id} n={n} className="snap-start shrink-0 w-[220px]" />
+          ))}
+        </div>
+        <div className="hidden md:grid px-8 grid-cols-3 lg:grid-cols-4 gap-4">
+          {noticias.slice(0, 4).map((n) => (
+            <NoticiaCardLink key={n.id} n={n} className="w-full" />
           ))}
         </div>
       </section>
 
       {/* ===== Ferramentas ===== */}
-      <section className="px-4 md:px-10">
+      <section className="px-4 md:px-8">
         <SectionTitle icon={GraduationCap} eyebrow="Plano completo de aprovação" title="Ferramentas de estudo" />
-        <div className="grid grid-cols-2 gap-2.5 md:gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-3">
           {FERRAMENTAS.map(({ label, sub, icon: Icon, to }) => (
             <Link
               key={label}
@@ -154,6 +138,33 @@ function AreaOABPage() {
   );
 }
 
+function NoticiaCardLink({ n, className = "" }: { n: ReturnType<typeof getNoticias>[number]; className?: string }) {
+  return (
+    <Link
+      to="/noticias/$id"
+      params={{ id: n.id }}
+      className={`rounded-2xl overflow-hidden border border-border bg-card hover:border-gold/30 transition-colors ${className}`}
+    >
+      <div className="relative h-28 md:h-36 bg-gradient-to-br from-[oklch(0.32_0.1_240)] via-[oklch(0.22_0.08_240)] to-[oklch(0.16_0.05_240)] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: "radial-gradient(circle at 30% 40%, oklch(0.85 0.12 80 / 0.4), transparent 60%)",
+        }} />
+        <p className="relative font-display font-bold text-2xl md:text-3xl tracking-tight text-primary-foreground/90">NOTÍCIAS</p>
+        <span className="absolute top-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-[oklch(0.45_0.18_240)] text-white text-[9px] font-bold uppercase tracking-wider">
+          {n.categoria === "OAB" || n.categoria === "Exame" ? "OAB Nacional" : n.fonte.split(" ")[0]}
+        </span>
+        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/55 text-white text-[10px] font-medium" suppressHydrationWarning>
+          <Calendar className="h-3 w-3" />
+          {formatNoticiaDate(n.data)}
+        </span>
+      </div>
+      <div className="p-3">
+        <p className="font-medium text-[13px] md:text-sm leading-snug line-clamp-3 text-foreground">{n.titulo}</p>
+      </div>
+    </Link>
+  );
+}
+
 function SectionTitle({
   icon: Icon, eyebrow, title, inline = false,
 }: { icon: typeof Sparkles; eyebrow: string; title: string; inline?: boolean }) {
@@ -163,7 +174,7 @@ function SectionTitle({
         <Icon className="h-4 w-4 md:h-4.5 md:w-4.5 text-gold" strokeWidth={2} />
       </div>
       <div className="min-w-0">
-        <h2 className="font-display font-semibold text-[19px] md:text-[26px] leading-[1.1] tracking-tight truncate">{title}</h2>
+        <h2 className="font-display font-semibold text-[19px] md:text-[24px] leading-[1.1] tracking-tight truncate">{title}</h2>
         <p className="text-[10px] md:text-[11px] text-muted-foreground mt-0.5 truncate">{eyebrow}</p>
       </div>
     </div>
@@ -176,7 +187,7 @@ function FaseCard({
   return (
     <Link
       to={to}
-      className="group relative overflow-hidden rounded-2xl border border-gold/15 aspect-[4/5] md:aspect-[3/4] block shadow-lg shadow-black/40 hover:-translate-y-0.5 transition-transform"
+      className="group relative overflow-hidden rounded-2xl border border-gold/15 aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/9] block shadow-lg shadow-black/40 hover:-translate-y-0.5 transition-transform"
     >
       <img
         src={cover}
