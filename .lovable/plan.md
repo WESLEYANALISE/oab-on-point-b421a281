@@ -1,48 +1,71 @@
-## Plano para deixar os simulados instantâneos
+## Objetivo
 
-### Diagnóstico encontrado
-- O fluxo do simulado ainda depende de várias chamadas separadas: lista, overview, histórico, iniciar tentativa e carregar questões.
-- A tela de prática só renderiza depois de `getSimulado` voltar; por isso aparece “Carregando simulado…”.
-- O histórico/desempenho e o resumo do edital carregam junto da tela de overview, mesmo não sendo necessários para abrir a página rapidamente.
-- Há reconsultas repetidas do perfil no Supabase, causadas por invalidação de cache no auth provider.
-- Existe um erro React #418, provavelmente por diferença entre HTML gerado no servidor e no cliente, com forte suspeita em renderizações dependentes de data/localidade ou estado que muda na hidratação.
-- No banco, as tabelas são pequenas e os índices principais existem; o gargalo maior está no fluxo do código e na forma de carregamento, não no volume do Supabase.
+Permitir gerar vários simulados em fila no /admin/simulados, executando um após o outro automaticamente, em segundo plano — você pode sair da tela, navegar pelo app e voltar; o progresso continua visível em tempo real.
 
-### O que vou mudar
-1. **Abrir a prática com cache instantâneo**
-   - Ao clicar em um simulado, pré-carregar os dados principais das questões antes da navegação quando possível.
-   - Na tela de prática, usar `placeholderData`/cache local para não trocar a tela por loading quando a query revalidar.
-   - Manter a última versão carregada do simulado em `sessionStorage` como fallback imediato.
+## Como vai funcionar
 
-2. **Unificar chamadas críticas de entrada**
-   - Criar/ajustar uma função de servidor para retornar, em uma única chamada, dados do simulado + questões + tentativa em andamento/criada.
-   - Evitar que a prática faça primeiro `getSimulado` e depois `iniciarTentativa` em sequência visual.
+1. **Seleção em fila**: na lista de provas, ao lado de cada botão "Gerar" aparece um checkbox. No topo da página, dois novos botões:
+   - "Selecionar todas pendentes" (marca todas que têm PDF e ainda não estão prontas)
+   - "Gerar X em fila" (inicia a fila com as selecionadas)
 
-3. **Deixar overview progressivo**
-   - Carregar primeiro os dados essenciais: título, materiais, total e raio-x.
-   - Carregar desempenho/histórico somente quando a aba “Desempenho” for aberta.
-   - Carregar o edital estruturado somente quando a aba “Edital” for aberta, mantendo a tela principal instantânea.
+2. **Execução sequencial em background**: a fila roda em um *driver global* montado no layout `_app` (não no modal). Ele:
+   - Pega o próximo número da fila
+   - Chama `iniciarJob` → executa OCR → análise → loop de batches → validação (mesma sequência atual)
+   - Quando termina (sucesso ou erro), passa para o próximo automaticamente
+   - Não depende da página /admin/simulados estar aberta
 
-4. **Reduzir reconsultas desnecessárias do perfil**
-   - Ajustar o `AuthProvider` para não invalidar o perfil em todo evento de auth quando o usuário não mudou.
-   - Aumentar o `staleTime`/cache do perfil para evitar chamadas repetidas enquanto navega entre telas.
+3. **Persistência entre navegações e reloads**:
+   - A fila (lista de números pendentes + jobId ativo) fica em `localStorage`
+   - Ao recarregar o app, o driver lê o storage, consulta `getJobStatus` do job ativo e retoma de onde parou (continua o loop de batches ou avança para o próximo da fila se já terminou)
 
-5. **Otimizar salvamento das respostas**
-   - Manter resposta instantânea na interface.
-   - Salvar em background, sem bloquear botão/navegação.
-   - Evitar estado visual de carregamento para ações que já têm feedback local.
+4. **Indicador global flutuante**: um mini-card fixo no canto inferior (visível em qualquer rota enquanto há fila ativa) mostrando:
+   - "Gerando 2 de 5 · Prova XX"
+   - Barra de progresso da prova atual (mesma lógica do modal: lote N/M ou questões feitas/total)
+   - Botão para expandir → abre o modal completo com logs ao vivo
+   - Botão para cancelar a prova atual (mantém o resto da fila) ou cancelar tudo
 
-6. **Corrigir o risco de hidratação React #418**
-   - Remover renderizações instáveis entre servidor e cliente nas telas de simulado/resultado, especialmente formatação de datas durante a primeira renderização.
-   - Garantir que conteúdo dependente do navegador não cause diferença de texto no SSR.
+5. **Na página /admin/simulados**: cada linha mostra o status real-time ("Na fila · posição 3", "Gerando…", "Pronto", "Erro"). O modal existente continua funcionando para inspeção detalhada quando expandido pelo mini-card ou clicando numa linha que está gerando.
 
-7. **Ajustes no Supabase para performance preventiva**
-   - Adicionar índice composto para tentativas por usuário/simulado/status (`user_id`, `simulado_id`, `concluido_em`, `iniciado_em desc`) se necessário via migration.
-   - Manter RLS como está, mas reduzir o número de consultas feitas pelo frontend.
+## Detalhes técnicos
 
-### Resultado esperado
-- A lista e a página do simulado abrem com sensação imediata.
-- Ao entrar na prática, não deve piscar “Carregando simulado…” se os dados já foram vistos/pré-carregados.
-- O desempenho e edital deixam de atrasar a tela principal.
-- Respostas continuam com feedback instantâneo e salvamento silencioso.
-- Menos chamadas repetidas ao Supabase durante navegação.
+**Novo arquivo** `src/lib/simulado-queue.ts` — store baseado em `zustand` (já no projeto? se não, usar um contexto + `useSyncExternalStore`) que mantém:
+```ts
+{
+  fila: number[],              // provaNumeros pendentes
+  atual: { provaNumero, jobId } | null,
+  historico: Array<{ provaNumero, status, jobId }>
+}
+```
+Persistido via `localStorage` com chave `oab:sim-queue`.
+
+**Novo componente** `src/components/admin/SimuladoQueueDriver.tsx`:
+- Montado uma única vez no `_app.tsx` (dentro do layout autenticado)
+- Usa `useServerFn` para `iniciarJob`, `executarOcr`, `analisarProva`, `processarBatch`, `validarFinal`, `getJobStatus`
+- `useEffect` que observa o store: se `atual === null` e `fila.length > 0`, inicia o próximo
+- Reproduz a máquina de estados que hoje está dentro do `ProgressModal` (OCR → analisar → batches → validar), mas escutando `getJobStatus` via polling com `setInterval` (não React Query, para não depender de uma rota montada)
+- Apenas dispara para usuários admin (checa `useAuth` + `is_admin` ou similar)
+
+**Novo componente** `src/components/admin/SimuladoQueueIndicator.tsx`:
+- Mini-card flutuante (canto inferior direito, acima do bottom nav mobile)
+- Lê do store; aparece quando `atual !== null || fila.length > 0`
+- Expande para abrir o `ProgressModal` reusado (refatorado para receber `jobId` de fora)
+
+**Refator** `_app.admin.simulados.tsx`:
+- Remove a auto-execução do modal (a lógica vai para o Driver)
+- O modal vira "viewer" passivo de `getJobStatus` + logs
+- Adiciona checkboxes, botão "Gerar em fila", e o estado por linha sai do store
+
+**Refator mínimo** `_app.tsx`: monta `<SimuladoQueueDriver />` e `<SimuladoQueueIndicator />` uma vez.
+
+## Limites honestos
+
+- Se você **fechar a aba** ou perder internet, a fila pausa (o driver é client-side). Ao reabrir, ela retoma sozinha lendo `localStorage` + `getJobStatus`.
+- Para execução 100% server-side independente do browser, seria preciso introduzir um worker agendado (Inngest/pg_cron) — fora do escopo desta entrega, mas posso propor depois se quiser.
+
+## Arquivos afetados
+
+- novo: `src/lib/simulado-queue.ts`
+- novo: `src/components/admin/SimuladoQueueDriver.tsx`
+- novo: `src/components/admin/SimuladoQueueIndicator.tsx`
+- editado: `src/routes/_app.admin.simulados.tsx` (checkboxes, fila, remove driver local)
+- editado: `src/routes/_app.tsx` (monta driver + indicador)

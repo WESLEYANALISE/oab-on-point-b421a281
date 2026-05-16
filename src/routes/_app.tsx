@@ -4,6 +4,8 @@ import { DesktopSidebar } from "@/components/layout/DesktopSidebar";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth, useProfile } from "@/hooks/use-auth";
+import { SimuladoQueueDriver } from "@/components/admin/SimuladoQueueDriver";
+import { SimuladoQueueIndicator } from "@/components/admin/SimuladoQueueIndicator";
 
 
 export const Route = createFileRoute("/_app")({
@@ -42,6 +44,8 @@ function AppLayout() {
         </main>
         {showBottomNav && <BottomNav />}
       </div>
+      <SimuladoQueueDriver />
+      <SimuladoQueueIndicator />
     </div>
   );
 }
