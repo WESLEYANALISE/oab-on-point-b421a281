@@ -19,7 +19,9 @@ export function BottomNav() {
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-card/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
       <ul className="relative grid grid-cols-5 max-w-2xl mx-auto h-[72px] items-center">
-        {left.map(({ to, label, icon: Icon, exact }) => {
+        {left.map((item) => {
+          const { to, label, icon: Icon } = item;
+          const exact = "exact" in item ? item.exact : false;
           const active = isActive(to, exact);
           return (
             <li key={to}>
