@@ -357,7 +357,7 @@ ${(job.data.ocr_gabarito ?? "").slice(0, 30000)}`;
         .from("simulado_jobs")
         .update({
           total_estimado: totalQ,
-          gabarito_oficial: gabaritoMap as unknown as Record<string, unknown>,
+          gabarito_oficial: gabaritoMap as never,
           simulado_id: sim.data.id,
           batches_total: batches,
           batch_atual: 0,
