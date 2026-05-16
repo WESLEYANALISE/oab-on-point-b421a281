@@ -119,11 +119,6 @@ export function DesktopSidebar() {
             </button>
           </div>
         </div>
-        <div className="rounded-lg bg-gradient-toga p-4">
-          <p className="font-display text-lg leading-tight text-primary-foreground">Próximo Exame</p>
-          <p className="text-xs text-primary-foreground/80 mt-1">42º Exame · 1ª fase</p>
-          <p className="font-display text-3xl text-gold mt-2">23 set</p>
-        </div>
       </div>
     </aside>
   );
