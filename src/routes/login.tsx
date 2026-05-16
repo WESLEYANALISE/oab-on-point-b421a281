@@ -20,13 +20,18 @@ function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     if (error) {
       toast.error(error.message === "Invalid login credentials" ? "E-mail ou senha incorretos." : error.message);
       return;
     }
-    navigate({ to: "/" });
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("onboarding_completo")
+      .eq("id", data.user.id)
+      .maybeSingle();
+    navigate({ to: profile?.onboarding_completo ? "/" : "/onboarding" });
   }
 
   async function handleGuest() {
