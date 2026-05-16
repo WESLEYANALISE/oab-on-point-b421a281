@@ -92,11 +92,11 @@ function AreaOABPage() {
             <Link
               to="/oab/calendario"
               aria-label="Ver calendário dos últimos exames da OAB"
-              className="group shrink-0 inline-flex items-center gap-2 pl-3 pr-2.5 py-1.5 md:py-2 rounded-full bg-gold text-primary text-[11px] md:text-xs font-semibold shadow-[0_6px_18px_-6px_oklch(0.78_0.13_80/0.55)] hover:bg-gold/90 active:scale-95 transition"
+              className="group shrink-0 inline-flex items-center gap-2 pl-3 pr-2.5 py-1.5 md:py-2 rounded-full bg-primary-foreground/10 border border-gold/50 text-primary-foreground text-[11px] md:text-xs font-semibold shadow-[0_6px_18px_-6px_oklch(0.78_0.13_80/0.45)] hover:bg-primary-foreground/15 active:scale-95 transition"
             >
-              <Calendar className="h-3.5 w-3.5" />
+              <Calendar className="h-3.5 w-3.5 text-gold" />
               <span>Ver calendário</span>
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="h-3.5 w-3.5 text-gold transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
 
