@@ -325,15 +325,16 @@ export const getSimuladoOverview = createServerFn({ method: "POST" })
 export const listMinhasTentativas = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { simuladoId: string }) =>
-    z.object({ simuladoId: z.string().uuid() }).parse(d),
+    z.object({ simuladoId: z.string().min(1).max(180) }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const simuladoId = await resolveSimuladoId(supabase, data.simuladoId);
     const { data: rows, error } = await supabase
       .from("simulado_tentativas")
       .select("id, iniciado_em, concluido_em, acertos, total, por_materia, updated_at")
       .eq("user_id", userId)
-      .eq("simulado_id", data.simuladoId)
+      .eq("simulado_id", simuladoId)
       .order("iniciado_em", { ascending: false });
     if (error) throw new Error(error.message);
     const agora = Date.now();
