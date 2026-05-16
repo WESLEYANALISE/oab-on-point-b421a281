@@ -11,11 +11,15 @@ function diff() {
 }
 
 export function CountdownExame({ light = false }: { light?: boolean }) {
-  const [t, setT] = useState(diff);
+  const [t, setT] = useState<{ d: number; h: number; m: number } | null>(null);
   useEffect(() => {
+    setT(diff());
     const id = setInterval(() => setT(diff()), 60000);
     return () => clearInterval(id);
   }, []);
+  if (!t) {
+    return <div className="flex items-end gap-3 h-[60px]" aria-hidden />;
+  }
   const items = [
     { v: t.d, l: "dias" },
     { v: t.h, l: "hrs" },
