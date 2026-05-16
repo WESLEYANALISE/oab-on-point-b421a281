@@ -1,9 +1,10 @@
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
-import { Scale, Search, Bell, ArrowLeft } from "lucide-react";
+import { Link, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
+import { Scale, Search, Bell, ArrowLeft, Home } from "lucide-react";
 
 export function MobileHeader() {
   const { pathname } = useLocation();
   const router = useRouter();
+  const navigate = useNavigate();
   const isHome = pathname === "/";
 
   return (
@@ -35,12 +36,26 @@ export function MobileHeader() {
           </button>
         )}
         <div className="flex items-center gap-1">
-          <button className="h-9 w-9 grid place-items-center rounded-full hover:bg-muted" aria-label="Buscar">
-            <Search className="h-4.5 w-4.5" />
-          </button>
-          <button className="h-9 w-9 grid place-items-center rounded-full hover:bg-muted" aria-label="Notificações">
-            <Bell className="h-4.5 w-4.5" />
-          </button>
+          {isHome ? (
+            <>
+              <button className="h-9 w-9 grid place-items-center rounded-full hover:bg-muted" aria-label="Buscar">
+                <Search className="h-4.5 w-4.5" />
+              </button>
+              <button className="h-9 w-9 grid place-items-center rounded-full hover:bg-muted" aria-label="Notificações">
+                <Bell className="h-4.5 w-4.5" />
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/" })}
+              className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-primary/15 text-primary border border-primary/30 text-sm font-medium hover:bg-primary/25 active:scale-[0.97] transition"
+              aria-label="Ir para o início"
+            >
+              <Home className="h-4 w-4" />
+              Início
+            </button>
+          )}
         </div>
       </div>
     </header>

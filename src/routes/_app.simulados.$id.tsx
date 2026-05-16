@@ -245,13 +245,17 @@ function PraticaPage() {
           {!respondida ? (
             <Button
               className="flex-1"
-              disabled={!estado?.alt || salvarMut.isPending}
+              disabled={(view === "alternativas" && !estado?.alt) || salvarMut.isPending}
               onClick={() => {
-                if (view === "enunciado") setView("alternativas");
-                else responder();
+                if (view === "enunciado" && !estado?.alt) {
+                  setView("alternativas");
+                } else {
+                  if (view === "enunciado") setView("alternativas");
+                  responder();
+                }
               }}
             >
-              {view === "enunciado" ? "Ver alternativas" : "Responder"}
+              {estado?.alt ? "Responder" : "Ver alternativas"}
             </Button>
           ) : ehUltima ? (
             <Button
