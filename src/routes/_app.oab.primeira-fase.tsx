@@ -1,20 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft, ArrowRight, Flame, Target, BookOpen, Clock,
   Play, Layers, FileText, Notebook, RefreshCw, ChevronRight,
-  Minus, Plus, Calendar, Sparkles, TrendingUp,
+  Calendar, Sparkles, TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MATERIAS_OAB_46 } from "@/data/oab-materias-46";
 import { touchStreak } from "@/lib/streak";
 import { fraseDoDia } from "@/lib/motivacao";
-import {
-  DURACOES, type Duracao, readPlanoConfig, savePlanoConfig,
-  gerarPlano, proximaSessao,
-} from "@/lib/plano-estudo";
 import { getStatsPrimeiraFase } from "@/lib/primeira-fase.functions";
 
 export const Route = createFileRoute("/_app/oab/primeira-fase")({
