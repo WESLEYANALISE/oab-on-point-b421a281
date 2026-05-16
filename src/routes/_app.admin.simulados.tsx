@@ -25,6 +25,7 @@ function AdminSimulados() {
   const listFn = useServerFn(listProvasComStatus);
   const delFn = useServerFn(excluirSimulado);
   const auditFn = useServerFn(auditarEReextrair);
+  const reextFn = useServerFn(reextrairFalhas);
   const authHeaders = session?.access_token
     ? { Authorization: `Bearer ${session.access_token}` }
     : undefined;
