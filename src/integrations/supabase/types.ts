@@ -323,6 +323,54 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string
+          dores: string[]
+          dores_outro: string | null
+          id: string
+          objetivo: string
+          onboarding_completo: boolean
+          semestre: number | null
+          status_academico:
+            | Database["public"]["Enums"]["status_academico"]
+            | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          dores?: string[]
+          dores_outro?: string | null
+          id: string
+          objetivo?: string
+          onboarding_completo?: boolean
+          semestre?: number | null
+          status_academico?:
+            | Database["public"]["Enums"]["status_academico"]
+            | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string
+          dores?: string[]
+          dores_outro?: string | null
+          id?: string
+          objetivo?: string
+          onboarding_completo?: boolean
+          semestre?: number | null
+          status_academico?:
+            | Database["public"]["Enums"]["status_academico"]
+            | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -384,7 +432,7 @@ export type Database = {
       get_biblioteca_counts: { Args: never; Returns: Json }
     }
     Enums: {
-      [_ in never]: never
+      status_academico: "cursando" | "formado" | "outro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -511,6 +559,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      status_academico: ["cursando", "formado", "outro"],
+    },
   },
 } as const

@@ -1,52 +1,112 @@
-# Ajustes de responsividade mobile — Home "Área OAB"
+# Autenticação + Onboarding + Saudação personalizada
 
-Foco: viewport 390×844 (mobile real). Hoje os cards, fontes e paddings foram dimensionados pensando em desktop e estouram/desalinham no mobile (countdown apertado, "1ª Fase / 2ª Fase" com texto cortado, atalhos com 4 colunas grudadas, news cards largos demais, ferramentas com ícone+texto desbalanceados).
+Tudo passa a exigir login. Cadastro coleta nome, status acadêmico e dores. Depois, a home mostra "Bom dia, [Nome]" com foto de perfil no topo.
 
-## O que muda (apenas frontend / `src/routes/_app.index.tsx` + alguns tokens)
+## 1. Banco de dados (migration Supabase)
 
-### 1. Header pill "ÁREA OAB"
-- Reduzir padding (`px-3.5 py-3`), avatar `h-10 w-10`, título `text-[15px]`.
-- Botão "Buscar" vira ícone-only no mobile (`<Search/>` em círculo) e volta a ter texto a partir de `sm:`.
+**Tabela `profiles`** (1‑para‑1 com `auth.users`):
+- `id` (uuid, PK, = `auth.users.id`)
+- `display_name` (text, obrigatório)
+- `avatar_url` (text)
+- `objetivo` (text) — sempre "OAB" por enquanto, fica preparado pra outros
+- `status_academico` (enum: `cursando` | `formado` | `outro`)
+- `semestre` (smallint 1‑10, só preenchido quando `cursando`)
+- `dores` (text[]) — múltiplas opções da lista pré‑definida
+- `dores_outro` (text) — campo livre opcional
+- `onboarding_completo` (bool, default false)
+- `created_at` / `updated_at` (timestamptz)
 
-### 2. Countdown Hero (bloco vinho)
-- Padding mobile `p-4` (era `p-5`), radius `rounded-2xl`.
-- Linha topo (badge + Calendário) com `flex-wrap` e gap menor; badge `text-[9px]`.
-- **Countdown**: criar variant `hero` mais enxuta no mobile — números `text-[34px]`, caixas `min-w-0 flex-1` (ocupam 1/3 cada via `grid grid-cols-3`) em vez de `min-w-[74px]` fixo que estoura.
-- Data inferior: `text-[13px]` mobile, quebra em 2 linhas permitida (`leading-snug`), **sem capitalizar à força** (corrige hydration mismatch "11 de mai / 12 de mai" — vamos remover o `formatExamDate` custom e usar `toLocaleDateString` direto com `suppressHydrationWarning`, ou fixar uma string estática já que a data é constante).
+**Trigger**: ao criar usuário em `auth.users`, cria linha em `profiles` com `display_name` vindo de `raw_user_meta_data.display_name`.
 
-### 3. Fases do Exame (1ª / 2ª)
-- Manter `grid-cols-2` mas reduzir aspect para `aspect-[4/5]` no mobile (cards menos altos).
-- Título dentro do card: `text-lg` no mobile, com `truncate` removido e `line-clamp-1`; subtítulo escondido em telas <360px ou `text-[9px]`.
-- Botão circular `h-8 w-8`.
+**RLS**: usuário só lê e atualiza o próprio perfil (`auth.uid() = id`). Sem `INSERT` direto (o trigger cuida).
 
-### 4. Atalhos OAB
-- Trocar `grid-cols-4` por `grid-cols-2 sm:grid-cols-4` — 4 ícones em 390px ficam apertados. Cards maiores, mais legíveis, ícone `h-5 w-5`, label `text-[13px]`.
+**Storage**: bucket público `avatars` com policies:
+- Leitura pública (avatar aparece na home).
+- Upload/update/delete apenas para arquivos dentro de `{auth.uid()}/...`.
 
-### 5. Notícias (carrossel)
-- Cards de 260px → `w-[220px]` no mobile, imagem `h-28`, badge e data menores. Padding lateral consistente com o resto (`px-4`).
-- Header da seção: botão "Ver todas" vira ícone-only no mobile.
+## 2. Rotas novas (públicas)
 
-### 6. Ferramentas de estudo
-- Manter `grid-cols-2`. Reduzir `min-h` para `72px`, padding `p-3`, ícone `h-9 w-9`, título `text-[13px]`, subtítulo `text-[10px] line-clamp-1`.
+- `/login` — e‑mail + senha + link "Criar conta" e "Esqueci a senha".
+- `/signup` — e‑mail + senha + nome. Após sucesso → redireciona para `/onboarding`.
+- `/reset-password` — formulário pra nova senha (link recebido por e‑mail).
+- `/onboarding` — wizard de 3 passos:
+  1. **Status acadêmico**: cards selecionáveis — "Estou cursando Direito" / "Já me formei" / "Outro". Se cursando, slider/dropdown de **semestre** (1º a 10º).
+  2. **O que você precisa?** — chips multi‑seleção: Material de estudo, Aulas, Cronograma, Resumos, Flashcards, Simulados, Questões comentadas, Peças de 2ª fase, Acompanhamento próximo. Campo "Outro" livre.
+  3. **Confirmação** + botão "Entrar no app".
+  - Salva tudo em `profiles` e marca `onboarding_completo = true`.
 
-### 7. SectionTitle
-- Componente compartilhado: ícone `h-8 w-8`, título `text-[19px]` no mobile (era 22), eyebrow `text-[10px]`. Adicionar `truncate` no título também.
+Layout do login/signup/onboarding: imagem de fundo elegante (toga + livros, mesmo clima das capas já geradas), card flutuante com glass effect, gradiente vinho→preto, tipografia display Plus Jakarta Sans.
 
-### 8. Espaçamento geral
-- `space-y-10` → `space-y-7` no mobile (`md:space-y-10`).
-- Padding lateral global `px-4` (mantém), remover `max-w-6xl` redundante nos filhos.
+## 3. Proteção de rotas
 
-### 9. Correção do erro de hidratação (silenciosa)
-Console mostra mismatch em data de notícia ("11 de mai" vs "12 de mai") — fuso horário entre server e client. Solução: formatar datas de notícia com `Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" })` e `suppressHydrationWarning` no `<span>` da data.
+- `_app.tsx` ganha `beforeLoad` que:
+  - Se não houver sessão → `redirect({ to: "/login" })`.
+  - Se houver sessão mas `onboarding_completo = false` → `redirect({ to: "/onboarding" })`.
+- Login/signup/reset/onboarding ficam fora do `_app` (rotas top‑level), então não entram no loop.
+- `__root.tsx` ganha `onAuthStateChange` que invalida o router/queryClient ao logar/deslogar.
 
-## Arquivos tocados
-- `src/routes/_app.index.tsx` — refatorar classes responsivas + fix de data.
-- `src/components/shared/CountdownExame.tsx` — variant `hero` usar `grid grid-cols-3` + tamanhos mobile-first.
-- (Opcional) `src/styles.css` — nenhum token novo necessário.
+## 4. Saudação personalizada (substitui o pill "ÁREA OAB")
 
-## Fora do escopo
-- Não mexer em rotas, dados, lógica de notícias, nem nas páginas "Em breve".
-- Sem alterações de paleta/branding — só layout/spacing/tipografia responsiva.
+Novo componente `HomeGreeting` no topo de `_app.index.tsx`:
+- Avatar circular 56×56 (foto do usuário ou iniciais sobre fundo dourado), com ícone de câmera no canto pra trocar foto.
+- Texto principal: **"Bom dia, Maria"** (saudação calculada por `new Date().getHours()`: 5‑11 bom dia / 12‑17 boa tarde / 18‑4 boa noite).
+- Subtítulo dourado: "Foco no 46º EOU".
+- Tap no avatar abre `/perfil` (página nova bem simples) onde a pessoa troca foto, edita nome, status, semestre, dores e faz logout.
 
-## Verificação
-Após aplicar: screenshot em 390×844 e 360×800, conferir que (a) countdown cabe sem cortar, (b) "1ª Fase / 2ª Fase" não trunca, (c) atalhos em 2 colunas legíveis, (d) sem erro de hidratação no console.
+Componente lê o `profile` via `useQuery` ligado ao server fn `getMyProfile`.
+
+## 5. Upload de avatar
+
+Server fn `uploadAvatar({ file })`:
+- Recebe `File`, valida tamanho (<2MB) e tipo (image/png|jpeg|webp).
+- Faz upload pra `avatars/{userId}/avatar-{timestamp}.{ext}`.
+- Atualiza `profiles.avatar_url` com a public URL.
+- Retorna nova URL → react‑query refaz a saudação na hora.
+
+## 6. Logout
+
+Botão "Sair" em `/perfil` chama `supabase.auth.signOut()` e o `onAuthStateChange` faz o resto (redireciona pra `/login`).
+
+## Detalhes técnicos
+
+**Cliente Supabase**:
+- Browser (`@/integrations/supabase/client`) — usado para `signIn/signUp/signOut`, `onAuthStateChange`, upload de storage.
+- Server fn protegido (`requireSupabaseAuth`) — `getMyProfile`, `saveOnboarding`, `updateProfile`.
+
+**Server fns** ficam em `src/lib/profile.functions.ts` (client‑safe, fora de `src/server/`).
+
+**Hook `useAuth`** em `src/hooks/use-auth.ts`: expõe `{ user, session, profile, isLoading }` lendo da sessão atual e do server fn `getMyProfile`. Wrap único em `__root` (provider) → consumido pela home e pelo `_app.tsx` beforeLoad.
+
+**Imagem de fundo**: gerada com Lovable AI (mesma estética das capas das fases) — `auth-bg.jpg` em `src/assets/`, aplicada com `bg-cover` + overlay vinho 60%.
+
+**Validação**: Zod em todos os formulários (signup, onboarding, update). Limites: nome ≤80, dores ≤9 opções da lista + opcional "outro" ≤200.
+
+**Segurança**: roles ficam de fora dessa task (só fluxo de cadastro/perfil); RLS na `profiles` cobre o caso. Nada de service role no cliente.
+
+## Arquivos criados / alterados
+
+**Novos**
+- `src/routes/login.tsx`, `src/routes/signup.tsx`, `src/routes/reset-password.tsx`, `src/routes/onboarding.tsx`, `src/routes/_app.perfil.tsx`
+- `src/components/auth/AuthShell.tsx` (layout com imagem de fundo)
+- `src/components/home/HomeGreeting.tsx`
+- `src/components/profile/AvatarUploader.tsx`
+- `src/hooks/use-auth.ts`
+- `src/lib/profile.functions.ts`
+- `src/lib/profile.server.ts`
+- `src/data/onboarding-options.ts` (lista de dores)
+- `src/assets/auth-bg.jpg` (gerada)
+
+**Editados**
+- `src/routes/__root.tsx` — `onAuthStateChange` + AuthProvider.
+- `src/routes/_app.tsx` — `beforeLoad` exigindo sessão + onboarding.
+- `src/routes/_app.index.tsx` — substituir pill "ÁREA OAB" por `<HomeGreeting />`.
+- `src/components/layout/MobileHeader.tsx` / `DesktopSidebar.tsx` — link pra `/perfil` no avatar; botão sair no menu.
+
+**Migration**: cria `profiles`, trigger `handle_new_user`, bucket `avatars` e RLS.
+
+## Fora de escopo
+
+- Login social (Google etc.) — só e‑mail + senha agora.
+- Sistema de roles/admin.
+- Personalização de UX baseada nas "dores" (por enquanto só armazenamos; pode virar onboarding inteligente depois).
+- E‑mails customizados de confirmação (usa o template padrão do Supabase).
