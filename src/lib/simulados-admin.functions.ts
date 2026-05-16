@@ -334,8 +334,9 @@ ${(job.data.ocr_gabarito ?? "").slice(0, 20000)}`;
           .eq("simulado_id", job.data.simulado_id)
           .in("numero", validas.map((q) => q.numero));
 
+        const simuladoId = job.data.simulado_id as string;
         const rows = validas.map((q) => ({
-          simulado_id: job.data.simulado_id,
+          simulado_id: simuladoId,
           numero: q.numero,
           enunciado: q.enunciado,
           materia: q.materia,
