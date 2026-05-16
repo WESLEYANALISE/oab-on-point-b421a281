@@ -21,7 +21,10 @@ export function MobileHeader() {
         ) : (
           <button
             type="button"
-            onClick={() => router.history.back()}
+            onClick={() => {
+              if (window.history.length > 1) router.history.back();
+              else router.navigate({ to: "/" });
+            }}
             className="inline-flex items-center gap-2 pl-2 pr-3.5 h-10 rounded-full bg-muted/70 border border-border text-sm font-medium text-foreground hover:bg-muted active:scale-[0.97] transition"
             aria-label="Voltar"
           >

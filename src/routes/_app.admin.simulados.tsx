@@ -33,10 +33,12 @@ function AdminSimulados() {
     ? { Authorization: `Bearer ${session.access_token}` }
     : undefined;
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ["admin-provas"],
     enabled: !!authHeaders,
     queryFn: () => listFn({ headers: authHeaders }),
+    staleTime: 60_000,
+    placeholderData: (prev) => prev,
   });
 
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -74,12 +76,7 @@ function AdminSimulados() {
         </p>
       </header>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-20 text-muted-foreground">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" /> Carregando provas…
-        </div>
-      ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-card">
+      <ul className="divide-y divide-border rounded-xl border border-border bg-card">
           {(data ?? []).map((p) => {
             const status = p.simulado?.status;
             const podeGerar = !!p.prova_1fase_url && !!p.gabarito_1fase_url && status !== "gerando";
@@ -137,8 +134,7 @@ function AdminSimulados() {
               </li>
             );
           })}
-        </ul>
-      )}
+      </ul>
 
       {activeJobId && (
         <ProgressModal
