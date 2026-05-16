@@ -135,7 +135,7 @@ function HomePage() {
   const outras = noticias.filter((n) => n.id !== destaque.id).slice(0, 4);
 
   return (
-    <div className="space-y-10 md:space-y-14 pb-10">
+    <div className="space-y-8 md:space-y-14 pb-10">
       <HomeHero />
 
       {/* Aulas Interativas + Plano de Estudo — dois cards compactos */}
