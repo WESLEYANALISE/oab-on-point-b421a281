@@ -8,7 +8,7 @@ export function MobileHeader() {
 
   return (
     <header className="md:hidden sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
-      <div className="flex items-center justify-between px-4 h-14">
+      <div className="flex items-center justify-between px-4 h-16">
         {isHome ? (
           <Link to="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-md bg-gradient-toga grid place-items-center">
@@ -22,10 +22,12 @@ export function MobileHeader() {
           <button
             type="button"
             onClick={() => router.history.back()}
-            className="inline-flex items-center gap-1.5 -ml-2 px-2 h-9 rounded-full text-sm font-medium text-foreground hover:bg-muted transition"
+            className="inline-flex items-center gap-2 pl-2 pr-3.5 h-10 rounded-full bg-muted/70 border border-border text-sm font-medium text-foreground hover:bg-muted active:scale-[0.97] transition"
             aria-label="Voltar"
           >
-            <ArrowLeft className="h-4.5 w-4.5" />
+            <span className="h-7 w-7 grid place-items-center rounded-full bg-foreground/10 text-foreground">
+              <ArrowLeft className="h-4 w-4" />
+            </span>
             Voltar
           </button>
         )}
