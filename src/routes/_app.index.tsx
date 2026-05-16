@@ -5,7 +5,7 @@ import { MateriaCard } from "@/components/shared/MateriaCard";
 import { NoticiaCard } from "@/components/shared/NoticiaCard";
 import { getMaterias } from "@/data/materias";
 import { getNoticias } from "@/data/noticias";
-import { Sparkles, ArrowRight, BookOpen, FileText, Layers, Library, Headphones, Flame } from "lucide-react";
+import { Sparkles, ArrowRight, BookOpen, FileText, Layers, Library, ClipboardList, FileCheck2, Newspaper, Flame } from "lucide-react";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
