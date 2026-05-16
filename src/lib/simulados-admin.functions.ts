@@ -620,7 +620,7 @@ export const validarFinal = createServerFn({ method: "POST" })
 
     const simuladoId = job.data.simulado_id as string;
     const total = job.data.total_estimado as number;
-    const gabarito = (job.data.gabarito_oficial ?? {}) as Record<string, string>;
+    const gabarito = normalizeGabarito(job.data.gabarito_oficial);
 
     try {
       // Tenta refazer faltantes até 3 vezes
@@ -633,7 +633,7 @@ export const validarFinal = createServerFn({ method: "POST" })
         const presentes = new Set((existentes.data ?? []).map((r) => r.numero));
         const faltantes: number[] = [];
         for (let n = 1; n <= total; n++) {
-          if (!presentes.has(n) && gabarito[String(n)]) faltantes.push(n);
+          if (!presentes.has(n) && hasGabaritoEntry(gabarito, n)) faltantes.push(n);
         }
 
         if (faltantes.length === 0) break;
@@ -646,19 +646,55 @@ export const validarFinal = createServerFn({ method: "POST" })
 
         const validas = await extrairQuestoes(data.jobId, job.data.ocr_prova ?? "", faltantes, gabarito);
         if (validas.length > 0) {
-          const rows = validas.map((q) => ({
-            simulado_id: simuladoId,
-            numero: q.numero,
-            enunciado: q.enunciado,
-            materia: q.materia,
-            alternativas: q.alternativas,
-            resposta_correta: gabarito[String(q.numero)],
-          }));
+          const rows = validas.map((q) => {
+            const g = gabarito[String(q.numero)];
+            const anulada = !!g?.anulada;
+            return {
+              simulado_id: simuladoId,
+              numero: q.numero,
+              enunciado: q.enunciado,
+              materia: q.materia,
+              alternativas: q.alternativas,
+              resposta_correta: anulada ? null : (g?.letra ?? null),
+              status: anulada ? "anulada" : "ok",
+              nota_oficial: g?.nota ?? null,
+            };
+          });
           const ins = await supabaseAdmin.from("simulado_questoes").insert(rows);
           if (ins.error) throw new Error(ins.error.message);
         } else {
           await appendLog(data.jobId, "info", `Validação ${tentativa}: Gemini não retornou questões válidas.`);
         }
+      }
+
+      // Após retentativas, marca as ainda faltantes como falhou_extracao
+      const existentesFinal = await supabaseAdmin
+        .from("simulado_questoes")
+        .select("numero")
+        .eq("simulado_id", simuladoId);
+      const presentesFinal = new Set((existentesFinal.data ?? []).map((r) => r.numero));
+      const placeholders: Array<Record<string, unknown>> = [];
+      for (let n = 1; n <= total; n++) {
+        if (!presentesFinal.has(n)) {
+          placeholders.push({
+            simulado_id: simuladoId,
+            numero: n,
+            enunciado: "Esta questão não pôde ser extraída automaticamente do PDF. Pule para a próxima.",
+            materia: null,
+            alternativas: { A: "—", B: "—", C: "—", D: "—" },
+            resposta_correta: null,
+            status: "falhou_extracao",
+            nota_oficial: null,
+          });
+        }
+      }
+      if (placeholders.length > 0) {
+        await supabaseAdmin.from("simulado_questoes").insert(placeholders);
+        await appendLog(
+          data.jobId,
+          "info",
+          `${placeholders.length} questão(ões) marcada(s) como "falhou_extracao": ${placeholders.map((p) => p.numero).join(", ")}.`,
+        );
       }
 
       // Total final
@@ -682,13 +718,14 @@ export const validarFinal = createServerFn({ method: "POST" })
         .update({ status: "pronto", total_questoes: final })
         .eq("id", simuladoId);
 
-      if (final === total) {
+      const okCount = final - placeholders.length;
+      if (placeholders.length === 0) {
         await appendLog(data.jobId, "ok", `Simulado pronto com ${final}/${total} questões.`);
       } else {
         await appendLog(
           data.jobId,
           "info",
-          `Simulado pronto com ${final}/${total} questões. ${total - final} não puderam ser extraídas após múltiplas tentativas.`,
+          `Simulado pronto: ${okCount} extraídas + ${placeholders.length} sem extração (marcadas para pular).`,
         );
       }
 
