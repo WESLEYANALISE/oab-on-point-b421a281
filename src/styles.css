@@ -177,6 +177,12 @@
   }
   .animate-fade-in { animation: fade-in 200ms ease-out both; }
 
+  @keyframes tab-fade {
+    from { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+    to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+  .animate-tab-fade { animation: tab-fade 280ms ease-out both; }
+
   /* Reflexo dourado varrendo de baixo pra cima — uma única vez */
   @keyframes chapter-sheen {
     0%   { transform: translateY(110%) rotate(8deg); opacity: 0; }
