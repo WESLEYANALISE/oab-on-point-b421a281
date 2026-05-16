@@ -329,6 +329,13 @@ export type Database = {
     }
     Functions: {
       get_biblioteca_areas: { Args: { _slug: string }; Returns: Json }
+      get_biblioteca_areas_counts: {
+        Args: { _slug: string }
+        Returns: {
+          area: string
+          total: number
+        }[]
+      }
       get_biblioteca_book: {
         Args: { _id: number; _slug: string }
         Returns: {

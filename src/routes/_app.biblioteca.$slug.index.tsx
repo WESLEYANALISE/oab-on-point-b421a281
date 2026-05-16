@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight, BookOpen } from "lucide-react";
 import { BIB_MAP, livrosQueryOptions, areasQueryOptions, countsQueryOptions } from "@/lib/biblioteca";
 
 const PAGE_SIZE = 60;
@@ -73,24 +73,30 @@ function BibliotecaList() {
         {showAreas ? (
           <>
             {areasLoading && !areas && (
-              <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden bg-card">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {Array.from({ length: 8 }).map((_, i) => (
-                  <li key={i} className="p-4">
-                    <div className="h-4 w-2/3 rounded bg-muted animate-pulse" />
-                  </li>
+                  <li key={i} className="h-20 rounded-2xl bg-muted/40 animate-pulse" />
                 ))}
               </ul>
             )}
             {areas && areas.length > 0 && (
-              <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden bg-card">
-                {areas.map((a) => (
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {areas.map(({ area: a, total: t }) => (
                   <li key={a}>
                     <button
                       onClick={() => { setArea(a); setLimit(PAGE_SIZE); window.scrollTo(0, 0); }}
-                      className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-muted/50 transition-colors"
+                      className="group w-full flex items-center gap-4 p-4 text-left rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 hover:from-primary/10 hover:to-card hover:border-primary/40 active:scale-[0.98] transition-all shadow-sm"
                     >
-                      <span className="font-sans text-sm font-medium text-foreground">{a}</span>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      <div className="w-12 h-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        <BookOpen className="w-5 h-5" strokeWidth={2.2} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-sans text-[15px] font-semibold text-foreground leading-tight line-clamp-2">{a}</div>
+                        <div className="font-sans text-xs text-muted-foreground mt-1">
+                          {t} {t === 1 ? "livro" : "livros"}
+                        </div>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary flex-shrink-0 transition-colors" />
                     </button>
                   </li>
                 ))}
