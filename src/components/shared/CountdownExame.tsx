@@ -42,8 +42,13 @@ export function CountdownExame({
   const numColor = light ? "text-primary-foreground" : "text-foreground";
   const lblColor = light ? "text-gold/80" : "text-muted-foreground";
 
+  const isHero = variant === "hero";
+  const containerCls = isHero
+    ? `grid grid-cols-3 ${s.gap}`
+    : `flex items-stretch ${s.gap}`;
+
   return (
-    <div className={`flex items-stretch ${s.gap}`} suppressHydrationWarning>
+    <div className={containerCls} suppressHydrationWarning>
       {items.map((i) => (
         <div
           key={i.l}
