@@ -262,12 +262,13 @@ function Edital({ provaNumero, editalUrl }: { provaNumero: number; editalUrl: st
     queryKey: ["edital-resumo", provaNumero],
     queryFn: async () => {
       // Timeout de UI de 35s — se o LLM travar, devolve null e mostra fallback.
-      return await Promise.race([
+      const result = await Promise.race([
         fn({ data: { provaNumero } }),
-        new Promise<{ conteudo: null; fonte: "timeout" }>((resolve) =>
+        new Promise<{ conteudo: null; fonte: string }>((resolve) =>
           setTimeout(() => resolve({ conteudo: null, fonte: "timeout" }), 35_000),
         ),
       ]);
+      return result as { conteudo: typeof result extends { conteudo: infer C } ? C : null; fonte: string };
     },
     staleTime: Infinity,
     enabled: !!editalUrl,
