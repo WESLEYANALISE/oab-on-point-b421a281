@@ -228,6 +228,21 @@ function AdminSimulados() {
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 )}
+                {status === "pronto" && !naFila && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={auditar.isPending}
+                    onClick={() => {
+                      if (confirm(`Auditar a prova ${p.numero}? Vai detectar questões inventadas e re-extrair do PDF.`))
+                        auditar.mutate(p.numero);
+                    }}
+                    title="Detecta questões alucinadas e reextrai do OCR"
+                  >
+                    <ShieldAlert className="h-4 w-4 mr-1" />
+                    Auditar
+                  </Button>
+                )}
                 {!naFila && (
                   <Button
                     size="sm"
