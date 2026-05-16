@@ -56,13 +56,21 @@ export const areasQueryOptions = (slug: string) =>
     gcTime: 60 * 60_000,
   });
 
-export const livrosQueryOptions = (slug: string, area: string | null = null, limit = 60, offset = 0) =>
+export type SortMode = "cronologica" | "alfabetica";
+
+export const livrosQueryOptions = (
+  slug: string,
+  area: string | null = null,
+  limit = 60,
+  offset = 0,
+  sort: SortMode = "cronologica",
+) =>
   queryOptions({
-    queryKey: ["biblioteca-livros", slug, area, limit, offset],
+    queryKey: ["biblioteca-livros", slug, area, limit, offset, sort],
     queryFn: async () => {
       const { data, error } = await supabase.rpc(
         "get_biblioteca_books" as never,
-        { _slug: slug, _area: area, _limit: limit, _offset: offset } as never,
+        { _slug: slug, _area: area, _limit: limit, _offset: offset, _sort: sort } as never,
       );
       if (error) throw error;
       return (data ?? []) as LivroLista[];
