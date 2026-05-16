@@ -37,20 +37,46 @@ function CapituloView() {
 
   const [aba, setAba] = useState<Aba>("resumo");
   const [gerandoPdf, setGerandoPdf] = useState(false);
+  const [pdfDialogAberto, setPdfDialogAberto] = useState(false);
+  const [incluirExemplo, setIncluirExemplo] = useState(false);
+  const [incluirTermos, setIncluirTermos] = useState(false);
 
   async function baixarPdf() {
-    if (!data) return;
+    if (!data || !atual) return;
+    setPdfDialogAberto(false);
     setGerandoPdf(true);
     const tid = toast.loading("Preparando seu PDF…");
     try {
-      const { gerarPdfResumo } = await import("@/lib/pdf-resumo");
-      await gerarPdfResumo(
+      const [{ gerarPdfCapitulo }] = await Promise.all([import("@/lib/pdf-resumo")]);
+
+      let exemplo: string | null = null;
+      let termos: string | null = null;
+
+      if (incluirExemplo) {
+        toast.loading("Gerando exemplo prático…", { id: tid });
+        const r = await gerarFn({
+          data: { resumo_livro_id: livroId, ordem: ordemNum, tipo: "exemplo" },
+        });
+        exemplo = r.conteudo_markdown;
+      }
+      if (incluirTermos) {
+        toast.loading("Gerando termos jurídicos…", { id: tid });
+        const r = await gerarFn({
+          data: { resumo_livro_id: livroId, ordem: ordemNum, tipo: "termos" },
+        });
+        termos = r.conteudo_markdown;
+      }
+
+      toast.loading("Montando PDF…", { id: tid });
+      await gerarPdfCapitulo(
         { titulo: data.livro.titulo, autor: data.livro.autor },
-        data.capitulos.map((c) => ({
-          ordem: c.ordem,
-          titulo: c.titulo,
-          conteudo_markdown: c.conteudo_markdown,
-        })),
+        {
+          ordem: atual.ordem,
+          titulo: atual.titulo,
+          conteudo_markdown: atual.conteudo_markdown,
+        },
+        data.capitulos.length,
+        { exemplo, termos },
       );
       toast.success("PDF baixado!", { id: tid });
     } catch (e: any) {
