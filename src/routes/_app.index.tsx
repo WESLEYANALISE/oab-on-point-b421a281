@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Calendar, Sparkles, ArrowRight,
-  Library, Trophy, HelpCircle, Video, Newspaper,
+  Library, Trophy, Video, Newspaper,
   Target, FileText, BookOpen, CalendarDays, ClipboardList, Layers, ScrollText,
   GraduationCap, Zap, Compass,
 } from "lucide-react";
-import { CountdownExame } from "@/components/shared/CountdownExame";
-import { HomeGreeting } from "@/components/home/HomeGreeting";
+import { HomeTopCard } from "@/components/home/HomeTopCard";
 import { getNoticias } from "@/data/noticias";
 import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.jpg";
 import segundaFaseCover from "@/assets/oab-segunda-fase-cover.jpg";
@@ -23,8 +22,7 @@ export const Route = createFileRoute("/_app/")({
   component: AreaOABPage,
 });
 
-// Data fixa do exame — string estática evita mismatch de fuso na hidratação
-const EXAM_DATE_LABEL = "Quarta-feira, 23 de setembro de 2026";
+
 
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit", month: "short", timeZone: "America/Sao_Paulo",
@@ -56,47 +54,10 @@ function AreaOABPage() {
 
   return (
     <div className="pb-10 space-y-7 md:space-y-10">
-      {/* ===== Greeting ===== */}
+      {/* ===== Top card unificado: saudação + countdown ===== */}
       <header className="px-4 pt-4 md:px-10 md:pt-6">
-        <HomeGreeting />
+        <HomeTopCard />
       </header>
-
-      {/* ===== Countdown Hero ===== */}
-      <section className="px-4 md:px-10">
-        <div className="relative overflow-hidden rounded-2xl md:rounded-3xl bg-gradient-toga text-primary-foreground p-4 md:p-7 border border-gold/15 shadow-xl shadow-black/40">
-          <div className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
-
-          <div className="relative flex items-center justify-between gap-2 mb-4 flex-wrap">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/15 border border-gold/40 text-gold text-[9px] md:text-[10px] uppercase tracking-[0.18em] font-semibold">
-              <Sparkles className="h-3 w-3" /> 46º Exame OAB
-            </div>
-            <Link
-              to="/oab/calendario"
-              aria-label="Ver calendário dos últimos exames da OAB"
-              className="group shrink-0 inline-flex items-center gap-2 pl-3 pr-2.5 py-1.5 md:py-2 rounded-full bg-primary-foreground/10 border border-gold/50 text-primary-foreground text-[11px] md:text-xs font-semibold shadow-[0_6px_18px_-6px_oklch(0.78_0.13_80/0.45)] hover:bg-primary-foreground/15 active:scale-95 transition"
-            >
-              <Calendar className="h-3.5 w-3.5 text-gold" />
-              <span>Ver calendário</span>
-              <ArrowRight className="h-3.5 w-3.5 text-gold transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-
-          <p className="relative text-[10px] uppercase tracking-[0.22em] text-primary-foreground/70 font-semibold mb-2.5">
-            Faltam para o exame
-          </p>
-          <div className="relative">
-            <CountdownExame light hero />
-          </div>
-
-          <div className="relative mt-5 pt-4 border-t border-primary-foreground/15 flex items-center gap-2.5 text-primary-foreground/85">
-            <div className="h-6 w-6 rounded-full bg-gold/15 border border-gold/30 grid place-items-center shrink-0">
-              <Calendar className="h-3 w-3 text-gold" />
-            </div>
-            <p className="font-display text-[13px] md:text-base tracking-tight leading-snug">{EXAM_DATE_LABEL}</p>
-          </div>
-        </div>
-      </section>
 
       {/* ===== Fases do Exame ===== */}
       <section className="px-4 md:px-10">
