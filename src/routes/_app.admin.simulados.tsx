@@ -140,6 +140,8 @@ function AdminSimulados() {
         </ul>
       )}
 
+      {preparandoNum !== null && !preview && <PreparandoModal numero={preparandoNum} />}
+
       {preview && !activeJobId && (
         <PreviewModal
           preview={preview}
