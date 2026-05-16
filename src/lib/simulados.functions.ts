@@ -208,7 +208,7 @@ export const finalizarTentativa = createServerFn({ method: "POST" })
       .from("simulado_tentativas")
       .update({
         acertos,
-        total: qs?.length ?? 0,
+        total: (qs ?? []).filter((q) => (q as { status?: string }).status !== "falhou_extracao").length,
         por_materia: porMateria,
         concluido_em: t.data.concluido_em ?? new Date().toISOString(),
       })
