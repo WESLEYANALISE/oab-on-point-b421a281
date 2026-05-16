@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FileText, BookOpen, Loader2 } from "lucide-react";
 import { listarLivrosComResumo } from "@/lib/resumos.functions";
 
-export const Route = createFileRoute("/_app/resumos")({
+export const Route = createFileRoute("/_app/resumos/")({
   head: () => ({
     meta: [
       { title: "Resumos — OAB na Risca" },
