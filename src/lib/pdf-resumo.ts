@@ -424,6 +424,76 @@ function desenharCabecalho(doc: jsPDF, tituloLivro: string, W: number) {
   doc.line(22, 17, W - 22, 17);
 }
 
+function desenharCapaCapitulo(
+  doc: jsPDF,
+  livro: Livro,
+  capitulo: Capitulo,
+  totalCaps: number,
+  W: number,
+  H: number,
+) {
+  doc.setFillColor(...COR_BORDO);
+  doc.rect(0, 0, W, H, "F");
+
+  doc.setDrawColor(...COR_DOURADO);
+  doc.setLineWidth(0.8);
+  doc.rect(12, 12, W - 24, H - 24);
+  doc.setLineWidth(0.3);
+  doc.rect(15, 15, W - 30, H - 30);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...COR_DOURADO_CLARO);
+  doc.text("RESUMO JURÍDICO", W / 2, 38, { align: "center" });
+
+  doc.setDrawColor(...COR_DOURADO);
+  doc.setLineWidth(0.5);
+  doc.line(W / 2 - 18, 42, W / 2 + 18, 42);
+
+  // Livro
+  doc.setFont("times", "italic");
+  doc.setFontSize(13);
+  doc.setTextColor(...COR_DOURADO_CLARO);
+  const livroLinhas = doc.splitTextToSize(livro.titulo, W - 50);
+  doc.text(livroLinhas, W / 2, H / 2 - 40, { align: "center" });
+
+  // Selo capítulo
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...COR_DOURADO);
+  doc.text(
+    `CAPÍTULO ${String(capitulo.ordem).padStart(2, "0")} DE ${String(totalCaps).padStart(2, "0")}`,
+    W / 2,
+    H / 2 - 20,
+    { align: "center" },
+  );
+
+  // Título capítulo
+  doc.setFont("times", "bold");
+  doc.setFontSize(26);
+  doc.setTextColor(245, 235, 215);
+  const tituloLinhas = doc.splitTextToSize(normalizarTitulo(capitulo.titulo), W - 50);
+  let yTit = H / 2 - 6;
+  doc.text(tituloLinhas, W / 2, yTit, { align: "center" });
+  yTit += tituloLinhas.length * 10 + 6;
+
+  doc.setDrawColor(...COR_DOURADO);
+  doc.setLineWidth(0.4);
+  doc.line(W / 2 - 30, yTit + 6, W / 2 - 6, yTit + 6);
+  doc.line(W / 2 + 6, yTit + 6, W / 2 + 30, yTit + 6);
+  doc.setFillColor(...COR_DOURADO);
+  doc.circle(W / 2, yTit + 6, 1.2, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...COR_DOURADO);
+  doc.text(MARCA.toUpperCase(), W / 2, H - 28, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(7.5);
+  doc.setTextColor(...COR_DOURADO_CLARO);
+  doc.text("Preparação inteligente para a OAB", W / 2, H - 22, { align: "center" });
+}
+
 function desenharRodape(doc: jsPDF, W: number, H: number) {
   doc.setDrawColor(...COR_DOURADO);
   doc.setLineWidth(0.3);
