@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   Calendar, Sparkles, ArrowRight,
   Library, Trophy, Video, Newspaper,
@@ -7,8 +8,8 @@ import {
 } from "lucide-react";
 import { HomeTopCard } from "@/components/home/HomeTopCard";
 import { getNoticias } from "@/data/noticias";
-import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.jpg";
-import segundaFaseCover from "@/assets/oab-segunda-fase-cover.jpg";
+import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.webp";
+import segundaFaseCover from "@/assets/oab-segunda-fase-cover.webp";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -193,19 +194,41 @@ function SectionTitle({
 function FaseCard({
   to, label, sub, cover, lcp = false, shineDelay = "0s",
 }: { to: "/oab/primeira-fase" | "/oab/segunda-fase"; label: string; sub: string; cover: string; lcp?: boolean; shineDelay?: string }) {
+  const [loaded, setLoaded] = useState(false);
   return (
     <Link
       to={to}
       className="group relative overflow-hidden rounded-2xl border border-gold/15 aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/9] block shadow-lg shadow-black/40 hover:-translate-y-0.5 transition-transform"
     >
+      {/* Placeholder com paleta (gold + primary) e shimmer enquanto carrega */}
+      <div
+        aria-hidden
+        className={`absolute inset-0 transition-opacity duration-500 ${loaded ? "opacity-0" : "opacity-100"}`}
+        style={{
+          background:
+            "linear-gradient(135deg, color-mix(in oklab, var(--primary) 85%, transparent) 0%, color-mix(in oklab, var(--primary) 55%, transparent) 45%, color-mix(in oklab, var(--gold) 55%, transparent) 100%)",
+        }}
+      >
+        <div
+          className="absolute inset-0 animate-pulse"
+          style={{
+            background:
+              "linear-gradient(110deg, transparent 30%, color-mix(in oklab, var(--gold) 35%, transparent) 50%, transparent 70%)",
+          }}
+        />
+      </div>
+
       <img
         src={cover}
         alt={label}
-        width={768}
-        height={1024}
+        width={900}
+        height={1200}
         loading={lcp ? "eager" : "lazy"}
+        decoding="async"
         fetchPriority={lcp ? "high" : "auto"}
-        className="absolute inset-0 h-full w-full object-cover"
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out ${loaded ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-[1.04] blur-sm"}`}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/15" />
       <span className="countdown-shimmer" style={{ animationDelay: shineDelay }} aria-hidden />
