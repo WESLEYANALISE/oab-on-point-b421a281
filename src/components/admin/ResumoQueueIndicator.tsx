@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Activity,
+  RotateCcw,
 } from "lucide-react";
 import { useResumoQueue, resumoQueue } from "@/lib/resumo-queue";
 import { useIsAdmin } from "@/hooks/use-admin";
@@ -39,7 +40,23 @@ export function ResumoQueueIndicator() {
     [state.historico, oneHourAgo],
   );
   const errosRecentes = useMemo(
-    () => state.historico.filter((h) => h.status === "erro" && h.finishedAt >= oneHourAgo).length,
+    () =>
+      state.historico.filter(
+        (h) =>
+          h.status === "erro" &&
+          h.finishedAt >= oneHourAgo &&
+          !(h.erro ?? "").includes("reenfileirado"),
+      ).length,
+    [state.historico, oneHourAgo],
+  );
+  const reenfileiradosRecentes = useMemo(
+    () =>
+      state.historico.filter(
+        (h) =>
+          h.status === "erro" &&
+          h.finishedAt >= oneHourAgo &&
+          (h.erro ?? "").includes("reenfileirado"),
+      ).length,
     [state.historico, oneHourAgo],
   );
   const ultimoConcluido = useMemo(
@@ -162,17 +179,23 @@ export function ResumoQueueIndicator() {
           </div>
 
           {/* Stats da hora */}
-          {(concluidosRecentes > 0 || errosRecentes > 0) && (
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
+          {(concluidosRecentes > 0 || errosRecentes > 0 || reenfileiradosRecentes > 0) && (
+            <div className="grid grid-cols-3 gap-2 text-[11px]">
               <div className="rounded-lg bg-emerald-500/10 px-2 py-1.5">
                 <p className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> Concluídos (1h)
+                  <CheckCircle2 className="h-3 w-3" /> OK (1h)
                 </p>
                 <p className="font-semibold tabular-nums">{concluidosRecentes}</p>
               </div>
+              <div className="rounded-lg bg-amber-500/10 px-2 py-1.5">
+                <p className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <RotateCcw className="h-3 w-3" /> Retry (1h)
+                </p>
+                <p className="font-semibold tabular-nums">{reenfileiradosRecentes}</p>
+              </div>
               <div className="rounded-lg bg-destructive/10 px-2 py-1.5">
                 <p className="text-destructive flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> Erros (1h)
+                  <AlertCircle className="h-3 w-3" /> Erro (1h)
                 </p>
                 <p className="font-semibold tabular-nums">{errosRecentes}</p>
               </div>
@@ -257,18 +280,25 @@ export function ResumoQueueIndicator() {
                 Histórico ({state.historico.length})
               </summary>
               <ol className="mt-1.5 space-y-1">
-                {[...state.historico].reverse().map((h) => (
-                  <li key={`${h.key}-${h.finishedAt}`} className="flex items-start gap-1.5 truncate">
-                    {h.status === "pronto" ? (
-                      <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0 mt-0.5" />
-                    ) : h.status === "erro" ? (
-                      <AlertCircle className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
-                    ) : (
-                      <X className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
-                    )}
-                    <span className="truncate">{h.titulo}</span>
-                  </li>
-                ))}
+                {[...state.historico].reverse().map((h) => {
+                  const isRetry = h.status === "erro" && (h.erro ?? "").includes("reenfileirado");
+                  return (
+                    <li key={`${h.key}-${h.finishedAt}`} className="flex items-start gap-1.5 truncate">
+                      {h.status === "pronto" ? (
+                        <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0 mt-0.5" />
+                      ) : isRetry ? (
+                        <RotateCcw className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+                      ) : h.status === "erro" ? (
+                        <AlertCircle className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
+                      ) : (
+                        <X className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                      )}
+                      <span className={`truncate ${isRetry ? "text-amber-600 dark:text-amber-400" : ""}`}>
+                        {h.titulo}
+                      </span>
+                    </li>
+                  );
+                })}
               </ol>
             </details>
           )}

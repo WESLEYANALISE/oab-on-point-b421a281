@@ -49,6 +49,7 @@ export function ResumoQueueDriver() {
     let cancelled = false;
 
     (async () => {
+      const restantesAposEste = () => resumoQueue.getSnapshot().fila.length;
       try {
         if (atual.kind === "previa") {
           resumoQueue.setProgress({ etapa: "OCR + sumário" });
@@ -61,7 +62,6 @@ export function ResumoQueueDriver() {
             return;
           }
           if (r?.resumo_livro_id && r?.total > 0) {
-            // Auto-enqueue capítulos para este livro.
             const cap: ResumoQueueItem = {
               kind: "capitulos",
               key: capitulosKey(r.resumo_livro_id),
@@ -69,11 +69,15 @@ export function ResumoQueueDriver() {
               titulo: atual.titulo,
             };
             resumoQueue.enqueue([cap]);
-            toast.success(`Prévia pronta: ${atual.titulo} (${r.total} cap.)`);
             resumoQueue.finishAtual("pronto");
+            toast.success(`✓ Prévia: ${atual.titulo} · ${r.total} cap. · ${restantesAposEste()} restantes`);
           } else {
-            toast.error(`Sem capítulos detectados: ${atual.titulo}`);
-            resumoQueue.finishAtual("erro", "sem capítulos");
+            const ret = resumoQueue.retryAtual("sem capítulos detectados", 3);
+            if (ret.retried) {
+              toast.error(`${atual.titulo}: sem capítulos · tentativa ${ret.attempt}/${ret.maxAttempts} — voltou pra fila (${ret.restantes} restantes)`);
+            } else {
+              toast.error(`${atual.titulo}: sem capítulos (desistiu após ${ret.maxAttempts} tentativas)`);
+            }
           }
           return;
         }
@@ -85,8 +89,8 @@ export function ResumoQueueDriver() {
           const r: any = await proxCapFn({ data: { resumo_livro_id: atual.id } });
           qc.invalidateQueries({ queryKey: ["admin-resumos"] });
           if (r?.done) {
-            toast.success(`Resumo concluído: ${atual.titulo}`);
             resumoQueue.finishAtual("pronto");
+            toast.success(`✓ Resumo: ${atual.titulo} · ${restantesAposEste()} restantes`);
             return;
           }
           feitos += 1;
@@ -102,12 +106,22 @@ export function ResumoQueueDriver() {
         if (cancelled) {
           resumoQueue.finishAtual("cancelado");
         } else {
-          resumoQueue.finishAtual("erro", "limite de iterações");
+          // limite de iterações: re-enfileira pra continuar do ponto onde parou
+          const ret = resumoQueue.retryAtual("limite de iterações", 3);
+          if (ret.retried) {
+            toast.message(`${atual.titulo}: pausado · continua em seguida (${ret.restantes} restantes)`);
+          } else {
+            toast.error(`${atual.titulo}: limite de iterações (desistiu)`);
+          }
         }
       } catch (e: any) {
         const msg = e?.message ?? "erro";
-        toast.error(`${atual.titulo}: ${msg}`);
-        resumoQueue.finishAtual("erro", msg);
+        const ret = resumoQueue.retryAtual(msg, 3);
+        if (ret.retried) {
+          toast.error(`${atual.titulo}: ${msg} · tentativa ${ret.attempt}/${ret.maxAttempts} — voltou pra fila (${ret.restantes} restantes)`);
+        } else {
+          toast.error(`${atual.titulo}: ${msg} (desistiu após ${ret.maxAttempts} tentativas)`);
+        }
         qc.invalidateQueries({ queryKey: ["admin-resumos"] });
       } finally {
         if (runningRef.current === atual.key) runningRef.current = null;

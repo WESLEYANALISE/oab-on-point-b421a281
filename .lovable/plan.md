@@ -1,51 +1,45 @@
-## Problema
+## Diagnóstico
 
-Hoje, ao navegar entre `/resumos/$livroId` e `/resumos/capitulo/$livroId/$ordem` (e ao voltar), a tela mostra "Carregando…" toda vez. Causas:
+Olhando o histórico no card (vários itens marcados com `×`):
 
-1. As duas rotas usam `useQuery` com `staleTime: 60_000`, mas **sem `loader` + prefetch**. O fetch só começa quando o componente monta.
-2. Cada rota mostra um spinner de tela inteira enquanto `isPending` for `true` — então toda navegação "pisca" mesmo quando o dado já está em cache (na verdade não está, porque nada prefetcha).
-3. Os `<Link>` para capítulos não disparam preload de dados (só de código), porque a rota destino não tem `loader`.
-4. Ao voltar para a lista, a query é refetch porque outras rotas podem ter invalidado o cache do livro.
+- `ResumoQueueDriver` chama `resumoQueue.finishAtual("erro", msg)` quando dá qualquer erro (timeout do Gemini, 503, "sem capítulos", limite de iterações).
+- `finishAtual` apenas move o item pro histórico — **não devolve à fila**. Por isso eles ficam parados como erro permanente, mesmo quando o erro é transitório (timeout/rate-limit).
+- O toast informa o erro mas não mostra quantos itens ainda faltam, então não dá pra acompanhar o progresso global.
 
-## Objetivo
+## O que vou mudar
 
-Abrir resumo do livro e cada capítulo de forma **instantânea e fluida**, sem spinner de tela cheia, reusando o mesmo cache para o livro inteiro (lista de capítulos vem junto com o livro — uma query só serve as duas rotas).
+Tudo no frontend (driver + store + indicator). Sem mexer nas server functions.
 
-## Mudanças
+### 1. `src/lib/resumo-queue.ts`
+- Adicionar campo opcional `attempts?: number` em `PreviaJob` e `CapitulosJob` (default 0).
+- Novo método `resumoQueue.retryAtual(erro: string, maxAttempts = 3)`:
+  - Se `(atual.attempts ?? 0) + 1 < maxAttempts` → re-enfileira o item **no fim da fila** com `attempts` incrementado, limpa `atual`, e grava no histórico um registro `status: "erro"` com sufixo `"(reenfileirado, tentativa N/3)"` pra ficar visível.
+  - Caso contrário → comporta-se como `finishAtual("erro", erro)` atual (desiste).
+- Persistência continua igual (já é JSON).
 
-### 1. `src/lib/resumos.functions.ts`
-Sem mudança de schema. Apenas extrair um `resumoLivroQueryOptions(livroId)` reutilizável (novo arquivo `src/lib/resumos-queries.ts` ou exportar do mesmo módulo de rota). Define:
+### 2. `src/components/admin/ResumoQueueDriver.tsx`
+- No `catch` do efeito que dirige o item atual, trocar `resumoQueue.finishAtual("erro", msg)` por `resumoQueue.retryAtual(msg, 3)`.
+- Mesma troca nos dois caminhos de erro determinístico que hoje finalizam como erro mas podem ser transitórios:
+  - `"sem capítulos"` (prévia retornou 0) — também re-tenta até 3x, pois às vezes o OCR/Gemini devolve sumário vazio em uma corrida ruim.
+  - `"limite de iterações"` no loop de capítulos — re-enfileira pra continuar de onde parou (o próximo `gerarProximoCapitulo` retoma do ponto correto via banco).
+- Após `retryAtual`, o `toast.error` passa a mostrar: `"<titulo>: <msg> · tentativa N/3 — voltou pra fila (X restantes)"`, usando `state.fila.length + 1`.
+- Quando um item é concluído com sucesso, mostrar toast `"✓ <titulo> · X restantes na fila"` (hoje só diz "Resumo concluído"). Idem para prévia.
 
-```ts
-queryOptions({
-  queryKey: ["resumo-livro", livroId],
-  queryFn: () => obterLivroResumo({ data: { resumo_livro_id: livroId } }),
-  staleTime: 10 * 60_000,   // 10 min: resumo muda raramente
-  gcTime: 60 * 60_000,
-})
-```
+### 3. `src/components/admin/ResumoQueueIndicator.tsx`
+- Já mostra `totalRestante`. Adicionar uma linha pequena no histórico que diferencia:
+  - `reenfileirado` (erro temporário, vai tentar de novo) — ícone `RotateCcw` âmbar
+  - `erro` final (esgotou 3 tentativas) — ícone vermelho atual
+  - Para isso, basta usar o `erro` string do registro: se contém `"reenfileirado"`, renderiza com cor âmbar e ícone diferente.
+- Mostrar contador "Reenfileirados (1h)" ao lado de "Concluídos (1h)" / "Erros (1h)" pra dar visibilidade de quanto está sendo re-tentado.
 
-### 2. `src/routes/_app.resumos.$livroId.tsx`
-- Adicionar `loader: ({ context, params }) => context.queryClient.ensureQueryData(resumoLivroQueryOptions(params.livroId))`.
-- Trocar `useQuery(...).isPending` por `useSuspenseQuery(resumoLivroQueryOptions(livroId))` **ou** manter `useQuery` e simplesmente remover o early-return de spinner — como o loader garante cache, `data` já estará pronto no primeiro render.
-- Remover o bloco `if (isPending || !data) return <Loader2/>…`.
-- Manter `defaultPreload: "intent"` (já está no router) — agora com loader, preload no hover/touch também prefetcha os dados.
+## Notas técnicas
 
-### 3. `src/routes/_app.resumos.capitulo.$livroId.$ordem.tsx`
-- Mesma queryKey `["resumo-livro", livroId]` já é usada (linha 33), então a navegação lista→capítulo reusa cache imediatamente.
-- Adicionar `loader: ({ context, params }) => context.queryClient.ensureQueryData(resumoLivroQueryOptions(params.livroId))`.
-- Remover o early-return com `Loader2` (linhas 128–136). Como o loader popula cache, `data` está disponível no primeiro render; o `if (!atual)` continua para o caso de ordem inválida.
-- Trocar para `useSuspenseQuery` (opcional, mas mais limpo) — ou continuar com `useQuery` confiando no cache do loader.
-- Navegação entre capítulos (anterior/próximo) já é instantânea porque mesma queryKey — só remover o spinner garante isso.
+- `attempts` fica no item da fila, então sobrevive a reload (já está no localStorage).
+- A retomada de capítulos é segura porque `gerarProximoCapitulo` consulta o banco pra saber o próximo capítulo pendente — nunca duplica.
+- Para prévia, re-tentativa apenas re-executa OCR + sumário; se já tinha gerado um `resumo_livro_id`, a server function faz upsert (verifiquei o fluxo anterior). Sem efeito colateral além de chamar Mistral de novo.
+- Cap de 3 tentativas evita loop infinito quando o livro tem problema real (PDF corrompido, link do Drive privado etc.).
 
-### 4. Router (`src/router.tsx`)
-Sem mudanças. `defaultPreload: "intent"` e `defaultPreloadStaleTime: 30_000` já estão configurados.
+## Fora de escopo
 
-## Resultado
-
-- Entrar em `/resumos/$livroId`: render imediato (loader preenche cache, sem spinner).
-- Clicar num capítulo: render instantâneo, sem spinner (mesma queryKey já em cache).
-- Voltar para a lista: instantâneo (cache fresh por 10min).
-- Pré-cache acontece no hover/touch dos `<Link>` graças ao `defaultPreload: "intent"` + loaders.
-
-Sem mudança de design, sem mudança de comportamento de negócio — só performance percebida.
+- Backoff entre re-tentativas (a fila já tem outros itens entre, e Gemini/Mistral já têm retry interno por chamada).
+- Mudar server functions (Gemini já tem retry 5x com backoff, Mistral 6x).
