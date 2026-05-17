@@ -1,32 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, Loader2, ChevronRight } from "lucide-react";
-import { obterLivroResumo } from "@/lib/resumos.functions";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
+import { resumoLivroQueryOptions } from "@/lib/resumos-queries";
 import { normalizarTitulo } from "@/lib/titulo";
 
 export const Route = createFileRoute("/_app/resumos/$livroId")({
+  loader: ({ context, params }) =>
+    context.queryClient.ensureQueryData(resumoLivroQueryOptions(params.livroId)),
   component: ResumoTimeline,
 });
 
 function ResumoTimeline() {
   const { livroId } = Route.useParams();
-  const fn = useServerFn(obterLivroResumo);
-  const { data, isPending } = useQuery({
-    queryKey: ["resumo-livro", livroId],
-    queryFn: () => fn({ data: { resumo_livro_id: livroId } }),
-    staleTime: 60_000,
-  });
-
-  if (isPending || !data) {
-    return (
-      <div className="px-4 py-12 text-center text-muted-foreground">
-        <span className="inline-flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando resumo…
-        </span>
-      </div>
-    );
-  }
+  const { data } = useSuspenseQuery(resumoLivroQueryOptions(livroId));
 
   const capitulos = data.capitulos ?? [];
 

@@ -1,18 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState, useRef, useLayoutEffect } from "react";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2, Minus, Plus, Type, AlertCircle, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Minus, Plus, Type, AlertCircle, Download } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
-import { obterLivroResumo } from "@/lib/resumos.functions";
 import { gerarComplementoCapitulo } from "@/lib/capitulo-ai.functions";
+import { resumoLivroQueryOptions } from "@/lib/resumos-queries";
 import { normalizarTitulo } from "@/lib/titulo";
 import { useFontScale } from "@/hooks/use-font-scale";
 
 export const Route = createFileRoute("/_app/resumos/capitulo/$livroId/$ordem")({
+  loader: ({ context, params }) =>
+    context.queryClient.ensureQueryData(resumoLivroQueryOptions(params.livroId)),
   component: CapituloView,
 });
 
@@ -27,13 +29,8 @@ function CapituloView() {
   const { livroId, ordem } = Route.useParams();
   const ordemNum = Number(ordem);
   const { scale, increase, decrease, canIncrease, canDecrease } = useFontScale();
-  const fn = useServerFn(obterLivroResumo);
   const gerarFn = useServerFn(gerarComplementoCapitulo);
-  const { data, isPending } = useQuery({
-    queryKey: ["resumo-livro", livroId],
-    queryFn: () => fn({ data: { resumo_livro_id: livroId } }),
-    staleTime: 60_000,
-  });
+  const { data } = useSuspenseQuery(resumoLivroQueryOptions(livroId));
 
   const [aba, setAba] = useState<Aba>("resumo");
   const [gerandoPdf, setGerandoPdf] = useState(false);
@@ -125,15 +122,7 @@ function CapituloView() {
     retry: 0,
   });
 
-  if (isPending || !data) {
-    return (
-      <div className="px-4 py-12 text-center text-muted-foreground">
-        <span className="inline-flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
-        </span>
-      </div>
-    );
-  }
+
 
   if (!atual) {
     return (
