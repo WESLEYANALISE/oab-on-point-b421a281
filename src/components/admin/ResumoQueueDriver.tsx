@@ -61,6 +61,11 @@ export function ResumoQueueDriver() {
             resumoQueue.finishAtual("cancelado");
             return;
           }
+          if (r?.ok === false) {
+            resumoQueue.finishAtual("erro", r.error ?? "erro");
+            toast.error(`${atual.titulo}: ${r.error ?? "falha ao gerar prévia"}`);
+            return;
+          }
           if (r?.resumo_livro_id && r?.total > 0) {
             const cap: ResumoQueueItem = {
               kind: "capitulos",
@@ -88,6 +93,11 @@ export function ResumoQueueDriver() {
         while (!cancelled && safety-- > 0) {
           const r: any = await proxCapFn({ data: { resumo_livro_id: atual.id } });
           qc.invalidateQueries({ queryKey: ["admin-resumos"] });
+          if (r?.ok === false) {
+            resumoQueue.finishAtual("erro", r.error ?? "erro");
+            toast.error(`${atual.titulo}: ${r.error ?? "falha ao gerar capítulo"}`);
+            return;
+          }
           if (r?.done) {
             resumoQueue.finishAtual("pronto");
             toast.success(`✓ Resumo: ${atual.titulo} · ${restantesAposEste()} restantes`);
