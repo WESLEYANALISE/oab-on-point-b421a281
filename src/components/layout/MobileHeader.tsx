@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Scale, Search, Bell, ArrowLeft, Home } from "lucide-react";
+import { Scale, ArrowLeft, Home } from "lucide-react";
 import { resolverVoltar } from "@/lib/voltar";
 
 export function MobileHeader() {
@@ -35,16 +35,7 @@ export function MobileHeader() {
           </Link>
         )}
         <div className="flex items-center gap-1">
-          {isHome ? (
-            <>
-              <button className="h-9 w-9 grid place-items-center rounded-full hover:bg-muted" aria-label="Buscar">
-                <Search className="h-4.5 w-4.5" />
-              </button>
-              <button className="h-9 w-9 grid place-items-center rounded-full hover:bg-muted" aria-label="Notificações">
-                <Bell className="h-4.5 w-4.5" />
-              </button>
-            </>
-          ) : (
+          {!isHome && (
             <button
               type="button"
               onClick={() => navigate({ to: "/" })}

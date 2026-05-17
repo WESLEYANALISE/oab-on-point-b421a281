@@ -27,6 +27,7 @@ export function BottomNav() {
             <li key={to}>
               <Link
                 to={to}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex flex-col items-center gap-1 py-2 text-[11px] transition-colors",
                   active ? "text-primary" : "text-foreground hover:text-primary",
@@ -62,6 +63,7 @@ export function BottomNav() {
             <li key={to}>
               <Link
                 to={to}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex flex-col items-center gap-1 py-2 text-[11px] transition-colors",
                   active ? "text-primary" : "text-foreground hover:text-primary",

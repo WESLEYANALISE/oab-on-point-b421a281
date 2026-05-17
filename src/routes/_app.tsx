@@ -46,7 +46,7 @@ function AppLayout() {
       <DesktopSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         {!isBiblioteca && <MobileHeader />}
-        <main className={`flex-1 ${showBottomNav ? "pb-20 md:pb-0" : ""} overflow-x-hidden`}>
+        <main id="conteudo-principal" className={`flex-1 ${showBottomNav ? "pb-20 md:pb-0" : ""} overflow-x-hidden`}>
           <div className="mx-auto w-full max-w-[1120px]">
             <Outlet />
           </div>
