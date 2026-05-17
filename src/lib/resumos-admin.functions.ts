@@ -63,49 +63,57 @@ async function mistralOcrFull(apiKey: string, documentUrl: string): Promise<OcrR
   return { pages };
 }
 
-async function geminiJson(systemPrompt: string, userPrompt: string): Promise<string> {
+async function geminiCall(body: unknown): Promise<any> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
-      }),
-    },
-  );
-  if (!res.ok) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const maxAttempts = 5;
+  let lastErr = "";
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } catch (e) {
+      lastErr = `network: ${e instanceof Error ? e.message : String(e)}`;
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 1000 * 2 ** (attempt - 1)));
+        continue;
+      }
+      throw new Error(`Gemini falhou [network]: ${lastErr}`);
+    }
+    if (res.ok) return await res.json();
     const t = await res.text();
-    throw new Error(`Gemini falhou [${res.status}]: ${t.slice(0, 300)}`);
+    lastErr = `[${res.status}]: ${t.slice(0, 300)}`;
+    // Retry on transient: 408, 429, 5xx
+    const transient = res.status === 408 || res.status === 429 || res.status >= 500;
+    if (transient && attempt < maxAttempts) {
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** (attempt - 1)));
+      continue;
+    }
+    throw new Error(`Gemini falhou ${lastErr}`);
   }
-  const j = (await res.json()) as any;
+  throw new Error(`Gemini falhou ${lastErr}`);
+}
+
+async function geminiJson(systemPrompt: string, userPrompt: string): Promise<string> {
+  const j = await geminiCall({
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
+  });
   return j.candidates?.[0]?.content?.parts?.[0]?.text ?? "{}";
 }
 
 async function geminiText(systemPrompt: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-        generationConfig: { temperature: 0.4 },
-      }),
-    },
-  );
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Gemini falhou [${res.status}]: ${t.slice(0, 300)}`);
-  }
-  const j = (await res.json()) as any;
+  const j = await geminiCall({
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    generationConfig: { temperature: 0.4 },
+  });
   return j.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 }
 
