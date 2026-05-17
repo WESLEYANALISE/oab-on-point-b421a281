@@ -377,6 +377,54 @@ export type Database = {
         }
         Relationships: []
       }
+      erros_questao: {
+        Row: {
+          alternativa_marcada: string | null
+          created_at: string
+          flashcard_id: string | null
+          id: string
+          materia: string | null
+          numero: number
+          questao_id: string
+          resposta_correta: string
+          revisado_em: string | null
+          simulado_id: string
+          tentativa_em: string
+          tentativa_id: string
+          user_id: string
+        }
+        Insert: {
+          alternativa_marcada?: string | null
+          created_at?: string
+          flashcard_id?: string | null
+          id?: string
+          materia?: string | null
+          numero: number
+          questao_id: string
+          resposta_correta: string
+          revisado_em?: string | null
+          simulado_id: string
+          tentativa_em?: string
+          tentativa_id: string
+          user_id: string
+        }
+        Update: {
+          alternativa_marcada?: string | null
+          created_at?: string
+          flashcard_id?: string | null
+          id?: string
+          materia?: string | null
+          numero?: number
+          questao_id?: string
+          resposta_correta?: string
+          revisado_em?: string | null
+          simulado_id?: string
+          tentativa_em?: string
+          tentativa_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       flashcard_revisoes: {
         Row: {
           card_id: string
