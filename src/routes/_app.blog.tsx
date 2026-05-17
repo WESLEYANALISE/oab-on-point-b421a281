@@ -1,10 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { Newspaper, ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { Newspaper } from "lucide-react";
 import { listBlogPosts, listBlogCategorias } from "@/lib/blog.functions";
-import { PostCard } from "@/components/blog/PostCard";
-import { FeaturedPost } from "@/components/blog/FeaturedPost";
+import { PostRow } from "@/components/blog/PostRow";
 import { CategoriaChips } from "@/components/blog/CategoriaChips";
 
 export const Route = createFileRoute("/_app/blog")({
