@@ -137,12 +137,13 @@ function BibliotecaList() {
               {([
                 { id: "cronologica", label: "Ordem de estudo", Icon: Clock },
                 { id: "alfabetica", label: "A–Z", Icon: ArrowDownAZ },
+                { id: "favoritos", label: "Favoritos", Icon: Heart },
               ] as const).map(({ id, label, Icon }) => {
-                const active = sort === id;
+                const active = view === id;
                 return (
                   <button
                     key={id}
-                    onClick={() => { setSort(id); setLimit(PAGE_SIZE); }}
+                    onClick={() => { setView(id); setLimit(PAGE_SIZE); }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     aria-pressed={active}
                   >
