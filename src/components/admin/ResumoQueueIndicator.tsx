@@ -179,17 +179,23 @@ export function ResumoQueueIndicator() {
           </div>
 
           {/* Stats da hora */}
-          {(concluidosRecentes > 0 || errosRecentes > 0) && (
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
+          {(concluidosRecentes > 0 || errosRecentes > 0 || reenfileiradosRecentes > 0) && (
+            <div className="grid grid-cols-3 gap-2 text-[11px]">
               <div className="rounded-lg bg-emerald-500/10 px-2 py-1.5">
                 <p className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> Concluídos (1h)
+                  <CheckCircle2 className="h-3 w-3" /> OK (1h)
                 </p>
                 <p className="font-semibold tabular-nums">{concluidosRecentes}</p>
               </div>
+              <div className="rounded-lg bg-amber-500/10 px-2 py-1.5">
+                <p className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <RotateCcw className="h-3 w-3" /> Retry (1h)
+                </p>
+                <p className="font-semibold tabular-nums">{reenfileiradosRecentes}</p>
+              </div>
               <div className="rounded-lg bg-destructive/10 px-2 py-1.5">
                 <p className="text-destructive flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> Erros (1h)
+                  <AlertCircle className="h-3 w-3" /> Erro (1h)
                 </p>
                 <p className="font-semibold tabular-nums">{errosRecentes}</p>
               </div>
