@@ -164,7 +164,9 @@ function BibliotecaList() {
                           <div className="w-14 h-20 rounded overflow-hidden bg-muted border border-border flex-shrink-0">
                             {l.capa ? (
                               <img
-                                src={l.capa}
+                                src={supabaseImage(l.capa, { w: 112, q: 72 }) ?? l.capa}
+                                srcSet={supabaseImageSrcSet(l.capa, 56, 72)}
+                                sizes="56px"
                                 alt={l.titulo}
                                 width={56}
                                 height={80}
