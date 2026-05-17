@@ -1,129 +1,128 @@
-## Visão geral
 
-Criar a função **Blogger** — um feed de artigos diários com dicas sobre OAB. Conteúdo dinâmico no Supabase, capas geradas por IA (fotográficas), 10 artigos iniciais já populados e um painel admin para você publicar/editar novos posts.
+# Auditoria completa — OAB na Risca
 
-## Arquitetura
+Analisei rotas, server functions, RLS, índices, linter Supabase, layout, CSS e cache. Encontrei **~30 melhorias reais**. Em vez de um PR gigante, divido em **5 fases** independentes — você aprova a fase 1 e seguimos, ou aprova tudo de uma vez.
 
-- **Banco**: tabela `blog_posts` no Supabase, leitura pública dos publicados, escrita só para admin (RLS via `has_role`).
-- **Storage**: bucket público `blog-capas` para as imagens geradas pela IA.
-- **Geração de texto e capa**: feita por mim agora (no momento da implementação) — para cada um dos 10 temas, gero o conteúdo em markdown e a imagem em estilo fotográfico realista, faço upload no bucket e o INSERT na tabela.
-- **Frontend**: 3 rotas no app + 1 card na Home + 1 item no menu lateral.
-- **Animação**: usa o `animate-slide-in-right` global já existente.
+---
 
-## Banco de dados (migration)
+## Diagnóstico — o que está bom e o que dói
 
-Tabela `blog_posts`:
-- `id` uuid
-- `slug` text único
-- `titulo` text
-- `subtitulo` text
-- `categoria` text (ex.: "Organização", "Estratégia", "Mente", "Conteúdo", "Reta final")
-- `tempo_leitura_min` int
-- `capa_url` text
-- `resumo` text (2–3 linhas, usado nos cards)
-- `conteudo_md` text (markdown completo)
-- `tags` text[]
-- `publicado` bool
-- `publicado_em` timestamptz
-- `created_at`, `updated_at`, `autor_id` uuid
+**Já está bem feito:**
+- TanStack Start corretamente configurado (`createServerFn`, `requireSupabaseAuth`, `attachSupabaseAuth`).
+- RLS habilitado em todas as tabelas; `has_role` via `SECURITY DEFINER` correto.
+- React Query + persister em localStorage funcionando.
+- `defaultPreload: "intent"` ligado.
+- Imagens do home com `loading=eager` + `fetchPriority=high` no LCP.
 
-RLS:
-- SELECT público quando `publicado = true`
-- ALL para admin (`has_role(auth.uid(), 'admin')`)
+**Onde dói (priorizado):**
 
-Bucket `blog-capas` (public). Policies de upload/update/delete restritas a admin.
+| # | Categoria | Problema | Impacto |
+|---|-----------|----------|---------|
+| 1 | Supabase | 4 buckets públicos permitem `LIST` de todos os arquivos | Segurança ALTA |
+| 2 | Supabase | Senha vazada (HaveIBeenPwned) desativado no Auth | Segurança ALTA |
+| 3 | Supabase | `listBlogCategorias` puxa TODOS os posts pra contar — devia ser `GROUP BY` no SQL | Perf ALTA |
+| 4 | Supabase | Faltam índices compostos (`blog_posts(publicado, publicado_em)`, `simulado_tentativas(user_id, simulado_id, concluido_em)`) | Perf MED |
+| 5 | Supabase | 6 funções `SECURITY DEFINER` executáveis por anon/authenticated sem necessidade | Segurança MED |
+| 6 | Cache | `defaultPreloadStaleTime: 0` zera o preload-cache do router → preload roda mas refaz fetch | Perf ALTA |
+| 7 | Cache | `staleTime` global de 60s é curto para listas estáticas (blog, biblioteca, provas) | Perf MED |
+| 8 | Cache | Persister grava **todas** queries no localStorage, inclusive markdown de capítulos (KB grandes) | Perf MED |
+| 9 | CSS | `@import url(fonts.googleapis)` bloqueia render; falta `preconnect` | LCP -200ms |
+| 10 | CSS | `countdown-shimmer` roda infinito com `mix-blend-mode: screen` (repaint constante na home) | Perf MED |
+| 11 | A11y | Sem `prefers-reduced-motion` em nenhum lugar | A11y |
+| 12 | A11y | Botões "Buscar"/"Notificações" do header são stubs sem ação nem rota | UX |
+| 13 | A11y | Sem skip-link, foco visível inconsistente | A11y |
+| 14 | A11y | Contraste de `/60` e `/65` sobre bordô abaixo de WCAG AA em alguns trechos | A11y |
+| 15 | Roteamento | Guard de auth e onboarding via `useEffect`+`navigate` (flicker) — deveria ser `beforeLoad` no layout | UX |
+| 16 | Roteamento | `og:image` definido no root sobrescreve leaf routes (warning da própria doc TanStack) | SEO |
+| 17 | Fluidez | `transition-all` em muitos cards (transiciona layout, filter, etc., não só transform) | Perf MED |
+| 18 | Fluidez | PWA sem service worker → não funciona offline, sem "instalar app" decente | UX nativo |
+| 19 | Mobile | Falta `touch-action: manipulation` global (delay de 300ms em alguns devices antigos é raro hoje, mas ajuda em scroll) + `overscroll-behavior` no main | Fluidez |
+| 20 | Mobile | `viewport` sem `viewport-fit=cover` → safe-area-inset-bottom não aplica corretamente em iOS | Layout |
+| 21 | Imagens | Capas do blog/biblioteca servidas direto do Supabase Storage sem `width=` (Supabase Image Transform) — mobile recebe imagem cheia | Perf ALTA |
+| 22 | Código | `simulados-admin.functions.ts` com 1209 linhas, `_app.simulados.$slug.index.tsx` com 855 — difícil manter | DX |
+| 23 | Código | `RootComponent` recria `persister` a cada render (sem `useMemo`) | Perf baixa |
+| 24 | Código | `_app.index.tsx` usa `getNoticias()` síncrono local mas o resto puxa do Supabase — duas fontes | DX |
+| 25 | SEO | 80% das rotas sem `head()` próprio (title, description, og:*) | SEO |
+| 26 | Realtime | Sem listener `onAuthStateChange` no `__root.tsx` invalidando queries (existe no `AuthProvider` mas não invalida queries) — risco de mostrar dados do usuário anterior | Bug latente |
+| 27 | A11y | `aria-current="page"` ausente nos itens ativos do sidebar/bottom-nav | A11y |
+| 28 | Erros | `errorComponent` único no root — rotas com loader não têm fallback próprio | UX |
+| 29 | DX | Falta um `loader` nas rotas estáticas (blog, provas, biblioteca) — tudo é client-fetched | Perf MED |
+| 30 | Segurança | Tabelas `BIBLIOTECA-*` sem políticas de INSERT/UPDATE/DELETE para admin — painel admin não funciona se for criado | Bug latente |
 
-## Temas dos 10 primeiros artigos
+---
 
-Baseados em pautas já consolidadas em blogs como JurisHand, Damásio, ProvaDaOrdem, Estuda Aqui, Debate Direito e Blog Exame OAB — reescritos do nosso jeito (linguagem direta, foco no aluno do app, sem clichê de cursinho).
+## Fase 1 — Supabase: segurança + performance do banco (alto impacto, baixo risco visual)
 
-1. **Como montar um cronograma realista para a 1ª fase em 60 dias** — Organização
-2. **As 5 matérias que mais caem no Exame de Ordem (e como priorizar)** — Estratégia
-3. **Lei seca x doutrina: o equilíbrio que aprova** — Estudo
-4. **Técnica do funil: como resolver questões da FGV sem cair em pegadinha** — Estratégia
-5. **Revisão espaçada aplicada ao Direito: por que reler não funciona** — Estudo
-6. **Como controlar a ansiedade na semana da prova** — Mente
-7. **O dia da prova: checklist completo de quem passa de primeira** — Reta final
-8. **Ética Profissional: a matéria mais subestimada (e mais decisiva)** — Conteúdo
-9. **Erros que reprovam: os 7 vícios de estudo mais comuns** — Estudo
-10. **Como usar provas anteriores como melhor professor particular** — Estratégia
+**Migração SQL única:**
 
-Cada artigo terá ~700–900 palavras, intro com hook, 3–5 subtítulos, exemplos práticos, bullets de checklist e um fechamento com CTA pro app (ex.: "veja o plano de estudo personalizado dentro do Hub da 1ª Fase").
+1. Criar índices compostos faltantes:
+   - `blog_posts(publicado, publicado_em DESC)` (substitui os dois separados, otimiza a query da listagem).
+   - `simulado_tentativas(user_id, simulado_id, concluido_em)` (otimiza a query do `getSimuladoCompleto`).
+   - `simulado_tentativas(user_id, concluido_em DESC)` (histórico).
+2. Criar RPC `get_blog_categorias_counts()` que faz `SELECT categoria, count(*) … GROUP BY` (substitui o aggregate no JS).
+3. `REVOKE EXECUTE … FROM anon, authenticated` nas SECURITY DEFINER que não precisam ser públicas (manter só `has_role` e as `get_biblioteca_*` chamadas pelo backend via service-role).
+4. Adicionar políticas RLS `INSERT/UPDATE/DELETE` para admins nas tabelas `BIBLIOTECA-*` (preparando painel admin).
+5. Restringir listagem dos buckets públicos (`avatars`, `blog-capas`, `provas-oab`, `resumos-imagens`, `resumos-pdfs`): manter SELECT individual por nome, remover `LIST`.
 
-## Capas (estilo fotográfico realista)
+**Código:**
+- Refatorar `listBlogCategorias` pra chamar a RPC.
+- Reescrever cliente Supabase do `client.ts` removendo o `Proxy` quente (ele cria custo em cada `supabase.x`) — usa lazy init via função simples.
 
-Prompt-base comum para coerência visual:
-> Fotografia editorial realista, iluminação natural cálida, profundidade de campo suave, paleta vinho/dourado/marfim, ambiente jurídico discreto (livros, mesa de madeira, balança, caderno), sem texto, sem logos, 16:9.
+**Setup manual no painel Supabase** (vou linkar): habilitar **Leaked Password Protection** no Auth.
 
-Cada tema recebe um sujeito-foco distinto (mesa de estudos com calendário, lei seca aberta, advogado segurando caneta, mão escrevendo, balança ao fundo desfocado, etc.) para não ficarem repetidas.
+---
 
-## Rotas e telas
+## Fase 2 — Cache, preload e bundle (sensação de "app nativo")
 
-```
-src/routes/_app.blog.tsx              -> /blog          feed (lista + filtros por categoria)
-src/routes/_app.blog.$slug.tsx        -> /blog/:slug    artigo (markdown renderizado)
-src/routes/_app.admin.blog.tsx        -> /admin/blog    painel admin (lista + form criar/editar)
-```
+1. `router.tsx`: subir `defaultPreloadStaleTime` para 30s, manter React Query como fonte de verdade.
+2. `router.tsx`: `staleTime` global 5 min, `gcTime` 1h. Queries voláteis (perfil, jobs) declaram `staleTime` próprio.
+3. Persister: whitelist explícita por prefixo (`blog`, `biblioteca`, `provas`, `noticias`) em vez de blacklist; ignora queries > 50 KB (capítulos).
+4. `__root.tsx`: adicionar `preconnect` + `dns-prefetch` para `fonts.googleapis.com` e `fonts.gstatic.com`; mover `@import url(...)` do `styles.css` para `<link rel="stylesheet">` no `head()`.
+5. `__root.tsx`: adicionar listener `onAuthStateChange` invalidando todas as queries (defesa contra leak entre usuários).
+6. `_app.tsx`: trocar `useEffect` de auth/onboarding por `beforeLoad` em layout `_authenticated` — elimina o flicker.
+7. Remover `og:image` do root e mover para cada rota relevante.
 
-**/blog (feed)**
-- Hero compacto "Blogger OAB" com tagline.
-- Chips de categoria (filtro).
-- Post em destaque (último publicado) + grid responsivo dos demais.
-- Cada card: capa, categoria, título, resumo, tempo de leitura, data.
+---
 
-**/blog/:slug (artigo)**
-- Capa full-bleed no topo, com gradiente para legibilidade.
-- Título, subtítulo, categoria, tempo de leitura, data.
-- Conteúdo em markdown (`react-markdown` + `remark-gfm` + `@tailwindcss/typography` `prose`).
-- Bloco final com CTA para "1ª Fase OAB" e sugestão de 2 artigos relacionados (mesma categoria).
-- Botão voltar e compartilhar.
+## Fase 3 — Fluidez visual + acessibilidade
 
-**/admin/blog (painel)**
-- Lista de posts (publicados/rascunhos) com ações editar/publicar/despublicar/excluir.
-- Form: título, subtítulo, slug (gerado do título), categoria (select), resumo, conteúdo (textarea markdown com preview ao lado), upload de capa (ou colar URL), tags, toggle publicado.
-- Visível só se `has_role` = admin (gate via server fn).
+1. CSS global:
+   - `html { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }`
+   - `body { overscroll-behavior-y: contain; }`
+   - `@media (prefers-reduced-motion: reduce)` desliga `countdown-shimmer`, `chapter-sheen`, `animate-*`.
+   - Foco visível padrão (`:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }`).
+2. Trocar `transition-all` por `transition-[transform,background-color,border-color]` nos cards principais (atalhos, ferramentas, blog, biblioteca).
+3. Adicionar `aria-current="page"` no `DesktopSidebar`/`BottomNav` ativos.
+4. Skip-link "Pular para o conteúdo" no `_app.tsx`.
+5. Aumentar contraste em rótulos secundários (`/60` → `/75` sobre bordô).
+6. Remover botões fantasma (Buscar/Notificações no `MobileHeader`) ou ligar a rotas reais.
+7. `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`.
 
-## Navegação
+---
 
-- **Home**: novo card "Blogger" na grade de atalhos, ícone `Newspaper`, abre `/blog`.
-- **DesktopSidebar** e **MenuDrawer**: novo item "Blog" com ícone, posicionado depois de "Biblioteca".
-- Admin no menu (visível só para admin) → link extra "Gerenciar blog".
+## Fase 4 — Imagens responsivas (alívio enorme em mobile)
 
-## Camada de dados / server functions
+1. Helper `supabaseImage(url, { w, q })` que devolve `…/storage/v1/render/image/public/<bucket>/<path>?width=W&quality=Q&resize=cover` (Supabase Image Transformations).
+2. Usar nos componentes: `PostCard`, `PostRow`, `FeaturedPost`, capas de biblioteca, avatar. `srcset` para `1x/2x` em mobile.
+3. Adicionar `width`/`height` em todas as `<img>` para zero CLS.
 
-`src/lib/blog.functions.ts`:
-- `listBlogPosts({ categoria?, limit?, offset? })` — público (admin client, filtra `publicado=true`).
-- `getBlogPost({ slug })` — público.
-- `getRelatedPosts({ slug, categoria, limit })` — público.
+---
 
-`src/lib/blog-admin.functions.ts`:
-- `adminListAllPosts()` — `requireSupabaseAuth` + checagem `has_role`.
-- `adminUpsertPost(input)` — idem.
-- `adminDeletePost({ id })` — idem.
-- `adminUploadCapa(formData)` — upload no bucket `blog-capas`.
+## Fase 5 — PWA + estrutura (opcional, alto valor)
 
-## Componentes novos
+1. `manifest.webmanifest`: ícones 192/512 + maskable, `display: standalone`, `theme_color`, `background_color`, `start_url`.
+2. Service worker mínimo (Workbox via Vite plugin) com cache de imagens (`stale-while-revalidate`) e fallback offline da home.
+3. Quebrar `simulados-admin.functions.ts` (1209 L) em `simulados-admin.{ocr,prompt,upload,queue}.functions.ts`.
+4. Quebrar `_app.simulados.$slug.index.tsx` (855 L) em componentes (`SimuladoHeader`, `MateriasResumo`, `EstatisticasUsuario`, `ListaQuestoes`).
+5. Adicionar `head()` por rota nas 40+ rotas sem SEO próprio (script gera template, ajusto manual nas principais).
 
-- `src/components/blog/PostCard.tsx`
-- `src/components/blog/FeaturedPost.tsx`
-- `src/components/blog/CategoriaChips.tsx`
-- `src/components/blog/MarkdownView.tsx` (react-markdown configurado com estilo `prose`)
-- `src/components/blog/admin/PostForm.tsx`
+---
 
-## Dependências
+## Como prefere prosseguir?
 
-Adicionar: `react-markdown`, `remark-gfm`, `@tailwindcss/typography` (plugin).
+- **A)** Executo as 5 fases em sequência (cada fase = 1 deploy verificável).
+- **B)** Foco só em **Fase 1 + 2 + 3** (segurança Supabase + cache + a11y/fluidez) — o que mais "transforma" o app.
+- **C)** Faço só uma fase específica primeiro (você diz qual).
 
-## Seed dos 10 artigos
+Se não responder, sigo com a opção **B**.
 
-Após aprovar o plano e rodar a migration, eu:
-1. Para cada tema, gero a capa via `imagegen` (fotográfico realista, 16:9), salvo em `/tmp` e faço upload para `blog-capas/<slug>.jpg` retornando a URL pública.
-2. Escrevo o conteúdo markdown completo de cada artigo (700–900 palavras).
-3. Insiro todos os 10 registros já com `publicado=true` e `publicado_em=now()`.
-
-## Fora de escopo (para depois)
-
-- Comentários, likes, contagem de visualizações.
-- Newsletter / envio diário.
-- SEO server-side específico por post (vamos adicionar `head()` por slug já no MVP, mas sem `og:image` dinâmico avançado — usa a `capa_url`).
-- Editor WYSIWYG (vai ser textarea markdown com preview).
