@@ -206,10 +206,16 @@ function FaseCard({
         className={`absolute inset-0 transition-opacity duration-500 ${loaded ? "opacity-0" : "opacity-100"}`}
         style={{
           background:
-            "linear-gradient(135deg, hsl(var(--primary) / 0.85) 0%, hsl(var(--primary) / 0.55) 45%, hsl(var(--gold) / 0.55) 100%)",
+            "linear-gradient(135deg, color-mix(in oklab, var(--primary) 85%, transparent) 0%, color-mix(in oklab, var(--primary) 55%, transparent) 45%, color-mix(in oklab, var(--gold) 55%, transparent) 100%)",
         }}
       >
-        <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_30%,hsl(var(--gold)/0.35)_50%,transparent_70%)] bg-[length:200%_100%] animate-[shimmer_1.6s_ease-in-out_infinite]" />
+        <div
+          className="absolute inset-0 animate-pulse"
+          style={{
+            background:
+              "linear-gradient(110deg, transparent 30%, color-mix(in oklab, var(--gold) 35%, transparent) 50%, transparent 70%)",
+          }}
+        />
       </div>
 
       <img
