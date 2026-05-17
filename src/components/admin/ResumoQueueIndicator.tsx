@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Activity,
+  RotateCcw,
 } from "lucide-react";
 import { useResumoQueue, resumoQueue } from "@/lib/resumo-queue";
 import { useIsAdmin } from "@/hooks/use-admin";
