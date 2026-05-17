@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Calendar, Sparkles, ArrowRight,
   Library, Trophy, Video, Newspaper,
@@ -7,7 +8,7 @@ import {
   GraduationCap, Zap, Compass,
 } from "lucide-react";
 import { HomeTopCard } from "@/components/home/HomeTopCard";
-import { getNoticias } from "@/data/noticias";
+import { listBlogPosts, type BlogPostListItem } from "@/lib/blog.functions";
 import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.webp";
 import segundaFaseCover from "@/assets/oab-segunda-fase-cover.webp";
 
