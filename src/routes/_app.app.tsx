@@ -102,30 +102,41 @@ function AreaOABPage() {
         </div>
       </section>
 
-      {/* ===== Notícias ===== */}
+      {/* ===== Blog ===== */}
       <section>
         <div className="px-4 md:px-8 flex items-end justify-between gap-3 mb-4">
-          <SectionTitle icon={Newspaper} eyebrow="Atualidades do exame" title="Notícias da OAB" inline />
+          <SectionTitle icon={Newspaper} eyebrow="Dicas diárias" title="Blog OAB na Risca" inline />
           <Link
-            to="/noticias"
+            to="/blog"
             className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-gold/15 border border-gold/35 text-gold text-[11px] md:text-xs font-semibold hover:bg-gold/25 transition"
-            aria-label="Ver todas as notícias"
+            aria-label="Ver todos os posts do blog"
           >
-            <span className="hidden sm:inline">Ver todas</span>
+            <span className="hidden sm:inline">Ver todos</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
-        {/* Mobile: scroll horizontal · Desktop: grid */}
-        <div className="md:hidden flex gap-3 overflow-x-auto scrollbar-hide px-4 scroll-px-4 pb-2 snap-x snap-mandatory">
-          {noticias.map((n) => (
-            <NoticiaCardLink key={n.id} n={n} className="snap-start shrink-0 w-[220px]" />
-          ))}
-        </div>
-        <div className="hidden md:grid px-8 grid-cols-3 lg:grid-cols-4 gap-4">
-          {noticias.slice(0, 4).map((n) => (
-            <NoticiaCardLink key={n.id} n={n} className="w-full" />
-          ))}
-        </div>
+        {blogQuery.isLoading ? (
+          <div className="md:hidden flex gap-3 overflow-x-auto scrollbar-hide px-4 pb-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="shrink-0 w-[220px] h-[200px] rounded-2xl border border-border bg-card animate-pulse" />
+            ))}
+          </div>
+        ) : posts.length === 0 ? (
+          <p className="px-4 md:px-8 text-sm text-muted-foreground">Nenhum post publicado ainda.</p>
+        ) : (
+          <>
+            <div className="md:hidden flex gap-3 overflow-x-auto scrollbar-hide px-4 scroll-px-4 pb-2 snap-x snap-mandatory">
+              {posts.map((p) => (
+                <BlogCardLink key={p.id} p={p} className="snap-start shrink-0 w-[220px]" />
+              ))}
+            </div>
+            <div className="hidden md:grid px-8 grid-cols-3 lg:grid-cols-4 gap-4">
+              {posts.slice(0, 4).map((p) => (
+                <BlogCardLink key={p.id} p={p} className="w-full" />
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       {/* ===== Ferramentas ===== */}
