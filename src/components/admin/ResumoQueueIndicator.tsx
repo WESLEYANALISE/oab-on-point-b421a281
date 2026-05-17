@@ -40,7 +40,23 @@ export function ResumoQueueIndicator() {
     [state.historico, oneHourAgo],
   );
   const errosRecentes = useMemo(
-    () => state.historico.filter((h) => h.status === "erro" && h.finishedAt >= oneHourAgo).length,
+    () =>
+      state.historico.filter(
+        (h) =>
+          h.status === "erro" &&
+          h.finishedAt >= oneHourAgo &&
+          !(h.erro ?? "").includes("reenfileirado"),
+      ).length,
+    [state.historico, oneHourAgo],
+  );
+  const reenfileiradosRecentes = useMemo(
+    () =>
+      state.historico.filter(
+        (h) =>
+          h.status === "erro" &&
+          h.finishedAt >= oneHourAgo &&
+          (h.erro ?? "").includes("reenfileirado"),
+      ).length,
     [state.historico, oneHourAgo],
   );
   const ultimoConcluido = useMemo(
