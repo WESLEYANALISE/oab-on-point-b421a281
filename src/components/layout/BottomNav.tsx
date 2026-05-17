@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, BookOpen, Newspaper, Target } from "lucide-react";
+import { Home, BookOpen, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MenuDrawer, MenuTriggerButton } from "@/components/layout/MenuDrawer";
 
