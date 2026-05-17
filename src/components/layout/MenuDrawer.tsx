@@ -139,7 +139,7 @@ export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
             <button className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent transition-colors">
               <HelpCircle className="h-4 w-4" /> Ajuda e suporte
             </button>
-            <button className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm text-destructive hover:bg-sidebar-accent transition-colors">
+            <button onClick={handleSignOut} className="flex items-center gap-3 px-3 py-2.5 w-full rounded-md text-sm text-destructive hover:bg-sidebar-accent transition-colors">
               <LogOut className="h-4 w-4" /> Sair
             </button>
           </div>
