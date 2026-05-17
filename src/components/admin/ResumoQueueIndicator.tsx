@@ -26,16 +26,13 @@ export function ResumoQueueIndicator() {
   const [expanded, setExpanded] = useState(true);
   const [showAll, setShowAll] = useState(false);
 
-  if (!isAdmin) return null;
-  if (!state.atual && state.fila.length === 0) return null;
-
   const atual = state.atual;
   const prog = atual?.progress;
   const previasNaFila = state.fila.filter((i) => i.kind === "previa").length;
   const capitulosNaFila = state.fila.filter((i) => i.kind === "capitulos").length;
   const totalRestante = state.fila.length + (atual ? 1 : 0);
 
-  // Histórico recente (última hora)
+  // Histórico recente (última hora) — hooks SEMPRE antes de qualquer early return.
   const oneHourAgo = Date.now() - 60 * 60_000;
   const concluidosRecentes = useMemo(
     () => state.historico.filter((h) => h.status === "pronto" && h.finishedAt >= oneHourAgo).length,
@@ -49,6 +46,9 @@ export function ResumoQueueIndicator() {
     () => [...state.historico].reverse().find((h) => h.status === "pronto"),
     [state.historico],
   );
+
+  if (!isAdmin) return null;
+  if (!state.atual && state.fila.length === 0) return null;
 
   const pct =
     prog && prog.total && prog.feitos !== undefined
