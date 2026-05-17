@@ -28,6 +28,51 @@ type OcrImage = { id: string; image_base64?: string };
 type OcrPage = { index: number; markdown: string; images?: OcrImage[] };
 type OcrResult = { pages: OcrPage[] };
 
+class GeminiApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status?: number,
+    public readonly nonRetryable = false,
+  ) {
+    super(message);
+    this.name = "GeminiApiError";
+  }
+}
+
+function normalizeGeminiError(status: number, body: string) {
+  let providerMessage = body.slice(0, 300);
+  let providerStatus = "";
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: string; status?: string } };
+    providerMessage = parsed.error?.message || providerMessage;
+    providerStatus = parsed.error?.status || "";
+  } catch {
+    /* keep raw snippet */
+  }
+
+  const deniedProject = status === 403 && /denied access|permission_denied/i.test(`${providerMessage} ${providerStatus}`);
+  if (deniedProject) {
+    return {
+      message: "Gemini bloqueado neste projeto Google. Verifique/rotacione a GEMINI_API_KEY em um projeto com acesso liberado à Gemini API.",
+      nonRetryable: true,
+    };
+  }
+
+  const nonRetryable = status === 400 || status === 401 || status === 403 || status === 404;
+  return {
+    message: `Gemini falhou [${status}]: ${providerMessage}`,
+    nonRetryable,
+  };
+}
+
+function toResumoError(e: unknown) {
+  const msg = e instanceof Error ? e.message : String(e);
+  return {
+    message: msg,
+    nonRetryable: e instanceof GeminiApiError ? e.nonRetryable : false,
+  };
+}
+
 async function mistralOcrFull(apiKey: string, documentUrl: string): Promise<OcrResult> {
   const maxAttempts = 6;
   let res: Response | null = null;
@@ -87,16 +132,17 @@ async function geminiCall(body: unknown): Promise<any> {
     }
     if (res.ok) return await res.json();
     const t = await res.text();
-    lastErr = `[${res.status}]: ${t.slice(0, 300)}`;
+    const normalized = normalizeGeminiError(res.status, t);
+    lastErr = `[${res.status}]: ${normalized.message}`;
     // Retry on transient: 408, 429, 5xx
     const transient = res.status === 408 || res.status === 429 || res.status >= 500;
     if (transient && attempt < maxAttempts) {
       await new Promise((r) => setTimeout(r, 1000 * 2 ** (attempt - 1)));
       continue;
     }
-    throw new Error(`Gemini falhou ${lastErr}`);
+    throw new GeminiApiError(normalized.message, res.status, normalized.nonRetryable);
   }
-  throw new Error(`Gemini falhou ${lastErr}`);
+  throw new GeminiApiError(`Gemini falhou ${lastErr}`);
 }
 
 async function geminiJson(systemPrompt: string, userPrompt: string): Promise<string> {
@@ -384,12 +430,12 @@ ${truncated}`;
 
       return { ok: true, resumo_livro_id: resumoLivroId, total: previa.length };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const { message: msg, nonRetryable } = toResumoError(e);
       await supabaseAdmin
         .from("resumo_livros")
         .update({ status: "erro", erro_msg: msg.slice(0, 500) })
         .eq("id", resumoLivroId);
-      throw new Error(msg);
+      return { ok: false, done: true, nonRetryable, error: msg, resumo_livro_id: resumoLivroId, total: 0 };
     }
   });
 
@@ -525,7 +571,7 @@ ${trecho}`;
 
       return { ok: true, done, restantes: total - feitosAgora, ordem: pendente.ordem, titulo: pendente.titulo };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const { message: msg, nonRetryable } = toResumoError(e);
       await supabaseAdmin.from("resumo_capitulos").upsert(
         {
           resumo_livro_id: data.resumo_livro_id,
@@ -537,7 +583,11 @@ ${trecho}`;
         },
         { onConflict: "resumo_livro_id,ordem" },
       );
-      throw new Error(msg);
+      await supabaseAdmin
+        .from("resumo_livros")
+        .update({ status: "erro", erro_msg: msg.slice(0, 500) })
+        .eq("id", data.resumo_livro_id);
+      return { ok: false, done: true, nonRetryable, error: msg, restantes: incluir.length - feitos.size, ordem: pendente.ordem, titulo: pendente.titulo };
     }
   });
 
