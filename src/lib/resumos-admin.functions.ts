@@ -447,19 +447,19 @@ export const gerarProximoCapitulo = createServerFn({ method: "POST" })
         .join("\n\n");
       const trecho = slice.slice(0, 140000);
 
-      const sys = "Você é um professor experiente que cria resumos didáticos e claros para estudantes de Direito. Escreva em português do Brasil, em Markdown, com estrutura clara e didática.";
-      const user = `Crie um RESUMO DIDÁTICO COMPLETO do capítulo a seguir, como se fosse uma AULA EXPLICADA POR UM PROFESSOR. O resumo deve:
+      const sys = "Você escreve RESUMOS escritos (não aulas faladas) de Direito, em português do Brasil, em Markdown, com estrutura clara e didática. NUNCA use saudações ou linguagem oral. NUNCA escreva 'Olá', 'Olá pessoal', 'Bem-vindos', 'Sejam bem-vindos', 'Hoje vamos ver', 'Nesta aula', 'Neste vídeo', 'pessoal', 'galera', 'turma', 'queridos alunos' ou qualquer expressão semelhante. NUNCA se refira ao texto como 'aula'; trate-o sempre como 'resumo'. Não fale com o leitor em primeira pessoa do plural ('vamos ver', 'vamos estudar'). Escreva de forma direta, expositiva e impessoal, como um material didático escrito.";
+      const user = `Escreva um RESUMO DIDÁTICO COMPLETO E ESCRITO do capítulo a seguir. Regras obrigatórias:
 
-1. Começar com um parágrafo introdutório explicando o tema e sua importância
-2. Usar subtítulos (##) para organizar os principais tópicos
-3. Explicar conceitos com linguagem acessível e exemplos práticos quando possível
-4. Destacar pontos-chave em **negrito**
-5. Usar listas e tabelas quando ajudar na compreensão
-6. Manter TODAS as imagens já presentes no texto original (sintaxe markdown ![](url)) — não invente novas
-7. Encerrar com um parágrafo "## Em resumo" sintetizando o que foi aprendido
-8. Ser COMPLETO e suficiente para o aluno entender o capítulo sem precisar ler o livro inteiro
+1. Comece DIRETO com o título "# ${pendente.titulo}" e, logo abaixo, um parágrafo expositivo entrando no conteúdo — sem saudação, sem "nesta aula", sem "olá", sem "vamos ver", sem se dirigir ao leitor.
+2. Use subtítulos (##) para organizar os principais tópicos.
+3. Explique conceitos com linguagem acessível e exemplos práticos quando possível, sempre em tom expositivo escrito.
+4. Destaque pontos-chave em **negrito**.
+5. Use listas e tabelas quando ajudar na compreensão.
+6. Mantenha TODAS as imagens já presentes no texto original (sintaxe markdown ![](url)) — não invente novas.
+7. Encerre com uma seção "## Em resumo" sintetizando os pontos centrais (sem despedidas, sem "espero que tenham gostado").
+8. Seja COMPLETO e suficiente para o aluno entender o capítulo sem precisar ler o livro inteiro.
 
-NÃO escreva introduções fora do conteúdo (nada como "Aqui está o resumo"). Comece direto com o título "# ${pendente.titulo}".
+PROIBIDO: saudações ("Olá", "Bem-vindos"), vocativos ("pessoal", "galera", "turma", "alunos"), referências à "aula"/"vídeo"/"hoje", frases como "vamos estudar"/"vamos ver"/"veremos a seguir", introduções metalinguísticas ("Aqui está o resumo", "Neste resumo iremos"). Trate o texto como RESUMO ESCRITO, não como fala.
 
 Livro: ${livro.data.titulo}${livro.data.autor ? ` — ${livro.data.autor}` : ""}
 Capítulo: ${pendente.titulo}
