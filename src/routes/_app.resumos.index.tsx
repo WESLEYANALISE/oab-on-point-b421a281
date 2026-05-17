@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { z } from "zod";
-import { zodValidator } from "@tanstack/zod-adapter";
 import { FileText, BookOpen, Loader2, ChevronRight, ArrowLeft, FolderOpen } from "lucide-react";
 import { listarLivrosComResumo } from "@/lib/resumos.functions";
 
@@ -12,7 +11,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/_app/resumos/")({
-  validateSearch: zodValidator(searchSchema),
+  validateSearch: (s: Record<string, unknown>) => searchSchema.parse(s),
   head: () => ({
     meta: [
       { title: "Resumos — OAB na Risca" },
