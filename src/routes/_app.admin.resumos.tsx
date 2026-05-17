@@ -303,9 +303,15 @@ function AdminResumos() {
             {livrosDaArea.map((l) => {
               const r = l.resumo as any;
               const status: string = r?.status ?? "sem_previa";
-              const proc = r?.id && (queueState.atual?.id === r.id);
-              const enfileirado = r?.id && naFila.has(r.id);
-              const el = elegivel(l);
+              const job = jobDoLivro(l);
+              const capKey = r?.id ? capitulosKey(r.id) : null;
+              const prevKey = previaKey(l.slug, l.livro_id);
+              const proc =
+                queueState.atual?.key === capKey ||
+                queueState.atual?.key === prevKey;
+              const enfileirado =
+                (capKey !== null && naFilaKeys.has(capKey)) ||
+                naFilaKeys.has(prevKey);
               return (
                 <LivroCard
                   key={`${l.slug}:${l.livro_id}`}
@@ -316,9 +322,9 @@ function AdminResumos() {
                   enfileirado={!!enfileirado && !proc}
                   previaPending={previa.isPending}
                   selectionMode={selectionMode}
-                  selectable={!!el && !enfileirado}
-                  selected={!!el && selecionados.has(el.id)}
-                  onToggleSelect={() => el && toggleSelecionado(el.id)}
+                  selectable={!!job && !enfileirado}
+                  selected={!!job && selecionados.has(job.key)}
+                  onToggleSelect={() => job && toggleSelecionado(job.key)}
                   onGerarPrevia={() => previa.mutate({ slug: l.slug, livro_id: l.livro_id })}
                   onVerPrevia={() => {
                     const itens = ((r.previa as PreviaItem[]) ?? []).map((it) => ({
@@ -330,7 +336,12 @@ function AdminResumos() {
                     }));
                     setPreview({ resumo_livro_id: r.id, itens });
                   }}
-                  onRetomar={() => enfileirar([{ id: r.id, titulo: l.titulo }])}
+                  onRetomar={() => enfileirarJobs([{
+                    kind: "capitulos",
+                    key: capitulosKey(r.id),
+                    id: r.id,
+                    titulo: l.titulo,
+                  }])}
                   onExcluir={() => { if (confirm("Excluir resumo deste livro?")) excluir.mutate(r.id); }}
                 />
               );
