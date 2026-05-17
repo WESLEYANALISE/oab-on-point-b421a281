@@ -164,28 +164,39 @@ function AreaOABPage() {
   );
 }
 
-function NoticiaCardLink({ n, className = "" }: { n: ReturnType<typeof getNoticias>[number]; className?: string }) {
+function BlogCardLink({ p, className = "" }: { p: BlogPostListItem; className?: string }) {
+  const dateStr = p.publicado_em
+    ? DATE_FMT.format(new Date(p.publicado_em)).replace(".", "")
+    : null;
   return (
     <Link
-      to="/noticias/$id"
-      params={{ id: n.id }}
+      to="/blog/$slug"
+      params={{ slug: p.slug }}
       className={`rounded-2xl overflow-hidden border border-border bg-card hover:border-gold/30 transition-colors ${className}`}
     >
-      <div className="relative h-28 md:h-36 bg-gradient-to-br from-[oklch(0.32_0.1_240)] via-[oklch(0.22_0.08_240)] to-[oklch(0.16_0.05_240)] flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 opacity-20" style={{
-          backgroundImage: "radial-gradient(circle at 30% 40%, oklch(0.85 0.12 80 / 0.4), transparent 60%)",
-        }} />
-        <p className="relative font-display font-bold text-2xl md:text-3xl tracking-tight text-primary-foreground/90">NOTÍCIAS</p>
-        <span className="absolute top-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-[oklch(0.45_0.18_240)] text-white text-[9px] font-bold uppercase tracking-wider">
-          {n.categoria === "OAB" || n.categoria === "Exame" ? "OAB Nacional" : n.fonte.split(" ")[0]}
+      <div className="relative h-28 md:h-36 bg-gradient-to-br from-[oklch(0.32_0.1_60)] via-[oklch(0.22_0.08_60)] to-[oklch(0.16_0.05_60)] flex items-center justify-center overflow-hidden">
+        {p.capa_url ? (
+          <img src={p.capa_url} alt={p.titulo} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <>
+            <div className="absolute inset-0 opacity-20" style={{
+              backgroundImage: "radial-gradient(circle at 30% 40%, oklch(0.85 0.12 80 / 0.4), transparent 60%)",
+            }} />
+            <p className="relative font-display font-bold text-2xl md:text-3xl tracking-tight text-primary-foreground/90">BLOG</p>
+          </>
+        )}
+        <span className="absolute top-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-gold/90 text-gold-foreground text-[9px] font-bold uppercase tracking-wider">
+          {p.categoria}
         </span>
-        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/55 text-white text-[10px] font-medium" suppressHydrationWarning>
-          <Calendar className="h-3 w-3" />
-          {formatNoticiaDate(n.data)}
-        </span>
+        {dateStr && (
+          <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/55 text-white text-[10px] font-medium" suppressHydrationWarning>
+            <Calendar className="h-3 w-3" />
+            {dateStr}
+          </span>
+        )}
       </div>
       <div className="p-3">
-        <p className="font-medium text-[13px] md:text-sm leading-snug line-clamp-3 text-foreground">{n.titulo}</p>
+        <p className="font-medium text-[13px] md:text-sm leading-snug line-clamp-3 text-foreground">{p.titulo}</p>
       </div>
     </Link>
   );
