@@ -883,6 +883,13 @@ export type Database = {
             }[]
           }
       get_biblioteca_counts: { Args: never; Returns: Json }
+      get_blog_categorias_counts: {
+        Args: never
+        Returns: {
+          categoria: string
+          total: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
