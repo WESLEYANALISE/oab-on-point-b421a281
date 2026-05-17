@@ -11,12 +11,14 @@ export type PreviaJob = {
   slug: string;
   livro_id: number;
   titulo: string;
+  attempts?: number;
 };
 export type CapitulosJob = {
   kind: "capitulos";
   key: string;        // dedup key
   id: string;         // resumo_livro_id
   titulo: string;
+  attempts?: number;
 };
 export type ResumoQueueItem = PreviaJob | CapitulosJob;
 
