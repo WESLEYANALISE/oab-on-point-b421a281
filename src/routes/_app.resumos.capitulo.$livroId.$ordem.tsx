@@ -122,15 +122,7 @@ function CapituloView() {
     retry: 0,
   });
 
-  if (isPending || !data) {
-    return (
-      <div className="px-4 py-12 text-center text-muted-foreground">
-        <span className="inline-flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
-        </span>
-      </div>
-    );
-  }
+
 
   if (!atual) {
     return (
