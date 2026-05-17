@@ -7,8 +7,8 @@ import {
 } from "lucide-react";
 import { HomeTopCard } from "@/components/home/HomeTopCard";
 import { getNoticias } from "@/data/noticias";
-import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.jpg";
-import segundaFaseCover from "@/assets/oab-segunda-fase-cover.jpg";
+import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.webp";
+import segundaFaseCover from "@/assets/oab-segunda-fase-cover.webp";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
