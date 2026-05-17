@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { ArrowLeft, ChevronRight, BookOpen, Clock, ArrowDownAZ } from "lucide-react";
-import { BIB_MAP, livrosQueryOptions, areasQueryOptions, countsQueryOptions, type SortMode } from "@/lib/biblioteca";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { ArrowLeft, ChevronRight, BookOpen, Clock, ArrowDownAZ, Heart } from "lucide-react";
+import { toast } from "sonner";
+import { BIB_MAP, livrosQueryOptions, areasQueryOptions, countsQueryOptions, favoritosQueryOptions, toggleFavorito, type SortMode } from "@/lib/biblioteca";
 import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
 const PAGE_SIZE = 60;
@@ -18,30 +19,48 @@ export const Route = createFileRoute("/_app/biblioteca/$slug/")({
   component: BibliotecaList,
 });
 
+type ViewMode = SortMode | "favoritos";
+
 function BibliotecaList() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const cfg = BIB_MAP[slug];
   const [area, setArea] = useState<string | null>(null);
   const [limit, setLimit] = useState(PAGE_SIZE);
-  const [sort, setSort] = useState<SortMode>("cronologica");
+  const [view, setView] = useState<ViewMode>("cronologica");
+  const sort: SortMode = view === "favoritos" ? "cronologica" : view;
 
-  const showAreas = cfg.hasAreas && area === null;
+  const showAreas = cfg.hasAreas && area === null && view !== "favoritos";
 
   const { data: areas, isLoading: areasLoading } = useQuery(areasQueryOptions(slug));
   const { data: livros, isLoading: livrosLoading } = useQuery({
-    ...livrosQueryOptions(slug, area, limit, 0, sort),
+    ...livrosQueryOptions(slug, area, view === "favoritos" ? 500 : limit, 0, sort),
     enabled: !showAreas,
     placeholderData: keepPreviousData,
   });
   const { data: counts } = useQuery(countsQueryOptions());
+  const { data: favoritos } = useQuery(favoritosQueryOptions(slug));
+  const favSet = useMemo(() => new Set((favoritos ?? []).map((f) => f.livro_id)), [favoritos]);
   const total = counts?.[slug];
+
+  const favMutation = useMutation({
+    mutationFn: ({ id, fav }: { id: number; fav: boolean }) => toggleFavorito(slug, id, fav),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["livros-favoritos"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const livrosVisiveis = useMemo(() => {
+    if (!livros) return livros;
+    if (view === "favoritos") return livros.filter((l) => favSet.has(Number(l.id)));
+    return livros;
+  }, [livros, view, favSet]);
 
   const goBack = () => {
     if (cfg.hasAreas && area !== null) {
       setArea(null);
       setLimit(PAGE_SIZE);
-      setSort("cronologica");
+      setView("cronologica");
     } else {
       navigate({ to: "/biblioteca" });
     }
@@ -65,9 +84,11 @@ function BibliotecaList() {
             <p className="text-xs text-muted-foreground">
               {showAreas
                 ? `${areas?.length ?? 0} áreas${total ? ` · ${total} livros` : ""}`
-                : livrosLoading && !livros
-                  ? "Carregando…"
-                  : `${livros?.length ?? 0} livros`}
+                : view === "favoritos"
+                  ? `${livrosVisiveis?.length ?? 0} favoritos`
+                  : livrosLoading && !livros
+                    ? "Carregando…"
+                    : `${livros?.length ?? 0} livros`}
             </p>
           </div>
         </div>
@@ -116,12 +137,13 @@ function BibliotecaList() {
               {([
                 { id: "cronologica", label: "Ordem de estudo", Icon: Clock },
                 { id: "alfabetica", label: "A–Z", Icon: ArrowDownAZ },
+                { id: "favoritos", label: "Favoritos", Icon: Heart },
               ] as const).map(({ id, label, Icon }) => {
-                const active = sort === id;
+                const active = view === id;
                 return (
                   <button
                     key={id}
-                    onClick={() => { setSort(id); setLimit(PAGE_SIZE); }}
+                    onClick={() => { setView(id); setLimit(PAGE_SIZE); }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
                     aria-pressed={active}
                   >
@@ -145,35 +167,36 @@ function BibliotecaList() {
               </ul>
             )}
 
-            {livros && livros.length === 0 && !livrosLoading && (
-              <p className="text-sm text-muted-foreground text-center py-8">Nenhum livro disponível.</p>
+            {livrosVisiveis && livrosVisiveis.length === 0 && !livrosLoading && (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {view === "favoritos" ? "Você ainda não favoritou nenhum livro." : "Nenhum livro disponível."}
+              </p>
             )}
 
-            {livros && livros.length > 0 && (
+            {livrosVisiveis && livrosVisiveis.length > 0 && (
               <>
                 <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden bg-card">
-                  {livros.map((l, idx) => {
+                  {livrosVisiveis.map((l, idx) => {
                     const id = String(l.id);
+                    const isFav = favSet.has(Number(l.id));
                     return (
-                      <li key={id}>
+                      <li key={id} className="relative">
                         <Link
                           to="/biblioteca/$slug/$bookId"
                           params={{ slug, bookId: id }}
                           preload={false}
-                          className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors"
+                          className="flex items-center gap-3 p-3 pr-12 hover:bg-muted/50 transition-colors"
                         >
-                          <div className="w-14 h-20 rounded overflow-hidden bg-muted border border-border flex-shrink-0">
+                          <div className="relative w-14 h-20 rounded overflow-hidden bg-white border border-border flex-shrink-0">
                             {l.capa ? (
                               <img
-                                src={supabaseImage(l.capa, { w: 112, q: 72 }) ?? l.capa}
-                                srcSet={supabaseImageSrcSet(l.capa, 56, 72)}
+                                src={supabaseImage(l.capa, { w: 160, q: 80 }) ?? l.capa}
+                                srcSet={supabaseImageSrcSet(l.capa, 80, 80)}
                                 sizes="56px"
                                 alt={l.titulo}
-                                width={56}
-                                height={80}
                                 loading={idx < 6 ? "eager" : "lazy"}
                                 decoding="async"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground p-1 text-center font-sans">{l.titulo}</div>
@@ -185,12 +208,25 @@ function BibliotecaList() {
                           </div>
                           <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         </Link>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            favMutation.mutate({ id: Number(l.id), fav: isFav });
+                          }}
+                          aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                          aria-pressed={isFav}
+                          className="absolute top-1.5 left-1.5 z-10 p-1 rounded-full bg-background/85 backdrop-blur shadow-sm border border-border hover:scale-110 active:scale-95 transition"
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${isFav ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                        </button>
                       </li>
                     );
                   })}
                 </ul>
 
-                {livros.length >= limit && (
+                {view !== "favoritos" && livros && livros.length >= limit && (
                   <div className="mt-4 flex justify-center">
                     <button
                       onClick={() => setLimit((n) => n + PAGE_SIZE)}
