@@ -47,16 +47,13 @@ export const listBlogPosts = createServerFn({ method: "GET" })
 
 export const listBlogCategorias = createServerFn({ method: "GET" }).handler(
   async (): Promise<{ categoria: string; total: number }[]> => {
-    const { data, error } = await supabaseAdmin
-      .from("blog_posts")
-      .select("categoria")
-      .eq("publicado", true);
+    // Agrega no banco com GROUP BY (RPC) em vez de baixar todos os posts.
+    const { data, error } = await supabaseAdmin.rpc("get_blog_categorias_counts");
     if (error) throw new Error(error.message);
-    const agg = new Map<string, number>();
-    for (const r of data ?? []) agg.set(r.categoria, (agg.get(r.categoria) ?? 0) + 1);
-    return [...agg.entries()]
-      .map(([categoria, total]) => ({ categoria, total }))
-      .sort((a, b) => b.total - a.total);
+    return ((data ?? []) as Array<{ categoria: string; total: number }>).map((r) => ({
+      categoria: r.categoria,
+      total: Number(r.total),
+    }));
   },
 );
 
