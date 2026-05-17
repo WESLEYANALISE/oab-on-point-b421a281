@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   Calendar, Sparkles, ArrowRight,
   Library, Trophy, Video, Newspaper,
