@@ -280,18 +280,25 @@ export function ResumoQueueIndicator() {
                 Histórico ({state.historico.length})
               </summary>
               <ol className="mt-1.5 space-y-1">
-                {[...state.historico].reverse().map((h) => (
-                  <li key={`${h.key}-${h.finishedAt}`} className="flex items-start gap-1.5 truncate">
-                    {h.status === "pronto" ? (
-                      <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0 mt-0.5" />
-                    ) : h.status === "erro" ? (
-                      <AlertCircle className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
-                    ) : (
-                      <X className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
-                    )}
-                    <span className="truncate">{h.titulo}</span>
-                  </li>
-                ))}
+                {[...state.historico].reverse().map((h) => {
+                  const isRetry = h.status === "erro" && (h.erro ?? "").includes("reenfileirado");
+                  return (
+                    <li key={`${h.key}-${h.finishedAt}`} className="flex items-start gap-1.5 truncate">
+                      {h.status === "pronto" ? (
+                        <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0 mt-0.5" />
+                      ) : isRetry ? (
+                        <RotateCcw className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+                      ) : h.status === "erro" ? (
+                        <AlertCircle className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
+                      ) : (
+                        <X className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                      )}
+                      <span className={`truncate ${isRetry ? "text-amber-600 dark:text-amber-400" : ""}`}>
+                        {h.titulo}
+                      </span>
+                    </li>
+                  );
+                })}
               </ol>
             </details>
           )}
