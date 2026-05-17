@@ -114,14 +114,6 @@ function VadeMecumPage() {
           }}
         />
         <div className="relative px-4 md:px-8 pt-5 pb-7">
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/app" })}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="h-4 w-4" /> Voltar
-          </button>
-
           <div className="mt-5 flex items-start gap-4">
             <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-gold/30 to-primary/30 border border-gold/30 grid place-items-center shrink-0">
               <Scale className="h-6 w-6 text-gold" />
