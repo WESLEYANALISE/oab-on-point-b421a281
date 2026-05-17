@@ -226,6 +226,19 @@ function AdminResumos() {
 
       {!isLoading && !areaSelecionada && (
         <div>
+          <div className="mb-4 p-3 rounded-xl border border-primary/30 bg-primary/5 flex items-start gap-3">
+            <Zap className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">Modo automático</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Enfileira prévia + capítulos de todos os livros, um por vez. Continua mesmo se você sair da página.
+              </p>
+              <Button size="sm" className="mt-2" onClick={iniciarAutomaticoTudo}>
+                <Zap className="h-3.5 w-3.5 mr-1.5" /> Iniciar tudo
+              </Button>
+            </div>
+          </div>
+
           <h2 className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
             Áreas ({areas.length})
           </h2>
