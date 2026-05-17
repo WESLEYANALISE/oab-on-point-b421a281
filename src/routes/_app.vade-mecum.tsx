@@ -153,24 +153,65 @@ function VadeMecumPage() {
         </div>
       </header>
 
-      {/* Categorias */}
+      {/* Principais */}
       <section className="px-4 md:px-8 mt-8">
-        <div className="flex items-end justify-between mb-4">
-          <div>
-            <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold mb-1">
-              Navegar por
-            </p>
-            <h2 className="font-display font-semibold text-[22px] md:text-[26px] tracking-tight">
-              Categorias
-            </h2>
-          </div>
+        <div className="mb-4">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold mb-1">
+            Navegar por
+          </p>
+          <h2 className="font-display font-semibold text-[22px] md:text-[26px] tracking-tight">
+            Principais
+          </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {CATEGORIAS.map((cat) => (
-            <CategoriaCard key={cat.id} cat={cat} />
+        <div className="grid grid-cols-2 gap-3">
+          {CATEGORIAS.filter((c) => c.id === "constituicao" || c.id === "codigos").map((cat) => (
+            <CategoriaCardCompact key={cat.id} cat={cat} />
           ))}
         </div>
+      </section>
+
+      {/* Demais categorias — timeline */}
+      <section className="px-4 md:px-8 mt-8">
+        <div className="mb-4">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold mb-1">
+            Explorar
+          </p>
+          <h2 className="font-display font-semibold text-[18px] md:text-[20px] tracking-tight">
+            Demais categorias
+          </h2>
+        </div>
+
+        <ol className="relative border-l border-border/60 ml-3 space-y-3">
+          {CATEGORIAS.filter((c) => c.id !== "constituicao" && c.id !== "codigos").map((cat) => {
+            const Icon = cat.icon;
+            return (
+              <li key={cat.id} className="pl-5 relative group">
+                <span className="absolute -left-[7px] top-3 h-3 w-3 rounded-full bg-gradient-to-br from-gold to-primary border border-background shadow-[0_0_0_3px_var(--background)]" />
+                <button
+                  type="button"
+                  className="w-full text-left rounded-xl border border-border/60 bg-card/50 hover:bg-card hover:border-gold/40 transition-all px-3.5 py-2.5 flex items-center gap-3 cursor-pointer"
+                >
+                  <div className="h-8 w-8 rounded-lg bg-secondary/60 border border-border/60 grid place-items-center shrink-0 text-foreground/80">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/80 font-semibold truncate">
+                      {cat.tag}
+                    </p>
+                    <p className="text-[13px] font-semibold leading-tight truncate">
+                      {cat.titulo}
+                    </p>
+                  </div>
+                  <span className="text-[10px] text-gold/80 font-medium shrink-0">
+                    {cat.total.toLocaleString("pt-BR")}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-gold group-hover:translate-x-0.5 transition-all shrink-0" />
+                </button>
+              </li>
+            );
+          })}
+        </ol>
       </section>
 
       {/* Mais acessados */}
