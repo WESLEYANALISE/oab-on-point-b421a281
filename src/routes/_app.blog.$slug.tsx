@@ -4,6 +4,7 @@ import { ArrowLeft, Clock, Share2, ChevronRight, Sparkles } from "lucide-react";
 import { getBlogPost, getRelatedBlogPosts } from "@/lib/blog.functions";
 import { MarkdownView } from "@/components/blog/MarkdownView";
 import { PostCard } from "@/components/blog/PostCard";
+import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
 const DATE = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
