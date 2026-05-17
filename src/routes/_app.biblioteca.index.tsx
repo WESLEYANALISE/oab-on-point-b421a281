@@ -74,16 +74,71 @@ function BibliotecaHub() {
               <strong className="text-gold font-semibold tabular-nums">
                 {totalLivros ?? "—"}
               </strong>{" "}
-              títulos disponíveis em {BIBLIOTECAS.length} coleções
+              títulos disponíveis em {TOTAL_COLECOES} coleções
             </span>
           </div>
         </div>
       </section>
 
-      {/* Grid de coleções */}
+      {/* Destaque — Biblioteca de Estudos */}
       <section className="px-4 md:px-8 pt-5 md:pt-7">
+        <Link
+          to="/biblioteca/$slug"
+          params={{ slug: ESTUDOS.slug }}
+          preload="intent"
+          className="group relative block rounded-2xl border border-gold/40 bg-card overflow-hidden shadow-lg shadow-black/40 hover:border-gold/70 hover:-translate-y-0.5 transition-all"
+        >
+          <div className="relative h-44 md:h-56 w-full overflow-hidden">
+            <img
+              src={ESTUDOS.cover}
+              alt={ESTUDOS.title}
+              width={1200}
+              height={600}
+              loading="eager"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+            <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/20 border border-gold/40 text-gold text-[10px] uppercase tracking-[0.18em] font-semibold backdrop-blur-sm">
+              <Library className="h-3 w-3" /> Destaque
+            </div>
+          </div>
+          <div className="relative px-4 md:px-5 pb-4 pt-2 -mt-6 md:-mt-8">
+            <p className="font-display font-semibold text-xl md:text-2xl leading-tight tracking-tight text-foreground">
+              {ESTUDOS.title}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {ESTUDOS.subtitle}
+            </p>
+            <div className="mt-3 flex items-center justify-between">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-gold">
+                <BookOpen className="h-3.5 w-3.5" />
+                <span className="tabular-nums">{counts?.[ESTUDOS.slug] ?? "—"}</span>
+                <span className="text-gold/70 font-medium">livros · todas as áreas</span>
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-foreground group-hover:text-gold transition-colors">
+                Explorar
+                <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </div>
+          </div>
+        </Link>
+      </section>
+
+      {/* Outras bibliotecas */}
+      <section className="px-4 md:px-8 pt-6 md:pt-8">
+        <div className="flex items-end justify-between mb-3">
+          <div>
+            <h2 className="font-display font-semibold text-lg md:text-xl leading-tight text-foreground">
+              Aprofunde-se
+            </h2>
+            <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+              Outras bibliotecas pra ir além do edital
+            </p>
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {BIBLIOTECAS.map((b) => {
+          {OUTRAS.map((b) => {
             const total = counts?.[b.slug];
             return (
               <Link
