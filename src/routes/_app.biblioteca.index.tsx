@@ -90,16 +90,15 @@ function BibliotecaHub() {
           className="group relative block rounded-2xl border border-gold/40 bg-card overflow-hidden shadow-lg shadow-black/40 hover:border-gold/70 hover:-translate-y-0.5 transition-all"
         >
           <div className="relative h-44 md:h-56 w-full overflow-hidden">
-            <img
+            <ShimmerCover
               src={ESTUDOS.cover}
               alt={ESTUDOS.title}
               width={1200}
               height={600}
-              loading="eager"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              eager
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+            <span className="countdown-shimmer" aria-hidden />
             <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/20 border border-gold/40 text-gold text-[10px] uppercase tracking-[0.18em] font-semibold backdrop-blur-sm">
               <Library className="h-3 w-3" /> Destaque
             </div>
