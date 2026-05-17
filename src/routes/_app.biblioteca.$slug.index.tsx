@@ -84,9 +84,11 @@ function BibliotecaList() {
             <p className="text-xs text-muted-foreground">
               {showAreas
                 ? `${areas?.length ?? 0} áreas${total ? ` · ${total} livros` : ""}`
-                : livrosLoading && !livros
-                  ? "Carregando…"
-                  : `${livros?.length ?? 0} livros`}
+                : view === "favoritos"
+                  ? `${livrosVisiveis?.length ?? 0} favoritos`
+                  : livrosLoading && !livros
+                    ? "Carregando…"
+                    : `${livros?.length ?? 0} livros`}
             </p>
           </div>
         </div>
