@@ -10,10 +10,10 @@ const searchSchema = z.object({
   area: z.string().optional(),
 });
 
-const resumosQueryOptions = (fn: typeof listarLivrosComResumo) =>
+const resumosQueryOptions = (fn: () => Promise<Awaited<ReturnType<typeof listarLivrosComResumo>>>) =>
   queryOptions({
     queryKey: ["resumos-publico"],
-    queryFn: () => fn(),
+    queryFn: fn,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
   });
