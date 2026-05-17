@@ -167,35 +167,36 @@ function BibliotecaList() {
               </ul>
             )}
 
-            {livros && livros.length === 0 && !livrosLoading && (
-              <p className="text-sm text-muted-foreground text-center py-8">Nenhum livro disponível.</p>
+            {livrosVisiveis && livrosVisiveis.length === 0 && !livrosLoading && (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                {view === "favoritos" ? "Você ainda não favoritou nenhum livro." : "Nenhum livro disponível."}
+              </p>
             )}
 
-            {livros && livros.length > 0 && (
+            {livrosVisiveis && livrosVisiveis.length > 0 && (
               <>
                 <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden bg-card">
-                  {livros.map((l, idx) => {
+                  {livrosVisiveis.map((l, idx) => {
                     const id = String(l.id);
+                    const isFav = favSet.has(Number(l.id));
                     return (
-                      <li key={id}>
+                      <li key={id} className="relative">
                         <Link
                           to="/biblioteca/$slug/$bookId"
                           params={{ slug, bookId: id }}
                           preload={false}
-                          className="flex items-center gap-3 p-3 hover:bg-muted/50 transition-colors"
+                          className="flex items-center gap-3 p-3 pr-12 hover:bg-muted/50 transition-colors"
                         >
-                          <div className="w-14 h-20 rounded overflow-hidden bg-muted border border-border flex-shrink-0">
+                          <div className="relative w-14 h-20 rounded overflow-hidden bg-white border border-border flex-shrink-0">
                             {l.capa ? (
                               <img
-                                src={supabaseImage(l.capa, { w: 112, q: 72 }) ?? l.capa}
-                                srcSet={supabaseImageSrcSet(l.capa, 56, 72)}
+                                src={supabaseImage(l.capa, { w: 160, q: 80 }) ?? l.capa}
+                                srcSet={supabaseImageSrcSet(l.capa, 80, 80)}
                                 sizes="56px"
                                 alt={l.titulo}
-                                width={56}
-                                height={80}
                                 loading={idx < 6 ? "eager" : "lazy"}
                                 decoding="async"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-contain"
                               />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-[9px] text-muted-foreground p-1 text-center font-sans">{l.titulo}</div>
@@ -207,12 +208,25 @@ function BibliotecaList() {
                           </div>
                           <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         </Link>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            favMutation.mutate({ id: Number(l.id), fav: isFav });
+                          }}
+                          aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+                          aria-pressed={isFav}
+                          className="absolute top-1.5 left-1.5 z-10 p-1 rounded-full bg-background/85 backdrop-blur shadow-sm border border-border hover:scale-110 active:scale-95 transition"
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${isFav ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                        </button>
                       </li>
                     );
                   })}
                 </ul>
 
-                {livros.length >= limit && (
+                {view !== "favoritos" && livros && livros.length >= limit && (
                   <div className="mt-4 flex justify-center">
                     <button
                       onClick={() => setLimit((n) => n + PAGE_SIZE)}
