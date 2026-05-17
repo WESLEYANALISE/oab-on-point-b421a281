@@ -53,7 +53,11 @@ const FERRAMENTAS = [
 ];
 
 function AreaOABPage() {
-  const noticias = getNoticias().slice(0, 8);
+  const blogQuery = useQuery({
+    queryKey: ["blog", "home-carousel"],
+    queryFn: () => listBlogPosts({ data: { limit: 8 } }),
+  });
+  const posts = blogQuery.data ?? [];
 
   return (
     <div className="pb-10 space-y-7 md:space-y-10">
