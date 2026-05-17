@@ -60,8 +60,15 @@ const adminGroup = {
 export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
+  const navigate = useNavigate();
   const { data: isAdmin } = useIsAdmin();
   const groups = isAdmin ? [...baseGroups, adminGroup] : baseGroups;
+  const handleSignOut = async () => {
+    setOpen(false);
+    try { await supabase.auth.signOut(); } catch { /* ignore */ }
+    try { window.localStorage.removeItem("oab:last-uid"); } catch { /* ignore */ }
+    navigate({ to: "/signup", replace: true });
+  };
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
