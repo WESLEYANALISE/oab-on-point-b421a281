@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, BookOpen, ScrollText, Target } from "lucide-react";
+import { Home, BookOpen, Newspaper, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MenuDrawer, MenuTriggerButton } from "@/components/layout/MenuDrawer";
 
@@ -9,7 +9,7 @@ const left = [
 ] as const;
 
 const right = [
-  { to: "/vade-mecum", label: "Vade Mecum", icon: ScrollText },
+  { to: "/noticias", label: "Notícias", icon: Newspaper },
 ] as const;
 
 export function BottomNav() {
