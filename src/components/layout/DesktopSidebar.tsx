@@ -71,7 +71,7 @@ export function DesktopSidebar() {
             <p className="px-3 mb-2 text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/50 font-semibold">{g.label}</p>
             <ul className="space-y-0.5">
               {g.items.map(({ to, label, icon: Icon }) => {
-                const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+                const active = to === "/app" ? pathname === "/app" : pathname.startsWith(to);
                 return (
                   <li key={to}>
                     <Link
