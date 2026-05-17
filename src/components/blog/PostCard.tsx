@@ -15,9 +15,14 @@ export function PostCard({ post }: { post: BlogPostListItem }) {
       <div className="aspect-[16/10] relative overflow-hidden bg-muted">
         {post.capa_url ? (
           <img
-            src={post.capa_url}
+            src={supabaseImage(post.capa_url, { w: 640, q: 72 })}
+            srcSet={supabaseImageSrcSet(post.capa_url, 480, 72)}
+            sizes="(max-width: 768px) 100vw, 480px"
+            width={480}
+            height={300}
             alt=""
             loading="lazy"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
           />
         ) : (
