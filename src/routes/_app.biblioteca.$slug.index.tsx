@@ -19,30 +19,48 @@ export const Route = createFileRoute("/_app/biblioteca/$slug/")({
   component: BibliotecaList,
 });
 
+type ViewMode = SortMode | "favoritos";
+
 function BibliotecaList() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const cfg = BIB_MAP[slug];
   const [area, setArea] = useState<string | null>(null);
   const [limit, setLimit] = useState(PAGE_SIZE);
-  const [sort, setSort] = useState<SortMode>("cronologica");
+  const [view, setView] = useState<ViewMode>("cronologica");
+  const sort: SortMode = view === "favoritos" ? "cronologica" : view;
 
-  const showAreas = cfg.hasAreas && area === null;
+  const showAreas = cfg.hasAreas && area === null && view !== "favoritos";
 
   const { data: areas, isLoading: areasLoading } = useQuery(areasQueryOptions(slug));
   const { data: livros, isLoading: livrosLoading } = useQuery({
-    ...livrosQueryOptions(slug, area, limit, 0, sort),
+    ...livrosQueryOptions(slug, area, view === "favoritos" ? 500 : limit, 0, sort),
     enabled: !showAreas,
     placeholderData: keepPreviousData,
   });
   const { data: counts } = useQuery(countsQueryOptions());
+  const { data: favoritos } = useQuery(favoritosQueryOptions(slug));
+  const favSet = useMemo(() => new Set((favoritos ?? []).map((f) => f.livro_id)), [favoritos]);
   const total = counts?.[slug];
+
+  const favMutation = useMutation({
+    mutationFn: ({ id, fav }: { id: number; fav: boolean }) => toggleFavorito(slug, id, fav),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["livros-favoritos"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const livrosVisiveis = useMemo(() => {
+    if (!livros) return livros;
+    if (view === "favoritos") return livros.filter((l) => favSet.has(Number(l.id)));
+    return livros;
+  }, [livros, view, favSet]);
 
   const goBack = () => {
     if (cfg.hasAreas && area !== null) {
       setArea(null);
       setLimit(PAGE_SIZE);
-      setSort("cronologica");
+      setView("cronologica");
     } else {
       navigate({ to: "/biblioteca" });
     }
