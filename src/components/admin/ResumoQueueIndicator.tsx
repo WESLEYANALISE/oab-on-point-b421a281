@@ -30,7 +30,9 @@ export function ResumoQueueIndicator() {
             Fila de resumos · {totalRestante} restante{totalRestante === 1 ? "" : "s"}
           </p>
           <p className="text-sm font-medium truncate">
-            {state.atual ? state.atual.titulo : `${state.fila.length} aguardando…`}
+            {state.atual
+              ? `${state.atual.kind === "previa" ? "Prévia" : "Capítulos"}: ${state.atual.titulo}`
+              : `${state.fila.length} aguardando…`}
           </p>
           {state.atual && (
             <div className="mt-1.5 h-1 rounded-full bg-muted overflow-hidden">
