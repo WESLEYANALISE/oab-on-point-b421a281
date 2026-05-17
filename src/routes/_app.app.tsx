@@ -5,7 +5,7 @@ import {
   Calendar, Sparkles, ArrowRight,
   Library, Trophy, Video, Newspaper,
   Target, FileText, BookOpen, CalendarDays, ClipboardList, Layers, ScrollText,
-  GraduationCap, Zap, Compass,
+  GraduationCap, Zap, Compass, Scale,
 } from "lucide-react";
 import { HomeTopCard } from "@/components/home/HomeTopCard";
 import { listBlogPosts, type BlogPostListItem } from "@/lib/blog.functions";
