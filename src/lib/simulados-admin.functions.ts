@@ -3,9 +3,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-
-console.log('[simulados-admin] importing, requireSupabaseAuth=', typeof requireSupabaseAuth, requireSupabaseAuth)
-
 // ============ Helpers ============
 type LogEntry = { ts: string; nivel: "info" | "ok" | "erro"; msg: string };
 
