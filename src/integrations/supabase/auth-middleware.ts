@@ -81,3 +81,5 @@ export const requireSupabaseAuth = _builder.server(
     });
   },
 );
+
+console.log('[auth-middleware] requireSupabaseAuth=', requireSupabaseAuth, 'typeof=', typeof requireSupabaseAuth)
