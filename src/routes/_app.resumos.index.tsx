@@ -1,17 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, queryOptions } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { z } from "zod";
-import { FileText, BookOpen, Loader2, ChevronRight, ArrowLeft, FolderOpen } from "lucide-react";
+import { FileText, BookOpen, ChevronRight, ArrowLeft, FolderOpen } from "lucide-react";
 import { listarLivrosComResumo } from "@/lib/resumos.functions";
 
 const searchSchema = z.object({
   area: z.string().optional(),
 });
 
+const resumosQueryOptions = (fn: typeof listarLivrosComResumo) =>
+  queryOptions({
+    queryKey: ["resumos-publico"],
+    queryFn: () => fn(),
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+  });
+
 export const Route = createFileRoute("/_app/resumos/")({
   validateSearch: (s: Record<string, unknown>) => searchSchema.parse(s),
+  loader: ({ context }) => {
+    context.queryClient.prefetchQuery(resumosQueryOptions(listarLivrosComResumo));
+  },
   head: () => ({
     meta: [
       { title: "Resumos — OAB na Risca" },
@@ -36,11 +47,7 @@ function ResumosIndex() {
   const { area } = Route.useSearch();
   const navigate = useNavigate({ from: "/resumos" });
   const fn = useServerFn(listarLivrosComResumo);
-  const { data, isLoading } = useQuery({
-    queryKey: ["resumos-publico"],
-    queryFn: () => fn(),
-    staleTime: 60_000,
-  });
+  const { data } = useQuery(resumosQueryOptions(fn));
 
   const livros = data ?? [];
 
