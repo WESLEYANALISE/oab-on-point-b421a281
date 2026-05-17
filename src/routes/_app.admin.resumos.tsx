@@ -295,6 +295,15 @@ function AdminResumos() {
               <ListChecks className="h-4 w-4 mr-1.5" />
               {selectionMode ? "Cancelar" : "Selecionar"}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={iniciarAutomaticoArea}
+              className="rounded-full"
+              title="Enfileira prévia + capítulos de todos os livros desta área"
+            >
+              <Zap className="h-4 w-4 mr-1.5" /> Iniciar área
+            </Button>
           </div>
 
           {selectionMode && (
