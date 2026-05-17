@@ -13,7 +13,7 @@ import {
   atualizarPrevia,
   excluirResumoLivro,
 } from "@/lib/resumos-admin.functions";
-import { resumoQueue, useResumoQueue } from "@/lib/resumo-queue";
+import { resumoQueue, useResumoQueue, capitulosKey, previaKey, type ResumoQueueItem } from "@/lib/resumo-queue";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/admin/resumos")({
