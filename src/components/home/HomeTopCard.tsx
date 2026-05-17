@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Calendar, ChevronRight, Sparkles } from "lucide-react";
-import { AvatarUploader } from "@/components/profile/AvatarUploader";
 import { useProfile, greetingFor, readCachedProfileOptimistic } from "@/hooks/use-auth";
 
-const EXAM_DATE = new Date("2026-07-05T08:00:00-03:00");
-const EXAM_LONG = "Domingo, 05 de julho de 2026";
+// Próxima 1ª fase (47º Exame de Ordem) — data prevista
+const EXAM_DATE = new Date("2026-08-23T08:00:00-03:00");
+const EXAM_LONG = "Domingo, 23 de agosto de 2026 (previsto)";
 
 function diff() {
   const ms = EXAM_DATE.getTime() - Date.now();
@@ -38,35 +38,35 @@ export function HomeTopCard() {
       <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-12 -left-6 h-32 w-32 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
 
-      {/* Selo do exame em foco */}
+      {/* Selo do próximo exame */}
       <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gold/15 border border-gold/35 text-gold text-[10px] font-semibold whitespace-nowrap shadow-sm">
-        <Sparkles className="h-2.5 w-2.5" /> 46º OAB
+        <Sparkles className="h-2.5 w-2.5" /> 47º OAB
       </span>
 
-      {/* Linha 1: avatar + saudação */}
+      {/* Linha 1: saudação + nome + frase motivacional */}
       <Link
         to="/perfil"
-        className="relative flex items-center gap-3 px-3.5 py-3 md:px-5 md:py-3.5 group pr-20"
+        className="relative block px-4 py-3.5 md:px-5 md:py-4 pr-24 group"
       >
-        <AvatarUploader size={44} />
-        <div className="min-w-0 flex-1">
-          <p
-            className="text-[9px] uppercase tracking-[0.22em] text-gold/85 font-semibold leading-none min-h-[9px]"
-            suppressHydrationWarning
-          >
-            {greet ?? "\u00a0"}
-          </p>
-          <p className="font-display font-semibold text-[15px] md:text-[17px] leading-tight tracking-tight truncate mt-1">
-            {firstName || <span className="inline-block h-3.5 w-24 rounded bg-white/10 animate-pulse align-middle" />}
-          </p>
-        </div>
+        <p
+          className="text-[9px] uppercase tracking-[0.22em] text-gold/85 font-semibold leading-none min-h-[9px]"
+          suppressHydrationWarning
+        >
+          {greet ?? "\u00a0"}
+        </p>
+        <p className="font-display font-semibold text-[19px] md:text-[22px] leading-tight tracking-tight truncate mt-1.5">
+          {firstName || <span className="inline-block h-4 w-28 rounded bg-white/10 animate-pulse align-middle" />}
+        </p>
+        <p className="text-[11px] md:text-[12px] text-primary-foreground/70 mt-1 leading-snug">
+          Futuro advogado, sua aprovação começa hoje.
+        </p>
       </Link>
 
       {/* Linha 2: rótulo "Próximo exame" + countdown + data + botão calendário */}
       <div className="relative border-t border-primary-foreground/12 px-3.5 py-2.5 md:px-5 md:py-3">
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <p className="text-[9px] uppercase tracking-[0.22em] text-primary-foreground/60 font-semibold leading-none">
-            Próximo exame
+            Próximo exame · 1ª fase
           </p>
           <Link
             to="/oab/calendario"
