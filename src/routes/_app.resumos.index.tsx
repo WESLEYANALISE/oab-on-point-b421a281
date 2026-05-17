@@ -21,7 +21,7 @@ const resumosQueryOptions = (fn: () => Promise<Awaited<ReturnType<typeof listarL
 export const Route = createFileRoute("/_app/resumos/")({
   validateSearch: (s: Record<string, unknown>) => searchSchema.parse(s),
   loader: ({ context }) => {
-    context.queryClient.prefetchQuery(resumosQueryOptions(listarLivrosComResumo));
+    context.queryClient.prefetchQuery(resumosQueryOptions(() => listarLivrosComResumo()));
   },
   head: () => ({
     meta: [
