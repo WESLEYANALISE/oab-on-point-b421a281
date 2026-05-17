@@ -83,3 +83,29 @@ export function BottomNav() {
     </nav>
   );
 }
+
+function TargetArrowIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      {/* alvo */}
+      <circle cx="11" cy="13" r="9" />
+      <circle cx="11" cy="13" r="5.5" />
+      <circle cx="11" cy="13" r="2" fill="currentColor" stroke="none" />
+      {/* flecha cravada (diagonal NE) */}
+      <line x1="11" y1="13" x2="20" y2="4" strokeWidth={2.4} />
+      {/* penas */}
+      <path d="M20 4l1.8 0.6M20 4l-0.6 -1.8M20 4l2.4 -0.6M20 4l-0.6 -2.4" strokeWidth={2} />
+      {/* ponta da flecha no centro */}
+      <path d="M11 13l2.2 -0.4l-0.4 -2.2" strokeWidth={2.2} fill="none" />
+    </svg>
+  );
+}
