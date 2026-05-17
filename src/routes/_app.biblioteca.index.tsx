@@ -9,14 +9,23 @@ import liderancaImg from "@/assets/biblio-lideranca.jpg";
 import politicaImg from "@/assets/biblio-politica.jpg";
 import foraDaTogaImg from "@/assets/biblio-fora-da-toga.jpg";
 
-const BIBLIOTECAS = [
-  { slug: "estudos",      title: "Biblioteca de Estudos", subtitle: "Resumos e materiais por área",   cover: estudosImg,    accent: "from-amber-900/70" },
+const ESTUDOS = {
+  slug: "estudos",
+  title: "Biblioteca de Estudos",
+  subtitle: "Resumos e materiais por área da OAB",
+  cover: estudosImg,
+  accent: "from-amber-900/70",
+} as const;
+
+const OUTRAS = [
   { slug: "classicos",    title: "Clássicos do Direito",  subtitle: "Obras fundamentais",              cover: classicosImg,  accent: "from-stone-900/70" },
   { slug: "oratoria",     title: "Oratória",              subtitle: "Comunicação e argumentação",      cover: oratoriaImg,   accent: "from-red-900/70" },
   { slug: "lideranca",    title: "Liderança",             subtitle: "Gestão e influência",             cover: liderancaImg,  accent: "from-emerald-900/70" },
   { slug: "politica",     title: "Política",              subtitle: "Pensamento político e jurídico",  cover: politicaImg,   accent: "from-blue-900/70" },
   { slug: "fora-da-toga", title: "Fora da Toga",          subtitle: "Leituras complementares",         cover: foraDaTogaImg, accent: "from-fuchsia-900/70" },
 ] as const;
+
+const TOTAL_COLECOES = 1 + OUTRAS.length;
 
 export const Route = createFileRoute("/_app/biblioteca/")({
   head: () => ({ meta: [{ title: "Biblioteca · OAB na Risca" }] }),
