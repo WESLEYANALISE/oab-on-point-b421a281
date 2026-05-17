@@ -15,9 +15,14 @@ export function PostRow({ post }: { post: BlogPostListItem }) {
       <div className="relative h-24 w-24 shrink-0 rounded-xl overflow-hidden bg-muted">
         {post.capa_url ? (
           <img
-            src={post.capa_url}
+            src={supabaseImage(post.capa_url, { w: 192, q: 72 })}
+            srcSet={supabaseImageSrcSet(post.capa_url, 96, 72)}
+            sizes="96px"
+            width={96}
+            height={96}
             alt=""
             loading="lazy"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
           />
         ) : (
