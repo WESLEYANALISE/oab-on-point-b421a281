@@ -116,6 +116,10 @@ export const resumoQueue = {
   setAtual(atual: ResumoAtual) {
     set({ atual });
   },
+  setProgress(progress: ResumoProgress) {
+    if (!state.atual) return;
+    set({ atual: { ...state.atual, progress: { ...state.atual.progress, ...progress } } });
+  },
   finishAtual(status: ResumoHist["status"], erro?: string) {
     if (!state.atual) return;
     const h: ResumoHist = {
