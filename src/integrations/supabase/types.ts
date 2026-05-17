@@ -377,6 +377,113 @@ export type Database = {
         }
         Relationships: []
       }
+      flashcard_revisoes: {
+        Row: {
+          card_id: string
+          difficulty: number
+          due_at: string
+          elapsed_days: number
+          id: string
+          rating: number
+          reviewed_at: string
+          stability: number
+          state: string
+          user_id: string
+        }
+        Insert: {
+          card_id: string
+          difficulty: number
+          due_at: string
+          elapsed_days?: number
+          id?: string
+          rating: number
+          reviewed_at?: string
+          stability: number
+          state: string
+          user_id: string
+        }
+        Update: {
+          card_id?: string
+          difficulty?: number
+          due_at?: string
+          elapsed_days?: number
+          id?: string
+          rating?: number
+          reviewed_at?: string
+          stability?: number
+          state?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcard_revisoes_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "flashcards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      flashcards: {
+        Row: {
+          created_at: string
+          difficulty: number
+          due_at: string
+          fonte_id: string | null
+          fonte_tipo: string
+          frente: string
+          id: string
+          lapses: number
+          last_review_at: string | null
+          materia: string | null
+          reps: number
+          stability: number
+          state: string
+          suspenso: boolean
+          updated_at: string
+          user_id: string
+          verso: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: number
+          due_at?: string
+          fonte_id?: string | null
+          fonte_tipo?: string
+          frente: string
+          id?: string
+          lapses?: number
+          last_review_at?: string | null
+          materia?: string | null
+          reps?: number
+          stability?: number
+          state?: string
+          suspenso?: boolean
+          updated_at?: string
+          user_id: string
+          verso: string
+        }
+        Update: {
+          created_at?: string
+          difficulty?: number
+          due_at?: string
+          fonte_id?: string | null
+          fonte_tipo?: string
+          frente?: string
+          id?: string
+          lapses?: number
+          last_review_at?: string | null
+          materia?: string | null
+          reps?: number
+          stability?: number
+          state?: string
+          suspenso?: boolean
+          updated_at?: string
+          user_id?: string
+          verso?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
