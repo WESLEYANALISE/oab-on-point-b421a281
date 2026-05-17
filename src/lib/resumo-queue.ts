@@ -20,7 +20,16 @@ export type CapitulosJob = {
 };
 export type ResumoQueueItem = PreviaJob | CapitulosJob;
 
-export type ResumoAtual = (ResumoQueueItem & { startedAt: number }) | null;
+export type ResumoProgress = {
+  ordem?: number;
+  titulo?: string;
+  feitos?: number;
+  total?: number;
+  etapa?: string; // "OCR", "Sumário", "Capítulo X/Y", etc.
+};
+export type ResumoAtual =
+  | (ResumoQueueItem & { startedAt: number; progress?: ResumoProgress })
+  | null;
 export type ResumoHist = {
   key: string;
   kind: ResumoQueueItem["kind"];
