@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Loader2, Sparkles, FileText, X, Eye, Trash2, RefreshCw,
-  CheckCircle2, AlertCircle, Clock, ChevronRight, ArrowLeft, ListChecks,
+  CheckCircle2, AlertCircle, Clock, ChevronRight, ArrowLeft, ListChecks, Zap,
 } from "lucide-react";
 import {
   listarLivrosParaResumo,
