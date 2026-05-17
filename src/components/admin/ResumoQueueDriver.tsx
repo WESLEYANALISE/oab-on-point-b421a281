@@ -51,6 +51,7 @@ export function ResumoQueueDriver() {
     (async () => {
       try {
         if (atual.kind === "previa") {
+          resumoQueue.setProgress({ etapa: "OCR + sumário" });
           const r: any = await previaFn({
             data: { slug: atual.slug, livro_id: atual.livro_id },
           });
@@ -79,6 +80,7 @@ export function ResumoQueueDriver() {
 
         // kind === "capitulos"
         let safety = 1000;
+        let feitos = 0;
         while (!cancelled && safety-- > 0) {
           const r: any = await proxCapFn({ data: { resumo_livro_id: atual.id } });
           qc.invalidateQueries({ queryKey: ["admin-resumos"] });
@@ -87,6 +89,15 @@ export function ResumoQueueDriver() {
             resumoQueue.finishAtual("pronto");
             return;
           }
+          feitos += 1;
+          const total = typeof r?.restantes === "number" ? feitos + r.restantes : undefined;
+          resumoQueue.setProgress({
+            ordem: r?.ordem,
+            titulo: r?.titulo,
+            feitos,
+            total,
+            etapa: total ? `Capítulo ${feitos}/${total}` : `Capítulo ${feitos}`,
+          });
         }
         if (cancelled) {
           resumoQueue.finishAtual("cancelado");
