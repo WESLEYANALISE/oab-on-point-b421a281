@@ -57,6 +57,8 @@ function AppLayout() {
       </div>
       <SimuladoQueueDriver />
       <SimuladoQueueIndicator />
+      <ResumoQueueDriver />
+      <ResumoQueueIndicator />
     </div>
   );
 }
