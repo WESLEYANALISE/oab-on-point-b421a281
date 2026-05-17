@@ -1,41 +1,74 @@
-import { useState } from "react";
-import { Loader2, BookOpen, X, ChevronDown, ChevronUp, FileText, ListChecks } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  Loader2,
+  BookOpen,
+  X,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  ListChecks,
+  CheckCircle2,
+  AlertCircle,
+  Activity,
+} from "lucide-react";
 import { useResumoQueue, resumoQueue } from "@/lib/resumo-queue";
 import { useIsAdmin } from "@/hooks/use-admin";
 
 /**
  * Floating indicator visible on any route while a resumo generation queue is active.
- * Shows detailed live info: current job, etapa, progress, next-in-line.
+ * - Mostra tudo (sem limite de 50)
+ * - Mobile-friendly: posicionada acima do BottomNav, com altura controlada
+ * - Mostra em tempo real o que está sendo gerado
  */
 export function ResumoQueueIndicator() {
   const { data: isAdmin } = useIsAdmin();
   const state = useResumoQueue();
   const [expanded, setExpanded] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   if (!isAdmin) return null;
   if (!state.atual && state.fila.length === 0) return null;
 
-  const totalRestante = state.fila.length + (state.atual ? 1 : 0);
-  const previasNaFila = state.fila.filter((i) => i.kind === "previa").length;
-  const capitulosNaFila = state.fila.filter((i) => i.kind === "capitulos").length;
-
   const atual = state.atual;
   const prog = atual?.progress;
+  const previasNaFila = state.fila.filter((i) => i.kind === "previa").length;
+  const capitulosNaFila = state.fila.filter((i) => i.kind === "capitulos").length;
+  const totalRestante = state.fila.length + (atual ? 1 : 0);
+
+  // Histórico recente (última hora)
+  const oneHourAgo = Date.now() - 60 * 60_000;
+  const concluidosRecentes = useMemo(
+    () => state.historico.filter((h) => h.status === "pronto" && h.finishedAt >= oneHourAgo).length,
+    [state.historico, oneHourAgo],
+  );
+  const errosRecentes = useMemo(
+    () => state.historico.filter((h) => h.status === "erro" && h.finishedAt >= oneHourAgo).length,
+    [state.historico, oneHourAgo],
+  );
+  const ultimoConcluido = useMemo(
+    () => [...state.historico].reverse().find((h) => h.status === "pronto"),
+    [state.historico],
+  );
+
   const pct =
     prog && prog.total && prog.feitos !== undefined
       ? Math.min(100, Math.round((prog.feitos / prog.total) * 100))
       : null;
 
-  // Próxima prévia / próximo resumo (capítulos) na fila
   const proxPrevia = state.fila.find((i) => i.kind === "previa");
   const proxCapitulos = state.fila.find((i) => i.kind === "capitulos");
 
+  const itensVisiveis = showAll ? state.fila : state.fila.slice(0, 20);
+
   return (
-    <div className="fixed z-[90] right-4 bottom-44 md:bottom-24 max-w-[calc(100vw-2rem)] w-80 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+    <div
+      className="fixed z-[90] right-2 md:right-4 bottom-[calc(72px+env(safe-area-inset-bottom)+8px)] md:bottom-24 w-[min(22rem,calc(100vw-1rem))] bg-card border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+      style={{ maxHeight: "min(80vh, 640px)" }}
+    >
       {/* Header */}
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="w-full p-3 flex items-center gap-3 text-left hover:bg-muted/40 transition"
+        className="w-full p-3 flex items-center gap-3 text-left hover:bg-muted/40 transition shrink-0"
       >
         <div className="shrink-0 h-9 w-9 rounded-full bg-primary/10 grid place-items-center">
           {atual ? (
@@ -46,7 +79,10 @@ export function ResumoQueueIndicator() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            Fila de resumos · {totalRestante} restante{totalRestante === 1 ? "" : "s"}
+            Fila · {totalRestante} restante{totalRestante === 1 ? "" : "s"}
+            {concluidosRecentes > 0 && (
+              <span className="text-emerald-500"> · {concluidosRecentes} ✓ (1h)</span>
+            )}
           </p>
           <p className="text-sm font-medium truncate">
             {atual
@@ -69,7 +105,7 @@ export function ResumoQueueIndicator() {
 
       {/* Progress bar */}
       {atual && (
-        <div className="px-3 pb-2">
+        <div className="px-3 pb-2 shrink-0">
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
             {pct !== null ? (
               <div
@@ -89,7 +125,26 @@ export function ResumoQueueIndicator() {
       )}
 
       {expanded && (
-        <div className="border-t border-border px-3 py-2 space-y-2 max-h-72 overflow-y-auto">
+        <div className="border-t border-border px-3 py-2 space-y-2 overflow-y-auto flex-1 overscroll-contain">
+          {/* Atual em destaque */}
+          {atual && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-2 space-y-1">
+              <p className="text-[9px] uppercase tracking-wider text-primary flex items-center gap-1">
+                <Activity className="h-3 w-3 animate-pulse" /> Gerando agora
+              </p>
+              <p className="text-[12px] font-medium truncate">{atual.titulo}</p>
+              <p className="text-[10px] text-muted-foreground">
+                {atual.kind === "previa" ? "Prévia (OCR + sumário)" : "Resumo (capítulos)"}
+                {prog?.etapa ? ` · ${prog.etapa}` : ""}
+              </p>
+              {prog?.titulo && (
+                <p className="text-[10px] text-muted-foreground truncate">
+                  Cap. atual: {prog.titulo}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Resumo da fila */}
           <div className="grid grid-cols-2 gap-2 text-[11px]">
             <div className="rounded-lg bg-muted/40 px-2 py-1.5">
@@ -105,6 +160,33 @@ export function ResumoQueueIndicator() {
               <p className="font-semibold tabular-nums">{capitulosNaFila}</p>
             </div>
           </div>
+
+          {/* Stats da hora */}
+          {(concluidosRecentes > 0 || errosRecentes > 0) && (
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <div className="rounded-lg bg-emerald-500/10 px-2 py-1.5">
+                <p className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" /> Concluídos (1h)
+                </p>
+                <p className="font-semibold tabular-nums">{concluidosRecentes}</p>
+              </div>
+              <div className="rounded-lg bg-destructive/10 px-2 py-1.5">
+                <p className="text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> Erros (1h)
+                </p>
+                <p className="font-semibold tabular-nums">{errosRecentes}</p>
+              </div>
+            </div>
+          )}
+
+          {ultimoConcluido && (
+            <div className="text-[11px]">
+              <p className="text-muted-foreground uppercase tracking-wider text-[9px]">
+                Último concluído
+              </p>
+              <p className="font-medium truncate">{ultimoConcluido.titulo}</p>
+            </div>
+          )}
 
           {/* Próximos */}
           {proxPrevia && proxPrevia.key !== atual?.key && (
@@ -126,14 +208,14 @@ export function ResumoQueueIndicator() {
 
           {/* Lista completa */}
           {state.fila.length > 0 && (
-            <details className="text-[11px]">
-              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                Ver fila completa ({state.fila.length})
-              </summary>
-              <ol className="mt-1.5 space-y-1 pl-2">
-                {state.fila.slice(0, 50).map((i, idx) => (
+            <div className="text-[11px]">
+              <p className="text-muted-foreground uppercase tracking-wider text-[9px] mb-1">
+                Fila ({state.fila.length})
+              </p>
+              <ol className="space-y-1 pl-0">
+                {itensVisiveis.map((i, idx) => (
                   <li key={i.key} className="flex items-start gap-1.5 truncate">
-                    <span className="text-muted-foreground tabular-nums shrink-0">
+                    <span className="text-muted-foreground tabular-nums shrink-0 w-6">
                       {idx + 1}.
                     </span>
                     <span
@@ -148,16 +230,52 @@ export function ResumoQueueIndicator() {
                     <span className="truncate">{i.titulo}</span>
                   </li>
                 ))}
-                {state.fila.length > 50 && (
-                  <li className="text-muted-foreground">+{state.fila.length - 50} mais…</li>
-                )}
+              </ol>
+              {!showAll && state.fila.length > 20 && (
+                <button
+                  onClick={() => setShowAll(true)}
+                  className="mt-1 text-primary hover:underline text-[11px]"
+                >
+                  Ver todos os {state.fila.length} itens
+                </button>
+              )}
+              {showAll && state.fila.length > 20 && (
+                <button
+                  onClick={() => setShowAll(false)}
+                  className="mt-1 text-muted-foreground hover:text-foreground text-[11px]"
+                >
+                  Recolher
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Histórico recente */}
+          {state.historico.length > 0 && (
+            <details className="text-[11px]">
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground uppercase tracking-wider text-[9px]">
+                Histórico ({state.historico.length})
+              </summary>
+              <ol className="mt-1.5 space-y-1">
+                {[...state.historico].reverse().map((h) => (
+                  <li key={`${h.key}-${h.finishedAt}`} className="flex items-start gap-1.5 truncate">
+                    {h.status === "pronto" ? (
+                      <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0 mt-0.5" />
+                    ) : h.status === "erro" ? (
+                      <AlertCircle className="h-3 w-3 text-destructive shrink-0 mt-0.5" />
+                    ) : (
+                      <X className="h-3 w-3 text-muted-foreground shrink-0 mt-0.5" />
+                    )}
+                    <span className="truncate">{h.titulo}</span>
+                  </li>
+                ))}
               </ol>
             </details>
           )}
         </div>
       )}
 
-      <div className="flex border-t border-border">
+      <div className="flex border-t border-border shrink-0">
         <button
           onClick={() => {
             if (
