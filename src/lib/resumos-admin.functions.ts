@@ -430,12 +430,12 @@ ${truncated}`;
 
       return { ok: true, resumo_livro_id: resumoLivroId, total: previa.length };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const { message: msg, nonRetryable } = toResumoError(e);
       await supabaseAdmin
         .from("resumo_livros")
         .update({ status: "erro", erro_msg: msg.slice(0, 500) })
         .eq("id", resumoLivroId);
-      throw new Error(msg);
+      return { ok: false, done: true, nonRetryable, error: msg, resumo_livro_id: resumoLivroId, total: 0 };
     }
   });
 
@@ -571,7 +571,7 @@ ${trecho}`;
 
       return { ok: true, done, restantes: total - feitosAgora, ordem: pendente.ordem, titulo: pendente.titulo };
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const { message: msg, nonRetryable } = toResumoError(e);
       await supabaseAdmin.from("resumo_capitulos").upsert(
         {
           resumo_livro_id: data.resumo_livro_id,
@@ -583,7 +583,11 @@ ${trecho}`;
         },
         { onConflict: "resumo_livro_id,ordem" },
       );
-      throw new Error(msg);
+      await supabaseAdmin
+        .from("resumo_livros")
+        .update({ status: "erro", erro_msg: msg.slice(0, 500) })
+        .eq("id", data.resumo_livro_id);
+      return { ok: false, done: true, nonRetryable, error: msg, restantes: incluir.length - feitos.size, ordem: pendente.ordem, titulo: pendente.titulo };
     }
   });
 
