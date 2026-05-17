@@ -47,9 +47,10 @@ function AdminResumos() {
   });
 
   const queueState = useResumoQueue();
-  const naFila = useMemo(() => {
-    const s = new Set(queueState.fila.map((i) => i.id));
-    if (queueState.atual) s.add(queueState.atual.id);
+  const naFilaKeys = useMemo(() => {
+    const s = new Set<string>();
+    for (const i of queueState.fila) s.add(i.key);
+    if (queueState.atual) s.add(queueState.atual.key);
     return s;
   }, [queueState]);
 
@@ -93,10 +94,40 @@ function AdminResumos() {
     onError: (e: any) => toast.error(e?.message ?? "Erro", { id: "previa" }),
   });
 
-  function enfileirar(itens: { id: string; titulo: string }[]) {
-    if (!itens.length) return;
-    resumoQueue.enqueue(itens);
-    toast.success(`${itens.length} ${itens.length === 1 ? "livro adicionado" : "livros adicionados"} à fila`);
+  // Converte um livro em job da fila baseado no estado atual.
+  // - sem resumo OU status sem_previa/erro sem id → previa
+  // - tem resumo.id com status previa_pronta/gerando/erro → capitulos (pula prévia)
+  // - status concluido → null
+  function jobParaLivro(l: Livro): ResumoQueueItem | null {
+    if (!l.pdf_url) return null;
+    const r = l.resumo as any;
+    const status: string = r?.status ?? "sem_previa";
+    if (status === "concluido") return null;
+    if (r?.id && (status === "previa_pronta" || status === "gerando" || status === "erro")) {
+      return {
+        kind: "capitulos",
+        key: capitulosKey(r.id),
+        id: r.id,
+        titulo: l.titulo,
+      };
+    }
+    return {
+      kind: "previa",
+      key: previaKey(l.slug, l.livro_id),
+      slug: l.slug,
+      livro_id: l.livro_id,
+      titulo: l.titulo,
+    };
+  }
+
+  function enfileirarJobs(jobs: ResumoQueueItem[]) {
+    const novos = jobs.filter((j) => !naFilaKeys.has(j.key));
+    if (!novos.length) {
+      toast.info("Nada novo para enfileirar");
+      return;
+    }
+    const added = resumoQueue.enqueue(novos);
+    toast.success(`${added} ${added === 1 ? "livro adicionado" : "livros adicionados"} à fila`);
   }
 
   const salvarPrevia = useMutation({
@@ -109,7 +140,14 @@ function AdminResumos() {
     const id = preview.resumo_livro_id;
     const livro = livros.find((l) => (l.resumo as any)?.id === id);
     setPreview(null);
-    enfileirar([{ id, titulo: livro?.titulo ?? "Livro" }]);
+    enfileirarJobs([
+      {
+        kind: "capitulos",
+        key: capitulosKey(id),
+        id,
+        titulo: livro?.titulo ?? "Livro",
+      },
+    ]);
   }
 
   const excluir = useMutation({
@@ -120,41 +158,54 @@ function AdminResumos() {
     },
   });
 
-  // Eligibility for bulk-queue: needs a resumo row with prévia já pronta ou em andamento/erro.
-  function elegivel(l: Livro): { id: string; titulo: string } | null {
-    const r = l.resumo as any;
-    if (!r?.id || !l.pdf_url) return null;
-    if (!["previa_pronta", "gerando", "erro"].includes(r.status)) return null;
-    if (r.status === "concluido") return null;
-    return { id: r.id, titulo: l.titulo };
+  function jobDoLivro(l: Livro) {
+    return jobParaLivro(l);
   }
 
-  function toggleSelecionado(id: string) {
+  function toggleSelecionado(key: string) {
     setSelecionados((s) => {
       const n = new Set(s);
-      if (n.has(id)) n.delete(id); else n.add(id);
+      if (n.has(key)) n.delete(key); else n.add(key);
       return n;
     });
   }
 
   function selecionarTodosVisiveis() {
-    const ids = livrosDaArea
-      .map(elegivel)
-      .filter((x): x is { id: string; titulo: string } => !!x && !naFila.has(x.id))
-      .map((x) => x.id);
-    setSelecionados(new Set(ids));
+    const keys = livrosDaArea
+      .map(jobDoLivro)
+      .filter((j): j is ResumoQueueItem => !!j && !naFilaKeys.has(j.key))
+      .map((j) => j.key);
+    setSelecionados(new Set(keys));
   }
 
   function enfileirarSelecionados() {
-    const itens: { id: string; titulo: string }[] = [];
+    const jobs: ResumoQueueItem[] = [];
     for (const l of livrosDaArea) {
-      const el = elegivel(l);
-      if (el && selecionados.has(el.id) && !naFila.has(el.id)) itens.push(el);
+      const j = jobDoLivro(l);
+      if (j && selecionados.has(j.key)) jobs.push(j);
     }
-    enfileirar(itens);
+    enfileirarJobs(jobs);
     setSelecionados(new Set());
     setSelectionMode(false);
   }
+
+  function iniciarAutomaticoArea() {
+    if (!areaSelecionada) return;
+    const jobs = livros
+      .filter((l) => (l.area ?? "Sem área") === areaSelecionada)
+      .map(jobDoLivro)
+      .filter((j): j is ResumoQueueItem => !!j);
+    enfileirarJobs(jobs);
+  }
+
+  function iniciarAutomaticoTudo() {
+    const jobs = livros
+      .map(jobDoLivro)
+      .filter((j): j is ResumoQueueItem => !!j);
+    if (jobs.length > 50 && !confirm(`Adicionar ${jobs.length} livros à fila? Pode demorar horas.`)) return;
+    enfileirarJobs(jobs);
+  }
+
 
 
   return (
