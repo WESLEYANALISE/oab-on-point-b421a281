@@ -242,6 +242,16 @@
     z-index: 1;
   }
   .chapter-sheen > * { position: relative; z-index: 2; }
+
+  /* Brilho pulsante no botão de questões — a cada 5 segundos */
+  @keyframes questoes-shine {
+    0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--gold) 55%, transparent), 0 8px 20px -6px color-mix(in oklab, var(--primary) 60%, transparent); }
+    50%  { box-shadow: 0 0 0 10px color-mix(in oklab, var(--gold) 0%, transparent), 0 8px 20px -6px color-mix(in oklab, var(--primary) 60%, transparent); }
+    100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--gold) 0%, transparent), 0 8px 20px -6px color-mix(in oklab, var(--primary) 60%, transparent); }
+  }
+  .animate-questoes-shine {
+    animation: questoes-shine 5s ease-in-out infinite;
+  }
 }
 
 /* Resumo / artigo markdown — hierarquia tipográfica garantida */
