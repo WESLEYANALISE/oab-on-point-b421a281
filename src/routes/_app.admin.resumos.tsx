@@ -88,6 +88,11 @@ function AdminResumos() {
     mutationFn: (v: { slug: string; livro_id: number }) => previaFn({ data: v }),
     onMutate: () => toast.loading("Lendo PDF e extraindo sumário…", { id: "previa" }),
     onSuccess: (r: any) => {
+      if (r?.ok === false) {
+        toast.error(r.error ?? "Falha ao gerar prévia", { id: "previa" });
+        qc.invalidateQueries({ queryKey: ["admin-resumos"] });
+        return;
+      }
       toast.success(`Prévia pronta: ${r.total} capítulos detectados`, { id: "previa" });
       qc.invalidateQueries({ queryKey: ["admin-resumos"] });
     },
