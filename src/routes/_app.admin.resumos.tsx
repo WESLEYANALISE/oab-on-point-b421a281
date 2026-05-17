@@ -316,15 +316,36 @@ function AdminResumos() {
 }
 
 function LivroCard({
-  livro, status, resumo, proc, previaPending,
+  livro, status, resumo, proc, enfileirado, previaPending,
+  selectionMode, selectable, selected, onToggleSelect,
   onGerarPrevia, onVerPrevia, onRetomar, onExcluir,
 }: {
-  livro: Livro; status: string; resumo: any; proc: boolean; previaPending: boolean;
+  livro: Livro; status: string; resumo: any; proc: boolean; enfileirado: boolean; previaPending: boolean;
+  selectionMode: boolean; selectable: boolean; selected: boolean; onToggleSelect: () => void;
   onGerarPrevia: () => void; onVerPrevia: () => void; onRetomar: () => void; onExcluir: () => void;
 }) {
+  const cardClasses = `p-3 rounded-xl border bg-card transition ${
+    selectionMode && selectable ? "cursor-pointer hover:bg-accent/30" : ""
+  } ${selected ? "ring-2 ring-primary border-primary" : ""}`;
+
   return (
-    <div className="p-3 rounded-xl border bg-card">
+    <div
+      className={cardClasses}
+      onClick={selectionMode && selectable ? onToggleSelect : undefined}
+    >
       <div className="flex items-start gap-3">
+        {selectionMode && (
+          <div className="pt-1">
+            <input
+              type="checkbox"
+              checked={selected}
+              disabled={!selectable}
+              onChange={onToggleSelect}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4"
+            />
+          </div>
+        )}
         <div className="h-16 w-12 bg-muted rounded overflow-hidden flex-shrink-0">
           {livro.capa && <img src={livro.capa} alt="" className="w-full h-full object-cover" />}
         </div>
@@ -332,6 +353,11 @@ function LivroCard({
           <p className="text-sm font-medium break-words">{livro.titulo}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <StatusBadge status={status} proc={proc} />
+            {enfileirado && (
+              <span className="text-xs inline-flex items-center gap-1 text-amber-600">
+                <Clock className="h-3 w-3" /> na fila
+              </span>
+            )}
             {resumo && (
               <span className="text-xs text-muted-foreground">
                 {resumo.capitulos_gerados ?? 0}/{resumo.total_capitulos ?? 0} cap.
@@ -344,47 +370,49 @@ function LivroCard({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {!livro.pdf_url && (
-          <span className="text-[11px] text-muted-foreground self-center">sem PDF</span>
-        )}
-        {livro.pdf_url && status === "sem_previa" && (
-          <Button
-            size="sm"
-            disabled={previaPending}
-            onClick={onGerarPrevia}
-            className="flex-1 sm:flex-none"
-          >
-            <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Gerar prévia
-          </Button>
-        )}
-        {livro.pdf_url && status === "previa_pronta" && resumo && (
-          <Button size="sm" variant="outline" onClick={onVerPrevia} className="flex-1 sm:flex-none">
-            <Eye className="h-3.5 w-3.5 mr-1.5" /> Ver prévia
-          </Button>
-        )}
-        {livro.pdf_url && (status === "previa_pronta" || status === "concluido" || status === "erro") && resumo && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={previaPending}
-            title="Refazer prévia"
-            onClick={onGerarPrevia}
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-          </Button>
-        )}
-        {resumo && status === "gerando" && !proc && (
-          <Button size="sm" onClick={onRetomar} className="flex-1 sm:flex-none">
-            Retomar
-          </Button>
-        )}
-        {resumo && (
-          <Button size="sm" variant="ghost" onClick={onExcluir}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        )}
-      </div>
+      {!selectionMode && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {!livro.pdf_url && (
+            <span className="text-[11px] text-muted-foreground self-center">sem PDF</span>
+          )}
+          {livro.pdf_url && status === "sem_previa" && (
+            <Button
+              size="sm"
+              disabled={previaPending}
+              onClick={onGerarPrevia}
+              className="flex-1 sm:flex-none"
+            >
+              <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Gerar prévia
+            </Button>
+          )}
+          {livro.pdf_url && status === "previa_pronta" && resumo && (
+            <Button size="sm" variant="outline" onClick={onVerPrevia} className="flex-1 sm:flex-none">
+              <Eye className="h-3.5 w-3.5 mr-1.5" /> Ver prévia
+            </Button>
+          )}
+          {livro.pdf_url && (status === "previa_pronta" || status === "concluido" || status === "erro") && resumo && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={previaPending}
+              title="Refazer prévia"
+              onClick={onGerarPrevia}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {resumo && status === "gerando" && !proc && !enfileirado && (
+            <Button size="sm" onClick={onRetomar} className="flex-1 sm:flex-none">
+              Retomar
+            </Button>
+          )}
+          {resumo && (
+            <Button size="sm" variant="ghost" onClick={onExcluir}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
