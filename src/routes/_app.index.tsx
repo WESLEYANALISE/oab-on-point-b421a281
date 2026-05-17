@@ -207,18 +207,18 @@ function FaseCard({
         fetchPriority={lcp ? "high" : "auto"}
         className="absolute inset-0 h-full w-full object-cover"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/15" />
       <span className="countdown-shimmer" style={{ animationDelay: shineDelay }} aria-hidden />
       <span className="absolute top-2 left-2 inline-flex items-center px-1.5 py-0.5 rounded-md bg-gold/90 text-gold-foreground text-[9px] font-bold tracking-wider uppercase">
         OAB
       </span>
-      <div className="absolute inset-x-0 bottom-0 p-2.5 flex items-end justify-between gap-2">
+      <div className="absolute inset-x-0 bottom-0 p-3 md:p-4 flex items-end justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-display font-semibold text-base md:text-xl leading-tight tracking-tight text-primary-foreground">{label}</p>
-          <p className="text-[9px] md:text-[10px] uppercase tracking-[0.16em] text-gold/90 font-semibold mt-0.5 line-clamp-1">{sub}</p>
+          <p className="font-display font-bold text-xl sm:text-2xl md:text-3xl lg:text-[34px] leading-[1.05] tracking-tight text-primary-foreground drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">{label}</p>
+          <p className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-gold font-semibold mt-1 line-clamp-1 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">{sub}</p>
         </div>
-        <div className="h-8 w-8 md:h-9 md:w-9 rounded-full bg-gold grid place-items-center shrink-0 shadow-lg shadow-black/40 group-hover:translate-x-0.5 transition-transform">
-          <ArrowRight className="h-3.5 w-3.5 md:h-4 md:w-4 text-gold-foreground" />
+        <div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-gold grid place-items-center shrink-0 shadow-lg shadow-black/40 group-hover:translate-x-0.5 transition-transform">
+          <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-gold-foreground" />
         </div>
       </div>
     </Link>
