@@ -23,7 +23,7 @@ function LoginPage() {
   const [guestLoading, setGuestLoading] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && user) navigate({ to: "/" });
+    if (!authLoading && user) navigate({ to: "/app" });
   }, [authLoading, user, navigate]);
 
   const signupSchema = z.object({

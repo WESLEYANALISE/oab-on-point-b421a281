@@ -8,7 +8,7 @@ const baseGroups = [
   {
     label: "Navegar",
     items: [
-      { to: "/", label: "Início", icon: Home },
+      { to: "/app", label: "Início", icon: Home },
       { to: "/materias", label: "Matérias", icon: BookOpen },
       { to: "/reta-final", label: "Reta Final", icon: Award },
     ],
@@ -55,7 +55,7 @@ export function DesktopSidebar() {
   return (
     <aside className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       <div className="px-6 py-5 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center gap-2.5">
+        <Link to="/app" className="flex items-center gap-2.5">
           <div className="h-9 w-9 rounded-md bg-gradient-gold grid place-items-center shadow-sm">
             <Scale className="h-5 w-5 text-gold-foreground" />
           </div>

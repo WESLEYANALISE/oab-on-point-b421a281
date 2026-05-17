@@ -12,7 +12,7 @@ export function MobileHeader() {
     <header className="md:hidden sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border">
       <div className="flex items-center justify-between px-4 h-16">
         {isHome ? (
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/app" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-md bg-gradient-toga grid place-items-center">
               <Scale className="h-4 w-4 text-primary-foreground" />
             </div>
@@ -38,7 +38,7 @@ export function MobileHeader() {
           {!isHome && (
             <button
               type="button"
-              onClick={() => navigate({ to: "/" })}
+              onClick={() => navigate({ to: "/app" })}
               className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-white/10 text-white border border-white/20 text-sm font-medium hover:bg-white/15 active:scale-[0.97] transition"
               aria-label="Ir para o início"
             >

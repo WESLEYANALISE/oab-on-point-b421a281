@@ -48,7 +48,7 @@ function OnboardingPage() {
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Tudo pronto! Bom estudo 🎯");
-    navigate({ to: "/" });
+    navigate({ to: "/app" });
   }
 
   return (

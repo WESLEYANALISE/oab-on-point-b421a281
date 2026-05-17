@@ -11,7 +11,7 @@ export function resolverVoltar(pathname: string): string {
   if (/^\/resumos\/[^/]+$/.test(p)) return "/resumos";
 
   // /resumos -> /
-  if (p === "/resumos") return "/";
+  if (p === "/resumos") return "/app";
 
   // /simulados/... -> /simulados
   if (/^\/simulados\/.+/.test(p)) return "/simulados";
@@ -23,5 +23,5 @@ export function resolverVoltar(pathname: string): string {
   const idx = p.lastIndexOf("/");
   if (idx > 0) return p.slice(0, idx);
 
-  return "/";
+  return "/app";
 }

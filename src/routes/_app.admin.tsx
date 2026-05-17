@@ -18,8 +18,8 @@ function AdminLayout() {
 
   useEffect(() => {
     if (!mounted || loading) return;
-    if (!user) { navigate({ to: "/" }); return; }
-    if (isAdmin === false) navigate({ to: "/" });
+    if (!user) { navigate({ to: "/app" }); return; }
+    if (isAdmin === false) navigate({ to: "/app" });
   }, [mounted, loading, user, isAdmin, navigate]);
 
   // Evita mismatch de hidratação: até montar no client, sempre renderiza o shell de loading.

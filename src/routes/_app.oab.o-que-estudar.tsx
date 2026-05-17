@@ -52,7 +52,7 @@ function OQueEstudarPage() {
       <header className="px-4 pt-5 pb-6 bg-gradient-toga text-primary-foreground relative overflow-hidden">
         <div className="absolute -top-20 -right-12 h-56 w-56 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
         <Link
-          to="/"
+          to="/app"
           className="inline-flex items-center gap-1.5 text-[12px] text-primary-foreground/80 hover:text-primary-foreground mb-4"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Voltar
