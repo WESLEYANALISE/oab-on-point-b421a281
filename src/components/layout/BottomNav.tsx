@@ -47,7 +47,7 @@ export function BottomNav() {
             aria-label="Praticar questões"
             className="absolute left-1/2 -translate-x-1/2 -top-7 h-16 w-16 rounded-full bg-gradient-gold text-gold-foreground grid place-items-center shadow-[0_8px_20px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)] ring-4 ring-background hover:scale-105 transition-transform animate-questoes-shine"
           >
-            <Target className="h-6 w-6" strokeWidth={2.4} />
+            <TargetArrowIcon className="h-7 w-7" />
           </Link>
           <span className={cn(
             "absolute left-1/2 -translate-x-1/2 bottom-1.5 text-[11px] font-medium",
