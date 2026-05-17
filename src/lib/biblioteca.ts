@@ -1,6 +1,42 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type FavoritoRow = { slug: string; livro_id: number };
+
+export const favoritosQueryOptions = (slug: string | null) =>
+  queryOptions({
+    queryKey: ["livros-favoritos", slug],
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return [] as FavoritoRow[];
+      let q = supabase.from("livros_favoritos").select("slug, livro_id");
+      if (slug) q = q.eq("slug", slug);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []).map((r) => ({ slug: r.slug, livro_id: Number(r.livro_id) })) as FavoritoRow[];
+    },
+    staleTime: 5 * 60_000,
+  });
+
+export async function toggleFavorito(slug: string, livroId: number, currentlyFav: boolean) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) throw new Error("Faça login para favoritar.");
+  if (currentlyFav) {
+    const { error } = await supabase
+      .from("livros_favoritos")
+      .delete()
+      .eq("user_id", auth.user.id)
+      .eq("slug", slug)
+      .eq("livro_id", livroId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase
+      .from("livros_favoritos")
+      .insert({ user_id: auth.user.id, slug, livro_id: livroId });
+    if (error) throw error;
+  }
+}
+
 export type BibCfg = { title: string; hasAreas: boolean };
 
 export const BIB_MAP: Record<string, BibCfg> = {
