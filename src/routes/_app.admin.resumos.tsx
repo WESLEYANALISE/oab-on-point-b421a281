@@ -11,7 +11,6 @@ import {
   listarLivrosParaResumo,
   gerarPreviaResumo,
   atualizarPrevia,
-  gerarProximoCapitulo,
   excluirResumoLivro,
 } from "@/lib/resumos-admin.functions";
 import { resumoQueue, useResumoQueue } from "@/lib/resumo-queue";
