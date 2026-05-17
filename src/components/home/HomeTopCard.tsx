@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Calendar, ChevronRight, Sparkles } from "lucide-react";
+import { Calendar, ChevronRight } from "lucide-react";
 import { useProfile, greetingFor, readCachedProfileOptimistic } from "@/hooks/use-auth";
+import themisHalf from "@/assets/themis-half.png";
 
 // Próxima 1ª fase (47º Exame de Ordem) — data prevista
 const EXAM_DATE = new Date("2026-08-23T08:00:00-03:00");
@@ -38,15 +39,21 @@ export function HomeTopCard() {
       <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-12 -left-6 h-32 w-32 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
 
-      {/* Selo do próximo exame */}
-      <span className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-gold/15 border border-gold/35 text-gold text-[10px] font-semibold whitespace-nowrap shadow-sm">
-        <Sparkles className="h-2.5 w-2.5" /> 47º OAB
-      </span>
+      {/* Themis — meia face alinhada à direita */}
+      <img
+        src={themisHalf}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        decoding="async"
+        className="pointer-events-none select-none absolute top-0 right-0 h-full w-auto object-cover object-left opacity-90 z-0 [mask-image:linear-gradient(to_left,black_55%,transparent_100%)]"
+      />
+      <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-transparent via-black/10 to-black/40 pointer-events-none z-0" />
 
       {/* Linha 1: saudação + nome + frase motivacional */}
       <Link
         to="/perfil"
-        className="relative block px-4 py-3.5 md:px-5 md:py-4 pr-24 group"
+        className="relative z-10 block px-4 py-3.5 md:px-5 md:py-4 pr-28 group"
       >
         <p
           className="text-[9px] uppercase tracking-[0.22em] text-gold/85 font-semibold leading-none min-h-[9px]"
