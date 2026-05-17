@@ -274,6 +274,50 @@ function VadeMecumPage() {
   );
 }
 
+function CategoriaCardCompact({ cat }: { cat: Categoria }) {
+  const Icon = cat.icon;
+  return (
+    <button
+      type="button"
+      className={cn(
+        "group relative overflow-hidden text-left rounded-2xl border bg-card/60 p-4 transition-all cursor-pointer h-full",
+        "hover:bg-card hover:border-gold/40 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-12px_color-mix(in_oklab,var(--gold)_25%,transparent)]",
+        cat.destaque ? "border-gold/30" : "border-border/60",
+      )}
+    >
+      {cat.destaque && (
+        <span
+          aria-hidden
+          className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gold/10 blur-2xl pointer-events-none"
+        />
+      )}
+      <div className="relative flex flex-col gap-3">
+        <div
+          className={cn(
+            "h-10 w-10 rounded-xl grid place-items-center border",
+            cat.destaque
+              ? "bg-gradient-to-br from-gold/25 to-primary/20 border-gold/40 text-gold"
+              : "bg-secondary/60 border-border/60 text-foreground/80",
+          )}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/80 font-semibold truncate">
+            {cat.tag}
+          </p>
+          <h3 className="font-display font-semibold text-[15px] leading-tight mt-1">
+            {cat.titulo}
+          </h3>
+          <p className="text-[11px] text-gold/80 font-medium mt-2">
+            {cat.total.toLocaleString("pt-BR")} itens
+          </p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 function CategoriaCard({ cat }: { cat: Categoria }) {
   const Icon = cat.icon;
   return (
