@@ -212,21 +212,50 @@ function AdminResumos() {
             <span className="text-xs text-muted-foreground">{livrosDaArea.length} livros</span>
           </div>
           <h2 className="font-display text-xl md:text-2xl mb-3">{areaSelecionada}</h2>
-          <input
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por título…"
-            className="w-full mb-4 text-sm px-4 py-2.5 rounded-full border bg-card"
-          />
 
-          <div className="grid gap-2">
+          <div className="flex gap-2 mb-3">
+            <input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar por título…"
+              className="flex-1 text-sm px-4 py-2.5 rounded-full border bg-card"
+            />
+            <Button
+              variant={selectionMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setSelectionMode((v) => !v);
+                setSelecionados(new Set());
+              }}
+              className="rounded-full"
+            >
+              <ListChecks className="h-4 w-4 mr-1.5" />
+              {selectionMode ? "Cancelar" : "Selecionar"}
+            </Button>
+          </div>
+
+          {selectionMode && (
+            <div className="mb-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span>{selecionados.size} selecionado(s)</span>
+              <button
+                onClick={selecionarTodosVisiveis}
+                className="underline hover:text-foreground"
+              >
+                Selecionar todos elegíveis
+              </button>
+            </div>
+          )}
+
+          <div className={`grid gap-2 ${selectionMode && selecionados.size > 0 ? "pb-24" : ""}`}>
             {livrosDaArea.length === 0 && (
               <p className="text-sm text-muted-foreground py-6 text-center">Nenhum livro encontrado.</p>
             )}
             {livrosDaArea.map((l) => {
               const r = l.resumo as any;
               const status: string = r?.status ?? "sem_previa";
-              const proc = r?.id && gerando.has(r.id);
+              const proc = r?.id && (queueState.atual?.id === r.id);
+              const enfileirado = r?.id && naFila.has(r.id);
+              const el = elegivel(l);
               return (
                 <LivroCard
                   key={`${l.slug}:${l.livro_id}`}
@@ -234,7 +263,12 @@ function AdminResumos() {
                   status={status}
                   resumo={r}
                   proc={!!proc}
+                  enfileirado={!!enfileirado && !proc}
                   previaPending={previa.isPending}
+                  selectionMode={selectionMode}
+                  selectable={!!el && !enfileirado}
+                  selected={!!el && selecionados.has(el.id)}
+                  onToggleSelect={() => el && toggleSelecionado(el.id)}
                   onGerarPrevia={() => previa.mutate({ slug: l.slug, livro_id: l.livro_id })}
                   onVerPrevia={() => {
                     const itens = ((r.previa as PreviaItem[]) ?? []).map((it) => ({
@@ -246,12 +280,25 @@ function AdminResumos() {
                     }));
                     setPreview({ resumo_livro_id: r.id, itens });
                   }}
-                  onRetomar={() => processarLivro(r.id)}
+                  onRetomar={() => enfileirar([{ id: r.id, titulo: l.titulo }])}
                   onExcluir={() => { if (confirm("Excluir resumo deste livro?")) excluir.mutate(r.id); }}
                 />
               );
             })}
           </div>
+
+          {selectionMode && selecionados.size > 0 && (
+            <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-8 md:w-auto z-40 flex justify-center">
+              <div className="bg-card border border-border rounded-full shadow-2xl flex items-center gap-3 pl-4 pr-2 py-2 max-w-full">
+                <span className="text-sm font-medium whitespace-nowrap">
+                  {selecionados.size} selecionado(s)
+                </span>
+                <Button size="sm" className="rounded-full" onClick={enfileirarSelecionados}>
+                  <Sparkles className="h-4 w-4 mr-1.5" /> Adicionar à fila
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
