@@ -5,7 +5,7 @@ import { resolverVoltar } from "@/lib/voltar";
 export function MobileHeader() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const isHome = pathname === "/";
+  const isHome = pathname === "/" || pathname === "/app";
   const destinoVoltar = resolverVoltar(pathname);
 
   return (
