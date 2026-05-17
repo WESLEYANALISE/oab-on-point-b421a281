@@ -1,12 +1,29 @@
-// Persistent queue store for background resumo (chapter) generation.
-// Mirrors src/lib/simulado-queue.ts.
+// Persistent queue store for background resumo automation.
+// Supports two job kinds:
+//   - "previa"    → extract sumário (calls gerarPreviaResumo); on success, auto-enqueue capítulos.
+//   - "capitulos" → loop gerarProximoCapitulo until done.
 
 import { useSyncExternalStore } from "react";
 
-export type ResumoQueueItem = { id: string; titulo: string };
+export type PreviaJob = {
+  kind: "previa";
+  key: string;        // dedup key
+  slug: string;
+  livro_id: number;
+  titulo: string;
+};
+export type CapitulosJob = {
+  kind: "capitulos";
+  key: string;        // dedup key
+  id: string;         // resumo_livro_id
+  titulo: string;
+};
+export type ResumoQueueItem = PreviaJob | CapitulosJob;
+
 export type ResumoAtual = (ResumoQueueItem & { startedAt: number }) | null;
 export type ResumoHist = {
-  id: string;
+  key: string;
+  kind: ResumoQueueItem["kind"];
   titulo: string;
   status: "pronto" | "erro" | "cancelado";
   erro?: string;
@@ -19,7 +36,14 @@ export type ResumoQueueState = {
   historico: ResumoHist[];
 };
 
-const STORAGE_KEY = "oab:resumo-queue:v1";
+const STORAGE_KEY = "oab:resumo-queue:v2";
+
+export function previaKey(slug: string, livro_id: number) {
+  return `previa:${slug}:${livro_id}`;
+}
+export function capitulosKey(id: string) {
+  return `capitulos:${id}`;
+}
 
 function load(): ResumoQueueState {
   if (typeof window === "undefined") return { fila: [], atual: null, historico: [] };
@@ -30,7 +54,7 @@ function load(): ResumoQueueState {
     return {
       fila: Array.isArray(parsed.fila) ? parsed.fila : [],
       atual: parsed.atual ?? null,
-      historico: Array.isArray(parsed.historico) ? parsed.historico.slice(-20) : [],
+      historico: Array.isArray(parsed.historico) ? parsed.historico.slice(-50) : [],
     };
   } catch {
     return { fila: [], atual: null, historico: [] };
@@ -70,15 +94,15 @@ export const resumoQueue = {
     return () => listeners.delete(cb);
   },
   enqueue(itens: ResumoQueueItem[]) {
-    const existIds = new Set(state.fila.map((i) => i.id));
-    const dedup = itens.filter(
-      (i) => !existIds.has(i.id) && state.atual?.id !== i.id,
-    );
-    if (!dedup.length) return;
+    const existing = new Set(state.fila.map((i) => i.key));
+    if (state.atual) existing.add(state.atual.key);
+    const dedup = itens.filter((i) => !existing.has(i.key));
+    if (!dedup.length) return 0;
     set({ fila: [...state.fila, ...dedup] });
+    return dedup.length;
   },
-  removeFromQueue(id: string) {
-    set({ fila: state.fila.filter((i) => i.id !== id) });
+  removeByKey(key: string) {
+    set({ fila: state.fila.filter((i) => i.key !== key) });
   },
   setAtual(atual: ResumoAtual) {
     set({ atual });
@@ -86,19 +110,23 @@ export const resumoQueue = {
   finishAtual(status: ResumoHist["status"], erro?: string) {
     if (!state.atual) return;
     const h: ResumoHist = {
-      id: state.atual.id,
+      key: state.atual.key,
+      kind: state.atual.kind,
       titulo: state.atual.titulo,
       status,
       erro,
       finishedAt: Date.now(),
     };
-    set({ atual: null, historico: [...state.historico, h].slice(-20) });
+    set({ atual: null, historico: [...state.historico, h].slice(-50) });
   },
   clearHistorico() {
     set({ historico: [] });
   },
   cancelAll() {
     set({ fila: [], atual: null });
+  },
+  hasKey(key: string) {
+    return state.atual?.key === key || state.fila.some((i) => i.key === key);
   },
 };
 
