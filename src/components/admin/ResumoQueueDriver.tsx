@@ -131,7 +131,8 @@ export function ResumoQueueDriver() {
     return () => {
       cancelled = true;
     };
-  }, [state.atual, previaFn, proxCapFn, qc]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.atual?.key, previaFn, proxCapFn, qc]);
 
   return null;
 }
