@@ -1,17 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, queryOptions } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { z } from "zod";
-import { FileText, BookOpen, Loader2, ChevronRight, ArrowLeft, FolderOpen } from "lucide-react";
+import { FileText, BookOpen, ChevronRight, ArrowLeft, FolderOpen } from "lucide-react";
 import { listarLivrosComResumo } from "@/lib/resumos.functions";
 
 const searchSchema = z.object({
   area: z.string().optional(),
 });
 
+const resumosQueryOptions = (fn: () => Promise<Awaited<ReturnType<typeof listarLivrosComResumo>>>) =>
+  queryOptions({
+    queryKey: ["resumos-publico"],
+    queryFn: fn,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+  });
+
 export const Route = createFileRoute("/_app/resumos/")({
   validateSearch: (s: Record<string, unknown>) => searchSchema.parse(s),
+  loader: ({ context }) => {
+    context.queryClient.prefetchQuery(resumosQueryOptions(() => listarLivrosComResumo()));
+  },
   head: () => ({
     meta: [
       { title: "Resumos — OAB na Risca" },
@@ -36,11 +47,7 @@ function ResumosIndex() {
   const { area } = Route.useSearch();
   const navigate = useNavigate({ from: "/resumos" });
   const fn = useServerFn(listarLivrosComResumo);
-  const { data, isLoading } = useQuery({
-    queryKey: ["resumos-publico"],
-    queryFn: () => fn(),
-    staleTime: 60_000,
-  });
+  const { data } = useQuery(resumosQueryOptions(fn));
 
   const livros = data ?? [];
 
@@ -94,13 +101,7 @@ function ResumosIndex() {
         )}
       </header>
 
-      {isLoading && (
-        <div className="py-12 text-center text-muted-foreground inline-flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
-        </div>
-      )}
-
-      {!isLoading && !livros.length && (
+      {!livros.length && (
         <div className="py-16 text-center border border-dashed rounded-xl text-muted-foreground">
           <BookOpen className="h-8 w-8 mx-auto mb-3 opacity-60" />
           <p>Nenhum resumo disponível ainda.</p>
@@ -108,7 +109,7 @@ function ResumosIndex() {
         </div>
       )}
 
-      {!isLoading && showAreas && areas.length > 0 && (
+      {showAreas && areas.length > 0 && (
         <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {areas.map(({ nome, total }) => (
             <li key={nome}>
@@ -132,7 +133,7 @@ function ResumosIndex() {
         </ul>
       )}
 
-      {!isLoading && !showAreas && (
+      {!showAreas && (
         <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden bg-card">
           {livrosDaArea.map((l) => (
             <li key={l.id}>
