@@ -17,6 +17,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
+import { Route as AppQuestoesRouteImport } from './routes/_app.questoes'
 import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
 import { Route as AppPlanoEstudoRouteImport } from './routes/_app.plano-estudo'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
@@ -100,6 +101,11 @@ const AppVadeMecumRoute = AppVadeMecumRouteImport.update({
 const AppRetaFinalRoute = AppRetaFinalRouteImport.update({
   id: '/reta-final',
   path: '/reta-final',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQuestoesRoute = AppQuestoesRouteImport.update({
+  id: '/questoes',
+  path: '/questoes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProgressoRoute = AppProgressoRouteImport.update({
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AppPerfilRoute
   '/plano-estudo': typeof AppPlanoEstudoRoute
   '/progresso': typeof AppProgressoRoute
+  '/questoes': typeof AppQuestoesRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/vade-mecum': typeof AppVadeMecumRoute
   '/admin/blog': typeof AppAdminBlogRoute
@@ -404,6 +411,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof AppPerfilRoute
   '/plano-estudo': typeof AppPlanoEstudoRoute
   '/progresso': typeof AppProgressoRoute
+  '/questoes': typeof AppQuestoesRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/vade-mecum': typeof AppVadeMecumRoute
   '/admin/blog': typeof AppAdminBlogRoute
@@ -458,6 +466,7 @@ export interface FileRoutesById {
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/plano-estudo': typeof AppPlanoEstudoRoute
   '/_app/progresso': typeof AppProgressoRoute
+  '/_app/questoes': typeof AppQuestoesRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/_app/vade-mecum': typeof AppVadeMecumRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
@@ -514,6 +523,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/plano-estudo'
     | '/progresso'
+    | '/questoes'
     | '/reta-final'
     | '/vade-mecum'
     | '/admin/blog'
@@ -566,6 +576,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/plano-estudo'
     | '/progresso'
+    | '/questoes'
     | '/reta-final'
     | '/vade-mecum'
     | '/admin/blog'
@@ -619,6 +630,7 @@ export interface FileRouteTypes {
     | '/_app/perfil'
     | '/_app/plano-estudo'
     | '/_app/progresso'
+    | '/_app/questoes'
     | '/_app/reta-final'
     | '/_app/vade-mecum'
     | '/_app/admin/blog'
@@ -721,6 +733,13 @@ declare module '@tanstack/react-router' {
       path: '/reta-final'
       fullPath: '/reta-final'
       preLoaderRoute: typeof AppRetaFinalRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/questoes': {
+      id: '/_app/questoes'
+      path: '/questoes'
+      fullPath: '/questoes'
+      preLoaderRoute: typeof AppQuestoesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/progresso': {
@@ -1151,6 +1170,7 @@ interface AppRouteChildren {
   AppPerfilRoute: typeof AppPerfilRoute
   AppPlanoEstudoRoute: typeof AppPlanoEstudoRoute
   AppProgressoRoute: typeof AppProgressoRoute
+  AppQuestoesRoute: typeof AppQuestoesRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
   AppVadeMecumRoute: typeof AppVadeMecumRoute
   AppOabCadernoErrosRoute: typeof AppOabCadernoErrosRoute
@@ -1187,6 +1207,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPerfilRoute: AppPerfilRoute,
   AppPlanoEstudoRoute: AppPlanoEstudoRoute,
   AppProgressoRoute: AppProgressoRoute,
+  AppQuestoesRoute: AppQuestoesRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
   AppVadeMecumRoute: AppVadeMecumRoute,
   AppOabCadernoErrosRoute: AppOabCadernoErrosRoute,
