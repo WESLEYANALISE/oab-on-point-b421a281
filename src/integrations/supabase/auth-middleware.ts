@@ -77,5 +77,3 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
     });
   },
 );
-
-console.log('[auth-middleware] requireSupabaseAuth=', requireSupabaseAuth, 'typeof=', typeof requireSupabaseAuth)
