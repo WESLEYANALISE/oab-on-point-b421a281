@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Loader2, Sparkles, FileText, X, Eye, Trash2, RefreshCw,
-  CheckCircle2, AlertCircle, Clock, ChevronRight, ArrowLeft,
+  CheckCircle2, AlertCircle, Clock, ChevronRight, ArrowLeft, ListChecks,
 } from "lucide-react";
 import {
   listarLivrosParaResumo,
@@ -14,6 +14,7 @@ import {
   gerarProximoCapitulo,
   excluirResumoLivro,
 } from "@/lib/resumos-admin.functions";
+import { resumoQueue, useResumoQueue } from "@/lib/resumo-queue";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/admin/resumos")({
