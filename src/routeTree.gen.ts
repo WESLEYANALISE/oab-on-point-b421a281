@@ -14,6 +14,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
@@ -84,6 +85,11 @@ const LoginRoute = LoginRouteImport.update({
 } as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppVadeMecumRoute = AppVadeMecumRouteImport.update({
@@ -328,7 +334,7 @@ const AppBibliotecaSlugBookIdLerRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppRouteWithChildren
+  '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -382,7 +388,7 @@ export interface FileRoutesByFullPath {
   '/biblioteca/$slug/$bookId/': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof AppRouteWithChildren
+  '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -433,6 +439,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
@@ -593,6 +600,7 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug/$bookId'
   id:
     | '__root__'
+    | '/'
     | '/_app'
     | '/login'
     | '/onboarding'
@@ -648,6 +656,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -691,6 +700,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/vade-mecum': {
@@ -1197,6 +1213,7 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
