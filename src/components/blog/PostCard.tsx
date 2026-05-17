@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Clock, ArrowRight } from "lucide-react";
 import type { BlogPostListItem } from "@/lib/blog.functions";
+import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
 const DATE = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" });
 
