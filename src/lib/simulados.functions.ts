@@ -221,8 +221,28 @@ export const finalizarTentativa = createServerFn({ method: "POST" })
       .eq("simulado_id", t.data.simulado_id);
     if (qErr) throw new Error(qErr.message);
 
+    // Busca enunciado/alternativas/id para popular caderno de erros + flashcards
+    const { data: qsFull } = await supabase
+      .from("simulado_questoes")
+      .select("id, numero, enunciado, materia, alternativas, resposta_correta, justificativa, status")
+      .eq("simulado_id", t.data.simulado_id);
+    const fullById = new Map<number, any>();
+    for (const q of qsFull ?? []) fullById.set(q.numero, q);
+
     let acertos = 0;
     const porMateria: Record<string, { acertos: number; total: number }> = {};
+    const errosParaInserir: Array<{
+      user_id: string; questao_id: string; simulado_id: string; tentativa_id: string;
+      numero: number; materia: string | null; alternativa_marcada: string | null;
+      resposta_correta: string; tentativa_em: string;
+    }> = [];
+    const flashcardsParaInserir: Array<{
+      user_id: string; frente: string; verso: string; materia: string | null;
+      fonte_tipo: string; fonte_id: string; due_at: string;
+    }> = [];
+    const agoraIso = new Date().toISOString();
+    const amanhaIso = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
     for (const q of qs ?? []) {
       if ((q as { status?: string }).status === "falhou_extracao") continue;
       const m = q.materia ?? "Sem matéria";
@@ -230,9 +250,73 @@ export const finalizarTentativa = createServerFn({ method: "POST" })
       porMateria[m].total += 1;
       const r = respostas[String(q.numero)];
       const anulada = (q as { status?: string }).status === "anulada";
-      if (anulada || (r && r === q.resposta_correta)) {
+      const acertou = anulada || (r && r === q.resposta_correta);
+      if (acertou) {
         acertos += 1;
         porMateria[m].acertos += 1;
+      } else if (r) {
+        const full = fullById.get(q.numero);
+        if (full) {
+          errosParaInserir.push({
+            user_id: userId,
+            questao_id: full.id,
+            simulado_id: t.data.simulado_id,
+            tentativa_id: t.data.id,
+            numero: q.numero,
+            materia: q.materia ?? null,
+            alternativa_marcada: r,
+            resposta_correta: q.resposta_correta ?? "",
+            tentativa_em: agoraIso,
+          });
+          const alts = (full.alternativas as Record<string, string>) ?? {};
+          const correta = full.resposta_correta as string;
+          const textoCorreta = alts[correta] ?? "";
+          const frente = `${full.enunciado}\n\nAlternativas:\nA) ${alts.A ?? ""}\nB) ${alts.B ?? ""}\nC) ${alts.C ?? ""}\nD) ${alts.D ?? ""}`.slice(0, 1900);
+          const verso = `Correta: **${correta}** — ${textoCorreta}${full.justificativa ? `\n\n${full.justificativa}` : ""}`.slice(0, 3900);
+          flashcardsParaInserir.push({
+            user_id: userId,
+            frente,
+            verso,
+            materia: q.materia ?? null,
+            fonte_tipo: "questao",
+            fonte_id: full.id,
+            due_at: amanhaIso,
+          });
+        }
+      }
+    }
+
+    if (errosParaInserir.length > 0) {
+      await supabase
+        .from("erros_questao")
+        .upsert(errosParaInserir, { onConflict: "user_id,tentativa_id,questao_id", ignoreDuplicates: true });
+    }
+    if (flashcardsParaInserir.length > 0) {
+      // Evita duplicar flashcard se a mesma questão já gerou um para esse user
+      const fonteIds = flashcardsParaInserir.map((f) => f.fonte_id);
+      const { data: existentes } = await supabase
+        .from("flashcards")
+        .select("fonte_id")
+        .eq("user_id", userId)
+        .eq("fonte_tipo", "questao")
+        .in("fonte_id", fonteIds);
+      const existentesSet = new Set((existentes ?? []).map((e: any) => e.fonte_id));
+      const novos = flashcardsParaInserir.filter((f) => !existentesSet.has(f.fonte_id));
+      if (novos.length > 0) {
+        const { data: cardsCriados } = await supabase.from("flashcards").insert(novos).select("id, fonte_id");
+        const cardByFonte = new Map((cardsCriados ?? []).map((c: any) => [c.fonte_id, c.id]));
+        // Liga flashcard_id em erros_questao
+        for (const erro of errosParaInserir) {
+          const cardId = cardByFonte.get(erro.questao_id);
+          if (cardId) {
+            await supabase
+              .from("erros_questao")
+              .update({ flashcard_id: cardId })
+              .eq("user_id", userId)
+              .eq("tentativa_id", erro.tentativa_id)
+              .eq("questao_id", erro.questao_id);
+          }
+        }
       }
     }
     const upd = await supabase
