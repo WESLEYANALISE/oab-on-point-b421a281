@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { ArrowLeft, ChevronRight, BookOpen, Library } from "lucide-react";
 import { countsQueryOptions } from "@/lib/biblioteca";
 import estudosImg from "@/assets/biblio-estudos.jpg";
@@ -89,16 +90,15 @@ function BibliotecaHub() {
           className="group relative block rounded-2xl border border-gold/40 bg-card overflow-hidden shadow-lg shadow-black/40 hover:border-gold/70 hover:-translate-y-0.5 transition-all"
         >
           <div className="relative h-44 md:h-56 w-full overflow-hidden">
-            <img
+            <ShimmerCover
               src={ESTUDOS.cover}
               alt={ESTUDOS.title}
               width={1200}
               height={600}
-              loading="eager"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              eager
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+            <span className="countdown-shimmer" aria-hidden />
             <div className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/20 border border-gold/40 text-gold text-[10px] uppercase tracking-[0.18em] font-semibold backdrop-blur-sm">
               <Library className="h-3 w-3" /> Destaque
             </div>
@@ -138,7 +138,7 @@ function BibliotecaHub() {
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {OUTRAS.map((b) => {
+          {OUTRAS.map((b, idx) => {
             const total = counts?.[b.slug];
             return (
               <Link
@@ -149,16 +149,18 @@ function BibliotecaHub() {
                 className="group relative flex items-stretch gap-3 p-3 rounded-2xl border border-border bg-card hover:border-gold/40 hover:-translate-y-0.5 transition-all shadow-md shadow-black/30 overflow-hidden"
               >
                 <div className="relative h-[88px] w-[88px] md:h-[96px] md:w-[96px] shrink-0 rounded-xl overflow-hidden border border-border">
-                  <img
+                  <ShimmerCover
                     src={b.cover}
                     alt={b.title}
                     width={192}
                     height={192}
-                    loading="lazy"
-                    decoding="async"
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className={`absolute inset-0 bg-gradient-to-t ${b.accent} via-black/10 to-transparent`} />
+                  <span
+                    className="countdown-shimmer"
+                    style={{ animationDelay: `${0.4 + idx * 0.35}s` }}
+                    aria-hidden
+                  />
                 </div>
                 <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                   <div>
@@ -184,5 +186,43 @@ function BibliotecaHub() {
         </div>
       </section>
     </div>
+  );
+}
+
+function ShimmerCover({
+  src, alt, width, height, eager = false,
+}: { src: string; alt: string; width: number; height: number; eager?: boolean }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <>
+      <div
+        aria-hidden
+        className={`absolute inset-0 transition-opacity duration-500 ${loaded ? "opacity-0" : "opacity-100"}`}
+        style={{
+          background:
+            "linear-gradient(135deg, color-mix(in oklab, var(--primary) 85%, transparent) 0%, color-mix(in oklab, var(--primary) 55%, transparent) 45%, color-mix(in oklab, var(--gold) 55%, transparent) 100%)",
+        }}
+      >
+        <div
+          className="absolute inset-0 animate-pulse"
+          style={{
+            background:
+              "linear-gradient(110deg, transparent 30%, color-mix(in oklab, var(--gold) 35%, transparent) 50%, transparent 70%)",
+          }}
+        />
+      </div>
+      <img
+        src={src}
+        alt={alt}
+        width={width}
+        height={height}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+        fetchPriority={eager ? "high" : "auto"}
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-105 ${loaded ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-[1.04] blur-sm"}`}
+      />
+    </>
   );
 }
