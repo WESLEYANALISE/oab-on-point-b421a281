@@ -4,6 +4,7 @@ import { ArrowLeft, Clock, Share2, ChevronRight, Sparkles } from "lucide-react";
 import { getBlogPost, getRelatedBlogPosts } from "@/lib/blog.functions";
 import { MarkdownView } from "@/components/blog/MarkdownView";
 import { PostCard } from "@/components/blog/PostCard";
+import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
 const DATE = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -85,7 +86,17 @@ function BlogArticle() {
       {/* Capa */}
       <div className="relative w-full aspect-[16/9] md:aspect-[21/9] bg-muted overflow-hidden">
         {post.capa_url ? (
-          <img src={post.capa_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img
+            src={supabaseImage(post.capa_url, { w: 1280, q: 80 })}
+            srcSet={supabaseImageSrcSet(post.capa_url, 960, 80)}
+            sizes="(max-width: 1024px) 100vw, 960px"
+            width={960}
+            height={540}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
         ) : (
           <div className="absolute inset-0 bg-gradient-toga" />
         )}

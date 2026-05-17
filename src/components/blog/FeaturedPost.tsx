@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Clock, ArrowRight } from "lucide-react";
 import type { BlogPostListItem } from "@/lib/blog.functions";
+import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
 const DATE = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 
@@ -15,8 +16,13 @@ export function FeaturedPost({ post }: { post: BlogPostListItem }) {
         <div className="relative aspect-[16/10] md:aspect-auto md:min-h-[320px] bg-muted overflow-hidden">
           {post.capa_url ? (
             <img
-              src={post.capa_url}
+              src={supabaseImage(post.capa_url, { w: 1200, q: 78 })}
+              srcSet={supabaseImageSrcSet(post.capa_url, 800, 78)}
+              sizes="(max-width: 768px) 100vw, 60vw"
+              width={800}
+              height={500}
               alt=""
+              decoding="async"
               className="absolute inset-0 h-full w-full object-cover group-hover:scale-[1.04] transition-transform duration-700"
             />
           ) : (
