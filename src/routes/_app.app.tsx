@@ -11,7 +11,7 @@ import { getNoticias } from "@/data/noticias";
 import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.webp";
 import segundaFaseCover from "@/assets/oab-segunda-fase-cover.webp";
 
-export const Route = createFileRoute("/_app/")({
+export const Route = createFileRoute("/_app/app")({
   head: () => ({
     meta: [
       { title: "Área OAB — Exame da Ordem | OAB na Risca" },

@@ -50,7 +50,7 @@ function BibliotecaHub() {
         <div className="absolute -bottom-16 -left-10 h-48 w-48 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
         <div className="relative px-4 md:px-8 pt-4 pb-6 md:pt-6 md:pb-8 max-w-5xl">
           <Link
-            to="/"
+            to="/app"
             preload="intent"
             className="md:hidden inline-flex items-center gap-2 pl-2 pr-3.5 h-9 rounded-full bg-white/10 border border-white/20 text-primary-foreground text-sm font-medium hover:bg-white/15 active:scale-[0.97] transition mb-3"
             aria-label="Voltar"

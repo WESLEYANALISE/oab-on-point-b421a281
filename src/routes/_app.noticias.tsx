@@ -38,7 +38,7 @@ function NoticiasPage() {
       </div>
 
       <p className="text-center text-xs text-muted-foreground mt-10">
-        <Link to="/" className="hover:underline">Voltar ao início</Link>
+        <Link to="/app" className="hover:underline">Voltar ao início</Link>
       </p>
     </div>
   );

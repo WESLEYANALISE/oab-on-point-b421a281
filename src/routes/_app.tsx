@@ -20,12 +20,12 @@ function AppLayout() {
   const { user, loading: authLoading } = useAuth();
   const { data: profile } = useProfile();
   const isBiblioteca = pathname.startsWith("/biblioteca");
-  const isHome = pathname === "/";
+  const isHome = pathname === "/app";
   const showBottomNav = isHome;
 
   useEffect(() => {
     if (authLoading) return;
-    if (!user) navigate({ to: "/login" });
+    if (!user) navigate({ to: "/" });
   }, [authLoading, user, navigate]);
 
   useEffect(() => {

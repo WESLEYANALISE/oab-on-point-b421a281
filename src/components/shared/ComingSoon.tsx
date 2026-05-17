@@ -10,7 +10,7 @@ export function ComingSoon({ title, subtitle }: { title: string; subtitle: strin
       <h1 className="font-display text-4xl md:text-5xl leading-tight">{title}</h1>
       <p className="mt-4 text-muted-foreground">{subtitle}</p>
       <p className="mt-8 text-xs uppercase tracking-[0.2em] text-muted-foreground/70">Em construção · próxima fase do roadmap</p>
-      <Link to="/" className="inline-block mt-6 text-primary hover:underline text-sm font-medium">Voltar ao início</Link>
+      <Link to="/app" className="inline-block mt-6 text-primary hover:underline text-sm font-medium">Voltar ao início</Link>
     </div>
   );
 }

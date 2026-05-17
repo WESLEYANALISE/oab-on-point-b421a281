@@ -14,7 +14,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
-import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
@@ -28,6 +28,7 @@ import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
+import { Route as AppAppRouteImport } from './routes/_app.app'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppSimuladosIndexRouteImport } from './routes/_app.simulados.index'
 import { Route as AppResumosIndexRouteImport } from './routes/_app.resumos.index'
@@ -86,10 +87,10 @@ const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AppRoute,
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppVadeMecumRoute = AppVadeMecumRouteImport.update({
   id: '/vade-mecum',
@@ -154,6 +155,11 @@ const AppAudioaulasRoute = AppAudioaulasRouteImport.update({
 const AppAssistenteRoute = AppAssistenteRouteImport.update({
   id: '/assistente',
   path: '/assistente',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAppRoute = AppAppRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminRoute = AppAdminRouteImport.update({
@@ -328,12 +334,13 @@ const AppBibliotecaSlugBookIdLerRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
+  '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof AppAdminRouteWithChildren
+  '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
@@ -381,10 +388,12 @@ export interface FileRoutesByFullPath {
   '/biblioteca/$slug/$bookId/': typeof AppBibliotecaSlugBookIdIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRoute
@@ -397,7 +406,6 @@ export interface FileRoutesByTo {
   '/progresso': typeof AppProgressoRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/vade-mecum': typeof AppVadeMecumRoute
-  '/': typeof AppIndexRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -431,12 +439,14 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
+  '/_app/app': typeof AppAppRoute
   '/_app/assistente': typeof AppAssistenteRoute
   '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRoute
@@ -450,7 +460,6 @@ export interface FileRoutesById {
   '/_app/progresso': typeof AppProgressoRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/_app/vade-mecum': typeof AppVadeMecumRoute
-  '/_app/': typeof AppIndexRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
@@ -493,6 +502,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
+    | '/app'
     | '/assistente'
     | '/audioaulas'
     | '/aulas'
@@ -540,10 +550,12 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug/$bookId/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/login'
     | '/onboarding'
     | '/reset-password'
     | '/signup'
+    | '/app'
     | '/assistente'
     | '/audioaulas'
     | '/aulas'
@@ -556,7 +568,6 @@ export interface FileRouteTypes {
     | '/progresso'
     | '/reta-final'
     | '/vade-mecum'
-    | '/'
     | '/admin/blog'
     | '/admin/resumos'
     | '/admin/simulados'
@@ -589,12 +600,14 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug/$bookId'
   id:
     | '__root__'
+    | '/'
     | '/_app'
     | '/login'
     | '/onboarding'
     | '/reset-password'
     | '/signup'
     | '/_app/admin'
+    | '/_app/app'
     | '/_app/assistente'
     | '/_app/audioaulas'
     | '/_app/aulas'
@@ -608,7 +621,6 @@ export interface FileRouteTypes {
     | '/_app/progresso'
     | '/_app/reta-final'
     | '/_app/vade-mecum'
-    | '/_app/'
     | '/_app/admin/blog'
     | '/_app/admin/resumos'
     | '/_app/admin/simulados'
@@ -644,6 +656,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -689,12 +702,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/vade-mecum': {
       id: '/_app/vade-mecum'
@@ -785,6 +798,13 @@ declare module '@tanstack/react-router' {
       path: '/assistente'
       fullPath: '/assistente'
       preLoaderRoute: typeof AppAssistenteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/app': {
+      id: '/_app/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppAppRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin': {
@@ -1119,6 +1139,7 @@ const AppNoticiasRouteWithChildren = AppNoticiasRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
+  AppAppRoute: typeof AppAppRoute
   AppAssistenteRoute: typeof AppAssistenteRoute
   AppAudioaulasRoute: typeof AppAudioaulasRoute
   AppAulasRoute: typeof AppAulasRoute
@@ -1132,7 +1153,6 @@ interface AppRouteChildren {
   AppProgressoRoute: typeof AppProgressoRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
   AppVadeMecumRoute: typeof AppVadeMecumRoute
-  AppIndexRoute: typeof AppIndexRoute
   AppOabCadernoErrosRoute: typeof AppOabCadernoErrosRoute
   AppOabCalendarioRoute: typeof AppOabCalendarioRoute
   AppOabCronogramaRoute: typeof AppOabCronogramaRoute
@@ -1155,6 +1175,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
+  AppAppRoute: AppAppRoute,
   AppAssistenteRoute: AppAssistenteRoute,
   AppAudioaulasRoute: AppAudioaulasRoute,
   AppAulasRoute: AppAulasRoute,
@@ -1168,7 +1189,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppProgressoRoute: AppProgressoRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
   AppVadeMecumRoute: AppVadeMecumRoute,
-  AppIndexRoute: AppIndexRoute,
   AppOabCadernoErrosRoute: AppOabCadernoErrosRoute,
   AppOabCalendarioRoute: AppOabCalendarioRoute,
   AppOabCronogramaRoute: AppOabCronogramaRoute,
@@ -1193,6 +1213,7 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
@@ -1203,13 +1224,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
