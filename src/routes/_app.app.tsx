@@ -29,9 +29,6 @@ export const Route = createFileRoute("/_app/app")({
 const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit", month: "short", timeZone: "America/Sao_Paulo",
 });
-function formatNoticiaDate(iso: string) {
-  return DATE_FMT.format(new Date(iso + "T12:00:00-03:00")).replace(".", "");
-}
 
 const ATALHOS = [
   { label: "Biblioteca", sub: "Livros e PDFs",     icon: Library,  to: "/biblioteca" as const },
