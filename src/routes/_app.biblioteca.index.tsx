@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, BookOpen, Library } from "lucide-react";
+import { ArrowLeft, ChevronRight, BookOpen, Library } from "lucide-react";
 import { countsQueryOptions } from "@/lib/biblioteca";
 import estudosImg from "@/assets/biblio-estudos.jpg";
 import classicosImg from "@/assets/biblio-classicos.jpg";
