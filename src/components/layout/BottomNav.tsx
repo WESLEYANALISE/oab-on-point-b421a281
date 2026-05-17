@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, BookOpen, Newspaper, Target } from "lucide-react";
+import { Home, BookOpen, Newspaper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MenuDrawer, MenuTriggerButton } from "@/components/layout/MenuDrawer";
 
@@ -47,7 +47,7 @@ export function BottomNav() {
             aria-label="Praticar questões"
             className="absolute left-1/2 -translate-x-1/2 -top-7 h-16 w-16 rounded-full bg-gradient-gold text-gold-foreground grid place-items-center shadow-[0_8px_20px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)] ring-4 ring-background hover:scale-105 transition-transform animate-questoes-shine"
           >
-            <Target className="h-6 w-6" strokeWidth={2.4} />
+            <TargetArrowIcon className="h-7 w-7" />
           </Link>
           <span className={cn(
             "absolute left-1/2 -translate-x-1/2 bottom-1.5 text-[11px] font-medium",
@@ -81,5 +81,31 @@ export function BottomNav() {
         </li>
       </ul>
     </nav>
+  );
+}
+
+function TargetArrowIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      {/* alvo */}
+      <circle cx="11" cy="13" r="9" />
+      <circle cx="11" cy="13" r="5.5" />
+      <circle cx="11" cy="13" r="2" fill="currentColor" stroke="none" />
+      {/* flecha cravada (diagonal NE) */}
+      <line x1="11" y1="13" x2="20" y2="4" strokeWidth={2.4} />
+      {/* penas */}
+      <path d="M20 4l1.8 0.6M20 4l-0.6 -1.8M20 4l2.4 -0.6M20 4l-0.6 -2.4" strokeWidth={2} />
+      {/* ponta da flecha no centro */}
+      <path d="M11 13l2.2 -0.4l-0.4 -2.2" strokeWidth={2.2} fill="none" />
+    </svg>
   );
 }
