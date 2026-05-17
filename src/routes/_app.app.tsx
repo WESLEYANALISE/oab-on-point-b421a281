@@ -5,7 +5,7 @@ import {
   Calendar, Sparkles, ArrowRight,
   Library, Trophy, Video, Newspaper,
   Target, FileText, BookOpen, CalendarDays, ClipboardList, Layers, ScrollText,
-  GraduationCap, Zap, Compass,
+  GraduationCap, Zap, Compass, Scale,
 } from "lucide-react";
 import { HomeTopCard } from "@/components/home/HomeTopCard";
 import { listBlogPosts, type BlogPostListItem } from "@/lib/blog.functions";
@@ -31,7 +31,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
 });
 
 const ATALHOS = [
-  { label: "Vade Mecum", sub: "Legislação rápida", icon: ScrollText, to: "/vade-mecum" as const },
+  { label: "Vade Mecum", sub: "Legislação rápida", icon: Scale, to: "/vade-mecum" as const },
   { label: "Biblioteca", sub: "Livros e PDFs",     icon: Library,  to: "/biblioteca" as const },
   { label: "Resumos",    sub: "Por matéria",       icon: FileText, to: "/resumos" as const },
   { label: "Simulados",  sub: "Treine no tempo",   icon: Trophy,   to: "/simulados" as const },
