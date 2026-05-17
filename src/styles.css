@@ -1,4 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap");
+/* Fonts are loaded via <link rel="stylesheet"> in src/routes/__root.tsx
+   (with preconnect to fonts.gstatic.com) to avoid the render-blocking
+   @import url(...) waterfall. */
 @import "tailwindcss" source(none);
 @plugin "@tailwindcss/typography";
 @source "../src";
