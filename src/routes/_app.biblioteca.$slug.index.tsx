@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { ArrowLeft, ChevronRight, BookOpen, Clock, ArrowDownAZ } from "lucide-react";
-import { BIB_MAP, livrosQueryOptions, areasQueryOptions, countsQueryOptions, type SortMode } from "@/lib/biblioteca";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { ArrowLeft, ChevronRight, BookOpen, Clock, ArrowDownAZ, Heart } from "lucide-react";
+import { toast } from "sonner";
+import { BIB_MAP, livrosQueryOptions, areasQueryOptions, countsQueryOptions, favoritosQueryOptions, toggleFavorito, type SortMode } from "@/lib/biblioteca";
 import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
 const PAGE_SIZE = 60;
