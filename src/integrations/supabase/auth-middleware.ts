@@ -5,7 +5,6 @@ import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
 
 
-
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
     
