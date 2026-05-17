@@ -38,7 +38,6 @@ function AdminResumos() {
   const listFn = useServerFn(listarLivrosParaResumo);
   const previaFn = useServerFn(gerarPreviaResumo);
   const atualizaFn = useServerFn(atualizarPrevia);
-  const proxCapFn = useServerFn(gerarProximoCapitulo);
   const delFn = useServerFn(excluirResumoLivro);
 
   const { data, isLoading } = useQuery({
@@ -48,10 +47,18 @@ function AdminResumos() {
     staleTime: 30_000,
   });
 
+  const queueState = useResumoQueue();
+  const naFila = useMemo(() => {
+    const s = new Set(queueState.fila.map((i) => i.id));
+    if (queueState.atual) s.add(queueState.atual.id);
+    return s;
+  }, [queueState]);
+
   const [areaSelecionada, setAreaSelecionada] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [preview, setPreview] = useState<{ resumo_livro_id: string; itens: PreviaItem[] } | null>(null);
-  const [gerando, setGerando] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
 
   const livros = (data ?? []) as Livro[];
 
@@ -87,21 +94,10 @@ function AdminResumos() {
     onError: (e: any) => toast.error(e?.message ?? "Erro", { id: "previa" }),
   });
 
-  async function processarLivro(resumo_livro_id: string) {
-    setGerando((s) => new Set(s).add(resumo_livro_id));
-    try {
-      let safety = 100;
-      while (safety-- > 0) {
-        const r: any = await proxCapFn({ data: { resumo_livro_id } });
-        qc.invalidateQueries({ queryKey: ["admin-resumos"] });
-        if (r?.done) { toast.success("Resumos gerados"); break; }
-      }
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erro ao gerar capítulo");
-    } finally {
-      setGerando((s) => { const n = new Set(s); n.delete(resumo_livro_id); return n; });
-      qc.invalidateQueries({ queryKey: ["admin-resumos"] });
-    }
+  function enfileirar(itens: { id: string; titulo: string }[]) {
+    if (!itens.length) return;
+    resumoQueue.enqueue(itens);
+    toast.success(`${itens.length} ${itens.length === 1 ? "livro adicionado" : "livros adicionados"} à fila`);
   }
 
   const salvarPrevia = useMutation({
@@ -112,8 +108,9 @@ function AdminResumos() {
     if (!preview) return;
     await salvarPrevia.mutateAsync({ resumo_livro_id: preview.resumo_livro_id, previa: preview.itens });
     const id = preview.resumo_livro_id;
+    const livro = livros.find((l) => (l.resumo as any)?.id === id);
     setPreview(null);
-    processarLivro(id);
+    enfileirar([{ id, titulo: livro?.titulo ?? "Livro" }]);
   }
 
   const excluir = useMutation({
@@ -123,6 +120,43 @@ function AdminResumos() {
       qc.invalidateQueries({ queryKey: ["admin-resumos"] });
     },
   });
+
+  // Eligibility for bulk-queue: needs a resumo row with prévia já pronta ou em andamento/erro.
+  function elegivel(l: Livro): { id: string; titulo: string } | null {
+    const r = l.resumo as any;
+    if (!r?.id || !l.pdf_url) return null;
+    if (!["previa_pronta", "gerando", "erro"].includes(r.status)) return null;
+    if (r.status === "concluido") return null;
+    return { id: r.id, titulo: l.titulo };
+  }
+
+  function toggleSelecionado(id: string) {
+    setSelecionados((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+
+  function selecionarTodosVisiveis() {
+    const ids = livrosDaArea
+      .map(elegivel)
+      .filter((x): x is { id: string; titulo: string } => !!x && !naFila.has(x.id))
+      .map((x) => x.id);
+    setSelecionados(new Set(ids));
+  }
+
+  function enfileirarSelecionados() {
+    const itens: { id: string; titulo: string }[] = [];
+    for (const l of livrosDaArea) {
+      const el = elegivel(l);
+      if (el && selecionados.has(el.id) && !naFila.has(el.id)) itens.push(el);
+    }
+    enfileirar(itens);
+    setSelecionados(new Set());
+    setSelectionMode(false);
+  }
+
 
   return (
     <div className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
