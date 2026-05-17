@@ -24,14 +24,16 @@ function writeCache(userId: string, value: boolean) {
 export function useIsAdmin() {
   const { user } = useAuth();
   const cached = readCache(user?.id);
+  // só usamos cache otimista quando já sabemos que é admin;
+  // negativos sempre revalidam para não travar usuários recém-promovidos
+  const initialData = cached === true ? true : undefined;
   return useQuery({
     queryKey: ["is-admin", user?.id],
     enabled: !!user,
-    staleTime: Infinity,
-    gcTime: Infinity,
-    refetchOnMount: false,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
-    initialData: cached,
+    initialData,
     queryFn: async () => {
       if (!user) return false;
       const { data, error } = await supabase
