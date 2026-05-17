@@ -29,20 +29,32 @@ type OcrPage = { index: number; markdown: string; images?: OcrImage[] };
 type OcrResult = { pages: OcrPage[] };
 
 async function mistralOcrFull(apiKey: string, documentUrl: string): Promise<OcrResult> {
-  const res = await fetch("https://api.mistral.ai/v1/ocr", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "mistral-ocr-latest",
-      document: { type: "document_url", document_url: documentUrl },
-      include_image_base64: true,
-    }),
-  });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Mistral OCR falhou [${res.status}]: ${txt.slice(0, 300)}`);
+  const maxAttempts = 6;
+  let res: Response | null = null;
+  let lastTxt = "";
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    res = await fetch("https://api.mistral.ai/v1/ocr", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "mistral-ocr-latest",
+        document: { type: "document_url", document_url: documentUrl },
+        include_image_base64: true,
+      }),
+    });
+    if (res.ok) break;
+    lastTxt = await res.text();
+    const retriable = res.status === 429 || res.status >= 500;
+    if (!retriable || attempt === maxAttempts) {
+      throw new Error(`Mistral OCR falhou [${res.status}]: ${lastTxt.slice(0, 300)}`);
+    }
+    const retryAfter = Number(res.headers.get("retry-after"));
+    const backoff = Number.isFinite(retryAfter) && retryAfter > 0
+      ? retryAfter * 1000
+      : Math.min(30_000, 2_000 * 2 ** (attempt - 1)) + Math.floor(Math.random() * 500);
+    await new Promise((r) => setTimeout(r, backoff));
   }
-  const json = (await res.json()) as { pages?: any[] };
+  const json = (await res!.json()) as { pages?: any[] };
   const pages: OcrPage[] = (json.pages ?? []).map((p, i) => ({
     index: typeof p.index === "number" ? p.index : i,
     markdown: p.markdown ?? "",
