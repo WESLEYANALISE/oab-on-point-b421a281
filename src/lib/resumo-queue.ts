@@ -134,6 +134,44 @@ export const resumoQueue = {
     };
     set({ atual: null, historico: [...state.historico, h].slice(-50) });
   },
+  /**
+   * Re-enfileira o item atual no fim da fila (incrementando attempts) até maxAttempts.
+   * Quando esgota, comporta-se como finishAtual("erro", erro).
+   * Retorna { retried: boolean, attempt: number, maxAttempts: number, restantes: number }.
+   */
+  retryAtual(erro: string, maxAttempts = 3) {
+    const atual = state.atual;
+    if (!atual) return { retried: false, attempt: 0, maxAttempts, restantes: state.fila.length };
+    const nextAttempt = (atual.attempts ?? 0) + 1;
+    const { startedAt: _s, progress: _p, attempts: _a, ...rest } = atual as any;
+    if (nextAttempt < maxAttempts) {
+      const reenfileirado: ResumoQueueItem = { ...(rest as ResumoQueueItem), attempts: nextAttempt };
+      const h: ResumoHist = {
+        key: atual.key,
+        kind: atual.kind,
+        titulo: atual.titulo,
+        status: "erro",
+        erro: `${erro} (reenfileirado, tentativa ${nextAttempt}/${maxAttempts})`,
+        finishedAt: Date.now(),
+      };
+      set({
+        atual: null,
+        fila: [...state.fila, reenfileirado],
+        historico: [...state.historico, h].slice(-50),
+      });
+      return { retried: true, attempt: nextAttempt, maxAttempts, restantes: state.fila.length };
+    }
+    const h: ResumoHist = {
+      key: atual.key,
+      kind: atual.kind,
+      titulo: atual.titulo,
+      status: "erro",
+      erro: `${erro} (desistiu após ${maxAttempts} tentativas)`,
+      finishedAt: Date.now(),
+    };
+    set({ atual: null, historico: [...state.historico, h].slice(-50) });
+    return { retried: false, attempt: nextAttempt, maxAttempts, restantes: state.fila.length };
+  },
   clearHistorico() {
     set({ historico: [] });
   },
