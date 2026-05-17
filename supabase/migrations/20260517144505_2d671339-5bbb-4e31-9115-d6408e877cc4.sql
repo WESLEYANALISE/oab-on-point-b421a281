@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.get_biblioteca_areas_counts(text) TO anon, authenticated;
