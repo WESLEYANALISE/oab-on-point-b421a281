@@ -6,6 +6,8 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth, useProfile } from "@/hooks/use-auth";
 import { SimuladoQueueDriver } from "@/components/admin/SimuladoQueueDriver";
 import { SimuladoQueueIndicator } from "@/components/admin/SimuladoQueueIndicator";
+import { ResumoQueueDriver } from "@/components/admin/ResumoQueueDriver";
+import { ResumoQueueIndicator } from "@/components/admin/ResumoQueueIndicator";
 
 
 export const Route = createFileRoute("/_app")({
@@ -55,6 +57,8 @@ function AppLayout() {
       </div>
       <SimuladoQueueDriver />
       <SimuladoQueueIndicator />
+      <ResumoQueueDriver />
+      <ResumoQueueIndicator />
     </div>
   );
 }

@@ -5,15 +5,15 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   Loader2, Sparkles, FileText, X, Eye, Trash2, RefreshCw,
-  CheckCircle2, AlertCircle, Clock, ChevronRight, ArrowLeft,
+  CheckCircle2, AlertCircle, Clock, ChevronRight, ArrowLeft, ListChecks,
 } from "lucide-react";
 import {
   listarLivrosParaResumo,
   gerarPreviaResumo,
   atualizarPrevia,
-  gerarProximoCapitulo,
   excluirResumoLivro,
 } from "@/lib/resumos-admin.functions";
+import { resumoQueue, useResumoQueue } from "@/lib/resumo-queue";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/admin/resumos")({
@@ -37,7 +37,6 @@ function AdminResumos() {
   const listFn = useServerFn(listarLivrosParaResumo);
   const previaFn = useServerFn(gerarPreviaResumo);
   const atualizaFn = useServerFn(atualizarPrevia);
-  const proxCapFn = useServerFn(gerarProximoCapitulo);
   const delFn = useServerFn(excluirResumoLivro);
 
   const { data, isLoading } = useQuery({
@@ -47,10 +46,18 @@ function AdminResumos() {
     staleTime: 30_000,
   });
 
+  const queueState = useResumoQueue();
+  const naFila = useMemo(() => {
+    const s = new Set(queueState.fila.map((i) => i.id));
+    if (queueState.atual) s.add(queueState.atual.id);
+    return s;
+  }, [queueState]);
+
   const [areaSelecionada, setAreaSelecionada] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
   const [preview, setPreview] = useState<{ resumo_livro_id: string; itens: PreviaItem[] } | null>(null);
-  const [gerando, setGerando] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
 
   const livros = (data ?? []) as Livro[];
 
@@ -86,21 +93,10 @@ function AdminResumos() {
     onError: (e: any) => toast.error(e?.message ?? "Erro", { id: "previa" }),
   });
 
-  async function processarLivro(resumo_livro_id: string) {
-    setGerando((s) => new Set(s).add(resumo_livro_id));
-    try {
-      let safety = 100;
-      while (safety-- > 0) {
-        const r: any = await proxCapFn({ data: { resumo_livro_id } });
-        qc.invalidateQueries({ queryKey: ["admin-resumos"] });
-        if (r?.done) { toast.success("Resumos gerados"); break; }
-      }
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erro ao gerar capítulo");
-    } finally {
-      setGerando((s) => { const n = new Set(s); n.delete(resumo_livro_id); return n; });
-      qc.invalidateQueries({ queryKey: ["admin-resumos"] });
-    }
+  function enfileirar(itens: { id: string; titulo: string }[]) {
+    if (!itens.length) return;
+    resumoQueue.enqueue(itens);
+    toast.success(`${itens.length} ${itens.length === 1 ? "livro adicionado" : "livros adicionados"} à fila`);
   }
 
   const salvarPrevia = useMutation({
@@ -111,8 +107,9 @@ function AdminResumos() {
     if (!preview) return;
     await salvarPrevia.mutateAsync({ resumo_livro_id: preview.resumo_livro_id, previa: preview.itens });
     const id = preview.resumo_livro_id;
+    const livro = livros.find((l) => (l.resumo as any)?.id === id);
     setPreview(null);
-    processarLivro(id);
+    enfileirar([{ id, titulo: livro?.titulo ?? "Livro" }]);
   }
 
   const excluir = useMutation({
@@ -122,6 +119,43 @@ function AdminResumos() {
       qc.invalidateQueries({ queryKey: ["admin-resumos"] });
     },
   });
+
+  // Eligibility for bulk-queue: needs a resumo row with prévia já pronta ou em andamento/erro.
+  function elegivel(l: Livro): { id: string; titulo: string } | null {
+    const r = l.resumo as any;
+    if (!r?.id || !l.pdf_url) return null;
+    if (!["previa_pronta", "gerando", "erro"].includes(r.status)) return null;
+    if (r.status === "concluido") return null;
+    return { id: r.id, titulo: l.titulo };
+  }
+
+  function toggleSelecionado(id: string) {
+    setSelecionados((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+
+  function selecionarTodosVisiveis() {
+    const ids = livrosDaArea
+      .map(elegivel)
+      .filter((x): x is { id: string; titulo: string } => !!x && !naFila.has(x.id))
+      .map((x) => x.id);
+    setSelecionados(new Set(ids));
+  }
+
+  function enfileirarSelecionados() {
+    const itens: { id: string; titulo: string }[] = [];
+    for (const l of livrosDaArea) {
+      const el = elegivel(l);
+      if (el && selecionados.has(el.id) && !naFila.has(el.id)) itens.push(el);
+    }
+    enfileirar(itens);
+    setSelecionados(new Set());
+    setSelectionMode(false);
+  }
+
 
   return (
     <div className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
@@ -177,21 +211,50 @@ function AdminResumos() {
             <span className="text-xs text-muted-foreground">{livrosDaArea.length} livros</span>
           </div>
           <h2 className="font-display text-xl md:text-2xl mb-3">{areaSelecionada}</h2>
-          <input
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por título…"
-            className="w-full mb-4 text-sm px-4 py-2.5 rounded-full border bg-card"
-          />
 
-          <div className="grid gap-2">
+          <div className="flex gap-2 mb-3">
+            <input
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Buscar por título…"
+              className="flex-1 text-sm px-4 py-2.5 rounded-full border bg-card"
+            />
+            <Button
+              variant={selectionMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                setSelectionMode((v) => !v);
+                setSelecionados(new Set());
+              }}
+              className="rounded-full"
+            >
+              <ListChecks className="h-4 w-4 mr-1.5" />
+              {selectionMode ? "Cancelar" : "Selecionar"}
+            </Button>
+          </div>
+
+          {selectionMode && (
+            <div className="mb-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span>{selecionados.size} selecionado(s)</span>
+              <button
+                onClick={selecionarTodosVisiveis}
+                className="underline hover:text-foreground"
+              >
+                Selecionar todos elegíveis
+              </button>
+            </div>
+          )}
+
+          <div className={`grid gap-2 ${selectionMode && selecionados.size > 0 ? "pb-24" : ""}`}>
             {livrosDaArea.length === 0 && (
               <p className="text-sm text-muted-foreground py-6 text-center">Nenhum livro encontrado.</p>
             )}
             {livrosDaArea.map((l) => {
               const r = l.resumo as any;
               const status: string = r?.status ?? "sem_previa";
-              const proc = r?.id && gerando.has(r.id);
+              const proc = r?.id && (queueState.atual?.id === r.id);
+              const enfileirado = r?.id && naFila.has(r.id);
+              const el = elegivel(l);
               return (
                 <LivroCard
                   key={`${l.slug}:${l.livro_id}`}
@@ -199,7 +262,12 @@ function AdminResumos() {
                   status={status}
                   resumo={r}
                   proc={!!proc}
+                  enfileirado={!!enfileirado && !proc}
                   previaPending={previa.isPending}
+                  selectionMode={selectionMode}
+                  selectable={!!el && !enfileirado}
+                  selected={!!el && selecionados.has(el.id)}
+                  onToggleSelect={() => el && toggleSelecionado(el.id)}
                   onGerarPrevia={() => previa.mutate({ slug: l.slug, livro_id: l.livro_id })}
                   onVerPrevia={() => {
                     const itens = ((r.previa as PreviaItem[]) ?? []).map((it) => ({
@@ -211,12 +279,25 @@ function AdminResumos() {
                     }));
                     setPreview({ resumo_livro_id: r.id, itens });
                   }}
-                  onRetomar={() => processarLivro(r.id)}
+                  onRetomar={() => enfileirar([{ id: r.id, titulo: l.titulo }])}
                   onExcluir={() => { if (confirm("Excluir resumo deste livro?")) excluir.mutate(r.id); }}
                 />
               );
             })}
           </div>
+
+          {selectionMode && selecionados.size > 0 && (
+            <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-8 md:w-auto z-40 flex justify-center">
+              <div className="bg-card border border-border rounded-full shadow-2xl flex items-center gap-3 pl-4 pr-2 py-2 max-w-full">
+                <span className="text-sm font-medium whitespace-nowrap">
+                  {selecionados.size} selecionado(s)
+                </span>
+                <Button size="sm" className="rounded-full" onClick={enfileirarSelecionados}>
+                  <Sparkles className="h-4 w-4 mr-1.5" /> Adicionar à fila
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -234,15 +315,36 @@ function AdminResumos() {
 }
 
 function LivroCard({
-  livro, status, resumo, proc, previaPending,
+  livro, status, resumo, proc, enfileirado, previaPending,
+  selectionMode, selectable, selected, onToggleSelect,
   onGerarPrevia, onVerPrevia, onRetomar, onExcluir,
 }: {
-  livro: Livro; status: string; resumo: any; proc: boolean; previaPending: boolean;
+  livro: Livro; status: string; resumo: any; proc: boolean; enfileirado: boolean; previaPending: boolean;
+  selectionMode: boolean; selectable: boolean; selected: boolean; onToggleSelect: () => void;
   onGerarPrevia: () => void; onVerPrevia: () => void; onRetomar: () => void; onExcluir: () => void;
 }) {
+  const cardClasses = `p-3 rounded-xl border bg-card transition ${
+    selectionMode && selectable ? "cursor-pointer hover:bg-accent/30" : ""
+  } ${selected ? "ring-2 ring-primary border-primary" : ""}`;
+
   return (
-    <div className="p-3 rounded-xl border bg-card">
+    <div
+      className={cardClasses}
+      onClick={selectionMode && selectable ? onToggleSelect : undefined}
+    >
       <div className="flex items-start gap-3">
+        {selectionMode && (
+          <div className="pt-1">
+            <input
+              type="checkbox"
+              checked={selected}
+              disabled={!selectable}
+              onChange={onToggleSelect}
+              onClick={(e) => e.stopPropagation()}
+              className="h-4 w-4"
+            />
+          </div>
+        )}
         <div className="h-16 w-12 bg-muted rounded overflow-hidden flex-shrink-0">
           {livro.capa && <img src={livro.capa} alt="" className="w-full h-full object-cover" />}
         </div>
@@ -250,6 +352,11 @@ function LivroCard({
           <p className="text-sm font-medium break-words">{livro.titulo}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
             <StatusBadge status={status} proc={proc} />
+            {enfileirado && (
+              <span className="text-xs inline-flex items-center gap-1 text-amber-600">
+                <Clock className="h-3 w-3" /> na fila
+              </span>
+            )}
             {resumo && (
               <span className="text-xs text-muted-foreground">
                 {resumo.capitulos_gerados ?? 0}/{resumo.total_capitulos ?? 0} cap.
@@ -262,47 +369,49 @@ function LivroCard({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {!livro.pdf_url && (
-          <span className="text-[11px] text-muted-foreground self-center">sem PDF</span>
-        )}
-        {livro.pdf_url && status === "sem_previa" && (
-          <Button
-            size="sm"
-            disabled={previaPending}
-            onClick={onGerarPrevia}
-            className="flex-1 sm:flex-none"
-          >
-            <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Gerar prévia
-          </Button>
-        )}
-        {livro.pdf_url && status === "previa_pronta" && resumo && (
-          <Button size="sm" variant="outline" onClick={onVerPrevia} className="flex-1 sm:flex-none">
-            <Eye className="h-3.5 w-3.5 mr-1.5" /> Ver prévia
-          </Button>
-        )}
-        {livro.pdf_url && (status === "previa_pronta" || status === "concluido" || status === "erro") && resumo && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={previaPending}
-            title="Refazer prévia"
-            onClick={onGerarPrevia}
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-          </Button>
-        )}
-        {resumo && status === "gerando" && !proc && (
-          <Button size="sm" onClick={onRetomar} className="flex-1 sm:flex-none">
-            Retomar
-          </Button>
-        )}
-        {resumo && (
-          <Button size="sm" variant="ghost" onClick={onExcluir}>
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        )}
-      </div>
+      {!selectionMode && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {!livro.pdf_url && (
+            <span className="text-[11px] text-muted-foreground self-center">sem PDF</span>
+          )}
+          {livro.pdf_url && status === "sem_previa" && (
+            <Button
+              size="sm"
+              disabled={previaPending}
+              onClick={onGerarPrevia}
+              className="flex-1 sm:flex-none"
+            >
+              <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Gerar prévia
+            </Button>
+          )}
+          {livro.pdf_url && status === "previa_pronta" && resumo && (
+            <Button size="sm" variant="outline" onClick={onVerPrevia} className="flex-1 sm:flex-none">
+              <Eye className="h-3.5 w-3.5 mr-1.5" /> Ver prévia
+            </Button>
+          )}
+          {livro.pdf_url && (status === "previa_pronta" || status === "concluido" || status === "erro") && resumo && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={previaPending}
+              title="Refazer prévia"
+              onClick={onGerarPrevia}
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {resumo && status === "gerando" && !proc && !enfileirado && (
+            <Button size="sm" onClick={onRetomar} className="flex-1 sm:flex-none">
+              Retomar
+            </Button>
+          )}
+          {resumo && (
+            <Button size="sm" variant="ghost" onClick={onExcluir}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
