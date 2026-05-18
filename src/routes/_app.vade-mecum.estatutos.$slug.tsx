@@ -653,6 +653,9 @@ function ArtigoSheet({
   const { data: artigo, isLoading } = useQuery({
     enabled: !!artigoId,
     queryKey: ["vade-mecum", "artigo", artigoId],
+    // Artigo individual também é praticamente imutável.
+    staleTime: 60 * 60_000,
+    gcTime: 24 * 60 * 60_000,
     queryFn: async (): Promise<ArtigoCompleto> => {
       const { data, error } = await supabase
         .from("vade_mecum_artigos")
