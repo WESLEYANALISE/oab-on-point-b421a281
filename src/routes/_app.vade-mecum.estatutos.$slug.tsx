@@ -760,18 +760,19 @@ function ArtigoSheet({
   temProximo: boolean;
 }) {
   const queryClient = useQueryClient();
-  const [funcTab, setFuncTab] = useState<FuncTab>("estudar");
   const [contentTab, setContentTab] = useState<ContentTab>("artigo");
   const [mostrarParenteses, setMostrarParenteses] = useState(false);
   const [chatAberto, setChatAberto] = useState(false);
+  // Overlay foco: praticar / anotacoes (estudar é a base do Sheet)
+  const [focusMode, setFocusMode] = useState<null | "praticar" | "anotacoes">(null);
   const { scale, increase, decrease, canIncrease, canDecrease } = useFontScale();
   const fontPx = Math.round(16 * scale);
 
   // Reset quando muda artigo
   useEffect(() => {
-    setFuncTab("estudar");
     setContentTab("artigo");
     setChatAberto(false);
+    setFocusMode(null);
   }, [artigoId]);
 
   const { data: artigo, isLoading } = useQuery({
