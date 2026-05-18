@@ -724,6 +724,7 @@ function ArtigoSheet({
   const [funcTab, setFuncTab] = useState<FuncTab>("estudar");
   const [contentTab, setContentTab] = useState<ContentTab>("artigo");
   const [mostrarParenteses, setMostrarParenteses] = useState(false);
+  const [chatAberto, setChatAberto] = useState(false);
   const { scale, increase, decrease, canIncrease, canDecrease } = useFontScale();
   const fontPx = Math.round(16 * scale);
 
@@ -731,6 +732,7 @@ function ArtigoSheet({
   useEffect(() => {
     setFuncTab("estudar");
     setContentTab("artigo");
+    setChatAberto(false);
   }, [artigoId]);
 
   const { data: artigo, isLoading } = useQuery({
