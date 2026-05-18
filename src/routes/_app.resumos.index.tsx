@@ -5,6 +5,48 @@ import { useMemo } from "react";
 import { z } from "zod";
 import { FileText, BookOpen, ChevronRight, ArrowLeft, FolderOpen } from "lucide-react";
 import { listarLivrosComResumo } from "@/lib/resumos.functions";
+import { cn } from "@/lib/utils";
+
+// Ordem cronológica de incidência na 1ª fase da OAB + emoji/gradiente
+// (mesma paleta dos cards de matérias na home)
+const AREA_META: Record<string, { ordem: number; emoji: string; cor: string }> = {
+  "Ética": { ordem: 1, emoji: "⚖️", cor: "from-primary to-primary/70" },
+  "Ética Profissional": { ordem: 1, emoji: "⚖️", cor: "from-primary to-primary/70" },
+  "Filosofia do Direito": { ordem: 2, emoji: "🧠", cor: "from-secondary to-secondary/70" },
+  "Filosofia": { ordem: 2, emoji: "🧠", cor: "from-secondary to-secondary/70" },
+  "Direitos Humanos": { ordem: 3, emoji: "🕊️", cor: "from-primary to-primary/70" },
+  "Direito Constitucional": { ordem: 4, emoji: "📜", cor: "from-secondary to-secondary/70" },
+  "Direito Internacional": { ordem: 5, emoji: "🌍", cor: "from-primary to-primary/70" },
+  "Direito Tributário": { ordem: 6, emoji: "💰", cor: "from-secondary to-secondary/70" },
+  "Direito Financeiro": { ordem: 7, emoji: "🏦", cor: "from-primary to-primary/70" },
+  "Direito Administrativo": { ordem: 8, emoji: "🏛️", cor: "from-secondary to-secondary/70" },
+  "Direito Ambiental": { ordem: 9, emoji: "🌿", cor: "from-primary to-primary/70" },
+  "Direito Civil": { ordem: 10, emoji: "📚", cor: "from-secondary to-secondary/70" },
+  "Direito Processual Civil": { ordem: 11, emoji: "🧾", cor: "from-primary to-primary/70" },
+  "Processo Civil": { ordem: 11, emoji: "🧾", cor: "from-primary to-primary/70" },
+  "Direito do Consumidor": { ordem: 12, emoji: "🛒", cor: "from-secondary to-secondary/70" },
+  "Direito Empresarial": { ordem: 13, emoji: "🏢", cor: "from-primary to-primary/70" },
+  "Direito Concorrencial": { ordem: 14, emoji: "📈", cor: "from-secondary to-secondary/70" },
+  "ECA": { ordem: 15, emoji: "🧒", cor: "from-primary to-primary/70" },
+  "ECA — Criança e Adolescente": { ordem: 15, emoji: "🧒", cor: "from-primary to-primary/70" },
+  "Direito Penal": { ordem: 16, emoji: "🔒", cor: "from-secondary to-secondary/70" },
+  "Direito Processual Penal": { ordem: 17, emoji: "🛡️", cor: "from-primary to-primary/70" },
+  "Processo Penal": { ordem: 17, emoji: "🛡️", cor: "from-primary to-primary/70" },
+  "Direito do Trabalho": { ordem: 18, emoji: "👷", cor: "from-secondary to-secondary/70" },
+  "Direito Processual do Trabalho": { ordem: 19, emoji: "📂", cor: "from-primary to-primary/70" },
+  "Processo do Trabalho": { ordem: 19, emoji: "📂", cor: "from-primary to-primary/70" },
+};
+
+function metaPara(nome: string, idx: number) {
+  const m = AREA_META[nome];
+  if (m) return m;
+  // fallback: alterna gradiente, ordena depois das conhecidas
+  return {
+    ordem: 100 + idx,
+    emoji: "📖",
+    cor: idx % 2 === 0 ? "from-primary to-primary/70" : "from-secondary to-secondary/70",
+  };
+}
 
 const searchSchema = z.object({
   area: z.string().optional(),
@@ -58,8 +100,8 @@ function ResumosIndex() {
       map.set(a, (map.get(a) ?? 0) + 1);
     }
     return Array.from(map.entries())
-      .map(([nome, total]) => ({ nome, total }))
-      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+      .map(([nome, total], i) => ({ nome, total, meta: metaPara(nome, i) }))
+      .sort((a, b) => a.meta.ordem - b.meta.ordem || a.nome.localeCompare(b.nome, "pt-BR"));
   }, [livros]);
 
   const livrosDaArea = useMemo(() => {
@@ -110,23 +152,23 @@ function ResumosIndex() {
       )}
 
       {showAreas && areas.length > 0 && (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {areas.map(({ nome, total }) => (
+        <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+          {areas.map(({ nome, total, meta }) => (
             <li key={nome}>
               <button
                 onClick={() => navigate({ search: { area: nome } })}
-                className="group w-full flex items-center gap-4 p-4 text-left rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 hover:from-primary/10 hover:to-card hover:border-primary/40 active:scale-[0.98] transition-all shadow-sm"
+                className="group relative w-full overflow-hidden rounded-xl border border-border bg-card text-left transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
               >
-                <div className="w-12 h-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <BookOpen className="w-5 h-5" strokeWidth={2.2} />
+                <div className={cn("h-24 bg-gradient-to-br p-4 flex items-start justify-between", meta.cor)}>
+                  <span className="text-3xl">{meta.emoji}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-primary-foreground/80 font-semibold">Resumo</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-sans text-[15px] font-semibold text-foreground leading-tight line-clamp-2">{nome}</div>
-                  <div className="font-sans text-xs text-muted-foreground mt-1">
+                <div className="p-3.5">
+                  <h3 className="font-display text-base leading-snug text-balance line-clamp-2">{nome}</h3>
+                  <p className="text-[11px] text-muted-foreground mt-1">
                     {total} {total === 1 ? "livro" : "livros"}
-                  </div>
+                  </p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary flex-shrink-0 transition-colors" />
               </button>
             </li>
           ))}
