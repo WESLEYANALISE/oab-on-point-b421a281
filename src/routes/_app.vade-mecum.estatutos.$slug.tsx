@@ -1429,7 +1429,22 @@ function ChatIAOverlay({
   };
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col bg-background animate-in slide-in-from-bottom duration-300">
+    <>
+      <motion.div
+        className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="absolute inset-0 z-30 flex flex-col bg-background shadow-2xl"
+        initial={{ y: "100%", opacity: 0.6 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: "100%", opacity: 0.4 }}
+        transition={{ type: "spring", stiffness: 320, damping: 34, mass: 0.9 }}
+      >
       {/* Header */}
       <div className="px-5 pt-5 pb-3 border-b border-border/60 bg-gradient-to-b from-card/80 to-card/40 flex items-center justify-between gap-3">
         <div className="min-w-0">
