@@ -435,7 +435,7 @@ function LivroCard({
           </div>
         )}
         <div className="h-16 w-12 bg-muted rounded overflow-hidden flex-shrink-0">
-          {livro.capa && <img src={livro.capa} alt="" className="w-full h-full object-cover" />}
+          {livro.capa && <img src={livro.capa} alt="" width={80} height={120} loading="lazy" decoding="async" className="w-full h-full object-cover" />}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium break-words">{livro.titulo}</p>

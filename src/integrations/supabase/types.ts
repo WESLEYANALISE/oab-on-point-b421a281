@@ -1247,6 +1247,41 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_artigo_full: {
+        Args: { _id: string }
+        Returns: {
+          aula: string | null
+          comentario: string | null
+          created_at: string
+          data_aprovacao: string | null
+          exemplo: string | null
+          explicacao_resumido: string | null
+          explicacao_simples_maior16: string | null
+          explicacao_simples_menor16: string | null
+          explicacao_tecnico: string | null
+          flashcards: Json | null
+          id: string
+          lei_id: string
+          narracao_url: string | null
+          numero: string | null
+          ordem: number
+          questoes: Json | null
+          relevancia: string | null
+          relevancia_fontes: Json | null
+          relevancia_nota: string | null
+          source_id: number | null
+          termos: Json | null
+          termos_aprofundados: Json | null
+          texto: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "vade_mecum_artigos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_biblioteca_areas: { Args: { _slug: string }; Returns: Json }
       get_biblioteca_areas_counts: {
         Args: { _slug: string }
@@ -1307,6 +1342,10 @@ export type Database = {
           categoria: string
           total: number
         }[]
+      }
+      get_estatuto_overview: {
+        Args: { _slug: string; _user_id?: string }
+        Returns: Json
       }
       has_role: {
         Args: {
