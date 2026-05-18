@@ -260,6 +260,9 @@ export const gerarNarracaoArtigo = createServerFn({ method: "POST" })
 
     const duracaoMs = Math.round((pcm.length / 2 / 24000) * 1000);
 
+    const { data: pub } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(audioPath);
+    const publicUrl = pub.publicUrl;
+
     const { error: dbErr } = await supabaseAdmin
       .from("vade_mecum_narracoes")
       .upsert(
@@ -276,6 +279,12 @@ export const gerarNarracaoArtigo = createServerFn({ method: "POST" })
         { onConflict: "artigo_id" },
       );
     if (dbErr) throw new Error(`DB falhou: ${dbErr.message}`);
+
+    // Reflete a URL pública no artigo, pra o player do usuário final.
+    await supabaseAdmin
+      .from("vade_mecum_artigos")
+      .update({ narracao_url: publicUrl })
+      .eq("id", art.id);
 
     return {
       url: await signed(audioPath),
