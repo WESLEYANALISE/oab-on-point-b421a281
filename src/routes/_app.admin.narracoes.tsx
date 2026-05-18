@@ -299,3 +299,137 @@ function ArtigoRow({ artigo }: { artigo: Artigo }) {
     </li>
   );
 }
+
+type LeiItem = {
+  id: string;
+  nome: string;
+  nome_curto: string | null;
+  categoria: string | null;
+  total_artigos: number | null;
+  total_narravel: number;
+  narrados: number;
+};
+
+const CATEGORIA_LABEL: Record<string, string> = {
+  codigo: "Códigos",
+  estatuto: "Estatutos",
+  lei: "Leis",
+  sumula: "Súmulas",
+};
+
+function ProgressoLei({
+  narrados,
+  total,
+  className = "",
+}: {
+  narrados: number;
+  total: number;
+  className?: string;
+}) {
+  const pct = total > 0 ? Math.round((narrados / total) * 100) : 0;
+  return (
+    <div className={className}>
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
+        <span>
+          {narrados} de {total} narrados
+        </span>
+        <span>{pct}%</span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+        <div
+          className="h-full bg-gradient-gold transition-[width] duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function LeisLista({
+  leis,
+  onSelect,
+}: {
+  leis: LeiItem[];
+  onSelect: (id: string) => void;
+}) {
+  const grupos = leis.reduce<Record<string, LeiItem[]>>((acc, l) => {
+    const k = l.categoria || "outros";
+    (acc[k] ||= []).push(l);
+    return acc;
+  }, {});
+
+  const totalNarravel = leis.reduce((s, l) => s + (l.total_narravel ?? 0), 0);
+  const totalNarrados = leis.reduce((s, l) => s + (l.narrados ?? 0), 0);
+
+  const ordemCategorias = ["codigo", "estatuto", "lei", "sumula"];
+  const categoriasOrdenadas = [
+    ...ordemCategorias.filter((k) => grupos[k]),
+    ...Object.keys(grupos).filter((k) => !ordemCategorias.includes(k)),
+  ];
+
+  return (
+    <section className="space-y-6">
+      <div className="p-4 rounded-xl border border-border bg-card">
+        <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">
+          Progresso geral
+        </div>
+        <ProgressoLei narrados={totalNarrados} total={totalNarravel} />
+      </div>
+
+      {categoriasOrdenadas.map((cat) => {
+        const items = grupos[cat];
+        const catNarr = items.reduce((s, l) => s + (l.narrados ?? 0), 0);
+        const catTot = items.reduce((s, l) => s + (l.total_narravel ?? 0), 0);
+        return (
+          <div key={cat}>
+            <div className="flex items-baseline justify-between mb-2">
+              <h2 className="text-sm uppercase tracking-wider text-muted-foreground">
+                {CATEGORIA_LABEL[cat] ?? cat} · {items.length}
+              </h2>
+              <span className="text-[11px] text-muted-foreground">
+                {catNarr}/{catTot}
+              </span>
+            </div>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {items.map((l) => (
+                <li key={l.id}>
+                  <button
+                    onClick={() => onSelect(l.id)}
+                    className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-primary hover:bg-accent transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-display text-base truncate">
+                          {l.nome_curto || l.nome}
+                        </div>
+                        {l.nome_curto && l.nome !== l.nome_curto && (
+                          <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                            {l.nome}
+                          </div>
+                        )}
+                      </div>
+                      {l.narrados >= l.total_narravel && l.total_narravel > 0 && (
+                        <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary shrink-0">
+                          completo
+                        </span>
+                      )}
+                    </div>
+                    <ProgressoLei
+                      narrados={l.narrados ?? 0}
+                      total={l.total_narravel ?? 0}
+                      className="mt-3"
+                    />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
+
+      {leis.length === 0 && (
+        <p className="text-sm text-muted-foreground">Nenhuma lei cadastrada.</p>
+      )}
+    </section>
+  );
+}
