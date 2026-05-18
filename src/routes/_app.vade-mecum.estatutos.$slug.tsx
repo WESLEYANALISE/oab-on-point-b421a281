@@ -929,6 +929,10 @@ function ArtigoSheet({
             <img
               src={brasao}
               alt=""
+              width={280}
+              height={280}
+              loading="lazy"
+              decoding="async"
               className="w-[55%] max-w-[280px] opacity-[0.06] select-none"
               draggable={false}
             />
