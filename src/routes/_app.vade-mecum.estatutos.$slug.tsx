@@ -974,9 +974,6 @@ function ArtigoSheet({
                 {contentTab === "termos" && (
                   <TermosView termos={termos} />
                 )}
-                {contentTab === "narracao" && (
-                  <NarracaoView url={artigo.narracao_url} />
-                )}
               </div>
             )}
           </div>
