@@ -632,7 +632,7 @@ function formatarQuebrasArtigo(texto: string): string {
   // Alíneas: " a) ", " b) "
   t = t.replace(/\s+([a-z])\)\s+/g, "\n$1) ");
   // Quebra após ":" e ";"
-  t = t.replace(/:\s+/g, ":\n");
+  t = t.replace(/:\s+/g, ":\n\n");
   t = t.replace(/;\s+/g, ";\n");
   // Normaliza quebras em excesso
   t = t.replace(/\n{3,}/g, "\n\n");
