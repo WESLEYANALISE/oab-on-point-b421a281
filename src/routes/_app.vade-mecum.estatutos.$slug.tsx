@@ -182,7 +182,7 @@ function EstatutoArtigosPage() {
     },
   });
 
-  const { data: favoritos } = useQuery({
+  const { data: favoritosIds } = useQuery({
     enabled: !!userId && !!data?.lei.id,
     queryKey: ["vade-mecum", "favoritos", data?.lei.id, userId],
     queryFn: async () => {
@@ -192,9 +192,10 @@ function EstatutoArtigosPage() {
         .eq("user_id", userId!)
         .eq("lei_id", data!.lei.id);
       if (error) throw error;
-      return new Set<string>((rows ?? []).map((r: any) => r.artigo_id));
+      return ((rows ?? []) as Array<{ artigo_id: string }>).map((r) => r.artigo_id);
     },
   });
+  const favoritos = useMemo(() => new Set<string>(favoritosIds ?? []), [favoritosIds]);
 
   const artigos = data?.artigos ?? [];
   const apenasArtigos = useMemo(() => artigos.filter((a) => !!a.numero && !tipoEstrutura(a.numero)), [artigos]);
