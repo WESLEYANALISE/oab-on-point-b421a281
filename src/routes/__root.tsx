@@ -73,7 +73,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
-const CACHE_BUSTER = "oab-v3";
+const CACHE_BUSTER = "oab-v4";
 
 // Prefixos de query persistidos no localStorage. Whitelist explícita: só
 // listas de conteúdo praticamente estático. Tudo o mais (perfil, jobs,
