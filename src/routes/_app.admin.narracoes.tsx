@@ -96,6 +96,12 @@ function AdminNarracoes() {
             </span>
           </div>
 
+          {(() => {
+            const l = (leis ?? []).find((x) => x.id === leiId);
+            if (!l) return null;
+            return <ProgressoLei narrados={l.narrados ?? 0} total={l.total_narravel ?? 0} className="mb-3" />;
+          })()}
+
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
