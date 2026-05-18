@@ -1111,6 +1111,105 @@ function FuncTabBtn({
   );
 }
 
+function NarracaoTabBtn({ url }: { url: string | null }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0); // 0..1
+  const disabled = !url;
+
+  // Reseta ao trocar de artigo
+  useEffect(() => {
+    setPlaying(false);
+    setProgress(0);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }, [url]);
+
+  // Pausa ao desmontar
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+    };
+  }, []);
+
+  const toggle = () => {
+    if (!url) return;
+    let a = audioRef.current;
+    if (!a) {
+      a = new Audio(url);
+      a.preload = "auto";
+      a.addEventListener("timeupdate", () => {
+        if (!a) return;
+        const d = a.duration || 0;
+        setProgress(d > 0 ? Math.min(1, a.currentTime / d) : 0);
+      });
+      a.addEventListener("ended", () => {
+        setPlaying(false);
+        setProgress(1);
+      });
+      a.addEventListener("pause", () => setPlaying(false));
+      a.addEventListener("play", () => setPlaying(true));
+      audioRef.current = a;
+    }
+    if (a.paused) {
+      void a.play();
+    } else {
+      a.pause();
+    }
+  };
+
+  const pct = Math.round(progress * 100);
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      disabled={disabled}
+      aria-label={disabled ? "Narração indisponível" : playing ? "Pausar narração" : "Reproduzir narração"}
+      className="flex flex-col items-center gap-1 group disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      <span
+        className={`relative h-14 w-14 grid place-items-center rounded-full transition-all btn-narracao-elegant text-black ${
+          playing ? "scale-110 ring-2 ring-gold/70" : ""
+        }`}
+      >
+        {/* Anel de progresso */}
+        <svg
+          className="absolute inset-0 -rotate-90 pointer-events-none"
+          viewBox="0 0 36 36"
+          aria-hidden
+        >
+          <circle
+            cx="18"
+            cy="18"
+            r="16"
+            fill="none"
+            stroke="rgba(0,0,0,0.25)"
+            strokeWidth="2.5"
+          />
+          <circle
+            cx="18"
+            cy="18"
+            r="16"
+            fill="none"
+            stroke="rgba(255,255,255,0.95)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeDasharray={`${(pct / 100) * 100.53} 100.53`}
+            style={{ transition: "stroke-dasharray 120ms linear" }}
+          />
+        </svg>
+        <span className="relative z-10">
+          {playing ? <Pause className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
+        </span>
+      </span>
+      <span className="text-[10px] font-medium text-gold">Narração</span>
+    </button>
+  );
+}
+
 function ExplicacaoView({ artigo }: { artigo: ArtigoCompleto }) {
   const [nivel, setNivel] = useState<"tecnico" | "resumido" | "simples">("resumido");
   const txt =
