@@ -1230,4 +1230,170 @@ function AnotacoesEditor({
   );
 }
 
+// ============ Chat IA dedicado ao artigo ============
+type ChatMsg = { role: "user" | "assistant"; content: string };
+
+function ChatIAOverlay({
+  artigo,
+  leiRotulo,
+  onClose,
+}: {
+  artigo: ArtigoCompleto;
+  leiRotulo: string;
+  onClose: () => void;
+}) {
+  const [mensagens, setMensagens] = useState<ChatMsg[]>([]);
+  const [input, setInput] = useState("");
+  const [carregando, setCarregando] = useState(false);
+  const perguntar = useServerFn(perguntarArtigoIA);
+
+  const sugestoes = useMemo(() => [
+    `O que significa o Art. ${artigo.numero} na prática?`,
+    `Quais são os pontos mais cobrados em prova sobre este artigo?`,
+    `Existe alguma exceção ou polêmica relacionada a este artigo?`,
+    `Como esse artigo se aplica em um caso real do dia a dia?`,
+  ], [artigo.numero]);
+
+  const enviar = async (texto: string) => {
+    const t = texto.trim();
+    if (!t || carregando) return;
+    const novas: ChatMsg[] = [...mensagens, { role: "user", content: t }];
+    setMensagens(novas);
+    setInput("");
+    setCarregando(true);
+    try {
+      const explicacao =
+        artigo.explicacao_resumido ||
+        artigo.explicacao_tecnico ||
+        artigo.explicacao_simples_maior16 ||
+        artigo.explicacao_simples_menor16 ||
+        null;
+      const r = await perguntar({
+        data: {
+          artigo: {
+            leiNome: leiRotulo,
+            numero: String(artigo.numero ?? ""),
+            texto: artigo.texto,
+            explicacao,
+          },
+          mensagens: novas,
+        },
+      });
+      setMensagens([...novas, { role: "assistant", content: r.resposta }]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao consultar IA");
+      setMensagens(novas);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  return (
+    <div className="absolute inset-0 z-30 flex flex-col bg-background animate-in slide-in-from-bottom duration-300">
+      {/* Header */}
+      <div className="px-5 pt-5 pb-3 border-b border-border/60 bg-gradient-to-b from-card/80 to-card/40 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-gold/90 font-semibold truncate">
+            IA · Art. {artigo.numero}
+          </p>
+          <h3 className="font-display font-bold text-lg leading-tight truncate">Tire suas dúvidas</h3>
+          <p className="text-[11px] text-muted-foreground truncate">{leiRotulo}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="h-9 w-9 grid place-items-center rounded-full bg-gradient-to-br from-gold to-amber-600 text-black shadow-md active:scale-95 transition shrink-0"
+          aria-label="Fechar chat"
+        >
+          <X className="h-4 w-4" strokeWidth={3} />
+        </button>
+      </div>
+
+      {/* Conversa */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {mensagens.length === 0 ? (
+          <div className="space-y-4">
+            <div className="text-center pt-2">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-gold/30 to-amber-600/20 border border-gold/40 mb-3">
+                <Sparkles className="h-6 w-6 text-gold" />
+              </div>
+              <p className="text-sm font-semibold">IA especialista neste artigo</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                Pergunte qualquer coisa sobre o Art. {artigo.numero}. Sugestões abaixo.
+              </p>
+            </div>
+            <div className="space-y-2">
+              {sugestoes.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => enviar(s)}
+                  className="w-full text-left px-3.5 py-3 rounded-2xl bg-card/70 border border-border/60 hover:border-gold/50 hover:bg-card transition-colors text-[13px] leading-snug"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-gold/70 inline mr-2 -mt-0.5" />
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            {mensagens.map((m, i) => (
+              <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+                <div
+                  className={
+                    m.role === "user"
+                      ? "max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-br-md bg-[#2a0d12] border border-[#4a1820] text-rose-100/90 text-[13.5px] leading-relaxed whitespace-pre-wrap"
+                      : "max-w-[90%] px-3.5 py-2.5 rounded-2xl rounded-bl-md bg-card/70 border border-border/60 text-foreground/95 text-[13.5px] leading-relaxed whitespace-pre-wrap"
+                  }
+                >
+                  {m.content}
+                </div>
+              </div>
+            ))}
+            {carregando && (
+              <div className="flex justify-start">
+                <div className="px-3.5 py-2.5 rounded-2xl bg-card/70 border border-border/60 text-muted-foreground text-[13px]">
+                  <span className="inline-flex gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-gold/70 animate-pulse" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-gold/70 animate-pulse [animation-delay:150ms]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-gold/70 animate-pulse [animation-delay:300ms]" />
+                  </span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Composer */}
+      <div className="border-t border-border/60 bg-card/60 backdrop-blur px-3 py-3">
+        <form
+          onSubmit={(e) => { e.preventDefault(); enviar(input); }}
+          className="flex items-end gap-2"
+        >
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(input); }
+            }}
+            placeholder={`Pergunte sobre o Art. ${artigo.numero}…`}
+            rows={1}
+            className="flex-1 max-h-32 resize-none px-3.5 py-2.5 rounded-2xl bg-background border border-border/60 focus:border-gold/60 focus:outline-none focus:ring-2 focus:ring-gold/20 text-[13.5px] leading-relaxed"
+          />
+          <button
+            type="submit"
+            disabled={carregando || !input.trim()}
+            className="h-10 w-10 shrink-0 grid place-items-center rounded-full bg-gradient-to-br from-gold to-amber-600 text-black shadow-md active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label="Enviar"
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export { SCALES };
