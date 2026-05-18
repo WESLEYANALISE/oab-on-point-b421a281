@@ -15,7 +15,6 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppVadeMecumRouteImport } from './routes/_app.vade-mecum'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppQuestoesRouteImport } from './routes/_app.questoes'
 import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
@@ -31,6 +30,7 @@ import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
 import { Route as AppAppRouteImport } from './routes/_app.app'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
+import { Route as AppVadeMecumIndexRouteImport } from './routes/_app.vade-mecum.index'
 import { Route as AppSimuladosIndexRouteImport } from './routes/_app.simulados.index'
 import { Route as AppResumosIndexRouteImport } from './routes/_app.resumos.index'
 import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
@@ -94,11 +94,6 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppVadeMecumRoute = AppVadeMecumRouteImport.update({
-  id: '/vade-mecum',
-  path: '/vade-mecum',
-  getParentRoute: () => AppRoute,
 } as any)
 const AppRetaFinalRoute = AppRetaFinalRouteImport.update({
   id: '/reta-final',
@@ -173,6 +168,11 @@ const AppAppRoute = AppAppRouteImport.update({
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVadeMecumIndexRoute = AppVadeMecumIndexRouteImport.update({
+  id: '/vade-mecum/',
+  path: '/vade-mecum/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSimuladosIndexRoute = AppSimuladosIndexRouteImport.update({
@@ -297,9 +297,9 @@ const AppAdminBlogRoute = AppAdminBlogRouteImport.update({
 } as any)
 const AppVadeMecumEstatutosIndexRoute =
   AppVadeMecumEstatutosIndexRouteImport.update({
-    id: '/estatutos/',
-    path: '/estatutos/',
-    getParentRoute: () => AppVadeMecumRoute,
+    id: '/vade-mecum/estatutos/',
+    path: '/vade-mecum/estatutos/',
+    getParentRoute: () => AppRoute,
   } as any)
 const AppSimuladosSlugIndexRoute = AppSimuladosSlugIndexRouteImport.update({
   id: '/simulados/$slug/',
@@ -313,9 +313,9 @@ const AppBibliotecaSlugIndexRoute = AppBibliotecaSlugIndexRouteImport.update({
 } as any)
 const AppVadeMecumEstatutosSlugRoute =
   AppVadeMecumEstatutosSlugRouteImport.update({
-    id: '/estatutos/$slug',
-    path: '/estatutos/$slug',
-    getParentRoute: () => AppVadeMecumRoute,
+    id: '/vade-mecum/estatutos/$slug',
+    path: '/vade-mecum/estatutos/$slug',
+    getParentRoute: () => AppRoute,
   } as any)
 const AppSimuladosSlugPraticarRoute =
   AppSimuladosSlugPraticarRouteImport.update({
@@ -374,7 +374,6 @@ export interface FileRoutesByFullPath {
   '/progresso': typeof AppProgressoRoute
   '/questoes': typeof AppQuestoesRoute
   '/reta-final': typeof AppRetaFinalRoute
-  '/vade-mecum': typeof AppVadeMecumRouteWithChildren
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -399,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/provas/': typeof AppProvasIndexRoute
   '/resumos/': typeof AppResumosIndexRoute
   '/simulados/': typeof AppSimuladosIndexRoute
+  '/vade-mecum/': typeof AppVadeMecumIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
@@ -429,7 +429,6 @@ export interface FileRoutesByTo {
   '/progresso': typeof AppProgressoRoute
   '/questoes': typeof AppQuestoesRoute
   '/reta-final': typeof AppRetaFinalRoute
-  '/vade-mecum': typeof AppVadeMecumRouteWithChildren
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -453,6 +452,7 @@ export interface FileRoutesByTo {
   '/provas': typeof AppProvasIndexRoute
   '/resumos': typeof AppResumosIndexRoute
   '/simulados': typeof AppSimuladosIndexRoute
+  '/vade-mecum': typeof AppVadeMecumIndexRoute
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
@@ -486,7 +486,6 @@ export interface FileRoutesById {
   '/_app/progresso': typeof AppProgressoRoute
   '/_app/questoes': typeof AppQuestoesRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
-  '/_app/vade-mecum': typeof AppVadeMecumRouteWithChildren
   '/_app/admin/blog': typeof AppAdminBlogRoute
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
@@ -511,6 +510,7 @@ export interface FileRoutesById {
   '/_app/provas/': typeof AppProvasIndexRoute
   '/_app/resumos/': typeof AppResumosIndexRoute
   '/_app/simulados/': typeof AppSimuladosIndexRoute
+  '/_app/vade-mecum/': typeof AppVadeMecumIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/_app/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/_app/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
@@ -545,7 +545,6 @@ export interface FileRouteTypes {
     | '/progresso'
     | '/questoes'
     | '/reta-final'
-    | '/vade-mecum'
     | '/admin/blog'
     | '/admin/resumos'
     | '/admin/simulados'
@@ -570,6 +569,7 @@ export interface FileRouteTypes {
     | '/provas/'
     | '/resumos/'
     | '/simulados/'
+    | '/vade-mecum/'
     | '/biblioteca/$slug/$bookId'
     | '/simulados/$slug/praticar'
     | '/vade-mecum/estatutos/$slug'
@@ -600,7 +600,6 @@ export interface FileRouteTypes {
     | '/progresso'
     | '/questoes'
     | '/reta-final'
-    | '/vade-mecum'
     | '/admin/blog'
     | '/admin/resumos'
     | '/admin/simulados'
@@ -624,6 +623,7 @@ export interface FileRouteTypes {
     | '/provas'
     | '/resumos'
     | '/simulados'
+    | '/vade-mecum'
     | '/simulados/$slug/praticar'
     | '/vade-mecum/estatutos/$slug'
     | '/biblioteca/$slug'
@@ -656,7 +656,6 @@ export interface FileRouteTypes {
     | '/_app/progresso'
     | '/_app/questoes'
     | '/_app/reta-final'
-    | '/_app/vade-mecum'
     | '/_app/admin/blog'
     | '/_app/admin/resumos'
     | '/_app/admin/simulados'
@@ -681,6 +680,7 @@ export interface FileRouteTypes {
     | '/_app/provas/'
     | '/_app/resumos/'
     | '/_app/simulados/'
+    | '/_app/vade-mecum/'
     | '/_app/biblioteca/$slug/$bookId'
     | '/_app/simulados/$slug/praticar'
     | '/_app/vade-mecum/estatutos/$slug'
@@ -746,13 +746,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_app/vade-mecum': {
-      id: '/_app/vade-mecum'
-      path: '/vade-mecum'
-      fullPath: '/vade-mecum'
-      preLoaderRoute: typeof AppVadeMecumRouteImport
-      parentRoute: typeof AppRoute
     }
     '/_app/reta-final': {
       id: '/_app/reta-final'
@@ -857,6 +850,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/vade-mecum/': {
+      id: '/_app/vade-mecum/'
+      path: '/vade-mecum'
+      fullPath: '/vade-mecum/'
+      preLoaderRoute: typeof AppVadeMecumIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/simulados/': {
@@ -1029,10 +1029,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/vade-mecum/estatutos/': {
       id: '/_app/vade-mecum/estatutos/'
-      path: '/estatutos'
+      path: '/vade-mecum/estatutos'
       fullPath: '/vade-mecum/estatutos/'
       preLoaderRoute: typeof AppVadeMecumEstatutosIndexRouteImport
-      parentRoute: typeof AppVadeMecumRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/simulados/$slug/': {
       id: '/_app/simulados/$slug/'
@@ -1050,10 +1050,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/vade-mecum/estatutos/$slug': {
       id: '/_app/vade-mecum/estatutos/$slug'
-      path: '/estatutos/$slug'
+      path: '/vade-mecum/estatutos/$slug'
       fullPath: '/vade-mecum/estatutos/$slug'
       preLoaderRoute: typeof AppVadeMecumEstatutosSlugRouteImport
-      parentRoute: typeof AppVadeMecumRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/simulados/$slug/praticar': {
       id: '/_app/simulados/$slug/praticar'
@@ -1196,20 +1196,6 @@ const AppNoticiasRouteWithChildren = AppNoticiasRoute._addFileChildren(
   AppNoticiasRouteChildren,
 )
 
-interface AppVadeMecumRouteChildren {
-  AppVadeMecumEstatutosSlugRoute: typeof AppVadeMecumEstatutosSlugRoute
-  AppVadeMecumEstatutosIndexRoute: typeof AppVadeMecumEstatutosIndexRoute
-}
-
-const AppVadeMecumRouteChildren: AppVadeMecumRouteChildren = {
-  AppVadeMecumEstatutosSlugRoute: AppVadeMecumEstatutosSlugRoute,
-  AppVadeMecumEstatutosIndexRoute: AppVadeMecumEstatutosIndexRoute,
-}
-
-const AppVadeMecumRouteWithChildren = AppVadeMecumRoute._addFileChildren(
-  AppVadeMecumRouteChildren,
-)
-
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAppRoute: typeof AppAppRoute
@@ -1226,7 +1212,6 @@ interface AppRouteChildren {
   AppProgressoRoute: typeof AppProgressoRoute
   AppQuestoesRoute: typeof AppQuestoesRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
-  AppVadeMecumRoute: typeof AppVadeMecumRouteWithChildren
   AppOabCadernoErrosRoute: typeof AppOabCadernoErrosRoute
   AppOabCalendarioRoute: typeof AppOabCalendarioRoute
   AppOabCronogramaRoute: typeof AppOabCronogramaRoute
@@ -1241,8 +1226,11 @@ interface AppRouteChildren {
   AppProvasIndexRoute: typeof AppProvasIndexRoute
   AppResumosIndexRoute: typeof AppResumosIndexRoute
   AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
+  AppVadeMecumIndexRoute: typeof AppVadeMecumIndexRoute
   AppSimuladosSlugPraticarRoute: typeof AppSimuladosSlugPraticarRoute
+  AppVadeMecumEstatutosSlugRoute: typeof AppVadeMecumEstatutosSlugRoute
   AppSimuladosSlugIndexRoute: typeof AppSimuladosSlugIndexRoute
+  AppVadeMecumEstatutosIndexRoute: typeof AppVadeMecumEstatutosIndexRoute
   AppResumosCapituloLivroIdOrdemRoute: typeof AppResumosCapituloLivroIdOrdemRoute
   AppSimuladosSlugResultadoTentativaIdRoute: typeof AppSimuladosSlugResultadoTentativaIdRoute
 }
@@ -1263,7 +1251,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppProgressoRoute: AppProgressoRoute,
   AppQuestoesRoute: AppQuestoesRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
-  AppVadeMecumRoute: AppVadeMecumRouteWithChildren,
   AppOabCadernoErrosRoute: AppOabCadernoErrosRoute,
   AppOabCalendarioRoute: AppOabCalendarioRoute,
   AppOabCronogramaRoute: AppOabCronogramaRoute,
@@ -1278,8 +1265,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppProvasIndexRoute: AppProvasIndexRoute,
   AppResumosIndexRoute: AppResumosIndexRoute,
   AppSimuladosIndexRoute: AppSimuladosIndexRoute,
+  AppVadeMecumIndexRoute: AppVadeMecumIndexRoute,
   AppSimuladosSlugPraticarRoute: AppSimuladosSlugPraticarRoute,
+  AppVadeMecumEstatutosSlugRoute: AppVadeMecumEstatutosSlugRoute,
   AppSimuladosSlugIndexRoute: AppSimuladosSlugIndexRoute,
+  AppVadeMecumEstatutosIndexRoute: AppVadeMecumEstatutosIndexRoute,
   AppResumosCapituloLivroIdOrdemRoute: AppResumosCapituloLivroIdOrdemRoute,
   AppSimuladosSlugResultadoTentativaIdRoute:
     AppSimuladosSlugResultadoTentativaIdRoute,
@@ -1299,3 +1289,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

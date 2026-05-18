@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_app/vade-mecum")({
+export const Route = createFileRoute("/_app/vade-mecum/")({
   head: () => ({
     meta: [
       { title: "Vade Mecum — OAB na Risca" },
