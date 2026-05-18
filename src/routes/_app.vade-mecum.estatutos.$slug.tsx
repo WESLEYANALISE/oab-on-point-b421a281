@@ -942,7 +942,9 @@ function ArtigoSheet({
             ) : funcTab === "perguntar" ? (
               <PerguntarPlaceholder artigo={artigo} />
             ) : funcTab === "praticar" ? (
-              <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
+              <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
+                <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
+              </Suspense>
             ) : (
               // Estudar — usa contentTab
               <div style={{ fontSize: fontPx }}>
