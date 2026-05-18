@@ -61,6 +61,7 @@ function AreaOABPage() {
   const blogQuery = useQuery({
     queryKey: ["blog", "home-carousel"],
     queryFn: () => listBlogPosts({ data: { limit: 8 } }),
+    staleTime: 10 * 60_000,
   });
   const posts = blogQuery.data ?? [];
 
