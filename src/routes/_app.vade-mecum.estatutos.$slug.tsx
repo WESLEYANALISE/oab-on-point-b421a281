@@ -38,6 +38,7 @@ import { pushRecente } from "@/lib/vade-mecum-recentes";
 import { useFontScale, SCALES } from "@/hooks/use-font-scale";
 import { toast } from "sonner";
 import brasao from "@/assets/brasao-republica.png";
+import { PraticarPanel } from "@/components/vade-mecum/PraticarPanel";
 
 export const Route = createFileRoute("/_app/vade-mecum/estatutos/$slug")({
   head: ({ params }) => ({
