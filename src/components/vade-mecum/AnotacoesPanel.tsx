@@ -167,7 +167,7 @@ function MinhasAnotacoes({
         queryKey: ["vade-mecum", "anotacao", artigoId, userId],
       });
       queryClient.invalidateQueries({
-        queryKey: ["vade-mecum", "anotacoes-ids", leiId, userId],
+        queryKey: ["vade-mecum", "estatuto"],
       });
       queryClient.invalidateQueries({
         queryKey: ["vade-mecum", "anotacoes-historico", leiId, userId],
