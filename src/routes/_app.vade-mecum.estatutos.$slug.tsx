@@ -41,12 +41,8 @@ import { pushRecente } from "@/lib/vade-mecum-recentes";
 import { useFontScale, SCALES } from "@/hooks/use-font-scale";
 import { toast } from "sonner";
 import brasao from "@/assets/brasao-republica.png";
-const PraticarPanel = lazy(() =>
-  import("@/components/vade-mecum/PraticarPanel").then((m) => ({ default: m.PraticarPanel })),
-);
-const AnotacoesPanel = lazy(() =>
-  import("@/components/vade-mecum/AnotacoesPanel").then((m) => ({ default: m.AnotacoesPanel })),
-);
+import { PraticarPanel } from "@/components/vade-mecum/PraticarPanel";
+import { AnotacoesPanel } from "@/components/vade-mecum/AnotacoesPanel";
 import { ArtigoFocusOverlay } from "@/components/vade-mecum/ArtigoFocusOverlay";
 import { AnimatePresence, motion } from "framer-motion";
 
