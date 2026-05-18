@@ -850,7 +850,7 @@ function ArtigoSheet({
         </div>
 
         {/* Controles flutuantes laterais */}
-        <div className="absolute right-3 bottom-20 flex flex-col items-center gap-2 z-10">
+        <div className="absolute right-3 bottom-36 flex flex-col items-center gap-2 z-10">
           <button
             type="button"
             onClick={() => setFuncTab("perguntar")}
@@ -936,9 +936,7 @@ function FuncTabBtn({
         className={`${tamanho} grid place-items-center rounded-full transition-all ${
           destaque
             ? `${baseElegant} ${ativo ? "scale-110 ring-2 ring-gold/60" : ""}`
-            : ativo
-              ? "bg-gradient-to-br from-gold to-amber-600 text-black shadow-md scale-110"
-              : "bg-card/60 border border-border/60 text-muted-foreground group-hover:text-foreground"
+            : `bg-card/60 border border-border/60 ${ativo ? "text-gold border-gold/50" : "text-muted-foreground group-hover:text-foreground"}`
         }`}
       >
         {icone}
