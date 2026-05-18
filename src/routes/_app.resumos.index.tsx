@@ -152,27 +152,36 @@ function ResumosIndex() {
       )}
 
       {showAreas && areas.length > 0 && (
-        <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-          {areas.map(({ nome, total, meta }) => (
-            <li key={nome}>
+        <ol className="relative ml-5 space-y-3 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-gradient-to-b before:from-gold/60 before:via-gold/30 before:to-transparent">
+          {areas.map(({ nome, total, meta }, i) => (
+            <li key={nome} className="relative pl-7">
+              <span className="absolute -left-4 top-4 h-8 w-8 rounded-full bg-gradient-toga border border-gold/50 grid place-items-center text-base shadow-[0_4px_14px_-2px_oklch(0.78_0.13_80/0.45)] ring-4 ring-background z-10">
+                {meta.emoji}
+              </span>
               <button
                 onClick={() => navigate({ search: { area: nome } })}
-                className="group relative w-full overflow-hidden rounded-xl border border-border bg-card text-left transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
+                className="group block w-full text-left min-h-[80px] rounded-xl border border-gold/15 bg-gradient-to-br from-[oklch(0.28_0.07_18)] to-[oklch(0.19_0.04_18)] p-4 hover:border-gold/40 hover:-translate-y-0.5 transition-all shadow-md shadow-black/30"
               >
-                <div className={cn("h-24 bg-gradient-to-br p-4 flex items-start justify-between", meta.cor)}>
-                  <span className="text-3xl">{meta.emoji}</span>
-                  <span className="text-[10px] uppercase tracking-wider text-primary-foreground/80 font-semibold">Resumo</span>
-                </div>
-                <div className="p-3.5">
-                  <h3 className="font-display text-base leading-snug text-balance line-clamp-2">{nome}</h3>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    {total} {total === 1 ? "livro" : "livros"}
-                  </p>
+                <div className="flex items-center justify-between gap-3 h-full">
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase tracking-[0.18em] text-gold/80 font-semibold">
+                      Área {String(i + 1).padStart(2, "0")}
+                    </p>
+                    <p className="font-display text-[15px] md:text-base leading-snug mt-1 break-words text-primary-foreground line-clamp-2">
+                      {nome}
+                    </p>
+                    <p className="text-[11px] text-primary-foreground/60 mt-0.5">
+                      {total} {total === 1 ? "livro" : "livros"}
+                    </p>
+                  </div>
+                  <div className="h-8 w-8 rounded-full bg-gold/15 border border-gold/30 grid place-items-center shrink-0 group-hover:bg-gold transition">
+                    <ChevronRight className="h-4 w-4 text-gold group-hover:text-gold-foreground" />
+                  </div>
                 </div>
               </button>
             </li>
           ))}
-        </ul>
+        </ol>
       )}
 
       {!showAreas && (
