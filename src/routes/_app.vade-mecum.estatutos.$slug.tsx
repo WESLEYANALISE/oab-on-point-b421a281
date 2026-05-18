@@ -1719,4 +1719,386 @@ function ChatIAOverlay({
   );
 }
 
+// ============================================================
+// PLAYLIST — lista de artigos narrados + player elaborado
+// ============================================================
+
+type PlaylistItem = {
+  id: string;
+  numero: string | null;
+  texto: string;
+  narracao_url: string;
+  ordem: number;
+};
+
+function PlaylistSheet({
+  open,
+  onClose,
+  leiId,
+  leiNome,
+}: {
+  open: boolean;
+  onClose: () => void;
+  leiId: string | null;
+  leiNome: string;
+}) {
+  const [atualId, setAtualId] = useState<string | null>(null);
+
+  const { data: itens = [], isLoading } = useQuery({
+    queryKey: ["playlist-narracoes", leiId],
+    enabled: open && !!leiId,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vade_mecum_artigos")
+        .select("id, numero, texto, ordem, narracao_url")
+        .eq("lei_id", leiId!)
+        .not("narracao_url", "is", null)
+        .order("ordem", { ascending: true });
+      if (error) throw error;
+      return (data ?? []).filter(
+        (a: any) => !!a.numero && !!a.narracao_url,
+      ) as PlaylistItem[];
+    },
+  });
+
+  const idx = atualId ? itens.findIndex((i) => i.id === atualId) : -1;
+  const atual = idx >= 0 ? itens[idx] : null;
+
+  const goPrev = () => {
+    if (idx > 0) setAtualId(itens[idx - 1].id);
+  };
+  const goNext = () => {
+    if (idx >= 0 && idx < itens.length - 1) setAtualId(itens[idx + 1].id);
+  };
+
+  return (
+    <Sheet open={open} onOpenChange={(v) => !v && (onClose(), setAtualId(null))}>
+      <SheetContent
+        side="bottom"
+        className="h-[92vh] p-0 overflow-hidden flex flex-col bg-background"
+      >
+        {atual ? (
+          <PlaylistPlayer
+            item={atual}
+            leiNome={leiNome}
+            posicao={idx + 1}
+            total={itens.length}
+            temAnterior={idx > 0}
+            temProximo={idx < itens.length - 1}
+            onPrev={goPrev}
+            onNext={goNext}
+            onVoltar={() => setAtualId(null)}
+            onAutoNext={goNext}
+          />
+        ) : (
+          <PlaylistLista
+            itens={itens}
+            isLoading={isLoading}
+            leiNome={leiNome}
+            onClose={onClose}
+            onSelect={(id) => setAtualId(id)}
+          />
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function PlaylistLista({
+  itens,
+  isLoading,
+  leiNome,
+  onClose,
+  onSelect,
+}: {
+  itens: PlaylistItem[];
+  isLoading: boolean;
+  leiNome: string;
+  onClose: () => void;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <>
+      <header className="px-5 pt-5 pb-4 border-b border-border/60 relative">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-4 top-4 h-8 w-8 grid place-items-center rounded-full bg-card/70 border border-border/60 text-muted-foreground hover:text-foreground"
+          aria-label="Fechar"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <div className="flex items-center gap-3">
+          <span className="h-11 w-11 grid place-items-center rounded-2xl btn-narracao-elegant text-black shadow-lg">
+            <ListMusic className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold">
+              Playlist de narrações
+            </p>
+            <h2 className="text-base font-semibold leading-tight truncate">
+              {leiNome}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {itens.length} {itens.length === 1 ? "artigo narrado" : "artigos narrados"}
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 overflow-y-auto px-3 py-3">
+        {isLoading ? (
+          <div className="text-center py-12 text-sm text-muted-foreground">
+            Carregando…
+          </div>
+        ) : itens.length === 0 ? (
+          <div className="text-center py-16 px-6">
+            <Volume2 className="h-10 w-10 text-gold/60 mx-auto mb-3" />
+            <p className="text-sm font-medium">Nenhuma narração ainda</p>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Os artigos narrados deste estatuto aparecerão aqui.
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-1.5">
+            {itens.map((it, i) => (
+              <li key={it.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(it.id)}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl bg-card/60 border border-border/50 hover:bg-card hover:border-gold/40 transition text-left group"
+                >
+                  <span className="h-9 w-9 shrink-0 grid place-items-center rounded-lg bg-gold/10 border border-gold/30 text-gold text-[11px] font-semibold tabular-nums">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[13px] font-semibold text-gold">
+                      Art. {it.numero}
+                    </span>
+                    <span className="block text-[12px] text-muted-foreground line-clamp-1 mt-0.5">
+                      {limparPrefixoArtigo(it.texto)}
+                    </span>
+                  </span>
+                  <span className="h-9 w-9 shrink-0 grid place-items-center rounded-full btn-narracao-elegant text-black opacity-90 group-hover:opacity-100 transition">
+                    <Play className="h-4 w-4 ml-0.5" />
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
+  );
+}
+
+function PlaylistPlayer({
+  item,
+  leiNome,
+  posicao,
+  total,
+  temAnterior,
+  temProximo,
+  onPrev,
+  onNext,
+  onVoltar,
+  onAutoNext,
+}: {
+  item: PlaylistItem;
+  leiNome: string;
+  posicao: number;
+  total: number;
+  temAnterior: boolean;
+  temProximo: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+  onVoltar: () => void;
+  onAutoNext: () => void;
+}) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [cur, setCur] = useState(0);
+  const [dur, setDur] = useState(0);
+
+  useEffect(() => {
+    const a = new Audio(item.narracao_url);
+    a.preload = "auto";
+    audioRef.current = a;
+    const onTime = () => {
+      setCur(a.currentTime);
+      setDur(a.duration || 0);
+    };
+    const onPlay = () => setPlaying(true);
+    const onPause = () => setPlaying(false);
+    const onEnded = () => {
+      setPlaying(false);
+      if (temProximo) onAutoNext();
+    };
+    a.addEventListener("timeupdate", onTime);
+    a.addEventListener("loadedmetadata", onTime);
+    a.addEventListener("play", onPlay);
+    a.addEventListener("pause", onPause);
+    a.addEventListener("ended", onEnded);
+    void a.play().catch(() => {});
+    return () => {
+      a.pause();
+      a.removeEventListener("timeupdate", onTime);
+      a.removeEventListener("loadedmetadata", onTime);
+      a.removeEventListener("play", onPlay);
+      a.removeEventListener("pause", onPause);
+      a.removeEventListener("ended", onEnded);
+    };
+  }, [item.id, item.narracao_url]);
+
+  const toggle = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.paused) void a.play();
+    else a.pause();
+  };
+
+  const seek = (pct: number) => {
+    const a = audioRef.current;
+    if (!a || !dur) return;
+    a.currentTime = Math.max(0, Math.min(dur, dur * pct));
+  };
+
+  const fmt = (s: number) => {
+    if (!Number.isFinite(s)) return "0:00";
+    const m = Math.floor(s / 60);
+    const r = Math.floor(s % 60);
+    return `${m}:${String(r).padStart(2, "0")}`;
+  };
+
+  const pct = dur > 0 ? cur / dur : 0;
+
+  return (
+    <>
+      <header className="px-5 pt-5 pb-3 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onVoltar}
+          className="h-9 w-9 grid place-items-center rounded-full bg-card/70 border border-border/60 text-muted-foreground hover:text-foreground"
+          aria-label="Voltar à playlist"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <div className="flex-1 min-w-0 text-center">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold">
+            {posicao} de {total}
+          </p>
+          <p className="text-[12px] text-muted-foreground truncate">{leiNome}</p>
+        </div>
+        <span className="h-9 w-9" />
+      </header>
+
+      <div className="flex-1 overflow-y-auto">
+        {/* Arte do player */}
+        <div className="px-6 pt-2 pb-6 flex flex-col items-center">
+          <div
+            className={`relative h-44 w-44 sm:h-52 sm:w-52 rounded-3xl btn-narracao-elegant grid place-items-center shadow-[0_20px_60px_-15px_rgba(212,175,55,0.45)] ${
+              playing ? "animate-[narracao-pulse_1.8s_ease-in-out_infinite]" : ""
+            }`}
+          >
+            {playing && (
+              <>
+                <span
+                  aria-hidden
+                  className="absolute inset-0 rounded-3xl ring-2 ring-gold/50 animate-ping"
+                  style={{ animationDuration: "2s" }}
+                />
+                <span
+                  aria-hidden
+                  className="absolute -inset-2 rounded-[28px] ring-2 ring-gold/25 animate-ping"
+                  style={{ animationDuration: "2.6s", animationDelay: "0.3s" }}
+                />
+              </>
+            )}
+            <Volume2 className="relative h-16 w-16 text-black/80" />
+          </div>
+          <h3 className="mt-5 text-2xl font-display font-semibold text-gold">
+            Art. {item.numero}
+          </h3>
+          <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground mt-1">
+            Narração
+          </p>
+        </div>
+
+        {/* Texto pra acompanhar */}
+        <div className="px-5 pb-6">
+          <div className="rounded-2xl bg-card/60 border border-border/50 p-4">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold mb-2">
+              Acompanhe a leitura
+            </p>
+            <p className="text-[14.5px] leading-relaxed whitespace-pre-line">
+              {limparPrefixoArtigo(item.texto)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Controles fixos */}
+      <div className="border-t border-border/60 bg-background/95 backdrop-blur px-5 pt-3 pb-5">
+        {/* Progresso */}
+        <div className="space-y-1.5">
+          <div
+            role="slider"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(pct * 100)}
+            className="relative h-1.5 rounded-full bg-border/70 cursor-pointer"
+            onClick={(e) => {
+              const r = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+              seek((e.clientX - r.left) / r.width);
+            }}
+          >
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-gold to-amber-500"
+              style={{ width: `${pct * 100}%` }}
+            />
+            <div
+              className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 rounded-full bg-gold shadow ring-2 ring-background"
+              style={{ left: `calc(${pct * 100}% - 7px)` }}
+            />
+          </div>
+          <div className="flex justify-between text-[11px] tabular-nums text-muted-foreground">
+            <span>{fmt(cur)}</span>
+            <span>{fmt(dur)}</span>
+          </div>
+        </div>
+
+        {/* Botões */}
+        <div className="mt-3 flex items-center justify-center gap-6">
+          <button
+            type="button"
+            onClick={onPrev}
+            disabled={!temAnterior}
+            className="h-11 w-11 grid place-items-center rounded-full bg-card/70 border border-border/60 text-foreground disabled:opacity-40"
+            aria-label="Anterior"
+          >
+            <SkipBack className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={toggle}
+            className="h-16 w-16 grid place-items-center rounded-full btn-narracao-elegant text-black shadow-lg active:scale-95 transition"
+            aria-label={playing ? "Pausar" : "Reproduzir"}
+          >
+            {playing ? <Pause className="h-7 w-7" /> : <Play className="h-7 w-7 ml-0.5" />}
+          </button>
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={!temProximo}
+            className="h-11 w-11 grid place-items-center rounded-full bg-card/70 border border-border/60 text-foreground disabled:opacity-40"
+            aria-label="Próximo"
+          >
+            <SkipForward className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
 export { SCALES };
