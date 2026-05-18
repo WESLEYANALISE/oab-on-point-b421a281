@@ -195,7 +195,10 @@ function EstatutoArtigosPage() {
       return ((rows ?? []) as Array<{ artigo_id: string }>).map((r) => r.artigo_id);
     },
   });
-  const favoritos = useMemo(() => new Set<string>(favoritosIds ?? []), [favoritosIds]);
+  const favoritos = useMemo(
+    () => new Set<string>(Array.isArray(favoritosIds) ? favoritosIds : []),
+    [favoritosIds],
+  );
 
   const artigos = data?.artigos ?? [];
   const apenasArtigos = useMemo(() => artigos.filter((a) => !!a.numero && !tipoEstrutura(a.numero)), [artigos]);
