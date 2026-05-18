@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isUuid, makeSimuladoSlug, provaNumeroFromSimuladoSlug } from "@/lib/simulado-slug";
+import { geminiGenerateContent, getGeminiKeys } from "@/lib/gemini.server";
 
 const simuladoRefSchema = z.object({ id: z.string().min(1).max(180) });
 
@@ -524,25 +525,17 @@ export const getEditalResumo = createServerFn({ method: "POST" })
       "Você organiza editais da OAB em JSON estruturado em português do Brasil. Seja conciso e fiel ao texto.";
 
     async function tryGemini(): Promise<string | null> {
-      const key = process.env.GEMINI_API_KEY;
-      if (!key) {
+      if (getGeminiKeys().length === 0) {
         console.error("[edital] GEMINI_API_KEY ausente");
         return null;
       }
       const model = "gemini-2.5-flash-lite";
       try {
-        const r = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              systemInstruction: { parts: [{ text: system }] },
-              contents: [{ role: "user", parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
-            }),
-          },
-        );
+        const r = await geminiGenerateContent(model, {
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
+        });
         if (!r.ok) {
           const body = await r.text().catch(() => "");
           console.error("[edital] Gemini falhou:", r.status, body.slice(0, 400));
