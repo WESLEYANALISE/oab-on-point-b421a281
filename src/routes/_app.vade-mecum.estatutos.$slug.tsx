@@ -983,7 +983,7 @@ function ArtigoSheet({
         <div className="absolute right-3 bottom-48 flex flex-col items-center gap-2 z-10">
           <button
             type="button"
-            onClick={() => setFuncTab("perguntar")}
+            onClick={() => setChatAberto(true)}
             className="h-11 w-11 rounded-full grid place-items-center bg-gradient-to-br from-gold to-amber-600 text-black shadow-lg active:scale-95"
             aria-label="Perguntar à IA"
           >
