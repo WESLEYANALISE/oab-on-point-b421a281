@@ -113,6 +113,34 @@ function montarArvore(artigos: ArtigoLista[]): Nó[] {
   return raiz;
 }
 
+/** Mapa artigoId → caminho hierárquico (Título, Capítulo, Seção…). */
+type CaminhoItem = { tipo: string; rotulo: string; texto: string };
+function mapearCaminhos(artigos: ArtigoLista[]): Map<string, CaminhoItem[]> {
+  const mapa = new Map<string, CaminhoItem[]>();
+  const pilha: CaminhoItem[] = [];
+  for (const a of artigos) {
+    const tipo = tipoEstrutura(a.numero);
+    if (tipo) {
+      const nivel = NIVEIS[tipo] ?? 99;
+      while (pilha.length && (NIVEIS[pilha[pilha.length - 1].tipo] ?? 99) >= nivel) pilha.pop();
+      pilha.push({ tipo, rotulo: (a.numero ?? "").trim(), texto: (a.texto ?? "").trim() });
+    } else {
+      mapa.set(a.id, pilha.slice());
+    }
+  }
+  return mapa;
+}
+
+/** Remove "Art. Nº " duplicado do início do texto do artigo. */
+function limparPrefixoArtigo(texto: string): string {
+  if (!texto) return texto;
+  // Casa "Art. 1", "Art. 2º", "Art. 2º-A", "Art. 1.º", "Art. 1°" etc.
+  return texto.replace(
+    /^\s*art\.?\s*[\dIVXLCDM]+(?:[ºoOªªA]|\.º|°)?(?:[-‑–][A-Za-z\d]+)*\s*[.\-–—:]?\s*/i,
+    "",
+  );
+}
+
 // ----------- Page -----------
 function EstatutoArtigosPage() {
   const { slug } = Route.useParams();
