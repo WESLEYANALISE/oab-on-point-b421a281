@@ -1197,6 +1197,51 @@ export type Database = {
         }
         Relationships: []
       }
+      vade_mecum_pratica_tentativas: {
+        Row: {
+          acertos: number
+          artigo_id: string
+          concluido_em: string | null
+          created_at: string
+          id: string
+          iniciado_em: string
+          lei_id: string
+          modo: string
+          respostas: Json
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acertos?: number
+          artigo_id: string
+          concluido_em?: string | null
+          created_at?: string
+          id?: string
+          iniciado_em?: string
+          lei_id: string
+          modo: string
+          respostas?: Json
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acertos?: number
+          artigo_id?: string
+          concluido_em?: string | null
+          created_at?: string
+          id?: string
+          iniciado_em?: string
+          lei_id?: string
+          modo?: string
+          respostas?: Json
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
