@@ -899,7 +899,7 @@ function ArtigoSheet({
         </div>
 
         {/* Controles flutuantes laterais */}
-        <div className="absolute right-3 bottom-36 flex flex-col items-center gap-2 z-10">
+        <div className="absolute right-3 bottom-48 flex flex-col items-center gap-2 z-10">
           <button
             type="button"
             onClick={() => setFuncTab("perguntar")}
@@ -936,7 +936,7 @@ function ArtigoSheet({
         {/* Rodapé: navegação + menu de funções */}
         <div className="border-t border-border/60 bg-card/60 backdrop-blur">
           {/* Anterior / Próximo */}
-          <div className="px-3 pt-2.5 pb-2 flex items-center justify-between gap-2">
+          <div className="px-3 pt-2.5 pb-2 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={onPrev}
@@ -985,12 +985,12 @@ function FuncTabBtn({
         className={`${tamanho} grid place-items-center rounded-full transition-all ${
           destaque
             ? `${baseElegant} ${ativo ? "scale-110 ring-2 ring-gold/60" : ""}`
-            : `bg-card/60 border border-border/60 ${ativo ? "text-gold border-gold/50" : "text-muted-foreground group-hover:text-foreground"}`
+            : `bg-card/60 border border-border/60 text-white ${ativo ? "border-white/60" : "group-hover:bg-card"}`
         }`}
       >
         {icone}
       </span>
-      <span className={`text-[10px] font-medium ${ativo || destaque ? "text-gold" : "text-muted-foreground"}`}>
+      <span className={`text-[10px] font-medium ${destaque ? "text-gold" : "text-white"}`}>
         {label}
       </span>
     </button>
