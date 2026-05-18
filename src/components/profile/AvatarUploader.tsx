@@ -49,7 +49,7 @@ export function AvatarUploader({ size = 56 }: { size?: number }) {
       aria-label="Trocar foto de perfil"
     >
       {profile?.avatar_url ? (
-        <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+        <img src={profile.avatar_url} alt="" width={96} height={96} loading="lazy" decoding="async" className="h-full w-full object-cover" />
       ) : (
         <span className="font-display font-semibold text-gold text-base">
           {initialsOf(profile?.display_name || "")}
