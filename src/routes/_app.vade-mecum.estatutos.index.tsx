@@ -144,7 +144,7 @@ function EstatutosListPage() {
             />
             <h1 className="font-display font-semibold text-[26px] md:text-[32px] tracking-[0.04em] mt-3 leading-none text-foreground"
                 style={{ fontFamily: "var(--font-display)" }}>
-              <span className="bg-gradient-to-b from-foreground to-foreground/80 bg-clip-text">CÓDIGOS & LEIS</span>
+              <span className="bg-gradient-to-b from-foreground to-foreground/80 bg-clip-text">ESTATUTOS</span>
             </h1>
             <p className="text-[12.5px] text-gold/90 mt-1.5 font-medium">
               Legislação brasileira compilada
