@@ -164,7 +164,7 @@ function EstatutoArtigosPage() {
   });
 
   const artigos = data?.artigos ?? [];
-  const apenasArtigos = useMemo(() => artigos.filter((a) => !tipoEstrutura(a.numero)), [artigos]);
+  const apenasArtigos = useMemo(() => artigos.filter((a) => !!a.numero && !tipoEstrutura(a.numero)), [artigos]);
 
   const filtrar = (lista: ArtigoLista[]) => {
     const q = query.trim().toLowerCase();
