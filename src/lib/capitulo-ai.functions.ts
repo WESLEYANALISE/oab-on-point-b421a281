@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { geminiGenerateContent } from "@/lib/gemini.server";
 
 const Input = z.object({
   resumo_livro_id: z.string().uuid(),
@@ -11,22 +12,13 @@ const Input = z.object({
 const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
 async function chamarGemini(system: string, user: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY ausente");
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: system }] },
-      contents: [{ role: "user", parts: [{ text: user }] }],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 8192,
-      },
-    }),
+  const res = await geminiGenerateContent(GEMINI_MODEL, {
+    system_instruction: { parts: [{ text: system }] },
+    contents: [{ role: "user", parts: [{ text: user }] }],
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 8192,
+    },
   });
 
   if (!res.ok) {

@@ -49,23 +49,14 @@ async function mistralOcr(apiKey: string, documentUrl: string): Promise<string> 
 }
 
 async function geminiExtractJson(systemPrompt: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.1,
-        },
-      }),
+  const res = await geminiGenerateContent("gemini-2.5-flash-lite", {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.1,
     },
-  );
+  });
   if (!res.ok) {
     const txt = await res.text();
     if (res.status === 429) throw new Error("Limite de requisições do Gemini atingido. Aguarde alguns segundos.");

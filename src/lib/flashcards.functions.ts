@@ -2,20 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { reviewCard, type CardSrs, type Rating } from "@/lib/srs";
+import { geminiGenerateContent } from "@/lib/gemini.server";
 
 // ---------- Gemini (direto, conforme regra do projeto) ----------
 async function geminiJson(systemPrompt: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-      generationConfig: { responseMimeType: "application/json", temperature: 0.3 },
-    }),
+  const res = await geminiGenerateContent("gemini-2.5-flash-lite", {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    generationConfig: { responseMimeType: "application/json", temperature: 0.3 },
   });
   if (!res.ok) {
     const t = await res.text();
