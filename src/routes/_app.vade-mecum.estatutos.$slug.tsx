@@ -636,6 +636,7 @@ function ArtigoSheet({
   const queryClient = useQueryClient();
   const [funcTab, setFuncTab] = useState<FuncTab>("estudar");
   const [contentTab, setContentTab] = useState<ContentTab>("artigo");
+  const [mostrarParenteses, setMostrarParenteses] = useState(false);
   const { scale, increase, decrease, canIncrease, canDecrease } = useFontScale();
   const fontPx = Math.round(16 * scale);
 
