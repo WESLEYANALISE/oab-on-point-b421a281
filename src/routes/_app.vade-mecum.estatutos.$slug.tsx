@@ -656,7 +656,7 @@ function NoArvore({ no, nivel, onOpen }: { no: Nó; nivel: number; onOpen: (id: 
 // ============== ARTIGO SHEET (3 telas em uma) ==============
 
 type FuncTab = "estudar" | "praticar" | "narracao" | "anotacoes" | "perguntar";
-type ContentTab = "artigo" | "explicacao" | "exemplo" | "termos";
+type ContentTab = "artigo" | "explicacao" | "exemplo" | "termos" | "narracao";
 
 /** Insere quebras de linha antes de incisos (I, II...), parágrafos (§) e "Parágrafo único". */
 function formatarQuebrasArtigo(texto: string): string {
