@@ -85,11 +85,13 @@ const PERSISTED_PREFIXES = new Set([
   "provas",
   "noticias",
   "resumos-list",
+  "vade-mecum",
 ]);
 
-// Limite por query persistida (50 KB). Markdown de capítulo costuma
-// passar disso e estoura a cota de localStorage.
-const MAX_PERSISTED_BYTES = 50_000;
+// Limite por query persistida. Estatutos grandes (CF/CC) podem passar de
+// 200 KB serializados — subimos pra 400 KB pra caberem sem estourar a cota
+// de localStorage (≈5 MB no total).
+const MAX_PERSISTED_BYTES = 400_000;
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
