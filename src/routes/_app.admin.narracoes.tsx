@@ -242,46 +242,86 @@ function ArtigoRow({ artigo }: { artigo: Artigo }) {
 
   const busy = gerar.isPending || carregar.isPending || excluir.isPending;
 
-  return (
-    <li className="p-4 flex flex-col sm:flex-row gap-3 sm:items-start">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="font-display text-base">Art. {artigo.numero}</span>
-          {artigo.tem_narracao && (
-            <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-              narrado
-            </span>
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground line-clamp-2">{artigo.texto}</p>
+  // Progresso simulado durante a geração: estimativa baseada no tamanho do
+  // texto (Gemini TTS ≈ 80 chars/s de áudio + overhead). Sobe até 95% e
+  // estaciona aguardando o término real.
+  const [progresso, setProgresso] = useState(0);
+  const tInicio = useRef<number>(0);
+  useEffect(() => {
+    if (!gerar.isPending) {
+      if (progresso > 0) setProgresso(0);
+      return;
+    }
+    tInicio.current = Date.now();
+    setProgresso(2);
+    const chars = Math.max(60, artigo.texto.length);
+    const etaMs = 2500 + chars * 35; // estimativa
+    const id = setInterval(() => {
+      const decorrido = Date.now() - tInicio.current;
+      const pct = Math.min(95, Math.round((decorrido / etaMs) * 100));
+      setProgresso(pct);
+    }, 150);
+    return () => clearInterval(id);
+  }, [gerar.isPending, artigo.texto.length]);
 
-        {audioUrl && (
-          <audio controls src={audioUrl} className="mt-2 w-full max-w-md" />
+  const segs = gerar.isPending ? Math.max(1, Math.round((Date.now() - tInicio.current) / 1000)) : 0;
+
+  return (
+    <li className="px-3 py-2 flex items-center gap-2">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-sm shrink-0">Art. {artigo.numero}</span>
+          {artigo.tem_narracao && !gerar.isPending && (
+            <Check className="h-3.5 w-3.5 text-primary shrink-0" />
+          )}
+          <p className="text-xs text-muted-foreground truncate">{artigo.texto}</p>
+        </div>
+
+        {gerar.isPending && (
+          <div className="mt-1.5">
+            <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-gradient-gold transition-[width] duration-150"
+                style={{ width: `${progresso}%` }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-0.5">
+              <span>narrando… {segs}s</span>
+              <span>{progresso}%</span>
+            </div>
+          </div>
+        )}
+
+        {audioUrl && !gerar.isPending && (
+          <audio controls src={audioUrl} className="mt-1.5 w-full h-8" />
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2 shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={abrirPreview}
-          className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-accent"
+          title="Ver texto"
+          className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-accent"
         >
-          <Eye className="h-3.5 w-3.5" /> Texto
+          <Eye className="h-3.5 w-3.5" />
         </button>
 
         {artigo.tem_narracao && !audioUrl && (
           <button
             disabled={busy}
             onClick={() => carregar.mutate()}
-            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-accent"
+            title="Ouvir"
+            className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-accent disabled:opacity-40"
           >
-            <Play className="h-3.5 w-3.5" /> Ouvir
+            <Play className="h-3.5 w-3.5" />
           </button>
         )}
 
         <button
           disabled={busy}
           onClick={() => gerar.mutate()}
-          className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-gradient-gold text-gold-foreground disabled:opacity-50"
+          title={artigo.tem_narracao ? "Regerar" : "Narrar"}
+          className="h-8 px-2 inline-flex items-center gap-1 rounded-md bg-gradient-gold text-gold-foreground text-xs disabled:opacity-50"
         >
           {gerar.isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -290,7 +330,6 @@ function ArtigoRow({ artigo }: { artigo: Artigo }) {
           ) : (
             <Play className="h-3.5 w-3.5" />
           )}
-          {artigo.tem_narracao ? "Regerar" : "Narrar"}
         </button>
 
         {artigo.tem_narracao && (
@@ -299,7 +338,8 @@ function ArtigoRow({ artigo }: { artigo: Artigo }) {
             onClick={() => {
               if (confirm("Remover narração deste artigo?")) excluir.mutate();
             }}
-            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-border text-destructive hover:bg-destructive/10"
+            title="Excluir"
+            className="h-8 w-8 grid place-items-center rounded-md border border-border text-destructive hover:bg-destructive/10 disabled:opacity-40"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
