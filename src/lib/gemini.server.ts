@@ -84,3 +84,42 @@ export async function geminiGenerateContent(
   if (lastRes) return lastRes;
   throw lastErr instanceof Error ? lastErr : new Error("Gemini falhou em todas as chaves");
 }
+
+/**
+ * Versão streaming: chama `streamGenerateContent?alt=sse&key=...`.
+ * Retorna o Response com body em ReadableStream (SSE), igual a fetch.
+ * Faz fallback entre chaves se a primeira falhar antes de iniciar o stream.
+ */
+export async function geminiStreamContent(
+  model: string,
+  body: unknown,
+): Promise<Response> {
+  const keys = getGeminiKeys();
+  if (keys.length === 0) throw new Error("GEMINI_API_KEY não configurada");
+
+  let lastRes: Response | null = null;
+  let lastErr: unknown = null;
+
+  for (const key of keys) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse&key=${key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+      );
+      if (res.ok) return res;
+      lastRes = res;
+      const authIssue = res.status === 401 || res.status === 403;
+      const transient = res.status === 408 || res.status === 429 || res.status >= 500;
+      if (!authIssue && !transient) return res;
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+
+  if (lastRes) return lastRes;
+  throw lastErr instanceof Error ? lastErr : new Error("Gemini stream falhou");
+}
