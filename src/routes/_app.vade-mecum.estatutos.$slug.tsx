@@ -24,6 +24,8 @@ import {
   MessageCircleQuestion,
   Plus,
   Minus,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
