@@ -104,17 +104,29 @@ function AdminNarracoes() {
             return <ProgressoLei narrados={l.narrados ?? 0} total={l.total_narravel ?? 0} className="mb-3" />;
           })()}
 
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              value={busca}
-              onChange={(e) => {
-                setBusca(e.target.value);
-                setPage(0);
-              }}
-              placeholder="Buscar por número ou texto"
-              className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm"
-            />
+          <div className="flex items-center gap-2 mb-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                value={busca}
+                onChange={(e) => {
+                  setBusca(e.target.value);
+                  setPage(0);
+                }}
+                placeholder="Buscar por número ou texto"
+                className="h-9 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm"
+              />
+            </div>
+            <button
+              onClick={() => { setSoFaltantes((v) => !v); setPage(0); }}
+              className={`shrink-0 h-9 px-3 text-xs rounded-lg border transition-colors ${
+                soFaltantes
+                  ? "bg-gradient-gold text-gold-foreground border-transparent"
+                  : "border-border hover:bg-accent"
+              }`}
+            >
+              Só faltantes
+            </button>
           </div>
 
           {isFetching && !artigos && (
@@ -123,14 +135,22 @@ function AdminNarracoes() {
             </div>
           )}
 
-          <ul className="divide-y divide-border rounded-xl border border-border bg-card overflow-hidden">
-            {(artigos?.items ?? []).map((a) => (
-              <ArtigoRow key={a.id} artigo={a} />
-            ))}
-            {artigos && artigos.items.length === 0 && (
-              <li className="p-6 text-sm text-muted-foreground">Nenhum artigo encontrado.</li>
-            )}
-          </ul>
+          {(() => {
+            const itens = (artigos?.items ?? []).filter((a) => !soFaltantes || !a.tem_narracao);
+            return (
+              <ul className="divide-y divide-border rounded-xl border border-border bg-card overflow-hidden">
+                {itens.map((a) => (
+                  <ArtigoRow key={a.id} artigo={a} />
+                ))}
+                {artigos && itens.length === 0 && (
+                  <li className="p-4 text-sm text-muted-foreground text-center">
+                    {soFaltantes ? "Todos os artigos desta página já foram narrados." : "Nenhum artigo encontrado."}
+                  </li>
+                )}
+              </ul>
+            );
+          })()}
+
 
           {artigos && artigos.total > artigos.pageSize && (
             <div className="flex items-center justify-between mt-4 text-sm">
