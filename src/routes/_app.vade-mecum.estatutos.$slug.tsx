@@ -1000,7 +1000,7 @@ function FuncTabBtn({
         className={`${tamanho} grid place-items-center rounded-full transition-all ${
           destaque
             ? `${baseElegant} ${ativo ? "scale-110 ring-2 ring-gold/60" : ""}`
-            : `bg-card/60 border border-border/60 text-white ${ativo ? "border-white/60" : "group-hover:bg-card"}`
+            : `bg-card/60 border border-border/60 text-white group-hover:bg-card`
         }`}
       >
         {icone}
