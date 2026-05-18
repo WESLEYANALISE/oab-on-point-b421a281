@@ -435,6 +435,13 @@ function EstatutoArtigosPage() {
         temAnterior={indiceAtual > 0}
         temProximo={indiceAtual >= 0 && indiceAtual < listaArtigos.length - 1}
       />
+
+      <PlaylistSheet
+        open={playlistOpen}
+        onClose={() => setPlaylistOpen(false)}
+        leiId={data?.lei.id ?? null}
+        leiNome={meta?.nomeCompleto ?? data?.lei.nome ?? "Estatuto"}
+      />
     </div>
   );
 }
