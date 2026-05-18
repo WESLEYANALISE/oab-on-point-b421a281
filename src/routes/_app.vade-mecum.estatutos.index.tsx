@@ -254,10 +254,11 @@ function TabPill({
 
 function LeiCard({ lei }: { lei: LeiRow }) {
   const meta = getEstatuto(lei.slug);
-  const sigla = meta?.sigla ?? (lei.nome_curto ?? lei.nome.split(" ")[0]).toUpperCase().slice(0, 4);
+  const sigla = meta?.sigla ?? (lei.nome_curto ?? lei.nome.split(" ")[0]);
   const nome = meta?.nomeCompleto ?? lei.nome;
   const barra = meta?.barra ?? "bg-primary";
   const bg = meta?.bg ?? "bg-gradient-to-br from-primary to-primary/70";
+  const Icon = meta?.Icon;
 
   return (
     <Link
@@ -267,13 +268,13 @@ function LeiCard({ lei }: { lei: LeiRow }) {
     >
       <span className={`absolute left-0 top-2 bottom-2 w-1.5 rounded-r-full ${barra}`} />
       <span className={`h-12 w-12 shrink-0 grid place-items-center rounded-2xl text-white shadow-md ${bg}`}>
-        <span className="font-bold text-[14px] tracking-tight">{sigla}</span>
+        {Icon ? <Icon className="h-6 w-6" strokeWidth={2.2} /> : <span className="font-bold text-[13px]">{sigla.slice(0, 3).toUpperCase()}</span>}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-bold text-foreground text-[15px] leading-tight">
+        <span className="block font-bold text-foreground text-[15px] leading-tight truncate">
           {sigla}
         </span>
-        <span className="block text-[12.5px] text-muted-foreground truncate">{nome}</span>
+        <span className="block text-[12px] text-muted-foreground truncate">{nome}</span>
       </span>
       <span className="text-[10px] text-muted-foreground/70 shrink-0">
         {lei.total_artigos.toLocaleString("pt-BR")} arts.
