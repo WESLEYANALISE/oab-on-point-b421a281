@@ -12,9 +12,9 @@ const MensagemSchema = z.object({
 const Input = z.object({
   artigo: z.object({
     leiNome: z.string().min(1).max(300),
-    numero: z.string().min(1).max(40),
-    texto: z.string().min(1).max(8000),
-    explicacao: z.string().max(8000).optional().nullable(),
+    numero: z.string().min(1).max(80),
+    texto: z.string().min(1).max(40000),
+    explicacao: z.string().max(40000).optional().nullable(),
   }),
   mensagens: z.array(MensagemSchema).min(1).max(30),
 });
