@@ -1,98 +1,37 @@
-# Acelerar navegação (Início, Vade-Mecum, Simulados)
+## Modo foco para cada função do artigo
 
-## Diagnóstico
+Hoje, ao tocar nos botões do menu inferior (Estudar, Praticar, Narração, Anotações, Perguntar) dentro do Sheet do artigo, o conteúdo troca mas o resto da tela continua igual: cabeçalho do artigo, as 4 abas Artigo/Explicação/Exemplo/Termos, controles laterais (fonte / sparkles), os botões Anterior/Próximo e o próprio menu de funções. Resultado: o card "Como quer treinar?" do Praticar aparece espremido entre todos esses controles.
 
-Hoje as rotas Início (`/app`), Vade-Mecum (`/vade-mecum/estatutos/$slug`) e Simulados (`/simulados/$slug`) demoram porque:
+A ideia é transformar Praticar, Estudar, Anotações e Perguntar em modos focados: quando a pessoa tocar, sobe um overlay full-screen por cima do Sheet do artigo, mostrando só o conteúdo daquela função + um X no canto. Sem abas, sem menu inferior, sem navegação.
 
-1. **Nenhuma rota tem `loader`.** Todos os dados são buscados em `useQuery` dentro do componente. Isso anula o `defaultPreload: "intent"` configurado no router: tocar no link não pré-busca nada — a request só sai depois do clique, no `mount`.
-2. **Bundles enormes carregados de uma vez.** `_app.vade-mecum.estatutos.$slug.tsx` tem 1564 linhas e arrasta `react-markdown`, `remark-gfm`, `jspdf` (PDF), `PraticarPanel` (546 linhas), Sheet, etc. Tudo isso baixa antes da tela aparecer, mesmo quem só quer ler um artigo.
-3. **Drivers globais sempre montados.** `SimuladoQueueDriver` e `ResumoQueueDriver` vivem em `_app.tsx` e disparam server functions / polling em toda navegação, mesmo para usuários não-admin sem fila ativa.
-4. **`/app` refaz a query do blog** ao voltar (nada pré-aquece o cache na primeira visita).
+### Comportamento por função
 
-## O que vamos mudar
+- **Estudar** — overlay focado com o texto do artigo. As 4 abas (Artigo / Explicação / Exemplo / Termos) viram um menu de alternância interno do próprio overlay (no topo logo abaixo do X). Anterior/Próximo entre artigos continua disponível, mas dentro do overlay (rodapé fino).
+- **Praticar** — abre direto na tela "Como quer treinar?" (Questões / Flashcards). Quando a pessoa escolhe um modo, o conteúdo daquele modo ocupa tudo. Botão Voltar para a escolha + X para fechar.
+- **Anotações** — overlay com menu de alternância interno de 3 sub-abas:
+  - **Minhas anotações** — editor de texto da anotação atual + lista do que já foi salvo neste artigo.
+  - **Sugestões IA** — a Profa. Ana sugere bullets prontos sobre o artigo; toque em um bullet pra adicionar à anotação.
+  - **Histórico** — todas as anotações antigas em qualquer artigo desta lei, ordenadas por data.
+- **Perguntar** — o chat dedicado da IA do artigo (já existe como overlay) é padronizado pra usar o mesmo shell do modo foco (mesmo header, mesmo X, mesma animação de subida).
+- **Narração** — fica como está (já é compacta e funciona bem no Sheet atual). Sem modo foco.
 
-### 1. Prefetch de dados via `loader` (ganho maior)
+### Shell comum do modo foco
 
-Adicionar `loader` que usa `context.queryClient.ensureQueryData` nas três rotas críticas — combinado com `defaultPreload: "intent"` e `defaultPreloadDelay: 0` já existentes, os dados começam a ser buscados no toque, antes do clique resolver.
+Um único componente `ArtigoFocusOverlay` é usado por todos: overlay fixo cobrindo o Sheet do artigo, animação slide-in-bottom, header com rótulo da lei + "Art. X°" + X dourado à direita, área de sub-abas opcional (Estudar e Anotações usam, Praticar e Perguntar não), corpo rolável, rodapé opcional (Estudar usa pra Anterior/Próximo). Fechar volta exatamente pro estado anterior do Sheet do artigo (não fecha o Sheet inteiro).
 
-- `/_app/app` → prefetch `listBlogPosts({ limit: 8 })`.
-- `/_app/vade-mecum/estatutos/$slug` → prefetch a lista de artigos do estatuto (query principal hoje feita dentro do componente).
-- `/_app/simulados/$slug` → prefetch `getSimuladoOverview` + `listMinhasTentativas`.
+### Notas técnicas
 
-Os componentes continuam usando `useQuery` com a mesma `queryKey` — pegam direto do cache, sem flicker.
+- Arquivo principal: `src/routes/_app.vade-mecum.estatutos.$slug.tsx` (componente `ArtigoSheet`). O switch atual `funcTab === "praticar" | "anotacoes" | "narracao" | "perguntar"` que renderiza dentro do corpo do Sheet é substituído por: render do conteúdo de Estudar como base do Sheet + um estado `focusMode` que monta o `ArtigoFocusOverlay` por cima quando a pessoa toca em Estudar/Praticar/Anotações/Perguntar no menu de funções.
+- Novo componente `src/components/vade-mecum/ArtigoFocusOverlay.tsx` — recebe `title`, `subtitle`, `tabs?`, `footer?`, `onClose`, `children`. Renderiza com `position: fixed`, `inset: 0`, z-index acima do `SheetContent`, fade+slide-in.
+- `PraticarPanel` já existe e é reutilizado — só passa a ser embrulhado pelo overlay em vez de pelo body do Sheet.
+- `AnotacoesEditor` atual vira a sub-aba "Minhas anotações". Duas novas sub-abas:
+  - `AnotacoesSugestoesIA` — server function nova `gerarSugestoesAnotacoesArtigo` em `src/lib/artigo-anotacoes.functions.ts`, chama Gemini direto (conforme a Core memory) com cache em coluna `sugestoes_ia` (jsonb) em `vade_mecum_artigos` (ou tabela própria se preferir — migration a confirmar).
+  - `AnotacoesHistorico` — server function `listarAnotacoesDaLei` que retorna anotações do usuário na lei atual ordenadas por `updated_at desc`, com link "abrir artigo" pra cada.
+- `ChatIAOverlay` existente é refatorado pra reusar o shell do `ArtigoFocusOverlay` em vez de ter chrome próprio.
+- O botão X fecha só o overlay, não o Sheet do artigo. Botão físico de voltar (Android) também fecha só o overlay.
 
-### 2. Code-split nas rotas pesadas
+### Fora do escopo
 
-No `_app.vade-mecum.estatutos.$slug.tsx`:
-- `PraticarPanel` via `lazy()` + `<Suspense>` (só carrega quando o usuário abre Praticar).
-- `chat-pdf` (jspdf, ~200KB) carregado dinâmico dentro do handler do botão PDF, não no topo do arquivo.
-- `react-markdown` + `remark-gfm` extraídos para um componente lazy `<MarkdownRender>`.
-
-No `_app.simulados.$slug.index.tsx`: mover os blocos pesados (edital, raio-x) para `lazy()` acionados por aba.
-
-### 3. Drivers globais só quando precisam
-
-`SimuladoQueueDriver` e `ResumoQueueDriver` em `_app.tsx`:
-- Não montar para usuários sem permissão (`useIsAdmin === false`).
-- Não iniciar polling enquanto `state.queue.length === 0` e não há job ativo no `localStorage`.
-
-### 4. Ajustes finos
-
-- `staleTime` do blog na home: 10 min (muda raramente).
-- `HomeTopCard`: já usa `readCachedProfileOptimistic`; garantir que a saudação renderize sem aguardar `useProfile`.
-- Bottom-nav: `<Link>` para `/app` com `preload="intent"` (já é o default, só confirmar não desativado).
-
-## Como vou verificar
-
-- Build sem erros + `bun add` não necessário.
-- Abrir devtools de network no preview e confirmar:
-  - tocar no botão Início no rodapé dispara `listBlogPosts` ANTES do clique;
-  - navegar para um estatuto baixa um chunk menor (sem jspdf no chunk inicial);
-  - drivers de simulado/resumo não disparam nenhuma request para usuário comum.
-
-## Detalhes técnicos
-
-Padrão do loader (TanStack Start):
-
-```ts
-export const Route = createFileRoute("/_app/app")({
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData({
-      queryKey: ["blog", "home-carousel"],
-      queryFn: () => listBlogPosts({ data: { limit: 8 } }),
-      staleTime: 10 * 60_000,
-    }),
-  component: AreaOABPage,
-  head: () => ({ /* ... */ }),
-});
-```
-
-Lazy de panel:
-
-```tsx
-const PraticarPanel = lazy(() =>
-  import("@/components/vade-mecum/PraticarPanel").then(m => ({ default: m.PraticarPanel }))
-);
-```
-
-Lazy de PDF dentro do handler (não no topo):
-
-```ts
-const onExportPdf = async () => {
-  const { exportarConversaPDF } = await import("@/lib/chat-pdf");
-  await exportarConversaPDF(mensagens);
-};
-```
-
-Guard nos drivers:
-
-```tsx
-const { data: isAdmin } = useIsAdmin();
-const state = useSimuladoQueue();
-if (!isAdmin && state.queue.length === 0 && !state.activeJobId) return null;
-```
-
-## Fora de escopo
-
-- Não vou mexer no streaming do chat da Profa. Ana (já feito).
-- Não vou alterar layout/visual nem fluxo de telas — só performance de carregamento.
+- Mudar a lógica de geração de Questões/Flashcards (continua exatamente como está).
+- Narração (fica como hoje).
+- Mudar o layout do Sheet do artigo quando nenhum modo foco está aberto (Estudar continua sendo o estado padrão do Sheet — o overlay focado é uma camada adicional).
