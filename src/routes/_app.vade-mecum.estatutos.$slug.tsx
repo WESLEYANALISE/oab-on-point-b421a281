@@ -48,6 +48,8 @@ function EstatutoArtigosPage() {
   const { slug } = Route.useParams();
   const [query, setQuery] = useState("");
   const [artigoId, setArtigoId] = useState<string | null>(null);
+  const [modo, setModo] = useState<"artigos" | "capitulos">("artigos");
+  const [capituloAberto, setCapituloAberto] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["vade-mecum", "estatuto", slug],
