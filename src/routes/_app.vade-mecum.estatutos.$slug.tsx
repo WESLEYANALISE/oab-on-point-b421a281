@@ -241,6 +241,13 @@ function EstatutoArtigosPage() {
     return filtrar(arr);
   }, [apenasArtigos, query, filtroChip, favoritos, idsAnotados]);
 
+  const listaRelevantes = useMemo(() => {
+    const ordem: Record<string, number> = { muito_alta: 0, alta: 1, media: 2 };
+    return apenasArtigos
+      .filter((a) => !!a.relevancia)
+      .sort((a, b) => (ordem[a.relevancia ?? ""] ?? 9) - (ordem[b.relevancia ?? ""] ?? 9));
+  }, [apenasArtigos]);
+
   const arvore = useMemo(() => montarArvore(artigos), [artigos]);
   const caminhos = useMemo(() => mapearCaminhos(artigos), [artigos]);
   const caminhoAtual = artigoId ? caminhos.get(artigoId) ?? [] : [];
