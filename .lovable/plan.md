@@ -1,96 +1,47 @@
+## O que vai mudar no chat da Profa. Ana
 
-# Praticar — Flashcards e Questões por Artigo (Gemini)
+### 1. Resposta em streaming (já vai aparecendo conforme a IA escreve)
+Hoje a função `perguntarArtigoIA` espera o Gemini terminar tudo pra devolver o texto — por isso demora. Vamos trocar pelo endpoint de streaming do Gemini (`streamGenerateContent?alt=sse`) e expor isso como uma rota de servidor HTTP em `src/routes/api/artigo-chat.ts`, que devolve um stream de texto. No componente, em vez de `useServerFn`, fazemos `fetch` nessa rota e lemos o `ReadableStream` chunk a chunk com `getReader()`, atualizando a última mensagem do assistente a cada pedaço recebido. O Markdown vai sendo renderizado em tempo real (o `ReactMarkdown` lida bem com texto parcial).
 
-## O que vai acontecer ao clicar em "Praticar"
+A animação atual de "digitação artificial" (estado `digitando`, timeout de 28ms) será removida — o próprio stream é a animação natural, e ela ficava mais lenta que a chegada do texto.
 
-Sobe um card de baixo para cima (bottom-sheet animado) com duas opções grandes:
-- **Flashcards** — revisão rápida com flip
-- **Questões** — prática estilo OAB (mistura múltipla escolha + V/F)
+### 2. Cortou no meio — aumentar limite
+O `maxOutputTokens` está em **2048**, que é pouco para explicações longas com markdown. Vamos subir para **8192** (limite confortável do `gemini-2.5-flash`). Combinado com streaming, a pessoa já vê o texto chegando e o final não é mais cortado.
 
-Se o conteúdo já estiver gerado e salvo, abre na hora. Se não, a Profa. Ana (Gemini) gera enquanto a pessoa vê uma tela de "preparando suas questões…". Uma vez gerado, fica salvo no Supabase e qualquer outra pessoa que entrar naquele artigo abre instantaneamente.
+### 3. Não descer a tela automaticamente
+Remover o `useEffect` que faz `scrollTo({ top: scrollHeight })`. A pessoa controla o scroll. Vamos manter apenas um pequeno auto-scroll **uma única vez** quando a própria pessoa envia a mensagem (pra mostrar a pergunta dela), mas durante o streaming da resposta a tela fica parada.
 
-## Quantidade dinâmica (depende do tamanho do artigo)
+### 4. Exportar PDF e compartilhar no WhatsApp
+Depois que a resposta do assistente termina de streamar (stream fechado), aparecem dois botões pequenos no rodapé da bolha da última resposta:
 
-Calculada a partir do número de caracteres do `texto` do artigo:
-- Até ~400 chars → **10 questões** / **20 flashcards**
-- 400–900 → **15 questões** / **25 flashcards**
-- 900–1800 → **20 questões** / **30 flashcards**
-- > 1800 → **30 questões** / **35 flashcards**
+- **Exportar PDF** — usa `jspdf` (já no projeto se não, instalar) pra gerar um PDF com: cabeçalho "Profa. Ana — Art. X · {Lei}", a pergunta da pessoa e a resposta formatada em texto (markdown convertido para texto puro com quebras e bullets). Nome do arquivo: `profa-ana-art-{numero}.pdf`. Download direto no navegador.
+- **Compartilhar no WhatsApp** — abre `https://wa.me/?text=...` em nova aba com o texto da resposta + a pergunta + um rodapé "via OAB On Point — Art. X". Em mobile abre o app do WhatsApp direto; em desktop abre o WhatsApp Web. Markdown vira formato WhatsApp (`**negrito**` → `*negrito*`, `*itálico*` → `_itálico_`, listas viram `• item`, blockquotes viram linhas com `> `).
 
-## Questões
-
-- Mistura **múltipla escolha (4 alternativas)** e **verdadeiro/falso**, com explicação após responder.
-- Ordem cronológica de aprendizado: começa pelo básico (literalidade do artigo), evolui para interpretação, e termina em casos práticos/pegadinhas estilo OAB.
-- Tela de prática: progresso (3/20), feedback imediato com cor (verde/vermelho), explicação curta da Profa. Ana, botão "Próxima".
-- Ao fim: tela de resultado com acertos, % e botões "Refazer" / "Ver histórico".
-
-## Flashcards
-
-- Frente: pergunta curta.
-- Verso (após flip animado 3D): resposta direta.
-- **Abaixo do card**: bloco de "Exemplo prático" (só aparece após o flip).
-- Botão "Próximo" avança para o próximo card. Contador no topo (5/30).
-
-## Histórico e desempenho
-
-- **Por artigo**: ao abrir Questões, mostra um botão "Histórico" no topo com a última tentativa (data, acertos/total, %) e mini-gráfico de evolução das últimas 5 tentativas.
-- **Geral do usuário**: nova seção no Perfil ("Meu desempenho") com gráfico de acertos por matéria/lei e total de questões praticadas.
-
-## Cache compartilhado
-
-- Conteúdo gerado uma vez por artigo fica salvo nas colunas `questoes` e `flashcards` (jsonb) já existentes em `vade_mecum_artigos`. Reuso para todos os usuários.
-- Tentativas e histórico são por usuário (novas tabelas).
+Os botões só aparecem em mensagens do assistente já finalizadas (não enquanto está streamando), e ficam discretos (ícones pequenos com label, estilo "ghost" dourado).
 
 ---
 
 ## Detalhes técnicos
 
-### Banco (migration)
+**Arquivos afetados:**
+- `src/lib/gemini.server.ts` — adicionar helper `geminiStreamContent(model, body)` que faz `fetch` em `streamGenerateContent?alt=sse&key=…` e retorna o `Response` (com o body como `ReadableStream`). Mantém o fallback entre as 2 chaves.
+- `src/routes/api/artigo-chat.ts` (novo) — `createFileRoute` com handler `POST` que valida o input (mesmo Zod schema de hoje), monta o prompt da Profa. Ana, chama `geminiStreamContent`, faz parse do SSE do Gemini (`data: {...}\n\n`) extraindo `candidates[0].content.parts[0].text`, e re-emite como `text/plain` streaming pro cliente (mais simples que SSE no front).
+- `src/lib/artigo-chat.functions.ts` — pode ser removido (ou mantido como fallback não-streaming). Vamos remover do componente.
+- `src/lib/whatsapp-markdown.ts` (novo) — utilitário puro `markdownToWhatsapp(text)`.
+- `src/lib/chat-pdf.ts` (novo) — utilitário `exportarConversaPDF({ artigo, lei, pergunta, resposta })` usando `jspdf`.
+- `src/routes/_app.vade-mecum.estatutos.$slug.tsx` — refatorar `ChatIAOverlay`:
+  - trocar `useServerFn(perguntarArtigoIA)` por `fetch("/api/artigo-chat", { method: "POST", body: JSON.stringify(...) })` + leitura via `response.body.getReader()` + `TextDecoder`.
+  - remover estado `digitando` e o `useEffect` de chunks artificiais.
+  - remover o `useEffect` de auto-scroll por mudança de mensagem; manter scroll só no envio do usuário.
+  - acrescentar barra de ações (PDF / WhatsApp) abaixo de cada resposta finalizada do assistente.
 
-Reaproveitar `vade_mecum_artigos.questoes` e `vade_mecum_artigos.flashcards` como cache compartilhado (jsonb com array de itens + metadata `{ gerado_em, modelo, total }`).
+**Dependência nova:** `jspdf` (`bun add jspdf`) — leve, roda no browser, sem dependências de fonte server-side.
 
-Novas tabelas:
-- `vade_mecum_pratica_tentativas` — `id, user_id, artigo_id, lei_id, modo ('questoes'|'flashcards'), acertos, total, respostas jsonb, iniciado_em, concluido_em` + RLS `auth.uid() = user_id`.
-- (Flashcards usa a tentativa só pra contagem; sem SRS aqui, pra não complicar.)
-
-Índices: `(user_id, artigo_id, concluido_em DESC)` e `(user_id, concluido_em DESC)` para dashboard geral.
-
-### Server functions (`createServerFn`, Gemini direto)
-
-Arquivo `src/lib/artigo-pratica.functions.ts`:
-- `gerarQuestoesArtigo({ artigoId })` — se `vade_mecum_artigos.questoes` já tem dados válidos, retorna. Senão, chama Gemini `gemini-2.5-flash` via `GEMINI_API_KEY` com prompt estruturado (JSON schema: array de `{ tipo, enunciado, alternativas?, correta, explicacao, dificuldade }`), salva e retorna.
-- `gerarFlashcardsArtigo({ artigoId })` — idem para flashcards (`{ frente, verso, exemplo }`).
-- `salvarTentativa({ artigoId, modo, respostas, acertos, total })` — protegida por `requireSupabaseAuth`.
-- `getHistoricoArtigo({ artigoId })` e `getDesempenhoGeral()` — leituras protegidas.
-
-Prompts pedem progressão de dificuldade explícita (básico → intermediário → avançado/pegadinha) e contagem dinâmica conforme tamanho do artigo.
-
-### UI (frontend)
-
-Em `src/routes/_app.vade-mecum.estatutos.$slug.tsx`:
-- Novo componente `PraticarSheet` (bottom-sheet com `framer-motion`, swipe-down pra fechar) que abre ao clicar no botão "Praticar" do menu inferior.
-- Duas rotas/overlays internos:
-  - `QuestoesOverlay` — header com botão "Histórico", card de questão, alternativas, feedback, explicação, tela final.
-  - `FlashcardsOverlay` — card com flip 3D (CSS `transform-style: preserve-3d` + `rotateY`), exemplo abaixo, botão "Próximo".
-- Skeleton/loading "Profa. Ana está preparando…" enquanto gera.
-- Toast amigável em caso de erro (rate limit Gemini, etc.).
-
-No Perfil (`src/routes/_app.perfil.tsx` ou equivalente): nova aba/seção "Meu desempenho" com `recharts` (gráfico de barras por matéria + linha de evolução).
-
-### Animações
-- Bottom-sheet: `slide-up` + backdrop fade.
-- Flip: `rotateY 180deg`, 500ms cubic-bezier.
-- Transição entre questões: fade + slide horizontal sutil.
-
-### Design
-- Reusa tokens existentes (gold para destaques, dark surface). Sem cores hardcoded.
-- Mobile-first (viewport 390px é prioridade — usuário está no mobile).
+**Sem mudança de banco, sem mudança de RLS, sem mexer em outras telas.**
 
 ---
 
-## Fora do escopo desta entrega
-- Spaced repetition (SRS) para flashcards.
-- Comparar com outros usuários / ranking.
-- Edição manual das questões geradas (admin).
-
-Quer que eu siga com essa proposta?
+## Fora do escopo
+- Salvar histórico das conversas no Supabase (não foi pedido).
+- Voz/áudio nas respostas.
+- Compartilhar imagem (card visual) — só texto via WhatsApp por enquanto.
