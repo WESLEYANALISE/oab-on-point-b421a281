@@ -132,6 +132,10 @@ function EstatutoArtigosPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["vade-mecum", "estatuto", slug],
+    // Conteúdo legal muda raramente. Fica quente por 1h em memória e até
+    // 24h no localStorage (PersistQueryClient). Abrir de novo é instantâneo.
+    staleTime: 60 * 60_000,
+    gcTime: 24 * 60 * 60_000,
     queryFn: async () => {
       const { data: leiData, error: e1 } = await supabase
         .from("vade_mecum_leis")
