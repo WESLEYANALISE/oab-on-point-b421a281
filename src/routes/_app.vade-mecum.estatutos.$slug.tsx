@@ -714,10 +714,10 @@ function ArtigoSheet({
           </div>
 
           {/* Função tabs */}
-          <div className="mt-4 grid grid-cols-5 gap-1">
+          <div className="mt-4 grid grid-cols-5 gap-1 items-end">
             <FuncTabBtn ativo={funcTab === "estudar"} onClick={() => setFuncTab("estudar")} icone={<GraduationCap className="h-5 w-5" />} label="Estudar" />
             <FuncTabBtn ativo={funcTab === "praticar"} onClick={() => setFuncTab("praticar")} icone={<Target className="h-5 w-5" />} label="Praticar" />
-            <FuncTabBtn ativo={funcTab === "narracao"} onClick={() => setFuncTab("narracao")} icone={<Volume2 className="h-5 w-5" />} label="Narração" destaque />
+            <FuncTabBtn ativo={funcTab === "narracao"} onClick={() => setFuncTab("narracao")} icone={<Volume2 className="h-6 w-6" />} label="Narração" destaque />
             <FuncTabBtn ativo={funcTab === "anotacoes"} onClick={() => setFuncTab("anotacoes")} icone={<StickyNote className="h-5 w-5" />} label="Anotações" />
             <FuncTabBtn ativo={funcTab === "perguntar"} onClick={() => setFuncTab("perguntar")} icone={<MessageCircleQuestion className="h-5 w-5" />} label="Perguntar" />
           </div>
@@ -730,7 +730,7 @@ function ArtigoSheet({
           </div>
 
           {/* Toggle 4 abas: Artigo / Explicação / Exemplo / Termos */}
-          <div className="mt-2 flex items-center gap-5 overflow-x-auto no-scrollbar">
+          <div className="mt-2 grid grid-cols-4 w-full">
             {(["artigo", "explicacao", "exemplo", "termos"] as ContentTab[]).map((t) => {
               const labels: Record<ContentTab, string> = {
                 artigo: "Artigo", explicacao: "Explicação", exemplo: "Exemplo", termos: "Termos",
@@ -741,12 +741,12 @@ function ArtigoSheet({
                   key={t}
                   type="button"
                   onClick={() => setContentTab(t)}
-                  className={`relative pb-2 text-[13.5px] font-semibold whitespace-nowrap transition-colors ${
+                  className={`relative pb-2 text-[12px] sm:text-[13px] font-semibold whitespace-nowrap text-center transition-colors ${
                     ativo ? "text-gold" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {labels[t]}
-                  {ativo && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-gold rounded-full" />}
+                  {ativo && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-gold rounded-full" />}
                 </button>
               );
             })}
