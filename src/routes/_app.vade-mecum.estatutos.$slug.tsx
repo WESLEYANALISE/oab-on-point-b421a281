@@ -110,8 +110,7 @@ function EstatutoArtigosPage() {
       } else if (atual) {
         atual.artigos.push(a);
       } else {
-        // artigos antes de qualquer marcador
-        if (!out[0] || out[0].rotulo !== "Disposições") {
+        if (!atual) {
           atual = { id: "_pre", rotulo: "Disposições", texto: "", artigos: [] };
           out.unshift(atual);
         }
