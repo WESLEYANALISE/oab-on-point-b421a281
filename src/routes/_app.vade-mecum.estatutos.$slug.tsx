@@ -25,6 +25,7 @@ import {
   GraduationCap,
   Target,
   Volume2,
+  Pause,
   MessageCircle,
   Plus,
   Minus,
