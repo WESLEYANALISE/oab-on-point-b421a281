@@ -899,7 +899,7 @@ function ArtigoSheet({
         </div>
 
         {/* Controles flutuantes laterais */}
-        <div className="absolute right-3 bottom-36 flex flex-col items-center gap-2 z-10">
+        <div className="absolute right-3 bottom-48 flex flex-col items-center gap-2 z-10">
           <button
             type="button"
             onClick={() => setFuncTab("perguntar")}
