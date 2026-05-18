@@ -87,6 +87,8 @@ export const listarArtigosParaNarrar = createServerFn({ method: "POST" })
       .from("vade_mecum_artigos")
       .select("id, numero, texto, ordem", { count: "exact" })
       .eq("lei_id", data.leiId)
+      .not("numero", "is", null)
+      .neq("numero", "")
       .order("ordem", { ascending: true })
       .range(data.page * data.pageSize, (data.page + 1) * data.pageSize - 1);
 

@@ -124,6 +124,14 @@ export type MontarTextoInput = {
 
 export const MAX_TTS_CHARS = 4000;
 
+/** Remove o marcador inicial "Art. N" / "Artigo N" do texto pra não duplicar com o prefixo. */
+export function removerArtigoInicial(texto: string): string {
+  return texto.replace(
+    /^\s*[Aa]rt(?:igo)?\.?\s*\d{1,3}[ºo°.]*(?:[-\s]*[A-Z])?\s*[.\-–—:]?\s*/,
+    "",
+  );
+}
+
 /** Pipeline final: prefixo + transformações + limpeza. */
 export function montarTextoNarracao({
   leiTitulo,
@@ -132,7 +140,8 @@ export function montarTextoNarracao({
 }: MontarTextoInput): string {
   const prefixo = `${leiTitulo.trim()}, artigo ${artigoNumeroPorExtenso(artigoNumero)}.`;
   const semParen = removerParenteses(artigoTexto || "");
-  const normalizado = normalizarMarcadores(semParen);
+  const semArtIni = removerArtigoInicial(semParen);
+  const normalizado = normalizarMarcadores(semArtIni);
   const limpo = limparEspacos(normalizado);
   return limparEspacos(`${prefixo} ${limpo}`);
 }

@@ -75,43 +75,75 @@ function AdminNarracoes() {
         </div>
       </header>
 
-      <div className="grid gap-3 md:grid-cols-[1fr_2fr] mb-4">
-        <select
-          value={leiId}
-          onChange={(e) => {
-            setLeiId(e.target.value);
-            setPage(0);
-          }}
-          className="h-10 rounded-lg border border-border bg-card px-3 text-sm"
-        >
-          <option value="">Selecione uma lei…</option>
-          {(leis ?? []).map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.nome_curto || l.nome}
-            </option>
-          ))}
-        </select>
-
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value);
-              setPage(0);
-            }}
-            placeholder="Buscar por número ou texto"
-            className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm"
-          />
-        </div>
-      </div>
-
       {!leiId && (
-        <p className="text-sm text-muted-foreground">Escolha uma lei para listar os artigos.</p>
+        <section>
+          <h2 className="text-sm uppercase tracking-wider text-muted-foreground mb-3">
+            Escolha uma lei
+          </h2>
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {(leis ?? []).map((l) => (
+              <li key={l.id}>
+                <button
+                  onClick={() => {
+                    setLeiId(l.id);
+                    setPage(0);
+                    setBusca("");
+                  }}
+                  className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-primary hover:bg-accent transition-colors"
+                >
+                  <div className="font-display text-base">
+                    {l.nome_curto || l.nome}
+                  </div>
+                  {l.nome_curto && l.nome !== l.nome_curto && (
+                    <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                      {l.nome}
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {l.total_artigos ?? 0} artigos
+                  </div>
+                </button>
+              </li>
+            ))}
+            {leis && leis.length === 0 && (
+              <li className="text-sm text-muted-foreground">Nenhuma lei cadastrada.</li>
+            )}
+          </ul>
+        </section>
       )}
 
       {leiId && (
         <>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <button
+              onClick={() => {
+                setLeiId("");
+                setBusca("");
+                setPage(0);
+              }}
+              className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ChevronLeft className="h-4 w-4" /> Trocar lei
+            </button>
+            <span className="text-sm font-medium truncate">
+              {(leis ?? []).find((l) => l.id === leiId)?.nome_curto ||
+                (leis ?? []).find((l) => l.id === leiId)?.nome}
+            </span>
+          </div>
+
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              value={busca}
+              onChange={(e) => {
+                setBusca(e.target.value);
+                setPage(0);
+              }}
+              placeholder="Buscar por número ou texto"
+              className="h-10 w-full rounded-lg border border-border bg-card pl-9 pr-3 text-sm"
+            />
+          </div>
+
           {isFetching && !artigos && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
