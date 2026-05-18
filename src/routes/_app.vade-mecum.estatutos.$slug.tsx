@@ -329,8 +329,8 @@ function EstatutoArtigosPage() {
             label="Favoritos"
           />
           <ChipFuncao
-            ativo={false}
-            onClick={() => toast.info("Playlist — em breve.")}
+            ativo={playlistOpen}
+            onClick={() => setPlaylistOpen(true)}
             cor="from-sky-500/30 to-blue-600/20 border-sky-400/40 text-sky-300"
             icone={<ListMusic className="h-5 w-5" />}
             label="Playlist"
