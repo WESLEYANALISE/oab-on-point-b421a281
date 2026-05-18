@@ -263,29 +263,41 @@ export const gerarNarracaoArtigo = createServerFn({ method: "POST" })
       );
     }
 
-    // Chama Gemini TTS
-    const res = await geminiGenerateContent(TTS_MODEL, {
-      contents: [{ parts: [{ text: texto }] }],
-      generationConfig: {
-        responseModalities: ["AUDIO"],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: data.voz },
-          },
-          languageCode: "pt-BR",
-        },
-      },
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new Error(`Gemini TTS falhou (${res.status}): ${body.slice(0, 300)}`);
-    }
-    const json = (await res.json()) as any;
-    const part = json?.candidates?.[0]?.content?.parts?.[0];
-    const b64 = part?.inlineData?.data as string | undefined;
-    if (!b64) throw new Error("Resposta TTS sem áudio");
+    // Divide em chunks de ~1 minuto pra não distorcer o áudio em artigos longos
+    const chunks = dividirTextoEmChunks(texto);
+    const pcmParts: Uint8Array[] = [];
 
-    const pcm = base64ToBytes(b64);
+    for (const chunk of chunks) {
+      const res = await geminiGenerateContent(TTS_MODEL, {
+        contents: [{ parts: [{ text: chunk }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: data.voz },
+            },
+            languageCode: "pt-BR",
+          },
+        },
+      });
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        throw new Error(`Gemini TTS falhou (${res.status}): ${body.slice(0, 300)}`);
+      }
+      const json = (await res.json()) as any;
+      const part = json?.candidates?.[0]?.content?.parts?.[0];
+      const b64 = part?.inlineData?.data as string | undefined;
+      if (!b64) throw new Error("Resposta TTS sem áudio");
+      pcmParts.push(base64ToBytes(b64));
+    }
+
+    // Concatena PCM cru e envelopa num único WAV (sem distorção entre pedaços)
+    const totalLen = pcmParts.reduce((s, p) => s + p.length, 0);
+    const pcm = new Uint8Array(totalLen);
+    {
+      let off = 0;
+      for (const p of pcmParts) { pcm.set(p, off); off += p.length; }
+    }
     const wav = pcmToWav(pcm, 24000);
     const audioPath = `${art.lei_id}/${art.id}.wav`;
 
