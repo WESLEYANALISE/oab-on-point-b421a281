@@ -66,7 +66,46 @@ export const listarLeisNarracao = createServerFn({ method: "GET" })
       .order("categoria")
       .order("ordem");
     if (error) throw new Error(error.message);
-    return data ?? [];
+    const leis = data ?? [];
+
+    // Conta artigos elegíveis (com numero) e já narrados por lei
+    const ids = leis.map((l) => l.id as string);
+    const totalNarravelMap = new Map<string, number>();
+    const narradosMap = new Map<string, number>();
+
+    if (ids.length) {
+      // total narrável: artigos com numero não nulo/vazio
+      const totalNarravel = await Promise.all(
+        ids.map(async (id) => {
+          const { count } = await supabaseAdmin
+            .from("vade_mecum_artigos")
+            .select("id", { count: "exact", head: true })
+            .eq("lei_id", id)
+            .not("numero", "is", null)
+            .neq("numero", "");
+          return [id, count ?? 0] as const;
+        }),
+      );
+      totalNarravel.forEach(([id, c]) => totalNarravelMap.set(id, c));
+
+      // narrados
+      const narrados = await Promise.all(
+        ids.map(async (id) => {
+          const { count } = await supabaseAdmin
+            .from("vade_mecum_narracoes")
+            .select("artigo_id", { count: "exact", head: true })
+            .eq("lei_id", id);
+          return [id, count ?? 0] as const;
+        }),
+      );
+      narrados.forEach(([id, c]) => narradosMap.set(id, c));
+    }
+
+    return leis.map((l) => ({
+      ...l,
+      total_narravel: totalNarravelMap.get(l.id as string) ?? 0,
+      narrados: narradosMap.get(l.id as string) ?? 0,
+    }));
   });
 
 // ---------- LIST ARTIGOS DE UMA LEI ----------
