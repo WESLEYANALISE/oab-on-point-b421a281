@@ -759,6 +759,8 @@ function ArtigoSheet({
     // Artigo individual também é praticamente imutável.
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
+    refetchOnMount: "always",
+
     queryFn: async (): Promise<ArtigoCompleto> => {
       const { data, error } = await supabase
         .from("vade_mecum_artigos")

@@ -184,6 +184,8 @@ function ArtigoRow({ artigo }: { artigo: Artigo }) {
       setAudioUrl(r.url);
       toast.success("Narração gerada!");
       qc.invalidateQueries({ queryKey: ["admin-narracoes"] });
+      qc.removeQueries({ queryKey: ["vade-mecum", "artigo", artigo.id] });
+      qc.invalidateQueries({ queryKey: ["vade-mecum"] });
     },
     onError: (e: any) => toast.error(e?.message || "Erro ao gerar"),
   });
@@ -201,6 +203,8 @@ function ArtigoRow({ artigo }: { artigo: Artigo }) {
       setAudioUrl(null);
       toast.success("Narração removida");
       qc.invalidateQueries({ queryKey: ["admin-narracoes"] });
+      qc.removeQueries({ queryKey: ["vade-mecum", "artigo", artigo.id] });
+      qc.invalidateQueries({ queryKey: ["vade-mecum"] });
     },
   });
 
