@@ -48,6 +48,8 @@ function EstatutoArtigosPage() {
   const { slug } = Route.useParams();
   const [query, setQuery] = useState("");
   const [artigoId, setArtigoId] = useState<string | null>(null);
+  const [modo, setModo] = useState<"artigos" | "capitulos">("artigos");
+  const [capituloAberto, setCapituloAberto] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["vade-mecum", "estatuto", slug],
@@ -95,6 +97,29 @@ function EstatutoArtigosPage() {
     if (next) setArtigoId(next.id);
   };
 
+  // Agrupa artigos por Título/Capítulo
+  const grupos = useMemo(() => {
+    const isEstrutura = (n: string | null) =>
+      !!n && /^(t[íi]tulo|cap[íi]tulo|livro|parte|se[çc][ãa]o)\b/i.test(n.trim());
+    const out: { id: string; rotulo: string; texto: string; artigos: ArtigoLista[] }[] = [];
+    let atual: (typeof out)[number] | null = null;
+    for (const a of artigos) {
+      if (isEstrutura(a.numero)) {
+        atual = { id: a.id, rotulo: a.numero!.trim(), texto: a.texto, artigos: [] };
+        out.push(atual);
+      } else if (atual) {
+        atual.artigos.push(a);
+      } else {
+        if (!atual) {
+          atual = { id: "_pre", rotulo: "Disposições", texto: "", artigos: [] };
+          out.unshift(atual);
+        }
+        atual.artigos.push(a);
+      }
+    }
+    return out;
+  }, [artigos]);
+
   return (
     <div className="pb-20">
       <header className="border-b border-border/60 px-4 md:px-8 pt-5 pb-5 bg-card/30">
@@ -125,35 +150,119 @@ function EstatutoArtigosPage() {
       </header>
 
       <section className="px-4 md:px-8 mt-4">
+        {/* Toggle Artigos / Capítulos */}
+        <div className="mb-3 inline-flex p-1 rounded-xl bg-card/60 border border-border/60">
+          {(["artigos", "capitulos"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setModo(m)}
+              className={`px-4 h-8 rounded-lg text-xs font-medium transition-colors ${
+                modo === m
+                  ? "bg-gradient-to-br from-primary/30 to-gold/20 text-gold border border-gold/30"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {m === "artigos" ? "Artigos" : "Capítulos"}
+            </button>
+          ))}
+        </div>
+
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="h-[68px] rounded-xl border border-border/60 bg-card/40 animate-pulse" />
             ))}
           </div>
-        ) : filtrados.length === 0 ? (
+        ) : modo === "artigos" ? (
+          filtrados.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
+              Nenhum artigo encontrado{query ? ` para "${query}".` : "."}
+            </div>
+          ) : (
+            <ul className="rounded-2xl border border-border/60 bg-card/40 divide-y divide-border/50 overflow-hidden">
+              {filtrados.map((a) => (
+                <li key={a.id}>
+                  <button
+                    type="button"
+                    onClick={() => setArtigoId(a.id)}
+                    className="w-full flex items-start gap-3 px-4 py-3.5 text-left hover:bg-card/80 transition-colors cursor-pointer group"
+                  >
+                    <span className="shrink-0 mt-0.5 h-8 min-w-[44px] px-2 rounded-lg bg-gradient-to-br from-primary/20 to-gold/10 border border-border/50 grid place-items-center text-[11px] font-semibold text-gold">
+                      {a.numero ? `Art. ${a.numero}` : `#${a.ordem}`}
+                    </span>
+                    <span className="min-w-0 flex-1 text-sm text-foreground/90 line-clamp-2 leading-snug">
+                      {a.texto}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )
+        ) : grupos.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
-            Nenhum artigo encontrado{query ? ` para "${query}".` : "."}
+            Esta lei não possui divisão em capítulos.
           </div>
         ) : (
-          <ul className="rounded-2xl border border-border/60 bg-card/40 divide-y divide-border/50 overflow-hidden">
-            {filtrados.map((a) => (
-              <li key={a.id}>
-                <button
-                  type="button"
-                  onClick={() => setArtigoId(a.id)}
-                  className="w-full flex items-start gap-3 px-4 py-3.5 text-left hover:bg-card/80 transition-colors cursor-pointer group"
+          <ul className="space-y-2">
+            {grupos.map((g) => {
+              const aberto = capituloAberto === g.id;
+              return (
+                <li
+                  key={g.id}
+                  className="rounded-xl border border-border/60 bg-card/40 overflow-hidden"
                 >
-                  <span className="shrink-0 mt-0.5 h-8 min-w-[44px] px-2 rounded-lg bg-gradient-to-br from-primary/20 to-gold/10 border border-border/50 grid place-items-center text-[11px] font-semibold text-gold">
-                    {a.numero ? `Art. ${a.numero}` : `#${a.ordem}`}
-                  </span>
-                  <span className="min-w-0 flex-1 text-sm text-foreground/90 line-clamp-2 leading-snug">
-                    {a.texto}
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
-                </button>
-              </li>
-            ))}
+                  <button
+                    type="button"
+                    onClick={() => setCapituloAberto(aberto ? null : g.id)}
+                    className="w-full flex items-start gap-3 px-4 py-3.5 text-left hover:bg-card/80 transition-colors"
+                  >
+                    <span className="shrink-0 mt-0.5 h-8 px-2.5 rounded-lg bg-gradient-to-br from-primary/20 to-gold/10 border border-border/50 grid place-items-center text-[10px] font-semibold text-gold uppercase tracking-wider whitespace-nowrap">
+                      {g.rotulo}
+                    </span>
+                    <span className="min-w-0 flex-1 text-sm text-foreground/90 leading-snug">
+                      {g.texto || g.rotulo}
+                      <span className="block text-[11px] text-muted-foreground mt-0.5">
+                        {g.artigos.length} {g.artigos.length === 1 ? "artigo" : "artigos"}
+                      </span>
+                    </span>
+                    <ChevronRight
+                      className={`h-4 w-4 text-muted-foreground shrink-0 mt-1 transition-transform ${
+                        aberto ? "rotate-90" : ""
+                      }`}
+                    />
+                  </button>
+                  {aberto && (
+                    <ul className="border-t border-border/50 divide-y divide-border/40 bg-background/30">
+                      {g.artigos.length === 0 ? (
+                        <li className="px-4 py-3 text-xs text-muted-foreground italic">
+                          Sem artigos neste capítulo.
+                        </li>
+                      ) : (
+                        g.artigos.map((a) => (
+                          <li key={a.id}>
+                            <button
+                              type="button"
+                              onClick={() => setArtigoId(a.id)}
+                              className="w-full flex items-start gap-3 px-4 py-2.5 text-left hover:bg-card/60 transition-colors group"
+                            >
+                              <span className="shrink-0 mt-0.5 text-[11px] font-semibold text-gold min-w-[44px]">
+                                Art. {a.numero ?? a.ordem}
+                              </span>
+                              <span className="min-w-0 flex-1 text-[13px] text-foreground/80 line-clamp-1 leading-snug">
+                                {a.texto}
+                              </span>
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:translate-x-0.5 transition-all shrink-0 mt-1" />
+                            </button>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
