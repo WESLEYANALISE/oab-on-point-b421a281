@@ -419,12 +419,16 @@ function EstatutoArtigosPage() {
               <div key={i} className="h-[76px] rounded-2xl border border-border/60 bg-card/40 animate-pulse" />
             ))}
           </div>
-        ) : aba === "artigos" ? (
-          <ListaArtigos lista={listaArtigos} onOpen={setArtigoId} query={query} />
-        ) : aba === "capitulos" ? (
-          <ArvoreCapitulos nos={arvore} onOpen={setArtigoId} />
         ) : (
-          <ListaArtigos lista={listaRelevantes} onOpen={setArtigoId} query={query} />
+          <div key={aba} className="animate-fade-in">
+            {aba === "artigos" ? (
+              <ListaArtigos lista={listaArtigos} onOpen={setArtigoId} query={query} />
+            ) : aba === "capitulos" ? (
+              <ArvoreCapitulos nos={arvore} onOpen={setArtigoId} />
+            ) : (
+              <ListaArtigos lista={listaRelevantes} onOpen={setArtigoId} query={query} />
+            )}
+          </div>
         )}
       </section>
 
