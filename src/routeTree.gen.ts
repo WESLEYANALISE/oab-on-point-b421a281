@@ -55,6 +55,7 @@ import { Route as AppBlogSlugRouteImport } from './routes/_app.blog.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
 import { Route as AppAdminResumosRouteImport } from './routes/_app.admin.resumos'
+import { Route as AppAdminNarracoesRouteImport } from './routes/_app.admin.narracoes'
 import { Route as AppAdminBlogRouteImport } from './routes/_app.admin.blog'
 import { Route as AppVadeMecumEstatutosIndexRouteImport } from './routes/_app.vade-mecum.estatutos.index'
 import { Route as AppSimuladosSlugIndexRouteImport } from './routes/_app.simulados.$slug.index'
@@ -296,6 +297,11 @@ const AppAdminResumosRoute = AppAdminResumosRouteImport.update({
   path: '/resumos',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminNarracoesRoute = AppAdminNarracoesRouteImport.update({
+  id: '/narracoes',
+  path: '/narracoes',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminBlogRoute = AppAdminBlogRouteImport.update({
   id: '/blog',
   path: '/blog',
@@ -382,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/admin/blog': typeof AppAdminBlogRoute
+  '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
@@ -438,6 +445,7 @@ export interface FileRoutesByTo {
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/admin/blog': typeof AppAdminBlogRoute
+  '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
   '/blog/$slug': typeof AppBlogSlugRoute
@@ -496,6 +504,7 @@ export interface FileRoutesById {
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
+  '/_app/admin/narracoes': typeof AppAdminNarracoesRoute
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
@@ -556,6 +565,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/api/artigo-chat'
     | '/admin/blog'
+    | '/admin/narracoes'
     | '/admin/resumos'
     | '/admin/simulados'
     | '/biblioteca/$slug'
@@ -612,6 +622,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/api/artigo-chat'
     | '/admin/blog'
+    | '/admin/narracoes'
     | '/admin/resumos'
     | '/admin/simulados'
     | '/blog/$slug'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/_app/reta-final'
     | '/api/artigo-chat'
     | '/_app/admin/blog'
+    | '/_app/admin/narracoes'
     | '/_app/admin/resumos'
     | '/_app/admin/simulados'
     | '/_app/biblioteca/$slug'
@@ -1040,6 +1052,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminResumosRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/narracoes': {
+      id: '/_app/admin/narracoes'
+      path: '/narracoes'
+      fullPath: '/admin/narracoes'
+      preLoaderRoute: typeof AppAdminNarracoesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/admin/blog': {
       id: '/_app/admin/blog'
       path: '/blog'
@@ -1122,6 +1141,7 @@ declare module '@tanstack/react-router' {
 
 interface AppAdminRouteChildren {
   AppAdminBlogRoute: typeof AppAdminBlogRoute
+  AppAdminNarracoesRoute: typeof AppAdminNarracoesRoute
   AppAdminResumosRoute: typeof AppAdminResumosRoute
   AppAdminSimuladosRoute: typeof AppAdminSimuladosRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
@@ -1129,6 +1149,7 @@ interface AppAdminRouteChildren {
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminBlogRoute: AppAdminBlogRoute,
+  AppAdminNarracoesRoute: AppAdminNarracoesRoute,
   AppAdminResumosRoute: AppAdminResumosRoute,
   AppAdminSimuladosRoute: AppAdminSimuladosRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,

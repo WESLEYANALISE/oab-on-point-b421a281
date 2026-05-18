@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Target, ChevronRight, FileText, Newspaper } from "lucide-react";
+import { Target, ChevronRight, FileText, Newspaper, AudioLines } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin/")({
   component: AdminHome,
@@ -56,6 +56,21 @@ function AdminHome() {
             <div className="flex-1 min-w-0">
               <p className="font-display text-lg">Blog</p>
               <p className="text-xs text-muted-foreground">Criar, editar e publicar artigos</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/admin/narracoes"
+            className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors"
+          >
+            <div className="h-12 w-12 rounded-lg bg-gradient-gold grid place-items-center text-gold-foreground">
+              <AudioLines className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-lg">Narração</p>
+              <p className="text-xs text-muted-foreground">Gerar narração dos artigos do Vade Mecum (Gemini TTS)</p>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </Link>
