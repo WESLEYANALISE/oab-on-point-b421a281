@@ -47,6 +47,7 @@ const AnotacoesPanel = lazy(() =>
   import("@/components/vade-mecum/AnotacoesPanel").then((m) => ({ default: m.AnotacoesPanel })),
 );
 import { ArtigoFocusOverlay } from "@/components/vade-mecum/ArtigoFocusOverlay";
+import { AnimatePresence, motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/vade-mecum/estatutos/$slug")({
   head: ({ params }) => ({
