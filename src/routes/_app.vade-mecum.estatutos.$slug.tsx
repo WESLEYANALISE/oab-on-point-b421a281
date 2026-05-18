@@ -940,18 +940,8 @@ function ArtigoSheet({
                 <div className="h-4 bg-card/60 rounded animate-pulse w-5/6" />
                 <div className="h-4 bg-card/60 rounded animate-pulse w-4/6" />
               </div>
-            ) : funcTab === "narracao" ? (
-              <NarracaoView url={artigo.narracao_url} />
-            ) : funcTab === "anotacoes" ? (
-              <AnotacoesEditor userId={userId} leiId={leiId} artigoId={artigo.id} />
-            ) : funcTab === "perguntar" ? (
-              <PerguntarPlaceholder artigo={artigo} />
-            ) : funcTab === "praticar" ? (
-              <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
-                <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
-              </Suspense>
             ) : (
-              // Estudar — usa contentTab
+              // Conteúdo padrão = Estudar. Praticar/Anotações/Perguntar abrem em overlay.
               <div style={{ fontSize: fontPx }}>
                 {contentTab === "artigo" && (
                   <div className="space-y-6">
@@ -983,6 +973,9 @@ function ArtigoSheet({
                 )}
                 {contentTab === "termos" && (
                   <TermosView termos={termos} />
+                )}
+                {contentTab === "narracao" && (
+                  <NarracaoView url={artigo.narracao_url} />
                 )}
               </div>
             )}
