@@ -408,6 +408,7 @@ function EstatutoArtigosPage() {
         planaltoUrl={meta?.planaltoUrl}
         userId={userId}
         favorito={!!artigoId && !!favoritos?.has(artigoId)}
+        caminho={caminhoAtual}
         onClose={() => setArtigoId(null)}
         onPrev={() => navegar(-1)}
         onNext={() => navegar(1)}
