@@ -251,7 +251,7 @@ function ArtigoSheet({
             </div>
           ) : (
             <>
-              <article className="text-[15px] leading-relaxed text-foreground whitespace-pre-wrap font-serif">
+              <article className="font-serif text-[17px] leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em] [text-wrap:pretty] first-letter:text-[28px] first-letter:font-semibold first-letter:text-gold first-letter:mr-0.5">
                 {artigo.texto}
               </article>
 
