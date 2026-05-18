@@ -886,6 +886,8 @@ function FuncTabBtn({
 }: {
   ativo: boolean; onClick: () => void; icone: React.ReactNode; label: string; destaque?: boolean;
 }) {
+  const tamanho = destaque ? "h-14 w-14" : "h-11 w-11";
+  const baseElegant = destaque ? "btn-narracao-elegant text-black" : "";
   return (
     <button
       type="button"
@@ -893,17 +895,17 @@ function FuncTabBtn({
       className="flex flex-col items-center gap-1 group"
     >
       <span
-        className={`h-11 w-11 grid place-items-center rounded-full transition-all ${
-          ativo
-            ? "bg-gradient-to-br from-gold to-amber-600 text-black shadow-md scale-110"
-            : destaque
-              ? "bg-card/70 border border-gold/30 text-gold/90 group-hover:bg-card"
+        className={`${tamanho} grid place-items-center rounded-full transition-all ${
+          destaque
+            ? `${baseElegant} ${ativo ? "scale-110 ring-2 ring-gold/60" : ""}`
+            : ativo
+              ? "bg-gradient-to-br from-gold to-amber-600 text-black shadow-md scale-110"
               : "bg-card/60 border border-border/60 text-muted-foreground group-hover:text-foreground"
         }`}
       >
         {icone}
       </span>
-      <span className={`text-[10px] font-medium ${ativo ? "text-gold" : "text-muted-foreground"}`}>
+      <span className={`text-[10px] font-medium ${ativo || destaque ? "text-gold" : "text-muted-foreground"}`}>
         {label}
       </span>
     </button>
