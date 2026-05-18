@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { markdownToWhatsapp } from "@/lib/whatsapp-markdown";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -41,12 +41,8 @@ import { pushRecente } from "@/lib/vade-mecum-recentes";
 import { useFontScale, SCALES } from "@/hooks/use-font-scale";
 import { toast } from "sonner";
 import brasao from "@/assets/brasao-republica.png";
-const PraticarPanel = lazy(() =>
-  import("@/components/vade-mecum/PraticarPanel").then((m) => ({ default: m.PraticarPanel })),
-);
-const AnotacoesPanel = lazy(() =>
-  import("@/components/vade-mecum/AnotacoesPanel").then((m) => ({ default: m.AnotacoesPanel })),
-);
+import { PraticarPanel } from "@/components/vade-mecum/PraticarPanel";
+import { AnotacoesPanel } from "@/components/vade-mecum/AnotacoesPanel";
 import { ArtigoFocusOverlay } from "@/components/vade-mecum/ArtigoFocusOverlay";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -1040,9 +1036,7 @@ function ArtigoSheet({
               subtitle="Profa. Ana gera tudo pra você"
               onClose={() => setFocusMode(null)}
             >
-              <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
                 <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
-              </Suspense>
             </ArtigoFocusOverlay>
           )}
         </AnimatePresence>
@@ -1056,14 +1050,12 @@ function ArtigoSheet({
               title={`Anotações · Art. ${artigo.numero ?? "—"}`}
               onClose={() => setFocusMode(null)}
             >
-              <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
                 <AnotacoesPanel
                   userId={userId}
                   leiId={leiId}
                   artigoId={artigo.id}
                   artigoNumero={artigo.numero}
                 />
-              </Suspense>
             </ArtigoFocusOverlay>
           )}
         </AnimatePresence>
