@@ -47,6 +47,7 @@ const AnotacoesPanel = lazy(() =>
   import("@/components/vade-mecum/AnotacoesPanel").then((m) => ({ default: m.AnotacoesPanel })),
 );
 import { ArtigoFocusOverlay } from "@/components/vade-mecum/ArtigoFocusOverlay";
+import { AnimatePresence, motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/vade-mecum/estatutos/$slug")({
   head: ({ params }) => ({
@@ -1046,45 +1047,54 @@ function ArtigoSheet({
         </div>
 
         {/* Overlay foco: Praticar */}
-        {focusMode === "praticar" && artigo && (
-          <ArtigoFocusOverlay
-            eyebrow={leiRotulo}
-            title={`Praticar · Art. ${artigo.numero ?? "—"}`}
-            subtitle="Profa. Ana gera tudo pra você"
-            onClose={() => setFocusMode(null)}
-          >
-            <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
-              <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
-            </Suspense>
-          </ArtigoFocusOverlay>
-        )}
+        <AnimatePresence>
+          {focusMode === "praticar" && artigo && (
+            <ArtigoFocusOverlay
+              key="focus-praticar"
+              eyebrow={leiRotulo}
+              title={`Praticar · Art. ${artigo.numero ?? "—"}`}
+              subtitle="Profa. Ana gera tudo pra você"
+              onClose={() => setFocusMode(null)}
+            >
+              <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
+                <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
+              </Suspense>
+            </ArtigoFocusOverlay>
+          )}
+        </AnimatePresence>
 
         {/* Overlay foco: Anotações */}
-        {focusMode === "anotacoes" && artigo && (
-          <ArtigoFocusOverlay
-            eyebrow={leiRotulo}
-            title={`Anotações · Art. ${artigo.numero ?? "—"}`}
-            onClose={() => setFocusMode(null)}
-          >
-            <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
-              <AnotacoesPanel
-                userId={userId}
-                leiId={leiId}
-                artigoId={artigo.id}
-                artigoNumero={artigo.numero}
-              />
-            </Suspense>
-          </ArtigoFocusOverlay>
-        )}
+        <AnimatePresence>
+          {focusMode === "anotacoes" && artigo && (
+            <ArtigoFocusOverlay
+              key="focus-anotacoes"
+              eyebrow={leiRotulo}
+              title={`Anotações · Art. ${artigo.numero ?? "—"}`}
+              onClose={() => setFocusMode(null)}
+            >
+              <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
+                <AnotacoesPanel
+                  userId={userId}
+                  leiId={leiId}
+                  artigoId={artigo.id}
+                  artigoNumero={artigo.numero}
+                />
+              </Suspense>
+            </ArtigoFocusOverlay>
+          )}
+        </AnimatePresence>
 
         {/* Overlay chat IA dedicado ao artigo */}
-        {chatAberto && artigo && (
-          <ChatIAOverlay
-            artigo={artigo}
-            leiRotulo={leiRotulo}
-            onClose={() => setChatAberto(false)}
-          />
-        )}
+        <AnimatePresence>
+          {chatAberto && artigo && (
+            <ChatIAOverlay
+              key="chat-ia"
+              artigo={artigo}
+              leiRotulo={leiRotulo}
+              onClose={() => setChatAberto(false)}
+            />
+          )}
+        </AnimatePresence>
       </SheetContent>
     </Sheet>
   );
@@ -1419,7 +1429,22 @@ function ChatIAOverlay({
   };
 
   return (
-    <div className="absolute inset-0 z-30 flex flex-col bg-background animate-in slide-in-from-bottom duration-300">
+    <>
+      <motion.div
+        className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        onClick={onClose}
+      />
+      <motion.div
+        className="absolute inset-0 z-30 flex flex-col bg-background shadow-2xl"
+        initial={{ y: "100%", opacity: 0.6 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: "100%", opacity: 0.4 }}
+        transition={{ type: "spring", stiffness: 320, damping: 34, mass: 0.9 }}
+      >
       {/* Header */}
       <div className="px-5 pt-5 pb-3 border-b border-border/60 bg-gradient-to-b from-card/80 to-card/40 flex items-center justify-between gap-3">
         <div className="min-w-0">
@@ -1588,7 +1613,8 @@ function ChatIAOverlay({
           </button>
         </form>
       </div>
-    </div>
+      </motion.div>
+    </>
   );
 }
 
