@@ -17,7 +17,6 @@ import {
   Scale,
   CheckCircle2,
   X,
-  MoreHorizontal,
   GraduationCap,
   Target,
   Volume2,
@@ -111,6 +110,34 @@ function montarArvore(artigos: ArtigoLista[]): Nó[] {
     }
   }
   return raiz;
+}
+
+/** Mapa artigoId → caminho hierárquico (Título, Capítulo, Seção…). */
+type CaminhoItem = { tipo: string; rotulo: string; texto: string };
+function mapearCaminhos(artigos: ArtigoLista[]): Map<string, CaminhoItem[]> {
+  const mapa = new Map<string, CaminhoItem[]>();
+  const pilha: CaminhoItem[] = [];
+  for (const a of artigos) {
+    const tipo = tipoEstrutura(a.numero);
+    if (tipo) {
+      const nivel = NIVEIS[tipo] ?? 99;
+      while (pilha.length && (NIVEIS[pilha[pilha.length - 1].tipo] ?? 99) >= nivel) pilha.pop();
+      pilha.push({ tipo, rotulo: (a.numero ?? "").trim(), texto: (a.texto ?? "").trim() });
+    } else {
+      mapa.set(a.id, pilha.slice());
+    }
+  }
+  return mapa;
+}
+
+/** Remove "Art. Nº " duplicado do início do texto do artigo. */
+function limparPrefixoArtigo(texto: string): string {
+  if (!texto) return texto;
+  // Casa "Art. 1", "Art. 2º", "Art. 2º-A", "Art. 1.º", "Art. 1°" etc.
+  return texto.replace(
+    /^\s*art\.?\s*[\dIVXLCDM]+(?:[ºoOªªA]|\.º|°)?(?:[-‑–][A-Za-z\d]+)*\s*[.\-–—:]?\s*/i,
+    "",
+  );
 }
 
 // ----------- Page -----------
@@ -208,6 +235,8 @@ function EstatutoArtigosPage() {
   }, [apenasArtigos, query, filtroChip, favoritos, idsAnotados]);
 
   const arvore = useMemo(() => montarArvore(artigos), [artigos]);
+  const caminhos = useMemo(() => mapearCaminhos(artigos), [artigos]);
+  const caminhoAtual = artigoId ? caminhos.get(artigoId) ?? [] : [];
 
   const indiceAtual = artigoId ? listaArtigos.findIndex((a) => a.id === artigoId) : -1;
   const navegar = (delta: number) => {
@@ -378,6 +407,7 @@ function EstatutoArtigosPage() {
         planaltoUrl={meta?.planaltoUrl}
         userId={userId}
         favorito={!!artigoId && !!favoritos?.has(artigoId)}
+        caminho={caminhoAtual}
         onClose={() => setArtigoId(null)}
         onPrev={() => navegar(-1)}
         onNext={() => navegar(1)}
@@ -619,6 +649,7 @@ function ArtigoSheet({
   planaltoUrl,
   userId,
   favorito,
+  caminho,
   onClose,
   onPrev,
   onNext,
@@ -631,6 +662,7 @@ function ArtigoSheet({
   planaltoUrl?: string;
   userId: string | null;
   favorito: boolean;
+  caminho: CaminhoItem[];
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
@@ -707,7 +739,20 @@ function ArtigoSheet({
               <p className="text-[10px] uppercase tracking-[0.22em] text-gold/90 font-semibold truncate">
                 {leiRotulo}
               </p>
-              <h2 className="font-display font-bold text-[26px] tracking-tight mt-0.5 leading-none">
+              {caminho.length > 0 && (
+                <div className="mt-1.5 space-y-0.5">
+                  {caminho.map((c, i) => (
+                    <p
+                      key={i}
+                      className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground/85 leading-tight truncate"
+                      style={{ paddingLeft: `${i * 8}px` }}
+                    >
+                      {c.rotulo}
+                    </p>
+                  ))}
+                </div>
+              )}
+              <h2 className="font-display font-bold text-[26px] tracking-tight mt-2 leading-none">
                 {artigo?.numero ? `Art. ${artigo.numero}` : "Artigo"}
               </h2>
             </div>
@@ -744,13 +789,6 @@ function ArtigoSheet({
                 title={mostrarParenteses ? "Ocultar texto entre parênteses" : "Mostrar texto entre parênteses"}
               >
                 {mostrarParenteses ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-              <button
-                type="button"
-                className="h-9 w-9 grid place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-card transition-colors"
-                aria-label="Mais"
-              >
-                <MoreHorizontal className="h-4 w-4" />
               </button>
               <button
                 type="button"
@@ -824,7 +862,7 @@ function ArtigoSheet({
                   <div className="space-y-6">
                     <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
                       <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
-                      {renderTextoArtigo(artigo.texto, mostrarParenteses)}
+                      {renderTextoArtigo(limparPrefixoArtigo(artigo.texto), mostrarParenteses)}
                     </article>
                     {planaltoUrl && (
                       <div className="flex justify-center pt-2 pb-4">
