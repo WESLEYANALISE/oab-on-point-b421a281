@@ -162,6 +162,7 @@ function EstatutoArtigosPage() {
   const [artigoId, setArtigoId] = useState<string | null>(null);
   const [aba, setAba] = useState<Aba>("artigos");
   const [userId, setUserId] = useState<string | null>(null);
+  const [playlistOpen, setPlaylistOpen] = useState(false);
 
   useEffect(() => {
     pushRecente(slug);
