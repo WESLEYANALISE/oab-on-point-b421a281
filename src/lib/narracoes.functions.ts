@@ -315,5 +315,9 @@ export const excluirNarracao = createServerFn({ method: "POST" })
       .delete()
       .eq("artigo_id", data.artigoId);
     if (error) throw new Error(error.message);
+    await supabaseAdmin
+      .from("vade_mecum_artigos")
+      .update({ narracao_url: null })
+      .eq("id", data.artigoId);
     return { ok: true };
   });
