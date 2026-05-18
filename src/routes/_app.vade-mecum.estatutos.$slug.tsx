@@ -619,6 +619,21 @@ function NoArvore({ no, nivel, onOpen }: { no: Nó; nivel: number; onOpen: (id: 
 type FuncTab = "estudar" | "praticar" | "narracao" | "anotacoes" | "perguntar";
 type ContentTab = "artigo" | "explicacao" | "exemplo" | "termos";
 
+/** Insere quebras de linha antes de incisos (I, II...), parágrafos (§) e "Parágrafo único". */
+function formatarQuebrasArtigo(texto: string): string {
+  if (!texto) return texto;
+  let t = texto.replace(/\s+/g, " ").trim();
+  // Parágrafos: § 1º, § 2º...
+  t = t.replace(/\s*(§\s*\d+[ºo]?)/g, "\n\n$1");
+  // Parágrafo único
+  t = t.replace(/\s*(Parágrafo único)/gi, "\n\n$1");
+  // Incisos romanos: " I - ", " II – ", " III — "
+  t = t.replace(/\s+([IVXLCDM]+)\s*[-–—]\s+/g, "\n$1 – ");
+  // Alíneas: " a) ", " b) "
+  t = t.replace(/\s+([a-z])\)\s+/g, "\n$1) ");
+  return t;
+}
+
 /** Divide o texto em partes entre/fora de parênteses (balanceados). */
 function renderTextoArtigo(texto: string, mostrarParenteses: boolean): React.ReactNode[] {
   const out: React.ReactNode[] = [];
