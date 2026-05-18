@@ -1003,6 +1003,122 @@ export type Database = {
         }
         Relationships: []
       }
+      vade_mecum_artigos: {
+        Row: {
+          aula: string | null
+          comentario: string | null
+          created_at: string
+          data_aprovacao: string | null
+          exemplo: string | null
+          explicacao_resumido: string | null
+          explicacao_simples_maior16: string | null
+          explicacao_simples_menor16: string | null
+          explicacao_tecnico: string | null
+          flashcards: Json | null
+          id: string
+          lei_id: string
+          narracao_url: string | null
+          numero: string | null
+          ordem: number
+          questoes: Json | null
+          source_id: number | null
+          termos: Json | null
+          termos_aprofundados: Json | null
+          texto: string
+          updated_at: string
+        }
+        Insert: {
+          aula?: string | null
+          comentario?: string | null
+          created_at?: string
+          data_aprovacao?: string | null
+          exemplo?: string | null
+          explicacao_resumido?: string | null
+          explicacao_simples_maior16?: string | null
+          explicacao_simples_menor16?: string | null
+          explicacao_tecnico?: string | null
+          flashcards?: Json | null
+          id?: string
+          lei_id: string
+          narracao_url?: string | null
+          numero?: string | null
+          ordem?: number
+          questoes?: Json | null
+          source_id?: number | null
+          termos?: Json | null
+          termos_aprofundados?: Json | null
+          texto: string
+          updated_at?: string
+        }
+        Update: {
+          aula?: string | null
+          comentario?: string | null
+          created_at?: string
+          data_aprovacao?: string | null
+          exemplo?: string | null
+          explicacao_resumido?: string | null
+          explicacao_simples_maior16?: string | null
+          explicacao_simples_menor16?: string | null
+          explicacao_tecnico?: string | null
+          flashcards?: Json | null
+          id?: string
+          lei_id?: string
+          narracao_url?: string | null
+          numero?: string | null
+          ordem?: number
+          questoes?: Json | null
+          source_id?: number | null
+          termos?: Json | null
+          termos_aprofundados?: Json | null
+          texto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vade_mecum_artigos_lei_id_fkey"
+            columns: ["lei_id"]
+            isOneToOne: false
+            referencedRelation: "vade_mecum_leis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vade_mecum_leis: {
+        Row: {
+          categoria: string
+          created_at: string
+          id: string
+          nome: string
+          nome_curto: string | null
+          ordem: number
+          slug: string
+          total_artigos: number
+          updated_at: string
+        }
+        Insert: {
+          categoria: string
+          created_at?: string
+          id?: string
+          nome: string
+          nome_curto?: string | null
+          ordem?: number
+          slug: string
+          total_artigos?: number
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          id?: string
+          nome?: string
+          nome_curto?: string | null
+          ordem?: number
+          slug?: string
+          total_artigos?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
