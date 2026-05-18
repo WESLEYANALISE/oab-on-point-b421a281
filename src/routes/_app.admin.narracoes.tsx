@@ -75,42 +75,7 @@ function AdminNarracoes() {
         </div>
       </header>
 
-      {!leiId && (
-        <section>
-          <h2 className="text-sm uppercase tracking-wider text-muted-foreground mb-3">
-            Escolha uma lei
-          </h2>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {(leis ?? []).map((l) => (
-              <li key={l.id}>
-                <button
-                  onClick={() => {
-                    setLeiId(l.id);
-                    setPage(0);
-                    setBusca("");
-                  }}
-                  className="w-full text-left p-4 rounded-xl border border-border bg-card hover:border-primary hover:bg-accent transition-colors"
-                >
-                  <div className="font-display text-base">
-                    {l.nome_curto || l.nome}
-                  </div>
-                  {l.nome_curto && l.nome !== l.nome_curto && (
-                    <div className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                      {l.nome}
-                    </div>
-                  )}
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {l.total_artigos ?? 0} artigos
-                  </div>
-                </button>
-              </li>
-            ))}
-            {leis && leis.length === 0 && (
-              <li className="text-sm text-muted-foreground">Nenhuma lei cadastrada.</li>
-            )}
-          </ul>
-        </section>
-      )}
+      {!leiId && <LeisLista leis={leis ?? []} onSelect={(id) => { setLeiId(id); setPage(0); setBusca(""); }} />}
 
       {leiId && (
         <>
