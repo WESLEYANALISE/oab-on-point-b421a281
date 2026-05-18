@@ -363,13 +363,13 @@ function EstatutoArtigosPage() {
         </div>
       </section>
 
-      {/* Toggle Artigos / Capítulos */}
+      {/* Toggle Artigos / Capítulos / Relevantes */}
       <section className="px-4 md:px-8 mt-5">
-        <div className="grid grid-cols-2 gap-2 rounded-full bg-card/60 border border-border/60 p-1">
+        <div className="grid grid-cols-3 gap-1.5 rounded-full bg-card/60 border border-border/60 p-1">
           <button
             type="button"
             onClick={() => setAba("artigos")}
-            className={`h-10 rounded-full text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all ${
+            className={`h-10 rounded-full text-[12.5px] font-semibold inline-flex items-center justify-center gap-1.5 transition-all ${
               aba === "artigos"
                 ? "bg-gradient-to-br from-gold to-amber-500 text-black shadow-md"
                 : "text-muted-foreground hover:text-foreground"
@@ -381,7 +381,7 @@ function EstatutoArtigosPage() {
           <button
             type="button"
             onClick={() => setAba("capitulos")}
-            className={`h-10 rounded-full text-sm font-semibold inline-flex items-center justify-center gap-2 transition-all ${
+            className={`h-10 rounded-full text-[12.5px] font-semibold inline-flex items-center justify-center gap-1.5 transition-all ${
               aba === "capitulos"
                 ? "bg-gradient-to-br from-gold to-amber-500 text-black shadow-md"
                 : "text-muted-foreground hover:text-foreground"
@@ -389,6 +389,18 @@ function EstatutoArtigosPage() {
           >
             <ChevronRight className="h-4 w-4 rotate-90" />
             Capítulos
+          </button>
+          <button
+            type="button"
+            onClick={() => setAba("relevantes")}
+            className={`h-10 rounded-full text-[12.5px] font-semibold inline-flex items-center justify-center gap-1.5 transition-all ${
+              aba === "relevantes"
+                ? "bg-gradient-to-br from-gold to-amber-500 text-black shadow-md"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Flame className="h-4 w-4" />
+            Relevantes
           </button>
         </div>
       </section>
@@ -402,8 +414,10 @@ function EstatutoArtigosPage() {
           </div>
         ) : aba === "artigos" ? (
           <ListaArtigos lista={listaArtigos} onOpen={setArtigoId} query={query} />
-        ) : (
+        ) : aba === "capitulos" ? (
           <ArvoreCapitulos nos={arvore} onOpen={setArtigoId} />
+        ) : (
+          <ListaArtigos lista={listaRelevantes} onOpen={setArtigoId} query={query} />
         )}
       </section>
 
