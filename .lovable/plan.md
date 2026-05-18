@@ -1,47 +1,98 @@
-## O que vai mudar no chat da Profa. Ana
+# Acelerar navegação (Início, Vade-Mecum, Simulados)
 
-### 1. Resposta em streaming (já vai aparecendo conforme a IA escreve)
-Hoje a função `perguntarArtigoIA` espera o Gemini terminar tudo pra devolver o texto — por isso demora. Vamos trocar pelo endpoint de streaming do Gemini (`streamGenerateContent?alt=sse`) e expor isso como uma rota de servidor HTTP em `src/routes/api/artigo-chat.ts`, que devolve um stream de texto. No componente, em vez de `useServerFn`, fazemos `fetch` nessa rota e lemos o `ReadableStream` chunk a chunk com `getReader()`, atualizando a última mensagem do assistente a cada pedaço recebido. O Markdown vai sendo renderizado em tempo real (o `ReactMarkdown` lida bem com texto parcial).
+## Diagnóstico
 
-A animação atual de "digitação artificial" (estado `digitando`, timeout de 28ms) será removida — o próprio stream é a animação natural, e ela ficava mais lenta que a chegada do texto.
+Hoje as rotas Início (`/app`), Vade-Mecum (`/vade-mecum/estatutos/$slug`) e Simulados (`/simulados/$slug`) demoram porque:
 
-### 2. Cortou no meio — aumentar limite
-O `maxOutputTokens` está em **2048**, que é pouco para explicações longas com markdown. Vamos subir para **8192** (limite confortável do `gemini-2.5-flash`). Combinado com streaming, a pessoa já vê o texto chegando e o final não é mais cortado.
+1. **Nenhuma rota tem `loader`.** Todos os dados são buscados em `useQuery` dentro do componente. Isso anula o `defaultPreload: "intent"` configurado no router: tocar no link não pré-busca nada — a request só sai depois do clique, no `mount`.
+2. **Bundles enormes carregados de uma vez.** `_app.vade-mecum.estatutos.$slug.tsx` tem 1564 linhas e arrasta `react-markdown`, `remark-gfm`, `jspdf` (PDF), `PraticarPanel` (546 linhas), Sheet, etc. Tudo isso baixa antes da tela aparecer, mesmo quem só quer ler um artigo.
+3. **Drivers globais sempre montados.** `SimuladoQueueDriver` e `ResumoQueueDriver` vivem em `_app.tsx` e disparam server functions / polling em toda navegação, mesmo para usuários não-admin sem fila ativa.
+4. **`/app` refaz a query do blog** ao voltar (nada pré-aquece o cache na primeira visita).
 
-### 3. Não descer a tela automaticamente
-Remover o `useEffect` que faz `scrollTo({ top: scrollHeight })`. A pessoa controla o scroll. Vamos manter apenas um pequeno auto-scroll **uma única vez** quando a própria pessoa envia a mensagem (pra mostrar a pergunta dela), mas durante o streaming da resposta a tela fica parada.
+## O que vamos mudar
 
-### 4. Exportar PDF e compartilhar no WhatsApp
-Depois que a resposta do assistente termina de streamar (stream fechado), aparecem dois botões pequenos no rodapé da bolha da última resposta:
+### 1. Prefetch de dados via `loader` (ganho maior)
 
-- **Exportar PDF** — usa `jspdf` (já no projeto se não, instalar) pra gerar um PDF com: cabeçalho "Profa. Ana — Art. X · {Lei}", a pergunta da pessoa e a resposta formatada em texto (markdown convertido para texto puro com quebras e bullets). Nome do arquivo: `profa-ana-art-{numero}.pdf`. Download direto no navegador.
-- **Compartilhar no WhatsApp** — abre `https://wa.me/?text=...` em nova aba com o texto da resposta + a pergunta + um rodapé "via OAB On Point — Art. X". Em mobile abre o app do WhatsApp direto; em desktop abre o WhatsApp Web. Markdown vira formato WhatsApp (`**negrito**` → `*negrito*`, `*itálico*` → `_itálico_`, listas viram `• item`, blockquotes viram linhas com `> `).
+Adicionar `loader` que usa `context.queryClient.ensureQueryData` nas três rotas críticas — combinado com `defaultPreload: "intent"` e `defaultPreloadDelay: 0` já existentes, os dados começam a ser buscados no toque, antes do clique resolver.
 
-Os botões só aparecem em mensagens do assistente já finalizadas (não enquanto está streamando), e ficam discretos (ícones pequenos com label, estilo "ghost" dourado).
+- `/_app/app` → prefetch `listBlogPosts({ limit: 8 })`.
+- `/_app/vade-mecum/estatutos/$slug` → prefetch a lista de artigos do estatuto (query principal hoje feita dentro do componente).
+- `/_app/simulados/$slug` → prefetch `getSimuladoOverview` + `listMinhasTentativas`.
 
----
+Os componentes continuam usando `useQuery` com a mesma `queryKey` — pegam direto do cache, sem flicker.
+
+### 2. Code-split nas rotas pesadas
+
+No `_app.vade-mecum.estatutos.$slug.tsx`:
+- `PraticarPanel` via `lazy()` + `<Suspense>` (só carrega quando o usuário abre Praticar).
+- `chat-pdf` (jspdf, ~200KB) carregado dinâmico dentro do handler do botão PDF, não no topo do arquivo.
+- `react-markdown` + `remark-gfm` extraídos para um componente lazy `<MarkdownRender>`.
+
+No `_app.simulados.$slug.index.tsx`: mover os blocos pesados (edital, raio-x) para `lazy()` acionados por aba.
+
+### 3. Drivers globais só quando precisam
+
+`SimuladoQueueDriver` e `ResumoQueueDriver` em `_app.tsx`:
+- Não montar para usuários sem permissão (`useIsAdmin === false`).
+- Não iniciar polling enquanto `state.queue.length === 0` e não há job ativo no `localStorage`.
+
+### 4. Ajustes finos
+
+- `staleTime` do blog na home: 10 min (muda raramente).
+- `HomeTopCard`: já usa `readCachedProfileOptimistic`; garantir que a saudação renderize sem aguardar `useProfile`.
+- Bottom-nav: `<Link>` para `/app` com `preload="intent"` (já é o default, só confirmar não desativado).
+
+## Como vou verificar
+
+- Build sem erros + `bun add` não necessário.
+- Abrir devtools de network no preview e confirmar:
+  - tocar no botão Início no rodapé dispara `listBlogPosts` ANTES do clique;
+  - navegar para um estatuto baixa um chunk menor (sem jspdf no chunk inicial);
+  - drivers de simulado/resumo não disparam nenhuma request para usuário comum.
 
 ## Detalhes técnicos
 
-**Arquivos afetados:**
-- `src/lib/gemini.server.ts` — adicionar helper `geminiStreamContent(model, body)` que faz `fetch` em `streamGenerateContent?alt=sse&key=…` e retorna o `Response` (com o body como `ReadableStream`). Mantém o fallback entre as 2 chaves.
-- `src/routes/api/artigo-chat.ts` (novo) — `createFileRoute` com handler `POST` que valida o input (mesmo Zod schema de hoje), monta o prompt da Profa. Ana, chama `geminiStreamContent`, faz parse do SSE do Gemini (`data: {...}\n\n`) extraindo `candidates[0].content.parts[0].text`, e re-emite como `text/plain` streaming pro cliente (mais simples que SSE no front).
-- `src/lib/artigo-chat.functions.ts` — pode ser removido (ou mantido como fallback não-streaming). Vamos remover do componente.
-- `src/lib/whatsapp-markdown.ts` (novo) — utilitário puro `markdownToWhatsapp(text)`.
-- `src/lib/chat-pdf.ts` (novo) — utilitário `exportarConversaPDF({ artigo, lei, pergunta, resposta })` usando `jspdf`.
-- `src/routes/_app.vade-mecum.estatutos.$slug.tsx` — refatorar `ChatIAOverlay`:
-  - trocar `useServerFn(perguntarArtigoIA)` por `fetch("/api/artigo-chat", { method: "POST", body: JSON.stringify(...) })` + leitura via `response.body.getReader()` + `TextDecoder`.
-  - remover estado `digitando` e o `useEffect` de chunks artificiais.
-  - remover o `useEffect` de auto-scroll por mudança de mensagem; manter scroll só no envio do usuário.
-  - acrescentar barra de ações (PDF / WhatsApp) abaixo de cada resposta finalizada do assistente.
+Padrão do loader (TanStack Start):
 
-**Dependência nova:** `jspdf` (`bun add jspdf`) — leve, roda no browser, sem dependências de fonte server-side.
+```ts
+export const Route = createFileRoute("/_app/app")({
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData({
+      queryKey: ["blog", "home-carousel"],
+      queryFn: () => listBlogPosts({ data: { limit: 8 } }),
+      staleTime: 10 * 60_000,
+    }),
+  component: AreaOABPage,
+  head: () => ({ /* ... */ }),
+});
+```
 
-**Sem mudança de banco, sem mudança de RLS, sem mexer em outras telas.**
+Lazy de panel:
 
----
+```tsx
+const PraticarPanel = lazy(() =>
+  import("@/components/vade-mecum/PraticarPanel").then(m => ({ default: m.PraticarPanel }))
+);
+```
 
-## Fora do escopo
-- Salvar histórico das conversas no Supabase (não foi pedido).
-- Voz/áudio nas respostas.
-- Compartilhar imagem (card visual) — só texto via WhatsApp por enquanto.
+Lazy de PDF dentro do handler (não no topo):
+
+```ts
+const onExportPdf = async () => {
+  const { exportarConversaPDF } = await import("@/lib/chat-pdf");
+  await exportarConversaPDF(mensagens);
+};
+```
+
+Guard nos drivers:
+
+```tsx
+const { data: isAdmin } = useIsAdmin();
+const state = useSimuladoQueue();
+if (!isAdmin && state.queue.length === 0 && !state.activeJobId) return null;
+```
+
+## Fora de escopo
+
+- Não vou mexer no streaming do chat da Profa. Ana (já feito).
+- Não vou alterar layout/visual nem fluxo de telas — só performance de carregamento.
