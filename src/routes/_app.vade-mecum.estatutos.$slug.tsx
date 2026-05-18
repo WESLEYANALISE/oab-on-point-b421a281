@@ -1020,7 +1020,7 @@ function ArtigoSheet({
           <div className="px-2 pt-1 pb-3 grid grid-cols-5 gap-1 items-end border-t border-border/40">
             <FuncTabBtn ativo={false} onClick={() => setContentTab("artigo")} icone={<GraduationCap className="h-5 w-5" />} label="Estudar" />
             <FuncTabBtn ativo={focusMode === "praticar"} onClick={() => setFocusMode("praticar")} icone={<Target className="h-5 w-5" />} label="Praticar" />
-            <FuncTabBtn ativo={false} onClick={() => { /* narração inline */ }} icone={<Volume2 className="h-6 w-6" />} label="Narração" destaque />
+            <NarracaoTabBtn url={artigo?.narracao_url ?? null} />
             <FuncTabBtn ativo={focusMode === "anotacoes"} onClick={() => setFocusMode("anotacoes")} icone={<StickyNote className="h-5 w-5" />} label="Anotações" />
             <FuncTabBtn ativo={chatAberto} onClick={() => setChatAberto(true)} icone={<MessageCircle className="h-5 w-5" />} label="Perguntar" />
           </div>
