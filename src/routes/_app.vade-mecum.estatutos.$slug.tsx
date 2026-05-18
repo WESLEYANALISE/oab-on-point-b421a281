@@ -1047,45 +1047,54 @@ function ArtigoSheet({
         </div>
 
         {/* Overlay foco: Praticar */}
-        {focusMode === "praticar" && artigo && (
-          <ArtigoFocusOverlay
-            eyebrow={leiRotulo}
-            title={`Praticar · Art. ${artigo.numero ?? "—"}`}
-            subtitle="Profa. Ana gera tudo pra você"
-            onClose={() => setFocusMode(null)}
-          >
-            <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
-              <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
-            </Suspense>
-          </ArtigoFocusOverlay>
-        )}
+        <AnimatePresence>
+          {focusMode === "praticar" && artigo && (
+            <ArtigoFocusOverlay
+              key="focus-praticar"
+              eyebrow={leiRotulo}
+              title={`Praticar · Art. ${artigo.numero ?? "—"}`}
+              subtitle="Profa. Ana gera tudo pra você"
+              onClose={() => setFocusMode(null)}
+            >
+              <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
+                <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
+              </Suspense>
+            </ArtigoFocusOverlay>
+          )}
+        </AnimatePresence>
 
         {/* Overlay foco: Anotações */}
-        {focusMode === "anotacoes" && artigo && (
-          <ArtigoFocusOverlay
-            eyebrow={leiRotulo}
-            title={`Anotações · Art. ${artigo.numero ?? "—"}`}
-            onClose={() => setFocusMode(null)}
-          >
-            <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
-              <AnotacoesPanel
-                userId={userId}
-                leiId={leiId}
-                artigoId={artigo.id}
-                artigoNumero={artigo.numero}
-              />
-            </Suspense>
-          </ArtigoFocusOverlay>
-        )}
+        <AnimatePresence>
+          {focusMode === "anotacoes" && artigo && (
+            <ArtigoFocusOverlay
+              key="focus-anotacoes"
+              eyebrow={leiRotulo}
+              title={`Anotações · Art. ${artigo.numero ?? "—"}`}
+              onClose={() => setFocusMode(null)}
+            >
+              <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
+                <AnotacoesPanel
+                  userId={userId}
+                  leiId={leiId}
+                  artigoId={artigo.id}
+                  artigoNumero={artigo.numero}
+                />
+              </Suspense>
+            </ArtigoFocusOverlay>
+          )}
+        </AnimatePresence>
 
         {/* Overlay chat IA dedicado ao artigo */}
-        {chatAberto && artigo && (
-          <ChatIAOverlay
-            artigo={artigo}
-            leiRotulo={leiRotulo}
-            onClose={() => setChatAberto(false)}
-          />
-        )}
+        <AnimatePresence>
+          {chatAberto && artigo && (
+            <ChatIAOverlay
+              key="chat-ia"
+              artigo={artigo}
+              leiRotulo={leiRotulo}
+              onClose={() => setChatAberto(false)}
+            />
+          )}
+        </AnimatePresence>
       </SheetContent>
     </Sheet>
   );
