@@ -754,55 +754,72 @@ function ArtigoSheet({
         </div>
 
         {/* Conteúdo */}
-        <div className="relative flex-1 overflow-y-auto px-5 py-6">
-          {isLoading || !artigo ? (
-            <div className="space-y-3">
-              <div className="h-4 bg-card/60 rounded animate-pulse" />
-              <div className="h-4 bg-card/60 rounded animate-pulse w-5/6" />
-              <div className="h-4 bg-card/60 rounded animate-pulse w-4/6" />
-            </div>
-          ) : funcTab === "narracao" ? (
-            <NarracaoView url={artigo.narracao_url} />
-          ) : funcTab === "anotacoes" ? (
-            <AnotacoesEditor userId={userId} leiId={leiId} artigoId={artigo.id} />
-          ) : funcTab === "perguntar" ? (
-            <PerguntarPlaceholder artigo={artigo} />
-          ) : funcTab === "praticar" ? (
-            <PraticarPlaceholder />
-          ) : (
-            // Estudar — usa contentTab
-            <div style={{ fontSize: fontPx }}>
-              {contentTab === "artigo" && (
-                <div className="space-y-4">
-                  <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
-                    <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
-                    {artigo.texto}
-                  </article>
-                  {planaltoUrl && (
-                    <a
-                      href={planaltoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-gold/40 bg-gold/10 text-gold text-[12.5px] font-semibold hover:bg-gold/15 transition-colors"
-                    >
-                      <Scale className="h-3.5 w-3.5" />
-                      Ver no Planalto
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
-                </div>
-              )}
-              {contentTab === "explicacao" && (
-                <ExplicacaoView artigo={artigo} />
-              )}
-              {contentTab === "exemplo" && (
-                <Bloco vazio={!artigo.exemplo}>{artigo.exemplo}</Bloco>
-              )}
-              {contentTab === "termos" && (
-                <TermosView termos={termos} />
-              )}
-            </div>
-          )}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Watermark brasão — fixo, não rola */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 flex items-center justify-center z-0"
+          >
+            <img
+              src={brasao}
+              alt=""
+              className="w-[55%] max-w-[280px] opacity-[0.06] select-none"
+              draggable={false}
+            />
+          </div>
+
+          <div className="relative z-10 h-full overflow-y-auto px-5 py-6 pb-10">
+            {isLoading || !artigo ? (
+              <div className="space-y-3">
+                <div className="h-4 bg-card/60 rounded animate-pulse" />
+                <div className="h-4 bg-card/60 rounded animate-pulse w-5/6" />
+                <div className="h-4 bg-card/60 rounded animate-pulse w-4/6" />
+              </div>
+            ) : funcTab === "narracao" ? (
+              <NarracaoView url={artigo.narracao_url} />
+            ) : funcTab === "anotacoes" ? (
+              <AnotacoesEditor userId={userId} leiId={leiId} artigoId={artigo.id} />
+            ) : funcTab === "perguntar" ? (
+              <PerguntarPlaceholder artigo={artigo} />
+            ) : funcTab === "praticar" ? (
+              <PraticarPlaceholder />
+            ) : (
+              // Estudar — usa contentTab
+              <div style={{ fontSize: fontPx }}>
+                {contentTab === "artigo" && (
+                  <div className="space-y-6">
+                    <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
+                      <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
+                      {artigo.texto}
+                    </article>
+                    {planaltoUrl && (
+                      <div className="flex justify-center pt-2 pb-4">
+                        <a
+                          href={planaltoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold/40 bg-gold/10 text-gold text-[12.5px] font-semibold hover:bg-gold/15 transition-colors"
+                        >
+                          <Scale className="h-3.5 w-3.5" />
+                          Ver no Planalto
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {contentTab === "explicacao" && (
+                  <ExplicacaoView artigo={artigo} />
+                )}
+                {contentTab === "exemplo" && (
+                  <Bloco vazio={!artigo.exemplo}>{artigo.exemplo}</Bloco>
+                )}
+                {contentTab === "termos" && (
+                  <TermosView termos={termos} />
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Controles flutuantes laterais */}
