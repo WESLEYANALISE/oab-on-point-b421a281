@@ -1037,13 +1037,45 @@ function ArtigoSheet({
           </div>
           {/* Menu de funções (rodapé) */}
           <div className="px-2 pt-1 pb-3 grid grid-cols-5 gap-1 items-end border-t border-border/40">
-            <FuncTabBtn ativo={funcTab === "estudar"} onClick={() => setFuncTab("estudar")} icone={<GraduationCap className="h-5 w-5" />} label="Estudar" />
-            <FuncTabBtn ativo={funcTab === "praticar"} onClick={() => setFuncTab("praticar")} icone={<Target className="h-5 w-5" />} label="Praticar" />
-            <FuncTabBtn ativo={funcTab === "narracao"} onClick={() => setFuncTab("narracao")} icone={<Volume2 className="h-6 w-6" />} label="Narração" destaque />
-            <FuncTabBtn ativo={funcTab === "anotacoes"} onClick={() => setFuncTab("anotacoes")} icone={<StickyNote className="h-5 w-5" />} label="Anotações" />
-            <FuncTabBtn ativo={false} onClick={() => setChatAberto(true)} icone={<MessageCircle className="h-5 w-5" />} label="Perguntar" />
+            <FuncTabBtn ativo={false} onClick={() => setContentTab("artigo")} icone={<GraduationCap className="h-5 w-5" />} label="Estudar" />
+            <FuncTabBtn ativo={focusMode === "praticar"} onClick={() => setFocusMode("praticar")} icone={<Target className="h-5 w-5" />} label="Praticar" />
+            <FuncTabBtn ativo={false} onClick={() => { /* narração inline */ }} icone={<Volume2 className="h-6 w-6" />} label="Narração" destaque />
+            <FuncTabBtn ativo={focusMode === "anotacoes"} onClick={() => setFocusMode("anotacoes")} icone={<StickyNote className="h-5 w-5" />} label="Anotações" />
+            <FuncTabBtn ativo={chatAberto} onClick={() => setChatAberto(true)} icone={<MessageCircle className="h-5 w-5" />} label="Perguntar" />
           </div>
         </div>
+
+        {/* Overlay foco: Praticar */}
+        {focusMode === "praticar" && artigo && (
+          <ArtigoFocusOverlay
+            eyebrow={leiRotulo}
+            title={`Praticar · Art. ${artigo.numero ?? "—"}`}
+            subtitle="Profa. Ana gera tudo pra você"
+            onClose={() => setFocusMode(null)}
+          >
+            <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
+              <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
+            </Suspense>
+          </ArtigoFocusOverlay>
+        )}
+
+        {/* Overlay foco: Anotações */}
+        {focusMode === "anotacoes" && artigo && (
+          <ArtigoFocusOverlay
+            eyebrow={leiRotulo}
+            title={`Anotações · Art. ${artigo.numero ?? "—"}`}
+            onClose={() => setFocusMode(null)}
+          >
+            <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
+              <AnotacoesPanel
+                userId={userId}
+                leiId={leiId}
+                artigoId={artigo.id}
+                artigoNumero={artigo.numero}
+              />
+            </Suspense>
+          </ArtigoFocusOverlay>
+        )}
 
         {/* Overlay chat IA dedicado ao artigo */}
         {chatAberto && artigo && (
