@@ -956,7 +956,7 @@ function ArtigoSheet({
               type="button"
               onClick={onPrev}
               disabled={!temAnterior}
-              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium bg-primary/15 border border-primary/40 text-primary-foreground hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               ‹ Anterior
             </button>
@@ -964,7 +964,7 @@ function ArtigoSheet({
               type="button"
               onClick={onNext}
               disabled={!temProximo}
-              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium bg-primary/15 border border-primary/40 text-primary-foreground hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Próximo ›
             </button>
