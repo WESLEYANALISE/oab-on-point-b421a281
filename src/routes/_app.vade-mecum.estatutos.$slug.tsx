@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { exportarConversaPDF } from "@/lib/chat-pdf";
 import { markdownToWhatsapp } from "@/lib/whatsapp-markdown";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -41,7 +40,9 @@ import { pushRecente } from "@/lib/vade-mecum-recentes";
 import { useFontScale, SCALES } from "@/hooks/use-font-scale";
 import { toast } from "sonner";
 import brasao from "@/assets/brasao-republica.png";
-import { PraticarPanel } from "@/components/vade-mecum/PraticarPanel";
+const PraticarPanel = lazy(() =>
+  import("@/components/vade-mecum/PraticarPanel").then((m) => ({ default: m.PraticarPanel })),
+);
 
 export const Route = createFileRoute("/_app/vade-mecum/estatutos/$slug")({
   head: ({ params }) => ({
@@ -941,7 +942,9 @@ function ArtigoSheet({
             ) : funcTab === "perguntar" ? (
               <PerguntarPlaceholder artigo={artigo} />
             ) : funcTab === "praticar" ? (
-              <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
+              <Suspense fallback={<div className="p-6 text-center text-sm text-muted-foreground">Carregando…</div>}>
+                <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
+              </Suspense>
             ) : (
               // Estudar — usa contentTab
               <div style={{ fontSize: fontPx }}>
@@ -1366,8 +1369,9 @@ function ChatIAOverlay({
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const exportarPDF = (pergunta: string, resposta: string) => {
+  const exportarPDF = async (pergunta: string, resposta: string) => {
     try {
+      const { exportarConversaPDF } = await import("@/lib/chat-pdf");
       exportarConversaPDF({
         leiNome: leiRotulo,
         artigoNumero: String(artigo.numero ?? ""),

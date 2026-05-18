@@ -1,14 +1,16 @@
 import { Outlet, createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { DesktopSidebar } from "@/components/layout/DesktopSidebar";
 import { MobileHeader } from "@/components/layout/MobileHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth, useProfile } from "@/hooks/use-auth";
-import { SimuladoQueueDriver } from "@/components/admin/SimuladoQueueDriver";
-import { SimuladoQueueIndicator } from "@/components/admin/SimuladoQueueIndicator";
-import { ResumoQueueDriver } from "@/components/admin/ResumoQueueDriver";
-import { ResumoQueueIndicator } from "@/components/admin/ResumoQueueIndicator";
+import { useIsAdmin } from "@/hooks/use-admin";
 
+// Drivers/indicators de fila só interessam para admins. Carregados sob demanda
+// para não pesar o bundle de quem só estuda.
+const AdminQueueOverlays = lazy(() =>
+  import("@/components/admin/AdminQueueOverlays").then((m) => ({ default: m.AdminQueueOverlays })),
+);
 
 export const Route = createFileRoute("/_app")({
   component: AppLayout,
@@ -19,6 +21,7 @@ function AppLayout() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { data: profile } = useProfile();
+  const { data: isAdmin } = useIsAdmin();
   const isBiblioteca = pathname.startsWith("/biblioteca");
   const isHome = pathname === "/app";
   const showBottomNav = isHome;
@@ -55,11 +58,11 @@ function AppLayout() {
         </main>
         {showBottomNav && <BottomNav />}
       </div>
-      <SimuladoQueueDriver />
-      <SimuladoQueueIndicator />
-      <ResumoQueueDriver />
-      <ResumoQueueIndicator />
+      {isAdmin ? (
+        <Suspense fallback={null}>
+          <AdminQueueOverlays />
+        </Suspense>
+      ) : null}
     </div>
   );
 }
-

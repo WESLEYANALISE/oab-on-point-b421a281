@@ -21,6 +21,14 @@ export const Route = createFileRoute("/_app/app")({
       { property: "og:description", content: "Tudo para sua aprovação na OAB em um só lugar." },
     ],
   }),
+  // Prefetch via defaultPreload: "intent" — ao tocar no botão Início, o blog
+  // já começa a baixar antes do clique resolver.
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData({
+      queryKey: ["blog", "home-carousel"],
+      queryFn: () => listBlogPosts({ data: { limit: 8 } }),
+      staleTime: 10 * 60_000,
+    }),
   component: AreaOABPage,
 });
 
@@ -53,6 +61,7 @@ function AreaOABPage() {
   const blogQuery = useQuery({
     queryKey: ["blog", "home-carousel"],
     queryFn: () => listBlogPosts({ data: { limit: 8 } }),
+    staleTime: 10 * 60_000,
   });
   const posts = blogQuery.data ?? [];
 
