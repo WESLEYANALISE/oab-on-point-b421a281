@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { geminiGenerateContent } from "@/lib/gemini.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
 
@@ -89,7 +90,7 @@ export const gerarQuestoesArtigo = createServerFn({ method: "POST" })
       `- Ordem CRONOLÓGICA de aprendizado: comece pelo básico (literalidade), depois interpretação, e finalize com casos práticos/pegadinhas estilo OAB.\n` +
       `- Marque a dificuldade: "basico" (primeiras), "intermediario" (meio), "avancado" (finais).\n` +
       `- "correta" é o ÍNDICE (0-based) da alternativa certa.\n` +
-      `- "explicacao" deve ser curta, didática e amigável (1–3 frases), explicando POR QUE a correta está certa e, se útil, o erro comum.\n` +
+      `- "explicacao" deve ser curta, didática e amigável (1–3 frases), explicando POR QUE a correta está certa.\n` +
       `- Nada de markdown nas strings. Texto puro.\n`;
     const schema = {
       type: "ARRAY",
@@ -109,8 +110,7 @@ export const gerarQuestoesArtigo = createServerFn({ method: "POST" })
     const raw = await chamarGemini(prompt, schema);
     const itens = z.array(QuestaoSchema).parse(raw);
 
-    const sb = admin();
-    await sb
+    await admin()
       .from("vade_mecum_artigos")
       .update({
         questoes: { itens, gerado_em: new Date().toISOString(), modelo: GEMINI_MODEL, total: itens.length },
@@ -138,8 +138,8 @@ export const gerarFlashcardsArtigo = createServerFn({ method: "POST" })
       `REGRAS:\n` +
       `- "frente": pergunta curta e direta (uma frase).\n` +
       `- "verso": resposta objetiva (1–2 frases).\n` +
-      `- "exemplo": exemplo prático e simples do dia a dia jurídico (1–3 frases), começando com "Ex.:".\n` +
-      `- Ordem crescente de dificuldade: comece pelos conceitos básicos, depois detalhes, e termine com pegadinhas.\n` +
+      `- "exemplo": exemplo prático do dia a dia jurídico (1–3 frases), começando com "Ex.:".\n` +
+      `- Ordem crescente de dificuldade: comece pelos conceitos básicos e termine com pegadinhas.\n` +
       `- Nada de markdown. Texto puro.\n`;
     const schema = {
       type: "ARRAY",
@@ -156,8 +156,7 @@ export const gerarFlashcardsArtigo = createServerFn({ method: "POST" })
     const raw = await chamarGemini(prompt, schema);
     const itens = z.array(FlashcardSchema).parse(raw);
 
-    const sb = admin();
-    await sb
+    await admin()
       .from("vade_mecum_artigos")
       .update({
         flashcards: { itens, gerado_em: new Date().toISOString(), modelo: GEMINI_MODEL, total: itens.length },
@@ -167,7 +166,7 @@ export const gerarFlashcardsArtigo = createServerFn({ method: "POST" })
     return { itens, total: itens.length, cache: false };
   });
 
-// ===== Tentativas (histórico) =====
+// ===== Tentativas =====
 
 const RespostaSchema = z.object({
   i: z.number().int().min(0),
@@ -176,6 +175,7 @@ const RespostaSchema = z.object({
 });
 
 export const salvarTentativa = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
       artigoId: z.string().uuid(),
@@ -186,23 +186,9 @@ export const salvarTentativa = createServerFn({ method: "POST" })
       respostas: z.array(RespostaSchema).max(60),
     }).parse(d),
   )
-  .handler(async ({ data }) => {
-    const sb = admin();
-    // pega user da sessão via authorization header — uso o cliente anon com bearer
-    const url = process.env.SUPABASE_URL!;
-    const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-    const { getRequestHeader } = await import("@tanstack/react-start/server");
-    const auth = getRequestHeader("authorization") ?? "";
-    if (!auth) throw new Error("Não autenticado");
-    const userClient = createClient(url, anonKey, {
-      global: { headers: { Authorization: auth } },
-      auth: { persistSession: false },
-    });
-    const { data: u, error: ue } = await userClient.auth.getUser();
-    if (ue || !u?.user) throw new Error("Sessão inválida");
-    const userId = u.user.id;
-
-    const { data: row, error } = await sb
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: row, error } = await supabase
       .from("vade_mecum_pratica_tentativas")
       .insert({
         user_id: userId,
@@ -221,18 +207,11 @@ export const salvarTentativa = createServerFn({ method: "POST" })
   });
 
 export const getHistoricoArtigo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ artigoId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const url = process.env.SUPABASE_URL!;
-    const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY!;
-    const { getRequestHeader } = await import("@tanstack/react-start/server");
-    const auth = getRequestHeader("authorization") ?? "";
-    if (!auth) return { tentativas: [] };
-    const sb = createClient(url, anonKey, {
-      global: { headers: { Authorization: auth } },
-      auth: { persistSession: false },
-    });
-    const { data: rows, error } = await sb
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await supabase
       .from("vade_mecum_pratica_tentativas")
       .select("id, modo, acertos, total, concluido_em")
       .eq("artigo_id", data.artigoId)
