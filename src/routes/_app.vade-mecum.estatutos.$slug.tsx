@@ -985,12 +985,12 @@ function FuncTabBtn({
         className={`${tamanho} grid place-items-center rounded-full transition-all ${
           destaque
             ? `${baseElegant} ${ativo ? "scale-110 ring-2 ring-gold/60" : ""}`
-            : `bg-card/60 border border-border/60 ${ativo ? "text-gold border-gold/50" : "text-muted-foreground group-hover:text-foreground"}`
+            : `bg-card/60 border border-border/60 text-white ${ativo ? "border-white/60" : "group-hover:bg-card"}`
         }`}
       >
         {icone}
       </span>
-      <span className={`text-[10px] font-medium ${ativo || destaque ? "text-gold" : "text-muted-foreground"}`}>
+      <span className={`text-[10px] font-medium ${destaque ? "text-gold" : "text-white"}`}>
         {label}
       </span>
     </button>
