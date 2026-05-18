@@ -740,7 +740,20 @@ function ArtigoSheet({
               <p className="text-[10px] uppercase tracking-[0.22em] text-gold/90 font-semibold truncate">
                 {leiRotulo}
               </p>
-              <h2 className="font-display font-bold text-[26px] tracking-tight mt-0.5 leading-none">
+              {caminho.length > 0 && (
+                <div className="mt-1.5 space-y-0.5">
+                  {caminho.map((c, i) => (
+                    <p
+                      key={i}
+                      className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground/85 leading-tight truncate"
+                      style={{ paddingLeft: `${i * 8}px` }}
+                    >
+                      {c.rotulo}
+                    </p>
+                  ))}
+                </div>
+              )}
+              <h2 className="font-display font-bold text-[26px] tracking-tight mt-2 leading-none">
                 {artigo?.numero ? `Art. ${artigo.numero}` : "Artigo"}
               </h2>
             </div>
@@ -777,13 +790,6 @@ function ArtigoSheet({
                 title={mostrarParenteses ? "Ocultar texto entre parênteses" : "Mostrar texto entre parênteses"}
               >
                 {mostrarParenteses ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-              <button
-                type="button"
-                className="h-9 w-9 grid place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-card transition-colors"
-                aria-label="Mais"
-              >
-                <MoreHorizontal className="h-4 w-4" />
               </button>
               <button
                 type="button"
