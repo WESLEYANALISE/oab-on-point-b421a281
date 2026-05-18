@@ -109,38 +109,67 @@ async function mistralOcrFull(apiKey: string, documentUrl: string): Promise<OcrR
 }
 
 async function geminiCall(body: unknown): Promise<any> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+  const keys: string[] = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2 ??
+      process.env["GEMINI_API_KEY 2"] ??
+      process.env.GEMINI_API_KEY2,
+  ].filter((k): k is string => typeof k === "string" && k.length > 0);
+  if (keys.length === 0) throw new Error("GEMINI_API_KEY não configurada");
+
   const maxAttempts = 5;
   let lastErr = "";
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-    } catch (e) {
-      lastErr = `network: ${e instanceof Error ? e.message : String(e)}`;
-      if (attempt < maxAttempts) {
+  let lastNormalized: { message: string; nonRetryable: boolean } | null = null;
+
+  for (let keyIdx = 0; keyIdx < keys.length; keyIdx++) {
+    const apiKey = keys[keyIdx];
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+    let switchKey = false;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      } catch (e) {
+        lastErr = `network: ${e instanceof Error ? e.message : String(e)}`;
+        if (attempt < maxAttempts) {
+          await new Promise((r) => setTimeout(r, 1000 * 2 ** (attempt - 1)));
+          continue;
+        }
+        switchKey = true;
+        break;
+      }
+      if (res.ok) return await res.json();
+      const t = await res.text();
+      const normalized = normalizeGeminiError(res.status, t);
+      lastErr = `[${res.status}]: ${normalized.message}`;
+      lastNormalized = normalized;
+
+      // Retry transitório (408, 429, 5xx) na mesma chave
+      const transient = res.status === 408 || res.status === 429 || res.status >= 500;
+      if (transient && attempt < maxAttempts) {
         await new Promise((r) => setTimeout(r, 1000 * 2 ** (attempt - 1)));
         continue;
       }
-      throw new Error(`Gemini falhou [network]: ${lastErr}`);
+
+      // Erros de auth/quota → tenta próxima chave
+      const failover = res.status === 401 || res.status === 403 || res.status === 429;
+      if (failover && keyIdx < keys.length - 1) {
+        switchKey = true;
+        break;
+      }
+
+      throw new GeminiApiError(normalized.message, res.status, normalized.nonRetryable);
     }
-    if (res.ok) return await res.json();
-    const t = await res.text();
-    const normalized = normalizeGeminiError(res.status, t);
-    lastErr = `[${res.status}]: ${normalized.message}`;
-    // Retry on transient: 408, 429, 5xx
-    const transient = res.status === 408 || res.status === 429 || res.status >= 500;
-    if (transient && attempt < maxAttempts) {
-      await new Promise((r) => setTimeout(r, 1000 * 2 ** (attempt - 1)));
-      continue;
-    }
-    throw new GeminiApiError(normalized.message, res.status, normalized.nonRetryable);
+    if (!switchKey) break;
+  }
+
+  if (lastNormalized) {
+    throw new GeminiApiError(lastNormalized.message, undefined, lastNormalized.nonRetryable);
   }
   throw new GeminiApiError(`Gemini falhou ${lastErr}`);
 }
