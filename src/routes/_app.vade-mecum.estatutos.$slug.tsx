@@ -650,6 +650,7 @@ function ArtigoSheet({
   planaltoUrl,
   userId,
   favorito,
+  caminho,
   onClose,
   onPrev,
   onNext,
@@ -662,6 +663,7 @@ function ArtigoSheet({
   planaltoUrl?: string;
   userId: string | null;
   favorito: boolean;
+  caminho: CaminhoItem[];
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
