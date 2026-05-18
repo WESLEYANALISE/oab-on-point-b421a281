@@ -22,10 +22,12 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPreloadDelay: 50,
-    // Reaproveita por 30s o que o preload já buscou — antes era 0 e o
-    // preload "esquentava" o cache só pra refazer o fetch ao navegar.
-    defaultPreloadStaleTime: 30_000,
+    // 0ms: começa o prefetch assim que o usuário aponta/toca no link, sem
+    // janela de 50ms. No mobile (sem hover), garante que touchstart dispare
+    // o preload antes mesmo de o click resolver — navegação mais "instantânea".
+    defaultPreloadDelay: 0,
+    // Reaproveita por 60s o que o preload já buscou.
+    defaultPreloadStaleTime: 60_000,
     defaultPreloadGcTime: 5 * 60_000,
   });
 

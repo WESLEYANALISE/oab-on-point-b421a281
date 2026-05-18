@@ -20,7 +20,7 @@ const semanas = [
   { titulo: "Semana 6 — Simulados", desc: "1 simulado completo por dia + análise das questões erradas." },
 ];
 
-export default function RetaFinalPage() {
+function RetaFinalPage() {
   return (
     <div className="pb-16">
       <section className="bg-gradient-toga text-primary-foreground px-4 md:px-10 py-10 md:py-14">

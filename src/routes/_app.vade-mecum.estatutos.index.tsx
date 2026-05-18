@@ -33,6 +33,9 @@ function EstatutosListPage() {
 
   const { data: leis } = useQuery({
     queryKey: ["vade-mecum", "estatutos", "lista"],
+    // Catálogo de estatutos quase nunca muda — 1h fresco, 24h persistido.
+    staleTime: 60 * 60_000,
+    gcTime: 24 * 60 * 60_000,
     queryFn: async (): Promise<LeiRow[]> => {
       const { data, error } = await supabase
         .from("vade_mecum_leis")

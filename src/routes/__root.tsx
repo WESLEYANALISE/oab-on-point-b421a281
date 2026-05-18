@@ -85,11 +85,13 @@ const PERSISTED_PREFIXES = new Set([
   "provas",
   "noticias",
   "resumos-list",
+  "vade-mecum",
 ]);
 
-// Limite por query persistida (50 KB). Markdown de capítulo costuma
-// passar disso e estoura a cota de localStorage.
-const MAX_PERSISTED_BYTES = 50_000;
+// Limite por query persistida. Estatutos grandes (CF/CC) podem passar de
+// 200 KB serializados — subimos pra 400 KB pra caberem sem estourar a cota
+// de localStorage (≈5 MB no total).
+const MAX_PERSISTED_BYTES = 400_000;
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
@@ -154,16 +156,47 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Lista de prefixos de queryKey que dependem do usuário logado e devem
+// ser descartados quando a sessão troca. Conteúdo público (blog, biblioteca,
+// vade-mecum, etc.) é preservado pra não recarregar à toa.
+const USER_SCOPED_PREFIXES = [
+  "profile",
+  "favoritos",
+  "anotacoes",
+  "progresso",
+  "tentativas",
+  "caderno-erros",
+  "flashcards",
+  "plano-estudo",
+  "streak",
+];
+
 function AuthCacheBridge() {
   const queryClient = useQueryClient();
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
-      // Em qualquer transição de sessão, invalida queries do usuário.
-      // Defesa contra mostrar dados do usuário anterior depois de um login.
-      if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        queryClient.invalidateQueries();
+      // TOKEN_REFRESHED roda em background a cada ~1h. Invalidar tudo nele
+      // derrubava o cache inteiro e dava a sensação de "app lento de novo".
+      // O token novo já é usado nas próximas requisições — nada a fazer.
+      if (event === "TOKEN_REFRESHED") return;
+      if (event === "SIGNED_OUT") {
+        queryClient.clear();
+        return;
+      }
+      if (event === "SIGNED_IN") {
+        // Só invalida o que é específico do usuário; conteúdo público fica
+        // quente no cache (vade-mecum, biblioteca, blog, etc.).
+        queryClient.invalidateQueries({
+          predicate: (q) => {
+            const root = String(q.queryKey?.[0] ?? "");
+            return USER_SCOPED_PREFIXES.includes(root) ||
+              // Algumas queries do vade-mecum têm sub-chave de usuário
+              // (favoritos/anotações) — captura por nome composto também.
+              root.includes("favoritos") || root.includes("anotacoes");
+          },
+        });
       }
     });
     return () => subscription.unsubscribe();

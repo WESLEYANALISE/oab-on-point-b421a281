@@ -1,101 +1,56 @@
-## Objetivo
+## Diagnóstico
 
-Reestruturar o Vade Mecum em três telas seguindo exatamente os prints enviados, mantendo o tema dourado/escuro atual do app.
+Quatro causas reais de lentidão ao clicar em qualquer função (Vade Mecum, Biblioteca, etc.):
 
----
+1. **Invalidação global em todo refresh de token.** `src/routes/__root.tsx` invalida *todas* as queries em `TOKEN_REFRESHED` (acontece a cada ~1h em segundo plano e também ao trocar de aba). Resultado: listas que pareciam prontas voltam a buscar do zero, dando a sensação de "tudo lento de novo".
+2. **Vade Mecum sem cache persistente nem prefetch.** Cada estatuto faz `select … limit 2000` em `vade_mecum_artigos` toda vez que abre. Como a lista de estatutos e o conteúdo dos artigos quase não muda, dá pra servir instantâneo do cache.
+3. **Preload de rota fraco.** `defaultPreload: "intent"` só prefetcha em hover (no mobile, hover não existe). A rota só começa a carregar depois do toque.
+4. **Bundles grandes em rotas pesadas.** `_app.vade-mecum.estatutos.$slug.tsx` tem 1.123 linhas e importa tudo no topo (28 ícones, sheet, etc.). O JS é baixado e parseado só ao clicar pela primeira vez.
 
-## Tela 1 — Lista de estatutos (`/vade-mecum/estatutos`)
+## O que vou mudar
 
-Reescrever `src/routes/_app.vade-mecum.estatutos.index.tsx`:
+### 1. Auth bridge mais cirúrgico (`src/routes/__root.tsx`)
+- Em `TOKEN_REFRESHED`: **não invalidar nada** (o token novo já é usado nas próximas requisições).
+- Em `SIGNED_IN` / `SIGNED_OUT`: invalidar só queries de usuário (`profile`, favoritos, anotações, progresso), preservando o cache de conteúdo público (estatutos, biblioteca, blog).
+- Em `SIGNED_OUT`: `queryClient.clear()` pra não vazar dado entre contas.
 
-- Cabeçalho central: brasão da República (asset em `src/assets/brasao.png` — gerar), título **"CÓDIGOS & LEIS"** em serifa dourada, subtítulo "Legislação brasileira compilada", pequeno ícone de câmera no canto.
-- Barra de busca arredondada com botão **"Buscar"** dourado à direita.
-- Toggle de 3 abas (pill): **Todos · Favoritos · Recentes**, cada uma com contador.
-- Lista de cartões, cada um com:
-  - Barra lateral colorida (cor por categoria).
-  - Ícone redondo colorido (laranja/vermelho/azul/roxo etc.).
-  - Sigla grande (ex.: "CC") + nome completo abaixo.
-  - Tocar abre `/vade-mecum/estatutos/$slug`.
-- Persistir favoritos e recentes do usuário (Supabase) — favoritos por user, recentes em `localStorage`.
+### 2. Router mais agressivo no preload (`src/router.tsx`)
+- `defaultPreload: "intent"` + ativar `defaultPreloadDelay: 0`.
+- Adicionar `defaultViewTransition` desligado pra evitar overhead.
+- Manter `defaultPreloadStaleTime: 0` quando for usar React Query, mas como hoje a maioria das rotas não usa loader, subir o `staleTime` global do QueryClient pros conteúdos estáveis (já está em 5min — ok).
 
----
+### 3. Cache persistente do Vade Mecum
+- Em `__root.tsx`, adicionar à whitelist `PERSISTED_PREFIXES`: `"vade-mecum"`.
+- Aumentar `MAX_PERSISTED_BYTES` pra 300 KB (um estatuto grande cabe; CF/LF cabem em ~150 KB gzipados no localStorage).
+- Em `_app.vade-mecum.estatutos.$slug.tsx` e `…estatutos.index.tsx`: adicionar `staleTime: 30 * 60_000` e `gcTime: 24h` nas queries de `vade_mecum_leis` / `vade_mecum_artigos`. Assim: 1ª vez busca, depois abre instantâneo (do localStorage).
 
-## Tela 2 — Lista de artigos de uma lei (`/vade-mecum/estatutos/$slug`)
+### 4. Pedir só o necessário do Supabase
+- Na lista do estatuto, trocar `select("id, numero, texto, ordem, relevancia, relevancia_nota")` por `select("id, numero, ordem, relevancia")` (texto é grande e só precisa quando o artigo é aberto). O texto vem sob demanda numa query separada `["vade-mecum", "artigo", id]` quando o sheet abre.
+- Resultado esperado: payload do estatuto cai de ~1–3 MB pra ~50–150 KB.
 
-Reescrever `src/routes/_app.vade-mecum.estatutos.$slug.tsx`:
+### 5. Quebrar o bundle do estatuto
+- Mover o `ArtigoSheet` (e tudo que só aparece quando se abre um artigo: termos, narração, anotações) pra `src/components/vade-mecum/ArtigoSheet.tsx` e importar com `lazy()` / `React.lazy`.
+- Idem para os componentes do menu rodapé que abrem sub-sheets (anotações, perguntar, narração).
+- A página em si fica leve e o JS pesado só baixa quando o usuário abre um artigo.
 
-- Cabeçalho centralizado: brasão, nome da lei em serifa (ex.: "CÓDIGO PENAL"), subtítulo com decreto/lei, link **"Ver no Planalto"** com ícone externo, divisor dourado.
-- Barra de busca + botão **Buscar**.
-- Linha de 5 chips redondos coloridos (Favoritos · Playlist · Anotações · Novidades · Radar). Funcionais:
-  - **Favoritos** — já existe (filtra artigos favoritos).
-  - **Playlist** — placeholder "em breve".
-  - **Anotações** — abre lista de anotações do usuário nessa lei.
-  - **Novidades** — placeholder.
-  - **Radar** — atalho para a aba Relevância.
-- Toggle pill 2 abas full-width: **Artigos · Capítulos** (remove Relevância e Favoritos — viram chips).
-- Cards de artigo: ícone redondo com balança, "Art. Nº" + check verde, descrição em 2 linhas, seta. Mesmo tamanho para todos.
+### 6. Pequenos ajustes paralelos
+- Remover o `export const RetaFinalPage` solto em `_app.reta-final.tsx` (o warning do console diz que ele quebra code-splitting).
+- Em `src/routes/_app.tsx`: usar `prefetch` (hover/touchstart) nos atalhos da home com `<Link preload="intent">` (já é default, confirmar) e garantir que `defaultPreloadDelay: 0` esteja honrado.
 
----
+## Resultado esperado
 
-## Tela 3 — Leitor de artigo (Sheet)
+- Voltar para uma rota já visitada (Vade Mecum, Estatutos, Biblioteca) → instantâneo, sem spinner.
+- Abrir um estatuto pela 1ª vez → carrega só a lista enxuta (rápido); abrir um artigo carrega o texto sob demanda.
+- Token refresh em background não causa mais "tela piscando" / refetch geral.
 
-Reescrever o componente `ArtigoSheet` no mesmo arquivo:
+## Detalhes técnicos
 
-- Sheet bottom (mobile) / right (desktop) ocupando ~95% da altura.
-- **Header**: tag "CÓDIGO PENAL" pequena dourada, "Art. Nº" grande, à direita botão "···" (menu com copiar/compartilhar/Planalto) e botão **X** dourado redondo. (Resolve o problema dos 2 X.)
-- **Barra de funções (topo)**: 5 ícones em coluna vertical com label — **Estudar · Praticar · Narração · Anotações · Perguntar**. Item central (Narração) com destaque dourado preenchido. Funcional:
-  - Estudar → mostra explicações.
-  - Praticar → questões relacionadas (placeholder).
-  - Narração → toca `narracao_url`.
-  - Anotações → editor de nota do usuário (Supabase, nova tabela `vade_mecum_anotacoes`).
-  - Perguntar → abre assistente IA com contexto do artigo.
-- **Toggle interno 4 abas**: **Artigo · Explicação · Exemplo · Termos** (sublinhado dourado no ativo). Conteúdo:
-  - Artigo: texto + botão "Ver no Planalto".
-  - Explicação: alterna técnico/resumido/simples.
-  - Exemplo: campo `exemplo`.
-  - Termos: glossário (`termos`).
-- **Controles flutuantes na lateral direita**:
-  - Botão dourado redondo "✨" (atalho IA → Perguntar).
-  - Stack vertical com **+ / valor (16) / −** para escala de fonte (`useFontScale`).
-- Remover o X do topo do `SheetContent` (usar `[&>button]:hidden` ou passar prop) para eliminar duplicação.
-
----
-
-## Banco de dados
-
-Nova migration:
-
-```sql
--- Recentes (opcional via localStorage, mas favoritos já existem)
-CREATE TABLE public.vade_mecum_anotacoes (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  lei_id uuid NOT NULL,
-  artigo_id uuid NOT NULL,
-  conteudo text NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE(user_id, artigo_id)
-);
-ALTER TABLE public.vade_mecum_anotacoes ENABLE ROW LEVEL SECURITY;
--- policies: usuário só vê/edita suas próprias anotações.
-```
-
----
-
-## Arquivos afetados
-
-- `src/routes/_app.vade-mecum.estatutos.index.tsx` (rewrite)
-- `src/routes/_app.vade-mecum.estatutos.$slug.tsx` (rewrite)
-- `src/assets/brasao-republica.png` (gerar via imagegen, transparente)
-- `src/lib/vade-mecum-anotacoes.functions.ts` (novo — CRUD anotações)
-- `src/lib/vade-mecum-recentes.ts` (novo — helper localStorage)
-- migration nova para `vade_mecum_anotacoes`
-
----
-
-## Pontos a confirmar
-
-1. **Categorias dos cartões da Tela 1** (cores/ícones): manter os 10 estatutos atuais (ECA, OAB, Idoso, PCD…) ou expandir para incluir CC, CP, CPC, CPP, CLT como na imagem? Hoje só temos estatutos no Supabase.
-2. **Playlist/Novidades**: deixar como "em breve" por enquanto está OK?
-3. **Brasão**: gerar versão dourada/oficial via imagegen ou usar um SVG simples?
+- Arquivos editados:
+  - `src/routes/__root.tsx` — auth bridge + persisted prefixes + byte cap.
+  - `src/router.tsx` — `defaultPreloadDelay: 0`.
+  - `src/routes/_app.vade-mecum.estatutos.$slug.tsx` — split, query enxuta, staleTime.
+  - `src/routes/_app.vade-mecum.estatutos.index.tsx` — staleTime.
+  - `src/routes/_app.reta-final.tsx` — remover export nomeado extra.
+  - Novo: `src/components/vade-mecum/ArtigoSheet.tsx` (e talvez `MenuRodape.tsx`).
+- Sem mudanças no Supabase (schema / RLS). Só a forma como o front consulta.
+- Sem mudança visual.
