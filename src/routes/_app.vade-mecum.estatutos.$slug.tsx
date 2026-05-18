@@ -1613,7 +1613,8 @@ function ChatIAOverlay({
           </button>
         </form>
       </div>
-    </div>
+      </motion.div>
+    </>
   );
 }
 
