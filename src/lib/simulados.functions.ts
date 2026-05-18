@@ -529,7 +529,7 @@ export const getEditalResumo = createServerFn({ method: "POST" })
         console.error("[edital] GEMINI_API_KEY ausente");
         return null;
       }
-      const model = "gemini-2.5-flash";
+      const model = "gemini-2.5-flash-lite";
       try {
         const r = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,

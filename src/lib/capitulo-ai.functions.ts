@@ -8,7 +8,7 @@ const Input = z.object({
   tipo: z.enum(["exemplo", "termos"]),
 });
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
 async function chamarGemini(system: string, user: string): Promise<string> {
   const apiKey = process.env.GEMINI_API_KEY;
