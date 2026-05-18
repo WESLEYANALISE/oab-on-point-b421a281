@@ -5,12 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 export type FocusTab = { id: string; label: string };
 
 /**
- * Overlay full-cover montado por cima do Sheet do artigo.
- * Mostra só o conteúdo da função escolhida + X de fechar.
- * Pode opcionalmente exibir um menu de sub-abas no topo.
- *
- * Animação: backdrop com fade + painel deslizando de baixo com easing
- * suave (spring), pra dar sensação de fluidez ao abrir/fechar.
+ * Overlay montado por cima do Sheet do artigo.
+ * - variant="full": cobre toda a tela do Sheet.
+ * - variant="half": sobe só até ~68% da altura, ancorado embaixo, com cantos
+ *   arredondados, deixando o conteúdo de trás visível e ofuscado pelo backdrop.
  */
 export function ArtigoFocusOverlay({
   eyebrow,
@@ -21,6 +19,7 @@ export function ArtigoFocusOverlay({
   onTabChange,
   onClose,
   children,
+  variant = "full",
 }: {
   eyebrow?: string;
   title: string;
@@ -30,12 +29,17 @@ export function ArtigoFocusOverlay({
   onTabChange?: (id: string) => void;
   onClose: () => void;
   children: ReactNode;
+  variant?: "full" | "half";
 }) {
+  const ehHalf = variant === "half";
   return (
     <>
-      {/* Backdrop sutil que escurece o conteúdo embaixo */}
       <motion.div
-        className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px]"
+        className={
+          ehHalf
+            ? "absolute inset-0 z-20 bg-black/60 backdrop-blur-[3px]"
+            : "absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px]"
+        }
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -43,21 +47,25 @@ export function ArtigoFocusOverlay({
         onClick={onClose}
       />
 
-      {/* Painel principal */}
       <motion.div
-        className="absolute inset-0 z-30 flex flex-col bg-background shadow-2xl"
-        initial={{ y: "100%", opacity: 0.6 }}
+        className={
+          ehHalf
+            ? "absolute inset-x-0 bottom-0 z-30 flex flex-col bg-background shadow-2xl rounded-t-3xl border-t border-border/60 max-h-[72%] h-[72%]"
+            : "absolute inset-0 z-30 flex flex-col bg-background shadow-2xl"
+        }
+        initial={{ y: "100%", opacity: ehHalf ? 0.85 : 0.6 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: "100%", opacity: 0.4 }}
-        transition={{
-          type: "spring",
-          stiffness: 320,
-          damping: 34,
-          mass: 0.9,
-        }}
+        exit={{ y: "100%", opacity: ehHalf ? 0.6 : 0.4 }}
+        transition={{ type: "spring", stiffness: 320, damping: 34, mass: 0.9 }}
       >
+        {ehHalf && (
+          <div className="pt-2 pb-1 grid place-items-center">
+            <span className="h-1 w-10 rounded-full bg-border/80" />
+          </div>
+        )}
+
         {/* Header */}
-        <div className="px-5 pt-5 pb-3 border-b border-border/60 bg-gradient-to-b from-card/80 to-card/40">
+        <div className={`px-5 ${ehHalf ? "pt-2" : "pt-5"} pb-3 border-b border-border/60 bg-gradient-to-b from-card/80 to-card/40`}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               {eyebrow && (
