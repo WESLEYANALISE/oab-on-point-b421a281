@@ -1,57 +1,96 @@
-## Diagnóstico
 
-O problema **não é no front**, é nos dados da tabela `vade_mecum_artigos` para o `lei_id` do `estatuto-oab`. Conferi no Supabase:
+# Praticar — Flashcards e Questões por Artigo (Gemini)
 
-| ordem | numero | texto (início) | tamanho |
-|---|---|---|---|
-| 4 | — | `TÍTULO I` | 8 |
-| 5 | `1º` | `Da Advocacia CAPÍTULO I Da Atividade de Advocacia Art. 1º São atividades privativas de advocacia:` | **97** |
-| 6 | `2º` | `Art. 2º-A. O advogado pode contribuir com o processo legislativo…` | 179 |
-| 7 | `3º` | `Art. 3º-A. Os serviços profissionais de advogado são…` | 676 |
-| 8 | `4º` | `Art. 4º São nulos os atos privativos de advogado…` | 339 |
+## O que vai acontecer ao clicar em "Praticar"
 
-Três bugs distintos no import:
+Sobe um card de baixo para cima (bottom-sheet animado) com duas opções grandes:
+- **Flashcards** — revisão rápida com flip
+- **Questões** — prática estilo OAB (mistura múltipla escolha + V/F)
 
-1. **Art. 1º** — só o caput, sem os incisos I/II/III. Além disso, o subtítulo do TÍTULO I ("Da Advocacia") e o cabeçalho "CAPÍTULO I Da Atividade de Advocacia" foram colados no INÍCIO do texto do artigo (por isso aparece "Capítulo junto com o artigo").
-2. **Art. 2º sumiu** — a linha com `numero='2º'` contém somente o `Art. 2º-A` (incluído em 2022). O caput original ("Art. 2º. O advogado é indispensável à administração da justiça…") e os §§ 1º-3º não estão em lugar nenhum.
-3. **Art. 3º idem** — sobrou só o `Art. 3º-A`, o caput original ("O exercício da atividade de advocacia… depende de inscrição na OAB") foi descartado.
+Se o conteúdo já estiver gerado e salvo, abre na hora. Se não, a Profa. Ana (Gemini) gera enquanto a pessoa vê uma tela de "preparando suas questões…". Uma vez gerado, fica salvo no Supabase e qualquer outra pessoa que entrar naquele artigo abre instantaneamente.
 
-Padrão: o parser agrupou por "número raiz" e ficou com a ÚLTIMA ocorrência (`2º-A`, `3º-A`) em vez de criar UMA linha para cada variante. E não separou os cabeçalhos estruturais (Título/Capítulo/Seção) das linhas de artigo.
+## Quantidade dinâmica (depende do tamanho do artigo)
 
-## Correção
+Calculada a partir do número de caracteres do `texto` do artigo:
+- Até ~400 chars → **10 questões** / **20 flashcards**
+- 400–900 → **15 questões** / **25 flashcards**
+- 900–1800 → **20 questões** / **30 flashcards**
+- > 1800 → **30 questões** / **35 flashcards**
 
-Reimportar somente o Estatuto da OAB direto do Planalto, com parser correto, e substituir as linhas atuais.
+## Questões
 
-### Plano de execução
+- Mistura **múltipla escolha (4 alternativas)** e **verdadeiro/falso**, com explicação após responder.
+- Ordem cronológica de aprendizado: começa pelo básico (literalidade do artigo), evolui para interpretação, e termina em casos práticos/pegadinhas estilo OAB.
+- Tela de prática: progresso (3/20), feedback imediato com cor (verde/vermelho), explicação curta da Profa. Ana, botão "Próxima".
+- Ao fim: tela de resultado com acertos, % e botões "Refazer" / "Ver histórico".
 
-1. **Backup leve**: `SELECT count(*)` dos `vade_mecum_favoritos` e `vade_mecum_anotacoes` apontando para o `lei_id` do `estatuto-oab`, para reportar o impacto antes de apagar.
-2. **Script de import** em `/tmp` (Node, via `code--exec`):
-   - Baixa `https://www.planalto.gov.br/ccivil_03/leis/l8906.htm`.
-   - Faz parse do HTML linha a linha. Para cada bloco:
-     - Linhas que casam `^(TÍTULO|CAPÍTULO|SEÇÃO|Subseção)\b` viram rows com `numero=null` (cabeçalho estrutural).
-     - Linhas que casam `^Art\.\s*(\d+[º°]?(?:-[A-Z])?)\b` iniciam um novo artigo. `numero` recebe `"1º"`, `"2º"`, `"2º-A"`, `"3º"`, `"3º-A"`, etc. (variantes -A/-B viram artigos próprios, separados).
-     - Conteúdo do artigo acumula caput + todos os incisos romanos (I, II, III…), alíneas (a, b, c) e parágrafos (`§ 1º`, `Parágrafo único`) até o próximo `Art.` ou cabeçalho estrutural.
-   - Resolve `lei_id` via `SELECT id FROM vade_mecum_leis WHERE slug='estatuto-oab'`.
-   - Em transação: `DELETE FROM vade_mecum_artigos WHERE lei_id = <oab>` e `INSERT` da nova lista com `ordem` sequencial.
-   - Atualiza `vade_mecum_leis.total_artigos` para a nova contagem.
-3. **Validação automática** após o import:
-   - Conferir que existe linha com `numero='2º'` cujo texto começa com `Art. 2º` (e NÃO `Art. 2º-A`).
-   - Conferir que `Art. 1º` tem ≥ 3 incisos romanos no texto.
-   - Conferir que nenhum texto de artigo contém as substrings `TÍTULO ` ou `CAPÍTULO ` no início.
-4. **Limpeza colateral**: campos derivados por IA (`explicacao_*`, `exemplo`, `termos`, `narracao_url`) ficam como `null` para os artigos novos; o app já lida com isso (gera sob demanda). Favoritos/anotações antigos do estatuto-oab perdem o `artigo_id` de referência (os IDs mudam) — vou reportar a contagem antes de apagar e pedir confirmação se for >0.
+## Flashcards
 
-### O que NÃO muda
+- Frente: pergunta curta.
+- Verso (após flip animado 3D): resposta direta.
+- **Abaixo do card**: bloco de "Exemplo prático" (só aparece após o flip).
+- Botão "Próximo" avança para o próximo card. Contador no topo (5/30).
 
-- Front-end (`_app.vade-mecum.estatutos.$slug.tsx`) permanece igual — já sabe renderizar a hierarquia Título → Capítulo → Artigo a partir das rows com `numero=null`.
-- Demais 9 estatutos (ECA, Idoso, PCD, etc.) ficam intocados nesta rodada. Se quiser, depois rodo o mesmo script de validação neles para detectar bugs análogos.
+## Histórico e desempenho
 
-### Detalhes técnicos
+- **Por artigo**: ao abrir Questões, mostra um botão "Histórico" no topo com a última tentativa (data, acertos/total, %) e mini-gráfico de evolução das últimas 5 tentativas.
+- **Geral do usuário**: nova seção no Perfil ("Meu desempenho") com gráfico de acertos por matéria/lei e total de questões praticadas.
 
-- Tabela: `public.vade_mecum_artigos` (colunas `lei_id`, `numero`, `ordem`, `texto`, demais nullable).
-- Migração só de dados (DELETE + INSERT por `lei_id`); não muda schema.
-- Script roda fora do app, usando `process.env.SUPABASE_SERVICE_ROLE_KEY` via `supabase-js` admin client, em `/tmp/reimport-oab.ts`. Não fica versionado.
-- Fonte oficial: Planalto (lei consolidada com todas as alterações até 2024).
+## Cache compartilhado
 
-### Pergunta antes de executar
+- Conteúdo gerado uma vez por artigo fica salvo nas colunas `questoes` e `flashcards` (jsonb) já existentes em `vade_mecum_artigos`. Reuso para todos os usuários.
+- Tentativas e histórico são por usuário (novas tabelas).
 
-Confirmo se posso apagar as linhas atuais de `vade_mecum_artigos` do estatuto-oab (e quaisquer favoritos/anotações que apontem para esses IDs antigos) para reimportar do zero. Se preferir preservar favoritos/anotações, dá pra tentar um match por `numero` após o import — mas dado que os textos antigos estão corrompidos, recomendo recriar do zero.
+---
+
+## Detalhes técnicos
+
+### Banco (migration)
+
+Reaproveitar `vade_mecum_artigos.questoes` e `vade_mecum_artigos.flashcards` como cache compartilhado (jsonb com array de itens + metadata `{ gerado_em, modelo, total }`).
+
+Novas tabelas:
+- `vade_mecum_pratica_tentativas` — `id, user_id, artigo_id, lei_id, modo ('questoes'|'flashcards'), acertos, total, respostas jsonb, iniciado_em, concluido_em` + RLS `auth.uid() = user_id`.
+- (Flashcards usa a tentativa só pra contagem; sem SRS aqui, pra não complicar.)
+
+Índices: `(user_id, artigo_id, concluido_em DESC)` e `(user_id, concluido_em DESC)` para dashboard geral.
+
+### Server functions (`createServerFn`, Gemini direto)
+
+Arquivo `src/lib/artigo-pratica.functions.ts`:
+- `gerarQuestoesArtigo({ artigoId })` — se `vade_mecum_artigos.questoes` já tem dados válidos, retorna. Senão, chama Gemini `gemini-2.5-flash` via `GEMINI_API_KEY` com prompt estruturado (JSON schema: array de `{ tipo, enunciado, alternativas?, correta, explicacao, dificuldade }`), salva e retorna.
+- `gerarFlashcardsArtigo({ artigoId })` — idem para flashcards (`{ frente, verso, exemplo }`).
+- `salvarTentativa({ artigoId, modo, respostas, acertos, total })` — protegida por `requireSupabaseAuth`.
+- `getHistoricoArtigo({ artigoId })` e `getDesempenhoGeral()` — leituras protegidas.
+
+Prompts pedem progressão de dificuldade explícita (básico → intermediário → avançado/pegadinha) e contagem dinâmica conforme tamanho do artigo.
+
+### UI (frontend)
+
+Em `src/routes/_app.vade-mecum.estatutos.$slug.tsx`:
+- Novo componente `PraticarSheet` (bottom-sheet com `framer-motion`, swipe-down pra fechar) que abre ao clicar no botão "Praticar" do menu inferior.
+- Duas rotas/overlays internos:
+  - `QuestoesOverlay` — header com botão "Histórico", card de questão, alternativas, feedback, explicação, tela final.
+  - `FlashcardsOverlay` — card com flip 3D (CSS `transform-style: preserve-3d` + `rotateY`), exemplo abaixo, botão "Próximo".
+- Skeleton/loading "Profa. Ana está preparando…" enquanto gera.
+- Toast amigável em caso de erro (rate limit Gemini, etc.).
+
+No Perfil (`src/routes/_app.perfil.tsx` ou equivalente): nova aba/seção "Meu desempenho" com `recharts` (gráfico de barras por matéria + linha de evolução).
+
+### Animações
+- Bottom-sheet: `slide-up` + backdrop fade.
+- Flip: `rotateY 180deg`, 500ms cubic-bezier.
+- Transição entre questões: fade + slide horizontal sutil.
+
+### Design
+- Reusa tokens existentes (gold para destaques, dark surface). Sem cores hardcoded.
+- Mobile-first (viewport 390px é prioridade — usuário está no mobile).
+
+---
+
+## Fora do escopo desta entrega
+- Spaced repetition (SRS) para flashcards.
+- Comparar com outros usuários / ranking.
+- Edição manual das questões geradas (admin).
+
+Quer que eu siga com essa proposta?
