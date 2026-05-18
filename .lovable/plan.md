@@ -1,94 +1,58 @@
-## Escopo desta fase
+# Vade Mecum — 4 abas + Relevância + Favoritos
 
-Entregar a navegação **Vade Mecum → Estatutos → Artigos → Leitor do artigo**, com os **10 estatutos mais cobrados** já funcionais. As outras categorias (CF, Códigos, Súmulas, etc.) continuam mostradas no hub mas ficam para próximas levas de 10.
+## 1. UI: 4 abas full-width
 
-## Os 10 estatutos desta primeira leva
+Trocar o pequeno toggle pill por uma barra de 4 tabs ocupando toda a largura da seção (`grid grid-cols-4` com bottom-border ativo, estilo segmented control). Ordem:
 
-Selecionados por relevância em OAB/concursos (não só por nº de artigos):
+1. **Artigos** — somente artigos numerados (Art. 1º, 2º…). Filtra qualquer linha cujo `numero` comece com `Título`, `Capítulo`, `Livro`, `Parte`, `Seção`, `Subseção`, `Disposições` — fica oculto totalmente nesta aba.
+2. **Capítulos** — árvore expansível com estrutura completa: Título → Capítulo → Seção → Subseção → Artigos. Implementada montando uma árvore a partir da ordem dos artigos (cada marcador estrutural detectado por regex no `numero` empilha/desempilha conforme hierarquia). Cada nó é colapsável; folha é o artigo (abre o Sheet existente).
+3. **Relevância** — lista os artigos da lei marcados como mais cobrados, ordenados por peso (muito_alta → alta → media), com badge colorido (vermelho/âmbar/zinc) e tag opcional (ex: "OAB XL 1ª fase", "concursos federais").
+4. **Favoritos** — lista os artigos favoritados pelo usuário nesta lei. Se não logado, mostra CTA para entrar.
 
-1. ECA — Estatuto da Criança e do Adolescente
-2. Estatuto da OAB
-3. Estatuto do Idoso
-4. Estatuto da Pessoa com Deficiência
-5. Estatuto da Igualdade Racial
-6. Estatuto do Desarmamento
-7. Estatuto da Cidade
-8. Estatuto da Juventude
-9. Estatuto do Torcedor
-10. Estatuto do Índio
+Cada item dessas listas reaproveita o mesmo card de artigo + abre o `ArtigoSheet` existente. Dentro do Sheet, adiciono um botão de coração (toggle favorito) ao lado do Copiar.
 
-(Todos já estão no Supabase com artigos importados.)
+## 2. Banco de dados
 
-## Fluxo de navegação
+### Coluna em `vade_mecum_artigos`
+- `relevancia` text NULL (enum check: `muito_alta`, `alta`, `media`)
+- `relevancia_nota` text NULL (breve justificativa, ex.: "cai em quase toda OAB — princípio da proteção integral")
+- `relevancia_fontes` jsonb NULL (lista de URLs consultadas)
+- Index parcial `WHERE relevancia IS NOT NULL` para consultas rápidas.
 
-```
-/vade-mecum                       (hub atual — só adiciona link real em "Estatutos")
-   └── /vade-mecum/estatutos      (lista em timeline dos 10 estatutos)
-         └── /vade-mecum/estatutos/$slug   (lista de artigos da lei)
-                └── clique no artigo abre um Drawer/Sheet
-                     deslizando da ESQUERDA p/ DIREITA
-                     com o artigo estruturado
-```
+### Nova tabela `vade_mecum_favoritos`
+| coluna | tipo |
+|---|---|
+| id | uuid PK |
+| user_id | uuid NOT NULL |
+| artigo_id | uuid NOT NULL |
+| lei_id | uuid NOT NULL (denormalizado para listar rápido por lei) |
+| created_at | timestamptz default now() |
+| UNIQUE (user_id, artigo_id) |
 
-Sem rota separada para o artigo — ele entra como overlay (Sheet do shadcn com `side="left"`) por cima da lista, mantendo o contexto da lei.
+RLS: usuário só vê/insere/deleta os seus.
 
-## Telas a construir
+## 3. Popular Relevância (seed inicial via web search)
 
-### 1. `/vade-mecum/estatutos` — lista timeline
-- Mesmo padrão visual da seção "Demais categorias" já existente (timeline com bolinha + card).
-- Cada item: ícone, nome curto, nome completo, contagem de artigos, chevron.
-- Header com voltar para `/vade-mecum`, título "Estatutos", subtítulo "10 estatutos essenciais".
-- Server function `getEstatutos()` que lê `vade_mecum_leis` filtrando os 10 slugs definidos, preservando a ordem da lista acima.
+Estratégia:
+1. Script server-only (one-shot, rodado por exec) que, para cada uma das 10 leis em `ESTATUTOS_DESTAQUE`:
+   - faz buscas web tipo `"ECA" "artigo" "mais cobrado" OAB`, `"Estatuto do Idoso" jurisprudência artigos chave OAB concurso`, etc. (3-5 queries por lei).
+   - agrega resultados (snippets + URLs) e envia ao Gemini com prompt pedindo JSON estrito: `[{numero, peso, nota}]` onde `peso ∈ {muito_alta, alta, media}`.
+   - faz UPDATE em `vade_mecum_artigos` casando por `lei_id + numero`, gravando `relevancia`, `relevancia_nota` e `relevancia_fontes` (URLs usadas).
+2. Resultado salvo direto no Supabase — o app só lê.
 
-### 2. `/vade-mecum/estatutos/$slug` — lista de artigos
-- Header: voltar, nome do estatuto, total de artigos, busca por número/texto.
-- Lista virtualizada simples (paginada client-side por enquanto): cada linha mostra "Art. X" + primeiras ~140 chars do texto + chevron.
-- Server function `getEstatutoComArtigos(slug)` retorna `{ lei, artigos[] }` ordenado por `ordem`.
-- Clique → abre o Sheet do artigo (estado local com `artigoSelecionado`).
+A web search é feita uma vez agora, no sandbox, não em runtime. Decisão: Gemini valida/normaliza as evidências da web — não inventa do zero.
 
-### 3. Drawer do artigo (left → right)
-- Componente `ArtigoSheet` usando `Sheet` do shadcn com `side="left"` (animação nativa entra da esquerda).
-- Em mobile (390px) ocupa ~100% da largura; em desktop ~560px.
-- Conteúdo estruturado em seções colapsáveis/abas:
-  - **Cabeçalho**: "Art. X" + nome curto da lei + botões (favoritar, copiar, fechar).
-  - **Texto do artigo** (destaque tipográfico, leitura confortável).
-  - **Explicações**: tabs `Técnica · Resumida · Simples` (campos `explicacao_tecnico`, `explicacao_resumido`, `explicacao_simples_maior16`). Mostra placeholder "Em breve" se vazio.
-  - **Exemplo prático** (se houver).
-  - **Comentário do professor** (se houver).
-  - **Termos-chave** (chips a partir de `termos`).
-  - Áudio (`narracao_url`) e flashcards/questões ficam ocultos nesta fase se vazios.
-- Navegação entre artigos: setas ‹ Art. anterior / Art. próximo › no rodapé do Sheet.
+## 4. Arquivos a tocar
 
-## Mudanças no hub `/vade-mecum`
+- `src/routes/_app.vade-mecum.estatutos.$slug.tsx` — substituir toggle pelo segmented de 4 abas, filtrar estruturais em "Artigos", construir árvore para "Capítulos", queries para "Relevância" e "Favoritos", botão de favoritar no Sheet.
+- `src/lib/favoritos.functions.ts` (novo) — `toggleFavorito`, `listarFavoritos(leiId)`.
+- `src/lib/vade-mecum-relevancia.ts` (novo, server-only script) — não importado pelo app, rodado uma vez para o seed.
+- Migration: coluna + tabela + RLS.
 
-- O card/linha "Estatutos" passa a navegar de verdade para `/vade-mecum/estatutos`.
-- Total exibido vira `10` (essa leva) em vez de `28` mockado.
-- Resto do hub continua igual — outras categorias ficam visualmente presentes mas sem rota ainda (clique mostra toast "Em breve" para não quebrar expectativa).
+## 5. Ordem de execução
 
-## Camada de dados (server functions)
+1. Migration (coluna `relevancia*` + tabela `vade_mecum_favoritos` + RLS).
+2. Rodar script de seed da relevância (web search + Gemini → UPDATE).
+3. Implementar UI das 4 abas + favoritos + Sheet com coração.
 
-Arquivo novo `src/lib/vade-mecum.functions.ts`:
-
-- `getEstatutos()` → retorna os 10 estatutos na ordem definida.
-- `getEstatutoComArtigos(slug)` → lei + artigos (campos leves: id, numero, texto, ordem) para a lista.
-- `getArtigo(artigoId)` → artigo completo com todas as explicações para o Sheet.
-
-Todas usam o `supabase` browser client via leitura pública (RLS já permite SELECT público nas duas tabelas).
-
-## Detalhes técnicos
-
-- Rotas TanStack file-based:
-  - `src/routes/_app.vade-mecum.estatutos.index.tsx`
-  - `src/routes/_app.vade-mecum.estatutos.$slug.tsx`
-- Lista priorizada via array constante `ESTATUTOS_DESTAQUE` no módulo de dados (slug + ordem manual de relevância).
-- Sheet usa `@/components/ui/sheet` (shadcn) já presente no projeto; `side="left"` garante o slide esquerda→direita.
-- Sem mudança de schema — tabelas `vade_mecum_leis` e `vade_mecum_artigos` já têm tudo.
-- Tokens de cor existentes (`gold`, `primary`, `card`) — nada novo no `styles.css`.
-- SEO: cada rota define seu próprio `head()` (title/description).
-
-## Fora de escopo (próximas levas)
-
-- IA gerando explicações/exemplo/comentário sob demanda (ficará para depois — agora só renderiza o que já vier do banco).
-- Favoritos, anotações, histórico de leitura.
-- Códigos, CF, Leis ordinárias/complementares, Súmulas.
-- Busca global por texto de artigo (a busca do hub fica desabilitada por ora, ou só filtra os destaques como já faz).
+Depois disso, "Artigos" mostra só artigos numerados, "Capítulos" mostra a estrutura completa expansível, "Relevância" lista os marcados como mais cobrados com badge, "Favoritos" mostra os do usuário.
