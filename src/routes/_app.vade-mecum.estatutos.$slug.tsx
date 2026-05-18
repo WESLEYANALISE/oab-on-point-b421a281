@@ -1160,17 +1160,6 @@ function PerguntarPlaceholder({ artigo }: { artigo: ArtigoCompleto }) {
   );
 }
 
-function PraticarPlaceholder() {
-  return (
-    <div className="text-center py-10">
-      <Target className="h-10 w-10 text-gold/60 mx-auto mb-3" />
-      <p className="text-sm font-medium">Praticar</p>
-      <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-        Em breve — questões relacionadas a este artigo.
-      </p>
-    </div>
-  );
-}
 
 function AnotacoesEditor({
   userId, leiId, artigoId,
