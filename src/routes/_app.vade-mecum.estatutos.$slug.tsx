@@ -8,7 +8,6 @@ import {
   Search,
   ChevronRight,
   Send,
-  Sparkles as SparklesIcon,
   Copy,
   Heart,
   Flame,
