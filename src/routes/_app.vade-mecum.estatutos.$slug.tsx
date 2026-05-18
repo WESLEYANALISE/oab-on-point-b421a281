@@ -714,10 +714,10 @@ function ArtigoSheet({
           </div>
 
           {/* Função tabs */}
-          <div className="mt-4 grid grid-cols-5 gap-1">
+          <div className="mt-4 grid grid-cols-5 gap-1 items-end">
             <FuncTabBtn ativo={funcTab === "estudar"} onClick={() => setFuncTab("estudar")} icone={<GraduationCap className="h-5 w-5" />} label="Estudar" />
             <FuncTabBtn ativo={funcTab === "praticar"} onClick={() => setFuncTab("praticar")} icone={<Target className="h-5 w-5" />} label="Praticar" />
-            <FuncTabBtn ativo={funcTab === "narracao"} onClick={() => setFuncTab("narracao")} icone={<Volume2 className="h-5 w-5" />} label="Narração" destaque />
+            <FuncTabBtn ativo={funcTab === "narracao"} onClick={() => setFuncTab("narracao")} icone={<Volume2 className="h-6 w-6" />} label="Narração" destaque />
             <FuncTabBtn ativo={funcTab === "anotacoes"} onClick={() => setFuncTab("anotacoes")} icone={<StickyNote className="h-5 w-5" />} label="Anotações" />
             <FuncTabBtn ativo={funcTab === "perguntar"} onClick={() => setFuncTab("perguntar")} icone={<MessageCircleQuestion className="h-5 w-5" />} label="Perguntar" />
           </div>
@@ -730,7 +730,7 @@ function ArtigoSheet({
           </div>
 
           {/* Toggle 4 abas: Artigo / Explicação / Exemplo / Termos */}
-          <div className="mt-2 flex items-center gap-5 overflow-x-auto no-scrollbar">
+          <div className="mt-2 grid grid-cols-4 w-full">
             {(["artigo", "explicacao", "exemplo", "termos"] as ContentTab[]).map((t) => {
               const labels: Record<ContentTab, string> = {
                 artigo: "Artigo", explicacao: "Explicação", exemplo: "Exemplo", termos: "Termos",
@@ -741,12 +741,12 @@ function ArtigoSheet({
                   key={t}
                   type="button"
                   onClick={() => setContentTab(t)}
-                  className={`relative pb-2 text-[13.5px] font-semibold whitespace-nowrap transition-colors ${
+                  className={`relative pb-2 text-[12px] sm:text-[13px] font-semibold whitespace-nowrap text-center transition-colors ${
                     ativo ? "text-gold" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {labels[t]}
-                  {ativo && <span className="absolute left-0 right-0 -bottom-px h-[2px] bg-gold rounded-full" />}
+                  {ativo && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-gold rounded-full" />}
                 </button>
               );
             })}
@@ -754,55 +754,72 @@ function ArtigoSheet({
         </div>
 
         {/* Conteúdo */}
-        <div className="relative flex-1 overflow-y-auto px-5 py-6">
-          {isLoading || !artigo ? (
-            <div className="space-y-3">
-              <div className="h-4 bg-card/60 rounded animate-pulse" />
-              <div className="h-4 bg-card/60 rounded animate-pulse w-5/6" />
-              <div className="h-4 bg-card/60 rounded animate-pulse w-4/6" />
-            </div>
-          ) : funcTab === "narracao" ? (
-            <NarracaoView url={artigo.narracao_url} />
-          ) : funcTab === "anotacoes" ? (
-            <AnotacoesEditor userId={userId} leiId={leiId} artigoId={artigo.id} />
-          ) : funcTab === "perguntar" ? (
-            <PerguntarPlaceholder artigo={artigo} />
-          ) : funcTab === "praticar" ? (
-            <PraticarPlaceholder />
-          ) : (
-            // Estudar — usa contentTab
-            <div style={{ fontSize: fontPx }}>
-              {contentTab === "artigo" && (
-                <div className="space-y-4">
-                  <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
-                    <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
-                    {artigo.texto}
-                  </article>
-                  {planaltoUrl && (
-                    <a
-                      href={planaltoUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full border border-gold/40 bg-gold/10 text-gold text-[12.5px] font-semibold hover:bg-gold/15 transition-colors"
-                    >
-                      <Scale className="h-3.5 w-3.5" />
-                      Ver no Planalto
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
-                </div>
-              )}
-              {contentTab === "explicacao" && (
-                <ExplicacaoView artigo={artigo} />
-              )}
-              {contentTab === "exemplo" && (
-                <Bloco vazio={!artigo.exemplo}>{artigo.exemplo}</Bloco>
-              )}
-              {contentTab === "termos" && (
-                <TermosView termos={termos} />
-              )}
-            </div>
-          )}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Watermark brasão — fixo, não rola */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 flex items-center justify-center z-0"
+          >
+            <img
+              src={brasao}
+              alt=""
+              className="w-[55%] max-w-[280px] opacity-[0.06] select-none"
+              draggable={false}
+            />
+          </div>
+
+          <div className="relative z-10 h-full overflow-y-auto px-5 py-6 pb-10">
+            {isLoading || !artigo ? (
+              <div className="space-y-3">
+                <div className="h-4 bg-card/60 rounded animate-pulse" />
+                <div className="h-4 bg-card/60 rounded animate-pulse w-5/6" />
+                <div className="h-4 bg-card/60 rounded animate-pulse w-4/6" />
+              </div>
+            ) : funcTab === "narracao" ? (
+              <NarracaoView url={artigo.narracao_url} />
+            ) : funcTab === "anotacoes" ? (
+              <AnotacoesEditor userId={userId} leiId={leiId} artigoId={artigo.id} />
+            ) : funcTab === "perguntar" ? (
+              <PerguntarPlaceholder artigo={artigo} />
+            ) : funcTab === "praticar" ? (
+              <PraticarPlaceholder />
+            ) : (
+              // Estudar — usa contentTab
+              <div style={{ fontSize: fontPx }}>
+                {contentTab === "artigo" && (
+                  <div className="space-y-6">
+                    <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
+                      <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
+                      {artigo.texto}
+                    </article>
+                    {planaltoUrl && (
+                      <div className="flex justify-center pt-2 pb-4">
+                        <a
+                          href={planaltoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold/40 bg-gold/10 text-gold text-[12.5px] font-semibold hover:bg-gold/15 transition-colors"
+                        >
+                          <Scale className="h-3.5 w-3.5" />
+                          Ver no Planalto
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {contentTab === "explicacao" && (
+                  <ExplicacaoView artigo={artigo} />
+                )}
+                {contentTab === "exemplo" && (
+                  <Bloco vazio={!artigo.exemplo}>{artigo.exemplo}</Bloco>
+                )}
+                {contentTab === "termos" && (
+                  <TermosView termos={termos} />
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Controles flutuantes laterais */}
@@ -869,6 +886,8 @@ function FuncTabBtn({
 }: {
   ativo: boolean; onClick: () => void; icone: React.ReactNode; label: string; destaque?: boolean;
 }) {
+  const tamanho = destaque ? "h-14 w-14" : "h-11 w-11";
+  const baseElegant = destaque ? "btn-narracao-elegant text-black" : "";
   return (
     <button
       type="button"
@@ -876,17 +895,17 @@ function FuncTabBtn({
       className="flex flex-col items-center gap-1 group"
     >
       <span
-        className={`h-11 w-11 grid place-items-center rounded-full transition-all ${
-          ativo
-            ? "bg-gradient-to-br from-gold to-amber-600 text-black shadow-md scale-110"
-            : destaque
-              ? "bg-card/70 border border-gold/30 text-gold/90 group-hover:bg-card"
+        className={`${tamanho} grid place-items-center rounded-full transition-all ${
+          destaque
+            ? `${baseElegant} ${ativo ? "scale-110 ring-2 ring-gold/60" : ""}`
+            : ativo
+              ? "bg-gradient-to-br from-gold to-amber-600 text-black shadow-md scale-110"
               : "bg-card/60 border border-border/60 text-muted-foreground group-hover:text-foreground"
         }`}
       >
         {icone}
       </span>
-      <span className={`text-[10px] font-medium ${ativo ? "text-gold" : "text-muted-foreground"}`}>
+      <span className={`text-[10px] font-medium ${ativo || destaque ? "text-gold" : "text-muted-foreground"}`}>
         {label}
       </span>
     </button>

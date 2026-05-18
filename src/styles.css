@@ -252,6 +252,41 @@
   .animate-questoes-shine {
     animation: questoes-shine 5s ease-in-out infinite;
   }
+
+  /* Hide scrollbar */
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* Dourado elegante refinado para o botão de Narração */
+  .btn-narracao-elegant {
+    background: linear-gradient(135deg,
+      oklch(0.86 0.10 85) 0%,
+      oklch(0.74 0.13 78) 45%,
+      oklch(0.58 0.12 65) 100%);
+    box-shadow:
+      0 8px 22px -6px color-mix(in oklab, oklch(0.7 0.13 75) 55%, transparent),
+      inset 0 1px 0 color-mix(in oklab, white 35%, transparent),
+      inset 0 -1px 0 color-mix(in oklab, black 25%, transparent);
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-narracao-elegant::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg,
+      transparent 30%,
+      color-mix(in oklab, white 55%, transparent) 50%,
+      transparent 70%);
+    transform: translateX(-120%);
+    animation: narracao-sheen 3.2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes narracao-sheen {
+    0%, 60%  { transform: translateX(-120%); }
+    80%      { transform: translateX(120%); }
+    100%     { transform: translateX(120%); }
+  }
 }
 
 /* Resumo / artigo markdown — hierarquia tipográfica garantida */
