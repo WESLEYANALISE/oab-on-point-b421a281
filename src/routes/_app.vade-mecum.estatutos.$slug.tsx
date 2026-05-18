@@ -21,7 +21,7 @@ import {
   GraduationCap,
   Target,
   Volume2,
-  MessageCircleQuestion,
+  MessageCircle,
   Plus,
   Minus,
   Eye,
@@ -911,7 +911,7 @@ function ArtigoSheet({
             <FuncTabBtn ativo={funcTab === "praticar"} onClick={() => setFuncTab("praticar")} icone={<Target className="h-5 w-5" />} label="Praticar" />
             <FuncTabBtn ativo={funcTab === "narracao"} onClick={() => setFuncTab("narracao")} icone={<Volume2 className="h-6 w-6" />} label="Narração" destaque />
             <FuncTabBtn ativo={funcTab === "anotacoes"} onClick={() => setFuncTab("anotacoes")} icone={<StickyNote className="h-5 w-5" />} label="Anotações" />
-            <FuncTabBtn ativo={funcTab === "perguntar"} onClick={() => setFuncTab("perguntar")} icone={<MessageCircleQuestion className="h-5 w-5" />} label="Perguntar" />
+            <FuncTabBtn ativo={funcTab === "perguntar"} onClick={() => setFuncTab("perguntar")} icone={<MessageCircle className="h-5 w-5" />} label="Perguntar" />
           </div>
         </div>
       </SheetContent>
