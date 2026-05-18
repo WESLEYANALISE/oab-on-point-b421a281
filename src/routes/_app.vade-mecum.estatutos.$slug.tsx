@@ -921,7 +921,7 @@ function ArtigoSheet({
             />
           </div>
 
-          <div className="relative z-10 h-full overflow-y-auto px-5 py-6 pb-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="relative z-10 h-full overflow-y-auto px-5 py-6 pb-56 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {isLoading || !artigo ? (
               <div className="space-y-3">
                 <div className="h-4 bg-card/60 rounded animate-pulse" />
