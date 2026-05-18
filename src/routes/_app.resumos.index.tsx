@@ -6,6 +6,47 @@ import { z } from "zod";
 import { FileText, BookOpen, ChevronRight, ArrowLeft, FolderOpen } from "lucide-react";
 import { listarLivrosComResumo } from "@/lib/resumos.functions";
 
+// Ordem cronológica de incidência na 1ª fase da OAB + emoji/gradiente
+// (mesma paleta dos cards de matérias na home)
+const AREA_META: Record<string, { ordem: number; emoji: string; cor: string }> = {
+  "Ética": { ordem: 1, emoji: "⚖️", cor: "from-primary to-primary/70" },
+  "Ética Profissional": { ordem: 1, emoji: "⚖️", cor: "from-primary to-primary/70" },
+  "Filosofia do Direito": { ordem: 2, emoji: "🧠", cor: "from-secondary to-secondary/70" },
+  "Filosofia": { ordem: 2, emoji: "🧠", cor: "from-secondary to-secondary/70" },
+  "Direitos Humanos": { ordem: 3, emoji: "🕊️", cor: "from-primary to-primary/70" },
+  "Direito Constitucional": { ordem: 4, emoji: "📜", cor: "from-secondary to-secondary/70" },
+  "Direito Internacional": { ordem: 5, emoji: "🌍", cor: "from-primary to-primary/70" },
+  "Direito Tributário": { ordem: 6, emoji: "💰", cor: "from-secondary to-secondary/70" },
+  "Direito Financeiro": { ordem: 7, emoji: "🏦", cor: "from-primary to-primary/70" },
+  "Direito Administrativo": { ordem: 8, emoji: "🏛️", cor: "from-secondary to-secondary/70" },
+  "Direito Ambiental": { ordem: 9, emoji: "🌿", cor: "from-primary to-primary/70" },
+  "Direito Civil": { ordem: 10, emoji: "📚", cor: "from-secondary to-secondary/70" },
+  "Direito Processual Civil": { ordem: 11, emoji: "🧾", cor: "from-primary to-primary/70" },
+  "Processo Civil": { ordem: 11, emoji: "🧾", cor: "from-primary to-primary/70" },
+  "Direito do Consumidor": { ordem: 12, emoji: "🛒", cor: "from-secondary to-secondary/70" },
+  "Direito Empresarial": { ordem: 13, emoji: "🏢", cor: "from-primary to-primary/70" },
+  "Direito Concorrencial": { ordem: 14, emoji: "📈", cor: "from-secondary to-secondary/70" },
+  "ECA": { ordem: 15, emoji: "🧒", cor: "from-primary to-primary/70" },
+  "ECA — Criança e Adolescente": { ordem: 15, emoji: "🧒", cor: "from-primary to-primary/70" },
+  "Direito Penal": { ordem: 16, emoji: "🔒", cor: "from-secondary to-secondary/70" },
+  "Direito Processual Penal": { ordem: 17, emoji: "🛡️", cor: "from-primary to-primary/70" },
+  "Processo Penal": { ordem: 17, emoji: "🛡️", cor: "from-primary to-primary/70" },
+  "Direito do Trabalho": { ordem: 18, emoji: "👷", cor: "from-secondary to-secondary/70" },
+  "Direito Processual do Trabalho": { ordem: 19, emoji: "📂", cor: "from-primary to-primary/70" },
+  "Processo do Trabalho": { ordem: 19, emoji: "📂", cor: "from-primary to-primary/70" },
+};
+
+function metaPara(nome: string, idx: number) {
+  const m = AREA_META[nome];
+  if (m) return m;
+  // fallback: alterna gradiente, ordena depois das conhecidas
+  return {
+    ordem: 100 + idx,
+    emoji: "📖",
+    cor: idx % 2 === 0 ? "from-primary to-primary/70" : "from-secondary to-secondary/70",
+  };
+}
+
 const searchSchema = z.object({
   area: z.string().optional(),
 });
