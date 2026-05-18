@@ -1,15 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { geminiGenerateContent } from "@/lib/gemini.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const GEMINI_MODEL = "gemini-2.5-flash";
 
 function admin() {
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  return createClient(url, key, { auth: { persistSession: false } });
+  return supabaseAdmin;
 }
 
 function tamanhos(texto: string): { questoes: number; flashcards: number } {
