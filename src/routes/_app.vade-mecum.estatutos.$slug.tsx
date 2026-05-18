@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { perguntarArtigoIA } from "@/lib/artigo-chat.functions";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   ArrowLeft,
   Search,
@@ -1270,7 +1272,36 @@ function ChatIAOverlay({
   const [mensagens, setMensagens] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [carregando, setCarregando] = useState(false);
+  // Animação tipo "digitando": revela o conteúdo da última msg do assistente em chunks
+  const [digitando, setDigitando] = useState<{ idx: number; full: string; shown: number } | null>(null);
   const perguntar = useServerFn(perguntarArtigoIA);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll suave conforme novas mensagens / digitação avança
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [mensagens, digitando?.shown, carregando]);
+
+  // Reveal incremental por blocos (chunks) — sensação de digitação fluida
+  useEffect(() => {
+    if (!digitando) return;
+    if (digitando.shown >= digitando.full.length) {
+      setDigitando(null);
+      return;
+    }
+    const proximoChunk = (() => {
+      // tenta encontrar o próximo "fim de parágrafo" ou pontuação para parar
+      const restante = digitando.full.slice(digitando.shown);
+      const m = restante.match(/^[\s\S]{1,18}?([.,;:!?\n]|$)/);
+      return m ? m[0].length : Math.min(12, restante.length);
+    })();
+    const t = setTimeout(() => {
+      setDigitando((d) => (d ? { ...d, shown: Math.min(d.full.length, d.shown + proximoChunk) } : d));
+    }, 28);
+    return () => clearTimeout(t);
+  }, [digitando]);
 
   const sugestoes = useMemo(() => [
     `O que significa o Art. ${artigo.numero} na prática?`,
@@ -1281,7 +1312,7 @@ function ChatIAOverlay({
 
   const enviar = async (texto: string) => {
     const t = texto.trim();
-    if (!t || carregando) return;
+    if (!t || carregando || digitando) return;
     const novas: ChatMsg[] = [...mensagens, { role: "user", content: t }];
     setMensagens(novas);
     setInput("");
@@ -1304,7 +1335,10 @@ function ChatIAOverlay({
           mensagens: novas,
         },
       });
-      setMensagens([...novas, { role: "assistant", content: r.resposta }]);
+      const resposta = r.resposta ?? "";
+      const proxIdx = novas.length; // índice da nova msg do assistente
+      setMensagens([...novas, { role: "assistant", content: resposta }]);
+      setDigitando({ idx: proxIdx, full: resposta, shown: 0 });
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao consultar IA");
       setMensagens(novas);
@@ -1335,16 +1369,19 @@ function ChatIAOverlay({
       </div>
 
       {/* Conversa */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {mensagens.length === 0 ? (
           <div className="space-y-4">
             <div className="text-center pt-2">
               <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-gold/30 to-amber-600/20 border border-gold/40 mb-3">
                 <Sparkles className="h-6 w-6 text-gold" />
               </div>
-              <p className="text-sm font-semibold">IA especialista neste artigo</p>
+              <p className="text-sm font-semibold">Profa. Ana — sua dúvida aqui</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-                Pergunte qualquer coisa sobre o Art. {artigo.numero}. Sugestões abaixo.
+                Pergunte qualquer coisa sobre o Art. {artigo.numero}. Escolha uma sugestão ou digite a sua.
               </p>
             </div>
             <div className="space-y-2">
@@ -1363,19 +1400,61 @@ function ChatIAOverlay({
           </div>
         ) : (
           <>
-            {mensagens.map((m, i) => (
-              <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-                <div
-                  className={
-                    m.role === "user"
-                      ? "max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-br-md bg-[#2a0d12] border border-[#4a1820] text-rose-100/90 text-[13.5px] leading-relaxed whitespace-pre-wrap"
-                      : "max-w-[90%] px-3.5 py-2.5 rounded-2xl rounded-bl-md bg-card/70 border border-border/60 text-foreground/95 text-[13.5px] leading-relaxed whitespace-pre-wrap"
-                  }
-                >
-                  {m.content}
+            {mensagens.map((m, i) => {
+              const ehUltimaDigitando = digitando && digitando.idx === i && m.role === "assistant";
+              const conteudo = ehUltimaDigitando ? digitando!.full.slice(0, digitando!.shown) : m.content;
+              return (
+                <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+                  <div
+                    className={
+                      m.role === "user"
+                        ? "max-w-[85%] px-3.5 py-2.5 rounded-2xl rounded-br-md bg-[#2a0d12] border border-[#4a1820] text-rose-100/90 text-[13.5px] leading-relaxed whitespace-pre-wrap"
+                        : "max-w-[90%] px-3.5 py-2.5 rounded-2xl rounded-bl-md bg-card/70 border border-border/60 text-foreground/95 text-[13.5px] leading-relaxed"
+                    }
+                  >
+                    {m.role === "assistant" ? (
+                      <div className="chat-md">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            strong: ({ children }) => (
+                              <strong className="text-gold font-semibold">{children}</strong>
+                            ),
+                            em: ({ children }) => <em className="text-amber-200/90">{children}</em>,
+                            ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                            li: ({ children }) => <li className="leading-snug">{children}</li>,
+                            blockquote: ({ children }) => (
+                              <blockquote className="border-l-2 border-gold/60 pl-3 italic text-foreground/80 my-2">
+                                {children}
+                              </blockquote>
+                            ),
+                            code: ({ children }) => (
+                              <code className="px-1 py-0.5 rounded bg-background/60 text-amber-200 text-[12.5px]">
+                                {children}
+                              </code>
+                            ),
+                            a: ({ children, href }) => (
+                              <a href={href} target="_blank" rel="noreferrer" className="text-gold underline underline-offset-2">
+                                {children}
+                              </a>
+                            ),
+                          }}
+                        >
+                          {conteudo}
+                        </ReactMarkdown>
+                        {ehUltimaDigitando && (
+                          <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-gold/80 align-middle animate-pulse" />
+                        )}
+                      </div>
+                    ) : (
+                      conteudo
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {carregando && (
               <div className="flex justify-start">
                 <div className="px-3.5 py-2.5 rounded-2xl bg-card/70 border border-border/60 text-muted-foreground text-[13px]">
