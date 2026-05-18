@@ -1197,6 +1197,60 @@ export type Database = {
         }
         Relationships: []
       }
+      vade_mecum_narracoes: {
+        Row: {
+          artigo_id: string
+          audio_path: string
+          created_at: string
+          duracao_ms: number | null
+          gerado_por: string | null
+          id: string
+          lei_id: string
+          texto_narrado: string
+          updated_at: string
+          voz: string
+        }
+        Insert: {
+          artigo_id: string
+          audio_path: string
+          created_at?: string
+          duracao_ms?: number | null
+          gerado_por?: string | null
+          id?: string
+          lei_id: string
+          texto_narrado: string
+          updated_at?: string
+          voz?: string
+        }
+        Update: {
+          artigo_id?: string
+          audio_path?: string
+          created_at?: string
+          duracao_ms?: number | null
+          gerado_por?: string | null
+          id?: string
+          lei_id?: string
+          texto_narrado?: string
+          updated_at?: string
+          voz?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vade_mecum_narracoes_artigo_id_fkey"
+            columns: ["artigo_id"]
+            isOneToOne: true
+            referencedRelation: "vade_mecum_artigos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vade_mecum_narracoes_lei_id_fkey"
+            columns: ["lei_id"]
+            isOneToOne: false
+            referencedRelation: "vade_mecum_leis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vade_mecum_pratica_tentativas: {
         Row: {
           acertos: number
