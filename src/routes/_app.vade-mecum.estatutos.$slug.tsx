@@ -936,7 +936,7 @@ function ArtigoSheet({
         {/* Rodapé: navegação + menu de funções */}
         <div className="border-t border-border/60 bg-card/60 backdrop-blur">
           {/* Anterior / Próximo */}
-          <div className="px-3 pt-2.5 pb-2 flex items-center justify-between gap-2">
+          <div className="px-3 pt-2.5 pb-2 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={onPrev}
