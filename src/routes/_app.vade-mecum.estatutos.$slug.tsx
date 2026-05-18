@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { perguntarArtigoIA } from "@/lib/artigo-chat.functions";
+import { exportarConversaPDF } from "@/lib/chat-pdf";
+import { markdownToWhatsapp } from "@/lib/whatsapp-markdown";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -30,6 +31,8 @@ import {
   Minus,
   Eye,
   EyeOff,
+  FileDown,
+  Share2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -1262,36 +1265,9 @@ function ChatIAOverlay({
   const [mensagens, setMensagens] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [carregando, setCarregando] = useState(false);
-  // Animação tipo "digitando": revela o conteúdo da última msg do assistente em chunks
-  const [digitando, setDigitando] = useState<{ idx: number; full: string; shown: number } | null>(null);
-  const perguntar = useServerFn(perguntarArtigoIA);
+  // Índice da mensagem do assistente que está sendo streamada agora (null = nenhuma)
+  const [streamingIdx, setStreamingIdx] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-
-  // Auto-scroll suave conforme novas mensagens / digitação avança
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [mensagens, digitando?.shown, carregando]);
-
-  // Reveal incremental por blocos (chunks) — sensação de digitação fluida
-  useEffect(() => {
-    if (!digitando) return;
-    if (digitando.shown >= digitando.full.length) {
-      setDigitando(null);
-      return;
-    }
-    const proximoChunk = (() => {
-      // tenta encontrar o próximo "fim de parágrafo" ou pontuação para parar
-      const restante = digitando.full.slice(digitando.shown);
-      const m = restante.match(/^[\s\S]{1,18}?([.,;:!?\n]|$)/);
-      return m ? m[0].length : Math.min(12, restante.length);
-    })();
-    const t = setTimeout(() => {
-      setDigitando((d) => (d ? { ...d, shown: Math.min(d.full.length, d.shown + proximoChunk) } : d));
-    }, 28);
-    return () => clearTimeout(t);
-  }, [digitando]);
 
   const sugestoes = useMemo(() => [
     `O que significa o Art. ${artigo.numero} na prática?`,
@@ -1302,20 +1278,34 @@ function ChatIAOverlay({
 
   const enviar = async (texto: string) => {
     const t = texto.trim();
-    if (!t || carregando || digitando) return;
+    if (!t || carregando || streamingIdx !== null) return;
+
+    const explicacao =
+      artigo.explicacao_resumido ||
+      artigo.explicacao_tecnico ||
+      artigo.explicacao_simples_maior16 ||
+      artigo.explicacao_simples_menor16 ||
+      null;
+
     const novas: ChatMsg[] = [...mensagens, { role: "user", content: t }];
-    setMensagens(novas);
+    const idxAssistente = novas.length;
+    // já adiciona a bolha vazia do assistente (vai sendo preenchida via stream)
+    setMensagens([...novas, { role: "assistant", content: "" }]);
     setInput("");
     setCarregando(true);
+    setStreamingIdx(idxAssistente);
+
+    // scroll só uma vez, pra mostrar a pergunta da pessoa
+    requestAnimationFrame(() => {
+      const el = scrollRef.current;
+      if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    });
+
     try {
-      const explicacao =
-        artigo.explicacao_resumido ||
-        artigo.explicacao_tecnico ||
-        artigo.explicacao_simples_maior16 ||
-        artigo.explicacao_simples_menor16 ||
-        null;
-      const r = await perguntar({
-        data: {
+      const resp = await fetch("/api/artigo-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           artigo: {
             leiNome: leiRotulo,
             numero: String(artigo.numero ?? ""),
@@ -1323,18 +1313,78 @@ function ChatIAOverlay({
             explicacao,
           },
           mensagens: novas,
-        },
+        }),
       });
-      const resposta = r.resposta ?? "";
-      const proxIdx = novas.length; // índice da nova msg do assistente
-      setMensagens([...novas, { role: "assistant", content: resposta }]);
-      setDigitando({ idx: proxIdx, full: resposta, shown: 0 });
+
+      if (!resp.ok || !resp.body) {
+        const txt = await resp.text().catch(() => "");
+        throw new Error(txt || `Erro ${resp.status}`);
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let acumulado = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (!chunk) continue;
+        acumulado += chunk;
+        setMensagens((prev) => {
+          const copy = prev.slice();
+          if (copy[idxAssistente]?.role === "assistant") {
+            copy[idxAssistente] = { role: "assistant", content: acumulado };
+          }
+          return copy;
+        });
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao consultar IA");
-      setMensagens(novas);
+      // remove bolha vazia
+      setMensagens((prev) => {
+        const copy = prev.slice();
+        if (copy[idxAssistente]?.role === "assistant" && !copy[idxAssistente].content) {
+          copy.splice(idxAssistente, 1);
+        }
+        return copy;
+      });
     } finally {
       setCarregando(false);
+      setStreamingIdx(null);
     }
+  };
+
+  const compartilharWhatsApp = (pergunta: string, resposta: string) => {
+    const corpo = markdownToWhatsapp(resposta);
+    const texto =
+      `*Profa. Ana — Art. ${artigo.numero}*\n` +
+      `_${leiRotulo}_\n\n` +
+      `*Pergunta:* ${pergunta}\n\n` +
+      `${corpo}\n\n` +
+      `— via OAB On Point`;
+    const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const exportarPDF = (pergunta: string, resposta: string) => {
+    try {
+      exportarConversaPDF({
+        leiNome: leiRotulo,
+        artigoNumero: String(artigo.numero ?? ""),
+        pergunta,
+        resposta,
+      });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erro ao gerar PDF");
+    }
+  };
+
+  // Encontra a pergunta do usuário imediatamente anterior a uma resposta
+  const perguntaAnteriorTo = (idx: number): string => {
+    for (let i = idx - 1; i >= 0; i--) {
+      if (mensagens[i].role === "user") return mensagens[i].content;
+    }
+    return "";
   };
 
   return (
@@ -1391,10 +1441,11 @@ function ChatIAOverlay({
         ) : (
           <>
             {mensagens.map((m, i) => {
-              const ehUltimaDigitando = digitando && digitando.idx === i && m.role === "assistant";
-              const conteudo = ehUltimaDigitando ? digitando!.full.slice(0, digitando!.shown) : m.content;
+              const ehStreaming = streamingIdx === i && m.role === "assistant";
+              const respostaFinalizada =
+                m.role === "assistant" && !ehStreaming && m.content.trim().length > 0;
               return (
-                <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+                <div key={i} className={m.role === "user" ? "flex justify-end" : "flex flex-col items-start"}>
                   <div
                     className={
                       m.role === "user"
@@ -1404,58 +1455,78 @@ function ChatIAOverlay({
                   >
                     {m.role === "assistant" ? (
                       <div className="chat-md">
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                            strong: ({ children }) => (
-                              <strong className="text-gold font-semibold">{children}</strong>
-                            ),
-                            em: ({ children }) => <em className="text-amber-200/90">{children}</em>,
-                            ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
-                            ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
-                            li: ({ children }) => <li className="leading-snug">{children}</li>,
-                            blockquote: ({ children }) => (
-                              <blockquote className="border-l-2 border-gold/60 pl-3 italic text-foreground/80 my-2">
-                                {children}
-                              </blockquote>
-                            ),
-                            code: ({ children }) => (
-                              <code className="px-1 py-0.5 rounded bg-background/60 text-amber-200 text-[12.5px]">
-                                {children}
-                              </code>
-                            ),
-                            a: ({ children, href }) => (
-                              <a href={href} target="_blank" rel="noreferrer" className="text-gold underline underline-offset-2">
-                                {children}
-                              </a>
-                            ),
-                          }}
-                        >
-                          {conteudo}
-                        </ReactMarkdown>
-                        {ehUltimaDigitando && (
+                        {m.content ? (
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                              strong: ({ children }) => (
+                                <strong className="text-gold font-semibold">{children}</strong>
+                              ),
+                              em: ({ children }) => <em className="text-amber-200/90">{children}</em>,
+                              ul: ({ children }) => <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>,
+                              ol: ({ children }) => <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>,
+                              li: ({ children }) => <li className="leading-snug">{children}</li>,
+                              blockquote: ({ children }) => (
+                                <blockquote className="border-l-2 border-gold/60 pl-3 italic text-foreground/80 my-2">
+                                  {children}
+                                </blockquote>
+                              ),
+                              code: ({ children }) => (
+                                <code className="px-1 py-0.5 rounded bg-background/60 text-amber-200 text-[12.5px]">
+                                  {children}
+                                </code>
+                              ),
+                              a: ({ children, href }) => (
+                                <a href={href} target="_blank" rel="noreferrer" className="text-gold underline underline-offset-2">
+                                  {children}
+                                </a>
+                              ),
+                            }}
+                          >
+                            {m.content}
+                          </ReactMarkdown>
+                        ) : (
+                          <span className="inline-flex gap-1 py-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-gold/70 animate-pulse" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-gold/70 animate-pulse [animation-delay:150ms]" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-gold/70 animate-pulse [animation-delay:300ms]" />
+                          </span>
+                        )}
+                        {ehStreaming && m.content && (
                           <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-gold/80 align-middle animate-pulse" />
                         )}
                       </div>
                     ) : (
-                      conteudo
+                      m.content
                     )}
                   </div>
+
+                  {respostaFinalizada && (
+                    <div className="mt-1.5 ml-1 flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => exportarPDF(perguntaAnteriorTo(i), m.content)}
+                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-medium text-gold/90 hover:text-gold bg-gold/5 hover:bg-gold/10 border border-gold/20 hover:border-gold/40 transition"
+                        aria-label="Exportar resposta em PDF"
+                      >
+                        <FileDown className="h-3 w-3" />
+                        PDF
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => compartilharWhatsApp(perguntaAnteriorTo(i), m.content)}
+                        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-[11px] font-medium text-emerald-300/90 hover:text-emerald-200 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-400/40 transition"
+                        aria-label="Compartilhar no WhatsApp"
+                      >
+                        <Share2 className="h-3 w-3" />
+                        WhatsApp
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}
-            {carregando && (
-              <div className="flex justify-start">
-                <div className="px-3.5 py-2.5 rounded-2xl bg-card/70 border border-border/60 text-muted-foreground text-[13px]">
-                  <span className="inline-flex gap-1">
-                    <span className="h-1.5 w-1.5 rounded-full bg-gold/70 animate-pulse" />
-                    <span className="h-1.5 w-1.5 rounded-full bg-gold/70 animate-pulse [animation-delay:150ms]" />
-                    <span className="h-1.5 w-1.5 rounded-full bg-gold/70 animate-pulse [animation-delay:300ms]" />
-                  </span>
-                </div>
-              </div>
-            )}
           </>
         )}
       </div>

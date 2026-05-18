@@ -15,6 +15,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiArtigoChatRouteImport } from './routes/api/artigo-chat'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppQuestoesRouteImport } from './routes/_app.questoes'
 import { Route as AppProgressoRouteImport } from './routes/_app.progresso'
@@ -93,6 +94,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiArtigoChatRoute = ApiArtigoChatRouteImport.update({
+  id: '/api/artigo-chat',
+  path: '/api/artigo-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRetaFinalRoute = AppRetaFinalRouteImport.update({
@@ -374,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/progresso': typeof AppProgressoRoute
   '/questoes': typeof AppQuestoesRoute
   '/reta-final': typeof AppRetaFinalRoute
+  '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -429,6 +436,7 @@ export interface FileRoutesByTo {
   '/progresso': typeof AppProgressoRoute
   '/questoes': typeof AppQuestoesRoute
   '/reta-final': typeof AppRetaFinalRoute
+  '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -486,6 +494,7 @@ export interface FileRoutesById {
   '/_app/progresso': typeof AppProgressoRoute
   '/_app/questoes': typeof AppQuestoesRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
+  '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
@@ -545,6 +554,7 @@ export interface FileRouteTypes {
     | '/progresso'
     | '/questoes'
     | '/reta-final'
+    | '/api/artigo-chat'
     | '/admin/blog'
     | '/admin/resumos'
     | '/admin/simulados'
@@ -600,6 +610,7 @@ export interface FileRouteTypes {
     | '/progresso'
     | '/questoes'
     | '/reta-final'
+    | '/api/artigo-chat'
     | '/admin/blog'
     | '/admin/resumos'
     | '/admin/simulados'
@@ -656,6 +667,7 @@ export interface FileRouteTypes {
     | '/_app/progresso'
     | '/_app/questoes'
     | '/_app/reta-final'
+    | '/api/artigo-chat'
     | '/_app/admin/blog'
     | '/_app/admin/resumos'
     | '/_app/admin/simulados'
@@ -700,6 +712,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  ApiArtigoChatRoute: typeof ApiArtigoChatRoute
   ApiPublicSeedProvasRoute: typeof ApiPublicSeedProvasRoute
 }
 
@@ -745,6 +758,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/artigo-chat': {
+      id: '/api/artigo-chat'
+      path: '/api/artigo-chat'
+      fullPath: '/api/artigo-chat'
+      preLoaderRoute: typeof ApiArtigoChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/reta-final': {
@@ -1284,6 +1304,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  ApiArtigoChatRoute: ApiArtigoChatRoute,
   ApiPublicSeedProvasRoute: ApiPublicSeedProvasRoute,
 }
 export const routeTree = rootRouteImport
