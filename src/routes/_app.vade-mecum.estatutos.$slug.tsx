@@ -619,6 +619,21 @@ function NoArvore({ no, nivel, onOpen }: { no: Nó; nivel: number; onOpen: (id: 
 type FuncTab = "estudar" | "praticar" | "narracao" | "anotacoes" | "perguntar";
 type ContentTab = "artigo" | "explicacao" | "exemplo" | "termos";
 
+/** Insere quebras de linha antes de incisos (I, II...), parágrafos (§) e "Parágrafo único". */
+function formatarQuebrasArtigo(texto: string): string {
+  if (!texto) return texto;
+  let t = texto.replace(/\s+/g, " ").trim();
+  // Parágrafos: § 1º, § 2º...
+  t = t.replace(/\s*(§\s*\d+[ºo]?)/g, "\n\n$1");
+  // Parágrafo único
+  t = t.replace(/\s*(Parágrafo único)/gi, "\n\n$1");
+  // Incisos romanos: " I - ", " II – ", " III — "
+  t = t.replace(/\s+([IVXLCDM]+)\s*[-–—]\s+/g, "\n$1 – ");
+  // Alíneas: " a) ", " b) "
+  t = t.replace(/\s+([a-z])\)\s+/g, "\n$1) ");
+  return t;
+}
+
 /** Divide o texto em partes entre/fora de parênteses (balanceados). */
 function renderTextoArtigo(texto: string, mostrarParenteses: boolean): React.ReactNode[] {
   const out: React.ReactNode[] = [];
@@ -866,7 +881,7 @@ function ArtigoSheet({
                   <div className="space-y-6">
                     <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
                       <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
-                      {renderTextoArtigo(limparPrefixoArtigo(artigo.texto), mostrarParenteses)}
+                      {renderTextoArtigo(formatarQuebrasArtigo(limparPrefixoArtigo(artigo.texto)), mostrarParenteses)}
                     </article>
                     {planaltoUrl && (
                       <div className="flex justify-center pt-2 pb-4">
@@ -941,7 +956,7 @@ function ArtigoSheet({
               type="button"
               onClick={onPrev}
               disabled={!temAnterior}
-              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium bg-primary/15 border border-primary/40 text-primary-foreground hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               ‹ Anterior
             </button>
@@ -949,7 +964,7 @@ function ArtigoSheet({
               type="button"
               onClick={onNext}
               disabled={!temProximo}
-              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium bg-primary/15 border border-primary/40 text-primary-foreground hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Próximo ›
             </button>
