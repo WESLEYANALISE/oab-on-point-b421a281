@@ -631,18 +631,25 @@ function formatarQuebrasArtigo(texto: string): string {
   t = t.replace(/\s+([IVXLCDM]+)\s*[-–—]\s+/g, "\n$1 – ");
   // Alíneas: " a) ", " b) "
   t = t.replace(/\s+([a-z])\)\s+/g, "\n$1) ");
+  // Quebra após ":" e ";"
+  t = t.replace(/:\s+/g, ":\n");
+  t = t.replace(/;\s+/g, ";\n");
+  // Normaliza quebras em excesso
+  t = t.replace(/\n{3,}/g, "\n\n");
   return t;
 }
 
-/** Divide o texto em partes entre/fora de parênteses (balanceados). */
-function renderTextoArtigo(texto: string, mostrarParenteses: boolean): React.ReactNode[] {
+const PREFIXO_LEGAL_RE = /^(§\s*\d+[ºo]?|Parágrafo único|[IVXLCDM]+\s*[–-]|[a-z]\))(\s*)/;
+
+/** Renderiza parênteses (com cor) — usado dentro de cada linha. */
+function renderParenteses(texto: string, mostrarParenteses: boolean, baseKey: string): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   let depth = 0, start = 0, key = 0;
   for (let i = 0; i < texto.length; i++) {
     const ch = texto[i];
     if (ch === "(") {
       if (depth === 0) {
-        if (i > start) out.push(<span key={key++}>{texto.slice(start, i)}</span>);
+        if (i > start) out.push(<span key={`${baseKey}-${key++}`}>{texto.slice(start, i)}</span>);
         start = i;
       }
       depth++;
@@ -651,15 +658,40 @@ function renderTextoArtigo(texto: string, mostrarParenteses: boolean): React.Rea
       if (depth === 0) {
         const trecho = texto.slice(start, i + 1);
         if (mostrarParenteses) {
-          out.push(<span key={key++} className="text-amber-400/70 italic">{trecho}</span>);
+          out.push(<span key={`${baseKey}-${key++}`} className="text-amber-400/70 italic">{trecho}</span>);
         }
         start = i + 1;
       }
     }
   }
-  if (start < texto.length) out.push(<span key={key++}>{texto.slice(start)}</span>);
+  if (start < texto.length) out.push(<span key={`${baseKey}-${key++}`}>{texto.slice(start)}</span>);
   return out;
 }
+
+/** Quebra em linhas e destaca prefixos legais (§, incisos, alíneas) em dourado. */
+function renderTextoArtigo(texto: string, mostrarParenteses: boolean): React.ReactNode[] {
+  const linhas = texto.split("\n");
+  const out: React.ReactNode[] = [];
+  linhas.forEach((linha, idx) => {
+    if (idx > 0) out.push(<br key={`br-${idx}`} />);
+    if (!linha) return;
+    const m = linha.match(PREFIXO_LEGAL_RE);
+    if (m) {
+      const prefix = m[1];
+      const sep = m[2] ?? "";
+      const resto = linha.slice(prefix.length + sep.length);
+      out.push(
+        <span key={`p-${idx}`} className="font-bold text-gold">{prefix}</span>
+      );
+      out.push(<span key={`s-${idx}`}>{sep || " "}</span>);
+      out.push(...renderParenteses(resto, mostrarParenteses, `r-${idx}`));
+    } else {
+      out.push(...renderParenteses(linha, mostrarParenteses, `l-${idx}`));
+    }
+  });
+  return out;
+}
+
 
 function ArtigoSheet({
   artigoId,
@@ -859,7 +891,7 @@ function ArtigoSheet({
             />
           </div>
 
-          <div className="relative z-10 h-full overflow-y-auto px-5 py-6 pb-10">
+          <div className="relative z-10 h-full overflow-y-auto px-5 py-6 pb-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {isLoading || !artigo ? (
               <div className="space-y-3">
                 <div className="h-4 bg-card/60 rounded animate-pulse" />
