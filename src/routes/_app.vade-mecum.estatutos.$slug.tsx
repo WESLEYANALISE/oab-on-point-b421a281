@@ -223,7 +223,7 @@ function ArtigoSheet({
                 {artigo?.numero ? `Art. ${artigo.numero}` : "Artigo"}
               </h2>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 mr-9">
               <button
                 type="button"
                 onClick={() => {
@@ -236,14 +236,6 @@ function ArtigoSheet({
                 aria-label="Copiar"
               >
                 <Copy className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="h-9 w-9 grid place-items-center rounded-lg hover:bg-card transition-colors text-muted-foreground hover:text-foreground"
-                aria-label="Fechar"
-              >
-                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
