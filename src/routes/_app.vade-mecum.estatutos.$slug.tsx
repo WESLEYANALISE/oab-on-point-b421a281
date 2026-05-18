@@ -229,30 +229,17 @@ function EstatutoArtigosPage() {
             backgroundSize: "16px 16px",
           }}
         />
-        <div className="relative px-4 md:px-8 pt-4 pb-6">
-          <div className="flex items-center justify-between">
-            <Link
-              to="/vade-mecum/estatutos"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span className="leading-none">
-                <span className="block text-[9px] uppercase tracking-[0.2em] text-muted-foreground/80">Voltar</span>
-                <span className="block font-semibold text-foreground">Estatutos</span>
-              </span>
-            </Link>
-          </div>
-
-          <div className="mt-5 flex flex-col items-center text-center">
+        <div className="relative px-4 md:px-8 pt-5 pb-6">
+          <div className="flex flex-col items-center text-center">
             <img
               src={brasao}
               alt="Brasão"
               width={80}
               height={80}
-              className="h-20 w-20 object-contain drop-shadow-[0_0_22px_color-mix(in_oklab,var(--gold)_30%,transparent)]"
+              className="h-16 w-16 md:h-20 md:w-20 object-contain drop-shadow-[0_0_22px_color-mix(in_oklab,var(--gold)_30%,transparent)]"
               loading="eager"
             />
-            <h1 className="font-display font-semibold text-[24px] md:text-[30px] tracking-[0.04em] mt-2.5 leading-none uppercase">
+            <h1 className="font-display font-semibold text-[15px] sm:text-[18px] md:text-[24px] tracking-[0.04em] mt-2.5 leading-tight uppercase px-2 max-w-full break-words">
               {meta?.nomeCompleto ?? data?.lei.nome ?? "Estatuto"}
             </h1>
             <p className="text-[12.5px] text-muted-foreground mt-1.5">
