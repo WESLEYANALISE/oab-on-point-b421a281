@@ -1272,7 +1272,36 @@ function ChatIAOverlay({
   const [mensagens, setMensagens] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [carregando, setCarregando] = useState(false);
+  // Animação tipo "digitando": revela o conteúdo da última msg do assistente em chunks
+  const [digitando, setDigitando] = useState<{ idx: number; full: string; shown: number } | null>(null);
   const perguntar = useServerFn(perguntarArtigoIA);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll suave conforme novas mensagens / digitação avança
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [mensagens, digitando?.shown, carregando]);
+
+  // Reveal incremental por blocos (chunks) — sensação de digitação fluida
+  useEffect(() => {
+    if (!digitando) return;
+    if (digitando.shown >= digitando.full.length) {
+      setDigitando(null);
+      return;
+    }
+    const proximoChunk = (() => {
+      // tenta encontrar o próximo "fim de parágrafo" ou pontuação para parar
+      const restante = digitando.full.slice(digitando.shown);
+      const m = restante.match(/^[\s\S]{1,18}?([.,;:!?\n]|$)/);
+      return m ? m[0].length : Math.min(12, restante.length);
+    })();
+    const t = setTimeout(() => {
+      setDigitando((d) => (d ? { ...d, shown: Math.min(d.full.length, d.shown + proximoChunk) } : d));
+    }, 28);
+    return () => clearTimeout(t);
+  }, [digitando]);
 
   const sugestoes = useMemo(() => [
     `O que significa o Art. ${artigo.numero} na prática?`,
@@ -1283,7 +1312,7 @@ function ChatIAOverlay({
 
   const enviar = async (texto: string) => {
     const t = texto.trim();
-    if (!t || carregando) return;
+    if (!t || carregando || digitando) return;
     const novas: ChatMsg[] = [...mensagens, { role: "user", content: t }];
     setMensagens(novas);
     setInput("");
@@ -1306,7 +1335,10 @@ function ChatIAOverlay({
           mensagens: novas,
         },
       });
-      setMensagens([...novas, { role: "assistant", content: r.resposta }]);
+      const resposta = r.resposta ?? "";
+      const proxIdx = novas.length; // índice da nova msg do assistente
+      setMensagens([...novas, { role: "assistant", content: resposta }]);
+      setDigitando({ idx: proxIdx, full: resposta, shown: 0 });
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao consultar IA");
       setMensagens(novas);
