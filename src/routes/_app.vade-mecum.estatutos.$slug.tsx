@@ -1051,6 +1051,7 @@ function ArtigoSheet({
           {focusMode === "praticar" && artigo && (
             <ArtigoFocusOverlay
               key="focus-praticar"
+              variant="half"
               eyebrow={leiRotulo}
               title={`Praticar · Art. ${artigo.numero ?? "—"}`}
               subtitle="Profa. Ana gera tudo pra você"
