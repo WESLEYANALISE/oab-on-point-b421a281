@@ -727,6 +727,19 @@ function ArtigoSheet({
               </button>
               <button
                 type="button"
+                onClick={() => setMostrarParenteses((v) => !v)}
+                className={`h-9 w-9 grid place-items-center rounded-full transition-colors ${
+                  mostrarParenteses
+                    ? "text-amber-400 bg-amber-500/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card"
+                }`}
+                aria-label={mostrarParenteses ? "Ocultar alterações" : "Mostrar alterações"}
+                title={mostrarParenteses ? "Ocultar texto entre parênteses" : "Mostrar texto entre parênteses"}
+              >
+                {mostrarParenteses ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+              <button
+                type="button"
                 className="h-9 w-9 grid place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-card transition-colors"
                 aria-label="Mais"
               >
@@ -743,24 +756,8 @@ function ArtigoSheet({
             </div>
           </div>
 
-          {/* Função tabs */}
-          <div className="mt-4 grid grid-cols-5 gap-1 items-end">
-            <FuncTabBtn ativo={funcTab === "estudar"} onClick={() => setFuncTab("estudar")} icone={<GraduationCap className="h-5 w-5" />} label="Estudar" />
-            <FuncTabBtn ativo={funcTab === "praticar"} onClick={() => setFuncTab("praticar")} icone={<Target className="h-5 w-5" />} label="Praticar" />
-            <FuncTabBtn ativo={funcTab === "narracao"} onClick={() => setFuncTab("narracao")} icone={<Volume2 className="h-6 w-6" />} label="Narração" destaque />
-            <FuncTabBtn ativo={funcTab === "anotacoes"} onClick={() => setFuncTab("anotacoes")} icone={<StickyNote className="h-5 w-5" />} label="Anotações" />
-            <FuncTabBtn ativo={funcTab === "perguntar"} onClick={() => setFuncTab("perguntar")} icone={<MessageCircleQuestion className="h-5 w-5" />} label="Perguntar" />
-          </div>
-
-          {/* Separador dourado */}
-          <div className="mt-3 flex items-center justify-center">
-            <span className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/40 to-gold/40" />
-            <span className="mx-2 h-1.5 w-1.5 rounded-full bg-gold/60 rotate-45" />
-            <span className="h-px flex-1 bg-gradient-to-l from-transparent via-gold/40 to-gold/40" />
-          </div>
-
           {/* Toggle 4 abas: Artigo / Explicação / Exemplo / Termos */}
-          <div className="mt-2 grid grid-cols-4 w-full">
+          <div className="mt-4 grid grid-cols-4 w-full">
             {(["artigo", "explicacao", "exemplo", "termos"] as ContentTab[]).map((t) => {
               const labels: Record<ContentTab, string> = {
                 artigo: "Artigo", explicacao: "Explicação", exemplo: "Exemplo", termos: "Termos",
