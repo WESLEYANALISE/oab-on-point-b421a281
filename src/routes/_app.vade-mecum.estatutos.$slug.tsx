@@ -172,47 +172,31 @@ function EstatutoArtigosPage() {
 
   const meta = getEstatuto(slug);
 
+  // 1 chamada só: lei + artigos + favoritos + anotações do usuário.
+  // RPC `get_estatuto_overview` colapsa 3 round-trips em 1. Conteúdo legal
+  // muda raramente: 1h em memória, 24h no localStorage.
   const { data, isLoading } = useQuery({
-    queryKey: ["vade-mecum", "estatuto", slug],
-    // Conteúdo legal muda raramente. Fica quente por 1h em memória e até
-    // 24h no localStorage (PersistQueryClient). Abrir de novo é instantâneo.
+    queryKey: ["vade-mecum", "estatuto", slug, userId],
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
     queryFn: async () => {
-      const { data: leiData, error: e1 } = await supabase
-        .from("vade_mecum_leis")
-        .select("id, slug, nome, nome_curto, total_artigos")
-        .eq("slug", slug)
-        .maybeSingle();
-      if (e1) throw e1;
-      if (!leiData) throw new Error("Estatuto não encontrado");
-      const { data: artigos, error: e2 } = await supabase
-        .from("vade_mecum_artigos")
-        .select("id, numero, texto, ordem, relevancia, relevancia_nota")
-        .eq("lei_id", leiData.id)
-        .order("ordem", { ascending: true })
-        .limit(2000);
-      if (e2) throw e2;
-      return { lei: leiData as Lei, artigos: (artigos ?? []) as ArtigoLista[] };
+      const { data: payload, error } = await (supabase as any).rpc(
+        "get_estatuto_overview",
+        { _slug: slug, _user_id: userId },
+      );
+      if (error) throw error;
+      if (!payload?.lei) throw new Error("Estatuto não encontrado");
+      const lei = payload.lei as Lei;
+      const artigos = (payload.artigos ?? []) as ArtigoLista[];
+      const favoritos = (payload.favoritos ?? []) as string[];
+      const anotados = (payload.anotados ?? []) as string[];
+      return { lei, artigos, favoritos, anotados };
     },
   });
 
-  const { data: favoritosIds } = useQuery({
-    enabled: !!userId && !!data?.lei.id,
-    queryKey: ["vade-mecum", "favoritos", data?.lei.id, userId],
-    queryFn: async () => {
-      const { data: rows, error } = await (supabase as any)
-        .from("vade_mecum_favoritos")
-        .select("artigo_id")
-        .eq("user_id", userId!)
-        .eq("lei_id", data!.lei.id);
-      if (error) throw error;
-      return ((rows ?? []) as Array<{ artigo_id: string }>).map((r) => r.artigo_id);
-    },
-  });
   const favoritos = useMemo(
-    () => new Set<string>(Array.isArray(favoritosIds) ? favoritosIds : []),
-    [favoritosIds],
+    () => new Set<string>(data?.favoritos ?? []),
+    [data?.favoritos],
   );
 
   const artigos = data?.artigos ?? [];
@@ -227,19 +211,11 @@ function EstatutoArtigosPage() {
   // Chip-filtros (independentes da aba principal)
   const [filtroChip, setFiltroChip] = useState<null | "favoritos" | "anotacoes" | "radar">(null);
 
-  const { data: idsAnotados } = useQuery({
-    enabled: !!userId && !!data?.lei.id,
-    queryKey: ["vade-mecum", "anotacoes-ids", data?.lei.id, userId],
-    queryFn: async () => {
-      const { data: rows, error } = await (supabase as any)
-        .from("vade_mecum_anotacoes")
-        .select("artigo_id")
-        .eq("user_id", userId!)
-        .eq("lei_id", data!.lei.id);
-      if (error) throw error;
-      return new Set<string>((rows ?? []).map((r: any) => r.artigo_id));
-    },
-  });
+  const idsAnotados = useMemo(
+    () => new Set<string>(data?.anotados ?? []),
+    [data?.anotados],
+  );
+
 
   const listaArtigos = useMemo(() => {
     let arr = apenasArtigos;
