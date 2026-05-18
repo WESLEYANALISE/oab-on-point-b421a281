@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search, ChevronRight, X, Copy, BookOpen } from "lucide-react";
+import { ArrowLeft, Search, ChevronRight, Copy, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -223,7 +223,7 @@ function ArtigoSheet({
                 {artigo?.numero ? `Art. ${artigo.numero}` : "Artigo"}
               </h2>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1 shrink-0 mr-9">
               <button
                 type="button"
                 onClick={() => {
@@ -236,14 +236,6 @@ function ArtigoSheet({
                 aria-label="Copiar"
               >
                 <Copy className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="h-9 w-9 grid place-items-center rounded-lg hover:bg-card transition-colors text-muted-foreground hover:text-foreground"
-                aria-label="Fechar"
-              >
-                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -259,7 +251,7 @@ function ArtigoSheet({
             </div>
           ) : (
             <>
-              <article className="text-[15px] leading-relaxed text-foreground whitespace-pre-wrap font-serif">
+              <article className="font-serif text-[17px] leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em] [text-wrap:pretty] first-letter:text-[28px] first-letter:font-semibold first-letter:text-gold first-letter:mr-0.5">
                 {artigo.texto}
               </article>
 
