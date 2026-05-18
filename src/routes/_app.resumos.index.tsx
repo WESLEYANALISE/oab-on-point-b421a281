@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { z } from "zod";
 import { FileText, BookOpen, ChevronRight, ArrowLeft, FolderOpen } from "lucide-react";
 import { listarLivrosComResumo } from "@/lib/resumos.functions";
+import { cn } from "@/lib/utils";
 
 // Ordem cronológica de incidência na 1ª fase da OAB + emoji/gradiente
 // (mesma paleta dos cards de matérias na home)
