@@ -351,7 +351,7 @@ function EstatutoArtigosPage() {
         leiId={data?.lei.id ?? null}
         leiRotulo={rotulo}
         userId={userId}
-        favorito={!!artigoId && favoritos?.has(artigoId)}
+        favorito={!!artigoId && !!favoritos?.has(artigoId)}
         onClose={() => setArtigoId(null)}
         onPrev={() => navegar(-1)}
         onNext={() => navegar(1)}
