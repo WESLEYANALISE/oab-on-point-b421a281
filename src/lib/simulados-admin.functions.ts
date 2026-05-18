@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { geminiGenerateContent } from "@/lib/gemini.server";
+import { geminiGenerateContent, getGeminiKeys } from "@/lib/gemini.server";
 
 // ============ Helpers ============
 type LogEntry = { ts: string; nivel: "info" | "ok" | "erro"; msg: string };
@@ -674,7 +674,7 @@ export const processarBatch = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
 
-    if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
+    if (getGeminiKeys().length === 0) throw new Error("GEMINI_API_KEY não configurada");
 
     const job = await supabaseAdmin
       .from("simulado_jobs")
