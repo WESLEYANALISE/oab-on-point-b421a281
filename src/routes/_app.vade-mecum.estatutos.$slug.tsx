@@ -1365,8 +1365,9 @@ function ChatIAOverlay({
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const exportarPDF = (pergunta: string, resposta: string) => {
+  const exportarPDF = async (pergunta: string, resposta: string) => {
     try {
+      const { exportarConversaPDF } = await import("@/lib/chat-pdf");
       exportarConversaPDF({
         leiNome: leiRotulo,
         artigoNumero: String(artigo.numero ?? ""),
