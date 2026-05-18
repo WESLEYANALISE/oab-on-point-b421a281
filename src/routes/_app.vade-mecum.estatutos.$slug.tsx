@@ -1166,9 +1166,24 @@ function NarracaoTabBtn({ url }: { url: string | null }) {
     >
       <span
         className={`relative h-14 w-14 grid place-items-center rounded-full transition-all btn-narracao-elegant text-black ${
-          playing ? "scale-110 ring-2 ring-gold/70" : ""
+          playing ? "scale-110 ring-2 ring-gold/70 shadow-[0_0_24px_rgba(212,175,55,0.55)] animate-[narracao-pulse_1.6s_ease-in-out_infinite]" : ""
         }`}
       >
+        {/* Anéis pulsando enquanto narra */}
+        {playing && (
+          <>
+            <span
+              aria-hidden
+              className="absolute inset-0 rounded-full ring-2 ring-gold/60 animate-ping"
+              style={{ animationDuration: "1.8s" }}
+            />
+            <span
+              aria-hidden
+              className="absolute -inset-1 rounded-full ring-2 ring-gold/30 animate-ping"
+              style={{ animationDuration: "2.4s", animationDelay: "0.4s" }}
+            />
+          </>
+        )}
         {/* Anel de progresso */}
         <svg
           className="absolute inset-0 -rotate-90 pointer-events-none"

@@ -287,6 +287,19 @@
     80%      { transform: translateX(120%); }
     100%     { transform: translateX(120%); }
   }
+  @keyframes narracao-pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 0 0 color-mix(in oklab, oklch(0.78 0.13 78) 55%, transparent),
+        0 8px 22px -6px color-mix(in oklab, oklch(0.7 0.13 75) 60%, transparent),
+        inset 0 1px 0 color-mix(in oklab, white 35%, transparent);
+    }
+    50% {
+      box-shadow:
+        0 0 0 10px color-mix(in oklab, oklch(0.78 0.13 78) 0%, transparent),
+        0 10px 32px -4px color-mix(in oklab, oklch(0.74 0.14 75) 80%, transparent),
+        inset 0 1px 0 color-mix(in oklab, white 45%, transparent);
+    }
 }
 
 /* Resumo / artigo markdown — hierarquia tipográfica garantida */
