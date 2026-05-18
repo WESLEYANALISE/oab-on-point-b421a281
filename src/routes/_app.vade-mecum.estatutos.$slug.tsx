@@ -938,7 +938,7 @@ function ArtigoSheet({
             ) : funcTab === "perguntar" ? (
               <PerguntarPlaceholder artigo={artigo} />
             ) : funcTab === "praticar" ? (
-              <PraticarPlaceholder />
+              <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
             ) : (
               // Estudar — usa contentTab
               <div style={{ fontSize: fontPx }}>
