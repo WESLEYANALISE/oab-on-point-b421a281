@@ -97,6 +97,30 @@ function EstatutoArtigosPage() {
     if (next) setArtigoId(next.id);
   };
 
+  // Agrupa artigos por Título/Capítulo
+  const grupos = useMemo(() => {
+    const isEstrutura = (n: string | null) =>
+      !!n && /^(t[íi]tulo|cap[íi]tulo|livro|parte|se[çc][ãa]o)\b/i.test(n.trim());
+    const out: { id: string; rotulo: string; texto: string; artigos: ArtigoLista[] }[] = [];
+    let atual: (typeof out)[number] | null = null;
+    for (const a of artigos) {
+      if (isEstrutura(a.numero)) {
+        atual = { id: a.id, rotulo: a.numero!.trim(), texto: a.texto, artigos: [] };
+        out.push(atual);
+      } else if (atual) {
+        atual.artigos.push(a);
+      } else {
+        // artigos antes de qualquer marcador
+        if (!out[0] || out[0].rotulo !== "Disposições") {
+          atual = { id: "_pre", rotulo: "Disposições", texto: "", artigos: [] };
+          out.unshift(atual);
+        }
+        atual.artigos.push(a);
+      }
+    }
+    return out;
+  }, [artigos]);
+
   return (
     <div className="pb-20">
       <header className="border-b border-border/60 px-4 md:px-8 pt-5 pb-5 bg-card/30">
