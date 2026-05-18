@@ -817,7 +817,7 @@ function ArtigoSheet({
                   <div className="space-y-6">
                     <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
                       <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
-                      {artigo.texto}
+                      {renderTextoArtigo(artigo.texto, mostrarParenteses)}
                     </article>
                     {planaltoUrl && (
                       <div className="flex justify-center pt-2 pb-4">
