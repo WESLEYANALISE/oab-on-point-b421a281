@@ -151,23 +151,23 @@ function ResumosIndex() {
       )}
 
       {showAreas && areas.length > 0 && (
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {areas.map(({ nome, total }) => (
+        <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+          {areas.map(({ nome, total, meta }) => (
             <li key={nome}>
               <button
                 onClick={() => navigate({ search: { area: nome } })}
-                className="group w-full flex items-center gap-4 p-4 text-left rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 hover:from-primary/10 hover:to-card hover:border-primary/40 active:scale-[0.98] transition-all shadow-sm"
+                className="group relative w-full overflow-hidden rounded-xl border border-border bg-card text-left transition-all hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98]"
               >
-                <div className="w-12 h-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <BookOpen className="w-5 h-5" strokeWidth={2.2} />
+                <div className={cn("h-24 bg-gradient-to-br p-4 flex items-start justify-between", meta.cor)}>
+                  <span className="text-3xl">{meta.emoji}</span>
+                  <span className="text-[10px] uppercase tracking-wider text-primary-foreground/80 font-semibold">Resumo</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-sans text-[15px] font-semibold text-foreground leading-tight line-clamp-2">{nome}</div>
-                  <div className="font-sans text-xs text-muted-foreground mt-1">
+                <div className="p-3.5">
+                  <h3 className="font-display text-base leading-snug text-balance line-clamp-2">{nome}</h3>
+                  <p className="text-[11px] text-muted-foreground mt-1">
                     {total} {total === 1 ? "livro" : "livros"}
-                  </div>
+                  </p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary flex-shrink-0 transition-colors" />
               </button>
             </li>
           ))}
