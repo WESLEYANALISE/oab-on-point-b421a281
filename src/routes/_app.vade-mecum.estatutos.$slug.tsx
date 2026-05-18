@@ -236,6 +236,8 @@ function EstatutoArtigosPage() {
   }, [apenasArtigos, query, filtroChip, favoritos, idsAnotados]);
 
   const arvore = useMemo(() => montarArvore(artigos), [artigos]);
+  const caminhos = useMemo(() => mapearCaminhos(artigos), [artigos]);
+  const caminhoAtual = artigoId ? caminhos.get(artigoId) ?? [] : [];
 
   const indiceAtual = artigoId ? listaArtigos.findIndex((a) => a.id === artigoId) : -1;
   const navegar = (delta: number) => {
