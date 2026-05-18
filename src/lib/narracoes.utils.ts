@@ -122,7 +122,55 @@ export type MontarTextoInput = {
   artigoTexto: string;
 };
 
-export const MAX_TTS_CHARS = 4000;
+export const MAX_TTS_CHARS = 40000;
+
+/**
+ * Alvo de caracteres por chunk de TTS (~1 min de áudio em pt-BR a ~15 chars/s).
+ * Mantém entre 1:00 e 1:10 quebrando em fronteiras naturais (. ; : , espaço).
+ */
+export const TTS_CHUNK_TARGET_CHARS = 900;
+export const TTS_CHUNK_MAX_CHARS = 1050;
+
+/** Divide texto longo em chunks ~1min, preferindo fronteiras de sentença/pontuação. */
+export function dividirTextoEmChunks(
+  texto: string,
+  target = TTS_CHUNK_TARGET_CHARS,
+  max = TTS_CHUNK_MAX_CHARS,
+): string[] {
+  const t = texto.trim();
+  if (t.length <= max) return [t];
+
+  const chunks: string[] = [];
+  let i = 0;
+  while (i < t.length) {
+    const restante = t.length - i;
+    if (restante <= max) {
+      chunks.push(t.slice(i).trim());
+      break;
+    }
+    // Janela de busca: do alvo até o máximo
+    const inicio = i + Math.floor(target * 0.7);
+    const fim = Math.min(i + max, t.length);
+    const janela = t.slice(inicio, fim);
+
+    // Tenta achar pontuação forte, depois fraca, depois espaço.
+    const candidatos = [
+      janela.lastIndexOf(". "),
+      janela.lastIndexOf("; "),
+      janela.lastIndexOf(": "),
+      janela.lastIndexOf(", "),
+      janela.lastIndexOf(" "),
+    ];
+    let corte = -1;
+    for (const c of candidatos) {
+      if (c >= 0) { corte = c; break; }
+    }
+    const cortePos = corte >= 0 ? inicio + corte + 1 : fim;
+    chunks.push(t.slice(i, cortePos).trim());
+    i = cortePos;
+  }
+  return chunks.filter((c) => c.length > 0);
+}
 
 /** Remove o marcador inicial "Art. N" / "Artigo N" do texto pra não duplicar com o prefixo. */
 export function removerArtigoInicial(texto: string): string {
