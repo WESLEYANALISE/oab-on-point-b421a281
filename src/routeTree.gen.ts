@@ -55,8 +55,10 @@ import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
 import { Route as AppAdminResumosRouteImport } from './routes/_app.admin.resumos'
 import { Route as AppAdminBlogRouteImport } from './routes/_app.admin.blog'
+import { Route as AppVadeMecumEstatutosIndexRouteImport } from './routes/_app.vade-mecum.estatutos.index'
 import { Route as AppSimuladosSlugIndexRouteImport } from './routes/_app.simulados.$slug.index'
 import { Route as AppBibliotecaSlugIndexRouteImport } from './routes/_app.biblioteca.$slug.index'
+import { Route as AppVadeMecumEstatutosSlugRouteImport } from './routes/_app.vade-mecum.estatutos.$slug'
 import { Route as AppSimuladosSlugPraticarRouteImport } from './routes/_app.simulados.$slug.praticar'
 import { Route as AppBibliotecaSlugBookIdRouteImport } from './routes/_app.biblioteca.$slug.$bookId'
 import { Route as AppBibliotecaSlugBookIdIndexRouteImport } from './routes/_app.biblioteca.$slug.$bookId.index'
@@ -293,6 +295,12 @@ const AppAdminBlogRoute = AppAdminBlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppVadeMecumEstatutosIndexRoute =
+  AppVadeMecumEstatutosIndexRouteImport.update({
+    id: '/estatutos/',
+    path: '/estatutos/',
+    getParentRoute: () => AppVadeMecumRoute,
+  } as any)
 const AppSimuladosSlugIndexRoute = AppSimuladosSlugIndexRouteImport.update({
   id: '/simulados/$slug/',
   path: '/simulados/$slug/',
@@ -303,6 +311,12 @@ const AppBibliotecaSlugIndexRoute = AppBibliotecaSlugIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppBibliotecaSlugRoute,
 } as any)
+const AppVadeMecumEstatutosSlugRoute =
+  AppVadeMecumEstatutosSlugRouteImport.update({
+    id: '/estatutos/$slug',
+    path: '/estatutos/$slug',
+    getParentRoute: () => AppVadeMecumRoute,
+  } as any)
 const AppSimuladosSlugPraticarRoute =
   AppSimuladosSlugPraticarRouteImport.update({
     id: '/simulados/$slug/praticar',
@@ -360,7 +374,7 @@ export interface FileRoutesByFullPath {
   '/progresso': typeof AppProgressoRoute
   '/questoes': typeof AppQuestoesRoute
   '/reta-final': typeof AppRetaFinalRoute
-  '/vade-mecum': typeof AppVadeMecumRoute
+  '/vade-mecum': typeof AppVadeMecumRouteWithChildren
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -387,8 +401,10 @@ export interface FileRoutesByFullPath {
   '/simulados/': typeof AppSimuladosIndexRoute
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
+  '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
+  '/vade-mecum/estatutos/': typeof AppVadeMecumEstatutosIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/resumos/capitulo/$livroId/$ordem': typeof AppResumosCapituloLivroIdOrdemRoute
   '/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
@@ -413,7 +429,7 @@ export interface FileRoutesByTo {
   '/progresso': typeof AppProgressoRoute
   '/questoes': typeof AppQuestoesRoute
   '/reta-final': typeof AppRetaFinalRoute
-  '/vade-mecum': typeof AppVadeMecumRoute
+  '/vade-mecum': typeof AppVadeMecumRouteWithChildren
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -438,8 +454,10 @@ export interface FileRoutesByTo {
   '/resumos': typeof AppResumosIndexRoute
   '/simulados': typeof AppSimuladosIndexRoute
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
+  '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
   '/simulados/$slug': typeof AppSimuladosSlugIndexRoute
+  '/vade-mecum/estatutos': typeof AppVadeMecumEstatutosIndexRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/resumos/capitulo/$livroId/$ordem': typeof AppResumosCapituloLivroIdOrdemRoute
   '/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
@@ -468,7 +486,7 @@ export interface FileRoutesById {
   '/_app/progresso': typeof AppProgressoRoute
   '/_app/questoes': typeof AppQuestoesRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
-  '/_app/vade-mecum': typeof AppVadeMecumRoute
+  '/_app/vade-mecum': typeof AppVadeMecumRouteWithChildren
   '/_app/admin/blog': typeof AppAdminBlogRoute
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
@@ -495,8 +513,10 @@ export interface FileRoutesById {
   '/_app/simulados/': typeof AppSimuladosIndexRoute
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/_app/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
+  '/_app/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/_app/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
+  '/_app/vade-mecum/estatutos/': typeof AppVadeMecumEstatutosIndexRoute
   '/_app/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/_app/resumos/capitulo/$livroId/$ordem': typeof AppResumosCapituloLivroIdOrdemRoute
   '/_app/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
@@ -552,8 +572,10 @@ export interface FileRouteTypes {
     | '/simulados/'
     | '/biblioteca/$slug/$bookId'
     | '/simulados/$slug/praticar'
+    | '/vade-mecum/estatutos/$slug'
     | '/biblioteca/$slug/'
     | '/simulados/$slug/'
+    | '/vade-mecum/estatutos/'
     | '/biblioteca/$slug/$bookId/ler'
     | '/resumos/capitulo/$livroId/$ordem'
     | '/simulados/$slug/resultado/$tentativaId'
@@ -603,8 +625,10 @@ export interface FileRouteTypes {
     | '/resumos'
     | '/simulados'
     | '/simulados/$slug/praticar'
+    | '/vade-mecum/estatutos/$slug'
     | '/biblioteca/$slug'
     | '/simulados/$slug'
+    | '/vade-mecum/estatutos'
     | '/biblioteca/$slug/$bookId/ler'
     | '/resumos/capitulo/$livroId/$ordem'
     | '/simulados/$slug/resultado/$tentativaId'
@@ -659,8 +683,10 @@ export interface FileRouteTypes {
     | '/_app/simulados/'
     | '/_app/biblioteca/$slug/$bookId'
     | '/_app/simulados/$slug/praticar'
+    | '/_app/vade-mecum/estatutos/$slug'
     | '/_app/biblioteca/$slug/'
     | '/_app/simulados/$slug/'
+    | '/_app/vade-mecum/estatutos/'
     | '/_app/biblioteca/$slug/$bookId/ler'
     | '/_app/resumos/capitulo/$livroId/$ordem'
     | '/_app/simulados/$slug/resultado/$tentativaId'
@@ -1001,6 +1027,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminBlogRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/vade-mecum/estatutos/': {
+      id: '/_app/vade-mecum/estatutos/'
+      path: '/estatutos'
+      fullPath: '/vade-mecum/estatutos/'
+      preLoaderRoute: typeof AppVadeMecumEstatutosIndexRouteImport
+      parentRoute: typeof AppVadeMecumRoute
+    }
     '/_app/simulados/$slug/': {
       id: '/_app/simulados/$slug/'
       path: '/simulados/$slug'
@@ -1014,6 +1047,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/biblioteca/$slug/'
       preLoaderRoute: typeof AppBibliotecaSlugIndexRouteImport
       parentRoute: typeof AppBibliotecaSlugRoute
+    }
+    '/_app/vade-mecum/estatutos/$slug': {
+      id: '/_app/vade-mecum/estatutos/$slug'
+      path: '/estatutos/$slug'
+      fullPath: '/vade-mecum/estatutos/$slug'
+      preLoaderRoute: typeof AppVadeMecumEstatutosSlugRouteImport
+      parentRoute: typeof AppVadeMecumRoute
     }
     '/_app/simulados/$slug/praticar': {
       id: '/_app/simulados/$slug/praticar'
@@ -1156,6 +1196,20 @@ const AppNoticiasRouteWithChildren = AppNoticiasRoute._addFileChildren(
   AppNoticiasRouteChildren,
 )
 
+interface AppVadeMecumRouteChildren {
+  AppVadeMecumEstatutosSlugRoute: typeof AppVadeMecumEstatutosSlugRoute
+  AppVadeMecumEstatutosIndexRoute: typeof AppVadeMecumEstatutosIndexRoute
+}
+
+const AppVadeMecumRouteChildren: AppVadeMecumRouteChildren = {
+  AppVadeMecumEstatutosSlugRoute: AppVadeMecumEstatutosSlugRoute,
+  AppVadeMecumEstatutosIndexRoute: AppVadeMecumEstatutosIndexRoute,
+}
+
+const AppVadeMecumRouteWithChildren = AppVadeMecumRoute._addFileChildren(
+  AppVadeMecumRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAppRoute: typeof AppAppRoute
@@ -1172,7 +1226,7 @@ interface AppRouteChildren {
   AppProgressoRoute: typeof AppProgressoRoute
   AppQuestoesRoute: typeof AppQuestoesRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
-  AppVadeMecumRoute: typeof AppVadeMecumRoute
+  AppVadeMecumRoute: typeof AppVadeMecumRouteWithChildren
   AppOabCadernoErrosRoute: typeof AppOabCadernoErrosRoute
   AppOabCalendarioRoute: typeof AppOabCalendarioRoute
   AppOabCronogramaRoute: typeof AppOabCronogramaRoute
@@ -1209,7 +1263,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProgressoRoute: AppProgressoRoute,
   AppQuestoesRoute: AppQuestoesRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
-  AppVadeMecumRoute: AppVadeMecumRoute,
+  AppVadeMecumRoute: AppVadeMecumRouteWithChildren,
   AppOabCadernoErrosRoute: AppOabCadernoErrosRoute,
   AppOabCalendarioRoute: AppOabCalendarioRoute,
   AppOabCronogramaRoute: AppOabCronogramaRoute,

@@ -72,7 +72,7 @@ const CATEGORIAS: Categoria[] = [
     id: "estatutos",
     titulo: "Estatutos & Tratados",
     descricao: "OAB, Idoso, PCD, Igualdade Racial e tratados internacionais.",
-    total: 28,
+    total: 10,
     icon: ShieldCheck,
     tag: "Especiais",
   },
@@ -179,29 +179,44 @@ function VadeMecumPage() {
             .map((id) => CATEGORIAS.find((c) => c.id === id)!)
             .map((cat) => {
               const Icon = cat.icon;
+              const isEstatutos = cat.id === "estatutos";
+              const inner = (
+                <>
+                  <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary grid place-items-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <Icon className="h-5 w-5" strokeWidth={2.2} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] uppercase tracking-[0.2em] text-primary/80 font-semibold truncate">
+                      {cat.tag}
+                    </p>
+                    <p className="text-[14px] font-semibold leading-tight truncate text-foreground">
+                      {cat.titulo}
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-primary font-semibold shrink-0">
+                    {cat.total.toLocaleString("pt-BR")}
+                  </span>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+                </>
+              );
+              const className =
+                "w-full text-left rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 hover:from-primary/10 hover:to-card hover:border-primary/40 active:scale-[0.98] transition-all shadow-sm px-3.5 py-3 flex items-center gap-3 cursor-pointer";
               return (
                 <li key={cat.id} className="pl-5 relative group">
                   <span className="absolute -left-[7px] top-4 h-3 w-3 rounded-full bg-primary border-2 border-background shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_25%,transparent)]" />
-                  <button
-                    type="button"
-                    className="w-full text-left rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 hover:from-primary/10 hover:to-card hover:border-primary/40 active:scale-[0.98] transition-all shadow-sm px-3.5 py-3 flex items-center gap-3 cursor-pointer"
-                  >
-                    <div className="h-10 w-10 rounded-xl bg-primary/15 text-primary grid place-items-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      <Icon className="h-5 w-5" strokeWidth={2.2} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[9px] uppercase tracking-[0.2em] text-primary/80 font-semibold truncate">
-                        {cat.tag}
-                      </p>
-                      <p className="text-[14px] font-semibold leading-tight truncate text-foreground">
-                        {cat.titulo}
-                      </p>
-                    </div>
-                    <span className="text-[11px] text-primary font-semibold shrink-0">
-                      {cat.total.toLocaleString("pt-BR")}
-                    </span>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-                  </button>
+                  {isEstatutos ? (
+                    <Link to="/vade-mecum/estatutos" className={className}>
+                      {inner}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => { /* em breve */ }}
+                      className={className + " opacity-80"}
+                    >
+                      {inner}
+                    </button>
+                  )}
                 </li>
               );
             })}
