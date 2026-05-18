@@ -884,24 +884,35 @@ function ArtigoSheet({
           </div>
         </div>
 
-        {/* Nav inferior */}
-        <div className="border-t border-border/60 px-3 py-3 flex items-center justify-between gap-2 bg-card/40">
-          <button
-            type="button"
-            onClick={onPrev}
-            disabled={!temAnterior}
-            className="flex-1 h-10 rounded-lg text-sm font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            ‹ Anterior
-          </button>
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={!temProximo}
-            className="flex-1 h-10 rounded-lg text-sm font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Próximo ›
-          </button>
+        {/* Rodapé: navegação + menu de funções */}
+        <div className="border-t border-border/60 bg-card/60 backdrop-blur">
+          {/* Anterior / Próximo */}
+          <div className="px-3 pt-2.5 pb-2 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={onPrev}
+              disabled={!temAnterior}
+              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ‹ Anterior
+            </button>
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={!temProximo}
+              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Próximo ›
+            </button>
+          </div>
+          {/* Menu de funções (rodapé) */}
+          <div className="px-2 pt-1 pb-3 grid grid-cols-5 gap-1 items-end border-t border-border/40">
+            <FuncTabBtn ativo={funcTab === "estudar"} onClick={() => setFuncTab("estudar")} icone={<GraduationCap className="h-5 w-5" />} label="Estudar" />
+            <FuncTabBtn ativo={funcTab === "praticar"} onClick={() => setFuncTab("praticar")} icone={<Target className="h-5 w-5" />} label="Praticar" />
+            <FuncTabBtn ativo={funcTab === "narracao"} onClick={() => setFuncTab("narracao")} icone={<Volume2 className="h-6 w-6" />} label="Narração" destaque />
+            <FuncTabBtn ativo={funcTab === "anotacoes"} onClick={() => setFuncTab("anotacoes")} icone={<StickyNote className="h-5 w-5" />} label="Anotações" />
+            <FuncTabBtn ativo={funcTab === "perguntar"} onClick={() => setFuncTab("perguntar")} icone={<MessageCircleQuestion className="h-5 w-5" />} label="Perguntar" />
+          </div>
         </div>
       </SheetContent>
     </Sheet>
