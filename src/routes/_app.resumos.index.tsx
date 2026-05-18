@@ -99,8 +99,8 @@ function ResumosIndex() {
       map.set(a, (map.get(a) ?? 0) + 1);
     }
     return Array.from(map.entries())
-      .map(([nome, total]) => ({ nome, total }))
-      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+      .map(([nome, total], i) => ({ nome, total, meta: metaPara(nome, i) }))
+      .sort((a, b) => a.meta.ordem - b.meta.ordem || a.nome.localeCompare(b.nome, "pt-BR"));
   }, [livros]);
 
   const livrosDaArea = useMemo(() => {
