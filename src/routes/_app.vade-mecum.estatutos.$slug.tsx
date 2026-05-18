@@ -67,7 +67,7 @@ type ArtigoCompleto = ArtigoLista & {
   narracao_url: string | null;
 };
 
-type Aba = "artigos" | "capitulos";
+type Aba = "artigos" | "capitulos" | "relevantes";
 
 const RE_ESTRUTURA = /^(livro|parte|t[íi]tulo|cap[íi]tulo|se[çc][ãa]o|subse[çc][ãa]o|disposi[çc][õo]es)\b/i;
 
