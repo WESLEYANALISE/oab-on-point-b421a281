@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { geminiGenerateContent, getGeminiKeys } from "@/lib/gemini.server";
 
 // ============ Helpers ============
 type LogEntry = { ts: string; nivel: "info" | "ok" | "erro"; msg: string };
@@ -49,23 +50,14 @@ async function mistralOcr(apiKey: string, documentUrl: string): Promise<string> 
 }
 
 async function geminiExtractJson(systemPrompt: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error("GEMINI_API_KEY não configurada");
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          temperature: 0.1,
-        },
-      }),
+  const res = await geminiGenerateContent("gemini-2.5-flash-lite", {
+    system_instruction: { parts: [{ text: systemPrompt }] },
+    contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.1,
     },
-  );
+  });
   if (!res.ok) {
     const txt = await res.text();
     if (res.status === 429) throw new Error("Limite de requisições do Gemini atingido. Aguarde alguns segundos.");
@@ -682,7 +674,7 @@ export const processarBatch = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertAdmin(supabase, userId);
 
-    if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
+    if (getGeminiKeys().length === 0) throw new Error("GEMINI_API_KEY não configurada");
 
     const job = await supabaseAdmin
       .from("simulado_jobs")
