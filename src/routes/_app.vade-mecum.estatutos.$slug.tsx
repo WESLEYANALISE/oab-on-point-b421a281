@@ -38,6 +38,7 @@ import { pushRecente } from "@/lib/vade-mecum-recentes";
 import { useFontScale, SCALES } from "@/hooks/use-font-scale";
 import { toast } from "sonner";
 import brasao from "@/assets/brasao-republica.png";
+import { PraticarPanel } from "@/components/vade-mecum/PraticarPanel";
 
 export const Route = createFileRoute("/_app/vade-mecum/estatutos/$slug")({
   head: ({ params }) => ({
@@ -937,7 +938,7 @@ function ArtigoSheet({
             ) : funcTab === "perguntar" ? (
               <PerguntarPlaceholder artigo={artigo} />
             ) : funcTab === "praticar" ? (
-              <PraticarPlaceholder />
+              <PraticarPanel artigo={{ id: artigo.id, numero: artigo.numero, texto: artigo.texto, lei_id: leiId ?? undefined }} leiId={leiId} userId={userId} />
             ) : (
               // Estudar — usa contentTab
               <div style={{ fontSize: fontPx }}>
@@ -1159,17 +1160,6 @@ function PerguntarPlaceholder({ artigo }: { artigo: ArtigoCompleto }) {
   );
 }
 
-function PraticarPlaceholder() {
-  return (
-    <div className="text-center py-10">
-      <Target className="h-10 w-10 text-gold/60 mx-auto mb-3" />
-      <p className="text-sm font-medium">Praticar</p>
-      <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-        Em breve — questões relacionadas a este artigo.
-      </p>
-    </div>
-  );
-}
 
 function AnotacoesEditor({
   userId, leiId, artigoId,
