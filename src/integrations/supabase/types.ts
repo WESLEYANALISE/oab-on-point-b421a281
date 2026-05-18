@@ -1003,6 +1003,36 @@ export type Database = {
         }
         Relationships: []
       }
+      vade_mecum_anotacoes: {
+        Row: {
+          artigo_id: string
+          conteudo: string
+          created_at: string
+          id: string
+          lei_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          artigo_id: string
+          conteudo: string
+          created_at?: string
+          id?: string
+          lei_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          artigo_id?: string
+          conteudo?: string
+          created_at?: string
+          id?: string
+          lei_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       vade_mecum_artigos: {
         Row: {
           aula: string | null

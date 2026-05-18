@@ -1,58 +1,101 @@
-# Vade Mecum — 4 abas + Relevância + Favoritos
+## Objetivo
 
-## 1. UI: 4 abas full-width
+Reestruturar o Vade Mecum em três telas seguindo exatamente os prints enviados, mantendo o tema dourado/escuro atual do app.
 
-Trocar o pequeno toggle pill por uma barra de 4 tabs ocupando toda a largura da seção (`grid grid-cols-4` com bottom-border ativo, estilo segmented control). Ordem:
+---
 
-1. **Artigos** — somente artigos numerados (Art. 1º, 2º…). Filtra qualquer linha cujo `numero` comece com `Título`, `Capítulo`, `Livro`, `Parte`, `Seção`, `Subseção`, `Disposições` — fica oculto totalmente nesta aba.
-2. **Capítulos** — árvore expansível com estrutura completa: Título → Capítulo → Seção → Subseção → Artigos. Implementada montando uma árvore a partir da ordem dos artigos (cada marcador estrutural detectado por regex no `numero` empilha/desempilha conforme hierarquia). Cada nó é colapsável; folha é o artigo (abre o Sheet existente).
-3. **Relevância** — lista os artigos da lei marcados como mais cobrados, ordenados por peso (muito_alta → alta → media), com badge colorido (vermelho/âmbar/zinc) e tag opcional (ex: "OAB XL 1ª fase", "concursos federais").
-4. **Favoritos** — lista os artigos favoritados pelo usuário nesta lei. Se não logado, mostra CTA para entrar.
+## Tela 1 — Lista de estatutos (`/vade-mecum/estatutos`)
 
-Cada item dessas listas reaproveita o mesmo card de artigo + abre o `ArtigoSheet` existente. Dentro do Sheet, adiciono um botão de coração (toggle favorito) ao lado do Copiar.
+Reescrever `src/routes/_app.vade-mecum.estatutos.index.tsx`:
 
-## 2. Banco de dados
+- Cabeçalho central: brasão da República (asset em `src/assets/brasao.png` — gerar), título **"CÓDIGOS & LEIS"** em serifa dourada, subtítulo "Legislação brasileira compilada", pequeno ícone de câmera no canto.
+- Barra de busca arredondada com botão **"Buscar"** dourado à direita.
+- Toggle de 3 abas (pill): **Todos · Favoritos · Recentes**, cada uma com contador.
+- Lista de cartões, cada um com:
+  - Barra lateral colorida (cor por categoria).
+  - Ícone redondo colorido (laranja/vermelho/azul/roxo etc.).
+  - Sigla grande (ex.: "CC") + nome completo abaixo.
+  - Tocar abre `/vade-mecum/estatutos/$slug`.
+- Persistir favoritos e recentes do usuário (Supabase) — favoritos por user, recentes em `localStorage`.
 
-### Coluna em `vade_mecum_artigos`
-- `relevancia` text NULL (enum check: `muito_alta`, `alta`, `media`)
-- `relevancia_nota` text NULL (breve justificativa, ex.: "cai em quase toda OAB — princípio da proteção integral")
-- `relevancia_fontes` jsonb NULL (lista de URLs consultadas)
-- Index parcial `WHERE relevancia IS NOT NULL` para consultas rápidas.
+---
 
-### Nova tabela `vade_mecum_favoritos`
-| coluna | tipo |
-|---|---|
-| id | uuid PK |
-| user_id | uuid NOT NULL |
-| artigo_id | uuid NOT NULL |
-| lei_id | uuid NOT NULL (denormalizado para listar rápido por lei) |
-| created_at | timestamptz default now() |
-| UNIQUE (user_id, artigo_id) |
+## Tela 2 — Lista de artigos de uma lei (`/vade-mecum/estatutos/$slug`)
 
-RLS: usuário só vê/insere/deleta os seus.
+Reescrever `src/routes/_app.vade-mecum.estatutos.$slug.tsx`:
 
-## 3. Popular Relevância (seed inicial via web search)
+- Cabeçalho centralizado: brasão, nome da lei em serifa (ex.: "CÓDIGO PENAL"), subtítulo com decreto/lei, link **"Ver no Planalto"** com ícone externo, divisor dourado.
+- Barra de busca + botão **Buscar**.
+- Linha de 5 chips redondos coloridos (Favoritos · Playlist · Anotações · Novidades · Radar). Funcionais:
+  - **Favoritos** — já existe (filtra artigos favoritos).
+  - **Playlist** — placeholder "em breve".
+  - **Anotações** — abre lista de anotações do usuário nessa lei.
+  - **Novidades** — placeholder.
+  - **Radar** — atalho para a aba Relevância.
+- Toggle pill 2 abas full-width: **Artigos · Capítulos** (remove Relevância e Favoritos — viram chips).
+- Cards de artigo: ícone redondo com balança, "Art. Nº" + check verde, descrição em 2 linhas, seta. Mesmo tamanho para todos.
 
-Estratégia:
-1. Script server-only (one-shot, rodado por exec) que, para cada uma das 10 leis em `ESTATUTOS_DESTAQUE`:
-   - faz buscas web tipo `"ECA" "artigo" "mais cobrado" OAB`, `"Estatuto do Idoso" jurisprudência artigos chave OAB concurso`, etc. (3-5 queries por lei).
-   - agrega resultados (snippets + URLs) e envia ao Gemini com prompt pedindo JSON estrito: `[{numero, peso, nota}]` onde `peso ∈ {muito_alta, alta, media}`.
-   - faz UPDATE em `vade_mecum_artigos` casando por `lei_id + numero`, gravando `relevancia`, `relevancia_nota` e `relevancia_fontes` (URLs usadas).
-2. Resultado salvo direto no Supabase — o app só lê.
+---
 
-A web search é feita uma vez agora, no sandbox, não em runtime. Decisão: Gemini valida/normaliza as evidências da web — não inventa do zero.
+## Tela 3 — Leitor de artigo (Sheet)
 
-## 4. Arquivos a tocar
+Reescrever o componente `ArtigoSheet` no mesmo arquivo:
 
-- `src/routes/_app.vade-mecum.estatutos.$slug.tsx` — substituir toggle pelo segmented de 4 abas, filtrar estruturais em "Artigos", construir árvore para "Capítulos", queries para "Relevância" e "Favoritos", botão de favoritar no Sheet.
-- `src/lib/favoritos.functions.ts` (novo) — `toggleFavorito`, `listarFavoritos(leiId)`.
-- `src/lib/vade-mecum-relevancia.ts` (novo, server-only script) — não importado pelo app, rodado uma vez para o seed.
-- Migration: coluna + tabela + RLS.
+- Sheet bottom (mobile) / right (desktop) ocupando ~95% da altura.
+- **Header**: tag "CÓDIGO PENAL" pequena dourada, "Art. Nº" grande, à direita botão "···" (menu com copiar/compartilhar/Planalto) e botão **X** dourado redondo. (Resolve o problema dos 2 X.)
+- **Barra de funções (topo)**: 5 ícones em coluna vertical com label — **Estudar · Praticar · Narração · Anotações · Perguntar**. Item central (Narração) com destaque dourado preenchido. Funcional:
+  - Estudar → mostra explicações.
+  - Praticar → questões relacionadas (placeholder).
+  - Narração → toca `narracao_url`.
+  - Anotações → editor de nota do usuário (Supabase, nova tabela `vade_mecum_anotacoes`).
+  - Perguntar → abre assistente IA com contexto do artigo.
+- **Toggle interno 4 abas**: **Artigo · Explicação · Exemplo · Termos** (sublinhado dourado no ativo). Conteúdo:
+  - Artigo: texto + botão "Ver no Planalto".
+  - Explicação: alterna técnico/resumido/simples.
+  - Exemplo: campo `exemplo`.
+  - Termos: glossário (`termos`).
+- **Controles flutuantes na lateral direita**:
+  - Botão dourado redondo "✨" (atalho IA → Perguntar).
+  - Stack vertical com **+ / valor (16) / −** para escala de fonte (`useFontScale`).
+- Remover o X do topo do `SheetContent` (usar `[&>button]:hidden` ou passar prop) para eliminar duplicação.
 
-## 5. Ordem de execução
+---
 
-1. Migration (coluna `relevancia*` + tabela `vade_mecum_favoritos` + RLS).
-2. Rodar script de seed da relevância (web search + Gemini → UPDATE).
-3. Implementar UI das 4 abas + favoritos + Sheet com coração.
+## Banco de dados
 
-Depois disso, "Artigos" mostra só artigos numerados, "Capítulos" mostra a estrutura completa expansível, "Relevância" lista os marcados como mais cobrados com badge, "Favoritos" mostra os do usuário.
+Nova migration:
+
+```sql
+-- Recentes (opcional via localStorage, mas favoritos já existem)
+CREATE TABLE public.vade_mecum_anotacoes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  lei_id uuid NOT NULL,
+  artigo_id uuid NOT NULL,
+  conteudo text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(user_id, artigo_id)
+);
+ALTER TABLE public.vade_mecum_anotacoes ENABLE ROW LEVEL SECURITY;
+-- policies: usuário só vê/edita suas próprias anotações.
+```
+
+---
+
+## Arquivos afetados
+
+- `src/routes/_app.vade-mecum.estatutos.index.tsx` (rewrite)
+- `src/routes/_app.vade-mecum.estatutos.$slug.tsx` (rewrite)
+- `src/assets/brasao-republica.png` (gerar via imagegen, transparente)
+- `src/lib/vade-mecum-anotacoes.functions.ts` (novo — CRUD anotações)
+- `src/lib/vade-mecum-recentes.ts` (novo — helper localStorage)
+- migration nova para `vade_mecum_anotacoes`
+
+---
+
+## Pontos a confirmar
+
+1. **Categorias dos cartões da Tela 1** (cores/ícones): manter os 10 estatutos atuais (ECA, OAB, Idoso, PCD…) ou expandir para incluir CC, CP, CPC, CPP, CLT como na imagem? Hoje só temos estatutos no Supabase.
+2. **Playlist/Novidades**: deixar como "em breve" por enquanto está OK?
+3. **Brasão**: gerar versão dourada/oficial via imagegen ou usar um SVG simples?
