@@ -423,71 +423,89 @@ function FlashcardsView({
   };
 
   return (
-    <div className="animate-fade-in pb-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <button onClick={onClose} className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground hover:text-foreground transition">
-          ‹ Voltar
-        </button>
-        <div className="text-xs font-semibold text-muted-foreground">{idx + 1} / {total}</div>
-        <div className="w-12" />
-      </div>
-
-      <div className="h-1.5 rounded-full bg-card overflow-hidden mb-5">
-        <div className="h-full bg-gradient-to-r from-gold to-amber-500 transition-all" style={{ width: `${((idx + 1) / total) * 100}%` }} />
-      </div>
-
-      {/* Card 3D flip */}
+    <div className="fixed inset-0 z-[100] bg-background animate-fade-in flex flex-col">
+      {/* Header com botão de fechar */}
       <div
-        className="cursor-pointer select-none"
-        onClick={() => setFlip((f) => !f)}
-        style={{ perspective: "1200px" }}
+        className="flex items-center justify-between px-4 border-b border-border/60"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", paddingBottom: "12px" }}
       >
-        <div
-          className="relative w-full transition-transform duration-500"
-          style={{
-            transformStyle: "preserve-3d",
-            transform: flip ? "rotateY(180deg)" : "rotateY(0deg)",
-            minHeight: "220px",
-          }}
+        <div className="text-[11px] uppercase tracking-[0.2em] font-semibold text-gold">
+          Flashcards
+        </div>
+        <div className="text-xs font-semibold text-muted-foreground">{idx + 1} / {total}</div>
+        <button
+          onClick={onClose}
+          aria-label="Fechar"
+          className="h-9 w-9 -mr-2 grid place-items-center rounded-full hover:bg-card transition active:scale-95"
         >
-          {/* Frente */}
-          <div
-            className="absolute inset-0 rounded-2xl p-5 bg-gradient-to-br from-card to-card/60 border border-border/70 flex flex-col items-center justify-center text-center"
-            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
-          >
-            <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-gold/80 mb-3">Pergunta</span>
-            <p className="font-display font-semibold text-[17px] leading-snug">{c.frente}</p>
-            <span className="mt-5 text-[11px] text-muted-foreground">toque para virar</span>
-          </div>
-          {/* Verso */}
-          <div
-            className="absolute inset-0 rounded-2xl p-5 bg-gradient-to-br from-gold/15 to-amber-700/10 border border-gold/50 flex flex-col items-center justify-center text-center"
-            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
-          >
-            <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-gold mb-3">Resposta</span>
-            <p className="text-[15px] leading-relaxed text-foreground">{c.verso}</p>
-          </div>
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="px-4 pt-3">
+        <div className="h-1.5 rounded-full bg-card overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-gold to-amber-500 transition-all" style={{ width: `${((idx + 1) / total) * 100}%` }} />
         </div>
       </div>
 
-      {/* Exemplo prático (só após o flip) */}
-      {flip && (
-        <div className="mt-4 p-3.5 rounded-xl bg-card/40 border border-border/60 animate-fade-in">
-          <div className="flex items-center gap-2 mb-1.5">
-            <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-            <span className="text-[11px] uppercase tracking-widest font-semibold text-amber-400">Exemplo prático</span>
+      {/* Conteúdo principal */}
+      <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col">
+        <div
+          className="cursor-pointer select-none"
+          onClick={() => setFlip((f) => !f)}
+          style={{ perspective: "1200px" }}
+        >
+          <div
+            className="relative w-full transition-transform duration-500"
+            style={{
+              transformStyle: "preserve-3d",
+              transform: flip ? "rotateY(180deg)" : "rotateY(0deg)",
+              minHeight: "280px",
+            }}
+          >
+            {/* Frente */}
+            <div
+              className="absolute inset-0 rounded-2xl p-6 bg-gradient-to-br from-card to-card/60 border border-border/70 flex flex-col items-center justify-center text-center"
+              style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+            >
+              <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-gold/80 mb-3">Pergunta</span>
+              <p className="font-display font-semibold text-[18px] leading-snug">{c.frente}</p>
+              <span className="mt-6 text-[11px] text-muted-foreground">toque para virar</span>
+            </div>
+            {/* Verso */}
+            <div
+              className="absolute inset-0 rounded-2xl p-6 bg-gradient-to-br from-gold/15 to-amber-700/10 border border-gold/50 flex flex-col items-center justify-center text-center"
+              style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+            >
+              <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-gold mb-3">Resposta</span>
+              <p className="text-[15px] leading-relaxed text-foreground">{c.verso}</p>
+            </div>
           </div>
-          <p className="text-[13px] leading-relaxed text-foreground/85">{c.exemplo}</p>
         </div>
-      )}
 
-      <button
-        onClick={next}
-        className="mt-5 w-full h-12 rounded-xl bg-gradient-to-br from-gold to-amber-600 text-black font-semibold active:scale-95 transition flex items-center justify-center gap-2"
+        {flip && (
+          <div className="mt-4 p-3.5 rounded-xl bg-card/40 border border-border/60 animate-fade-in">
+            <div className="flex items-center gap-2 mb-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+              <span className="text-[11px] uppercase tracking-widest font-semibold text-amber-400">Exemplo prático</span>
+            </div>
+            <p className="text-[13px] leading-relaxed text-foreground/85">{c.exemplo}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Footer com botão próximo */}
+      <div
+        className="px-4 pt-3 border-t border-border/60 bg-background"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)" }}
       >
-        {ultimo ? "Concluir" : "Próximo"} <ChevronRight className="h-4 w-4" />
-      </button>
+        <button
+          onClick={next}
+          className="w-full h-12 rounded-xl bg-gradient-to-br from-gold to-amber-600 text-black font-semibold active:scale-95 transition flex items-center justify-center gap-2"
+        >
+          {ultimo ? "Concluir" : "Próximo"} <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }
