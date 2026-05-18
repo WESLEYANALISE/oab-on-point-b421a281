@@ -24,6 +24,8 @@ import {
   MessageCircleQuestion,
   Plus,
   Minus,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -164,7 +166,7 @@ function EstatutoArtigosPage() {
   });
 
   const artigos = data?.artigos ?? [];
-  const apenasArtigos = useMemo(() => artigos.filter((a) => !tipoEstrutura(a.numero)), [artigos]);
+  const apenasArtigos = useMemo(() => artigos.filter((a) => !!a.numero && !tipoEstrutura(a.numero)), [artigos]);
 
   const filtrar = (lista: ArtigoLista[]) => {
     const q = query.trim().toLowerCase();
@@ -579,6 +581,33 @@ function NoArvore({ no, nivel, onOpen }: { no: Nó; nivel: number; onOpen: (id: 
 type FuncTab = "estudar" | "praticar" | "narracao" | "anotacoes" | "perguntar";
 type ContentTab = "artigo" | "explicacao" | "exemplo" | "termos";
 
+/** Divide o texto em partes entre/fora de parênteses (balanceados). */
+function renderTextoArtigo(texto: string, mostrarParenteses: boolean): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  let depth = 0, start = 0, key = 0;
+  for (let i = 0; i < texto.length; i++) {
+    const ch = texto[i];
+    if (ch === "(") {
+      if (depth === 0) {
+        if (i > start) out.push(<span key={key++}>{texto.slice(start, i)}</span>);
+        start = i;
+      }
+      depth++;
+    } else if (ch === ")") {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) {
+        const trecho = texto.slice(start, i + 1);
+        if (mostrarParenteses) {
+          out.push(<span key={key++} className="text-amber-400/70 italic">{trecho}</span>);
+        }
+        start = i + 1;
+      }
+    }
+  }
+  if (start < texto.length) out.push(<span key={key++}>{texto.slice(start)}</span>);
+  return out;
+}
+
 function ArtigoSheet({
   artigoId,
   leiId,
@@ -607,6 +636,7 @@ function ArtigoSheet({
   const queryClient = useQueryClient();
   const [funcTab, setFuncTab] = useState<FuncTab>("estudar");
   const [contentTab, setContentTab] = useState<ContentTab>("artigo");
+  const [mostrarParenteses, setMostrarParenteses] = useState(false);
   const { scale, increase, decrease, canIncrease, canDecrease } = useFontScale();
   const fontPx = Math.round(16 * scale);
 
@@ -697,6 +727,19 @@ function ArtigoSheet({
               </button>
               <button
                 type="button"
+                onClick={() => setMostrarParenteses((v) => !v)}
+                className={`h-9 w-9 grid place-items-center rounded-full transition-colors ${
+                  mostrarParenteses
+                    ? "text-amber-400 bg-amber-500/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card"
+                }`}
+                aria-label={mostrarParenteses ? "Ocultar alterações" : "Mostrar alterações"}
+                title={mostrarParenteses ? "Ocultar texto entre parênteses" : "Mostrar texto entre parênteses"}
+              >
+                {mostrarParenteses ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+              <button
+                type="button"
                 className="h-9 w-9 grid place-items-center rounded-full text-muted-foreground hover:text-foreground hover:bg-card transition-colors"
                 aria-label="Mais"
               >
@@ -713,24 +756,8 @@ function ArtigoSheet({
             </div>
           </div>
 
-          {/* Função tabs */}
-          <div className="mt-4 grid grid-cols-5 gap-1 items-end">
-            <FuncTabBtn ativo={funcTab === "estudar"} onClick={() => setFuncTab("estudar")} icone={<GraduationCap className="h-5 w-5" />} label="Estudar" />
-            <FuncTabBtn ativo={funcTab === "praticar"} onClick={() => setFuncTab("praticar")} icone={<Target className="h-5 w-5" />} label="Praticar" />
-            <FuncTabBtn ativo={funcTab === "narracao"} onClick={() => setFuncTab("narracao")} icone={<Volume2 className="h-6 w-6" />} label="Narração" destaque />
-            <FuncTabBtn ativo={funcTab === "anotacoes"} onClick={() => setFuncTab("anotacoes")} icone={<StickyNote className="h-5 w-5" />} label="Anotações" />
-            <FuncTabBtn ativo={funcTab === "perguntar"} onClick={() => setFuncTab("perguntar")} icone={<MessageCircleQuestion className="h-5 w-5" />} label="Perguntar" />
-          </div>
-
-          {/* Separador dourado */}
-          <div className="mt-3 flex items-center justify-center">
-            <span className="h-px flex-1 bg-gradient-to-r from-transparent via-gold/40 to-gold/40" />
-            <span className="mx-2 h-1.5 w-1.5 rounded-full bg-gold/60 rotate-45" />
-            <span className="h-px flex-1 bg-gradient-to-l from-transparent via-gold/40 to-gold/40" />
-          </div>
-
           {/* Toggle 4 abas: Artigo / Explicação / Exemplo / Termos */}
-          <div className="mt-2 grid grid-cols-4 w-full">
+          <div className="mt-4 grid grid-cols-4 w-full">
             {(["artigo", "explicacao", "exemplo", "termos"] as ContentTab[]).map((t) => {
               const labels: Record<ContentTab, string> = {
                 artigo: "Artigo", explicacao: "Explicação", exemplo: "Exemplo", termos: "Termos",
@@ -790,7 +817,7 @@ function ArtigoSheet({
                   <div className="space-y-6">
                     <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
                       <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
-                      {artigo.texto}
+                      {renderTextoArtigo(artigo.texto, mostrarParenteses)}
                     </article>
                     {planaltoUrl && (
                       <div className="flex justify-center pt-2 pb-4">
@@ -857,24 +884,35 @@ function ArtigoSheet({
           </div>
         </div>
 
-        {/* Nav inferior */}
-        <div className="border-t border-border/60 px-3 py-3 flex items-center justify-between gap-2 bg-card/40">
-          <button
-            type="button"
-            onClick={onPrev}
-            disabled={!temAnterior}
-            className="flex-1 h-10 rounded-lg text-sm font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            ‹ Anterior
-          </button>
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={!temProximo}
-            className="flex-1 h-10 rounded-lg text-sm font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Próximo ›
-          </button>
+        {/* Rodapé: navegação + menu de funções */}
+        <div className="border-t border-border/60 bg-card/60 backdrop-blur">
+          {/* Anterior / Próximo */}
+          <div className="px-3 pt-2.5 pb-2 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={onPrev}
+              disabled={!temAnterior}
+              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ‹ Anterior
+            </button>
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={!temProximo}
+              className="flex-1 h-9 rounded-lg text-[12.5px] font-medium border border-border/60 hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Próximo ›
+            </button>
+          </div>
+          {/* Menu de funções (rodapé) */}
+          <div className="px-2 pt-1 pb-3 grid grid-cols-5 gap-1 items-end border-t border-border/40">
+            <FuncTabBtn ativo={funcTab === "estudar"} onClick={() => setFuncTab("estudar")} icone={<GraduationCap className="h-5 w-5" />} label="Estudar" />
+            <FuncTabBtn ativo={funcTab === "praticar"} onClick={() => setFuncTab("praticar")} icone={<Target className="h-5 w-5" />} label="Praticar" />
+            <FuncTabBtn ativo={funcTab === "narracao"} onClick={() => setFuncTab("narracao")} icone={<Volume2 className="h-6 w-6" />} label="Narração" destaque />
+            <FuncTabBtn ativo={funcTab === "anotacoes"} onClick={() => setFuncTab("anotacoes")} icone={<StickyNote className="h-5 w-5" />} label="Anotações" />
+            <FuncTabBtn ativo={funcTab === "perguntar"} onClick={() => setFuncTab("perguntar")} icone={<MessageCircleQuestion className="h-5 w-5" />} label="Perguntar" />
+          </div>
         </div>
       </SheetContent>
     </Sheet>
