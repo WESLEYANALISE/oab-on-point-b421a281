@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Narracoes publicly readable" ON storage.objects;
