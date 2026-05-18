@@ -581,6 +581,33 @@ function NoArvore({ no, nivel, onOpen }: { no: Nó; nivel: number; onOpen: (id: 
 type FuncTab = "estudar" | "praticar" | "narracao" | "anotacoes" | "perguntar";
 type ContentTab = "artigo" | "explicacao" | "exemplo" | "termos";
 
+/** Divide o texto em partes entre/fora de parênteses (balanceados). */
+function renderTextoArtigo(texto: string, mostrarParenteses: boolean): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  let depth = 0, start = 0, key = 0;
+  for (let i = 0; i < texto.length; i++) {
+    const ch = texto[i];
+    if (ch === "(") {
+      if (depth === 0) {
+        if (i > start) out.push(<span key={key++}>{texto.slice(start, i)}</span>);
+        start = i;
+      }
+      depth++;
+    } else if (ch === ")") {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) {
+        const trecho = texto.slice(start, i + 1);
+        if (mostrarParenteses) {
+          out.push(<span key={key++} className="text-amber-400/70 italic">{trecho}</span>);
+        }
+        start = i + 1;
+      }
+    }
+  }
+  if (start < texto.length) out.push(<span key={key++}>{texto.slice(start)}</span>);
+  return out;
+}
+
 function ArtigoSheet({
   artigoId,
   leiId,
