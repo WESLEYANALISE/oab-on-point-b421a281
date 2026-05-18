@@ -1021,6 +1021,9 @@ export type Database = {
           numero: string | null
           ordem: number
           questoes: Json | null
+          relevancia: string | null
+          relevancia_fontes: Json | null
+          relevancia_nota: string | null
           source_id: number | null
           termos: Json | null
           termos_aprofundados: Json | null
@@ -1044,6 +1047,9 @@ export type Database = {
           numero?: string | null
           ordem?: number
           questoes?: Json | null
+          relevancia?: string | null
+          relevancia_fontes?: Json | null
+          relevancia_nota?: string | null
           source_id?: number | null
           termos?: Json | null
           termos_aprofundados?: Json | null
@@ -1067,6 +1073,9 @@ export type Database = {
           numero?: string | null
           ordem?: number
           questoes?: Json | null
+          relevancia?: string | null
+          relevancia_fontes?: Json | null
+          relevancia_nota?: string | null
           source_id?: number | null
           termos?: Json | null
           termos_aprofundados?: Json | null
@@ -1076,6 +1085,45 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "vade_mecum_artigos_lei_id_fkey"
+            columns: ["lei_id"]
+            isOneToOne: false
+            referencedRelation: "vade_mecum_leis"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vade_mecum_favoritos: {
+        Row: {
+          artigo_id: string
+          created_at: string
+          id: string
+          lei_id: string
+          user_id: string
+        }
+        Insert: {
+          artigo_id: string
+          created_at?: string
+          id?: string
+          lei_id: string
+          user_id: string
+        }
+        Update: {
+          artigo_id?: string
+          created_at?: string
+          id?: string
+          lei_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vade_mecum_favoritos_artigo_id_fkey"
+            columns: ["artigo_id"]
+            isOneToOne: false
+            referencedRelation: "vade_mecum_artigos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vade_mecum_favoritos_lei_id_fkey"
             columns: ["lei_id"]
             isOneToOne: false
             referencedRelation: "vade_mecum_leis"
