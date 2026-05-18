@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { geminiGenerateContent } from "@/lib/gemini.server";
 
 // ============ Helpers ============
 type LogEntry = { ts: string; nivel: "info" | "ok" | "erro"; msg: string };
