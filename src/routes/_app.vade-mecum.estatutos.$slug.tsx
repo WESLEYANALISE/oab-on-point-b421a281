@@ -456,21 +456,24 @@ function ListaArtigos({
           <button
             type="button"
             onClick={() => onOpen(a.id)}
-            className="relative w-full flex items-start gap-3 pl-4 pr-3 py-3.5 rounded-2xl bg-card/70 border border-border/60 hover:border-gold/40 hover:bg-card transition-all cursor-pointer group overflow-hidden text-left active:scale-[0.99]"
+            className="relative w-full min-h-[88px] flex items-start gap-3 pl-4 pr-3 py-3.5 rounded-2xl bg-card/70 border border-border/60 hover:border-gold/40 hover:bg-card transition-all cursor-pointer group overflow-hidden text-left active:scale-[0.99]"
           >
             <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gold/70" />
             <span className="shrink-0 h-10 w-10 rounded-full bg-gradient-to-br from-gold/25 to-amber-600/15 border border-gold/30 grid place-items-center">
               <Scale className="h-5 w-5 text-gold" />
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-1.5 mb-1">
+            <span className="min-w-0 flex-1 flex flex-col">
+              <span className="flex items-center gap-1.5 mb-1 flex-wrap">
                 <span className="text-[14px] font-bold text-foreground">
                   {a.numero ? `Art. ${a.numero}` : `#${a.ordem}`}
                 </span>
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
                 {a.relevancia && <BadgeRelevancia peso={a.relevancia} />}
               </span>
-              <span className="block text-[12.5px] text-muted-foreground line-clamp-2 leading-snug">
+              <span
+                className="block text-[12.5px] text-muted-foreground leading-snug overflow-hidden"
+                style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
+              >
                 {a.texto}
               </span>
             </span>
