@@ -1236,7 +1236,7 @@ function AnotacoesEditor({
         toast.success("Anotação salva");
       }
       queryClient.invalidateQueries({ queryKey: ["vade-mecum", "anotacao", artigoId, userId] });
-      queryClient.invalidateQueries({ queryKey: ["vade-mecum", "anotacoes-ids", leiId, userId] });
+      queryClient.invalidateQueries({ queryKey: ["vade-mecum", "estatuto"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao salvar");
     } finally {
