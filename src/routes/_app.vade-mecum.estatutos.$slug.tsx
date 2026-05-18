@@ -17,7 +17,6 @@ import {
   Scale,
   CheckCircle2,
   X,
-  MoreHorizontal,
   GraduationCap,
   Target,
   Volume2,
