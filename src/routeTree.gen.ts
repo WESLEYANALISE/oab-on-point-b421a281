@@ -24,6 +24,7 @@ import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
 import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
+import { Route as AppCadernoErrosRouteImport } from './routes/_app.caderno-erros'
 import { Route as AppBlogRouteImport } from './routes/_app.blog'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
@@ -144,6 +145,11 @@ const AppMateriasRoute = AppMateriasRouteImport.update({
 const AppFlashcardsRoute = AppFlashcardsRouteImport.update({
   id: '/flashcards',
   path: '/flashcards',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCadernoErrosRoute = AppCadernoErrosRouteImport.update({
+  id: '/caderno-erros',
+  path: '/caderno-erros',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBlogRoute = AppBlogRouteImport.update({
@@ -403,6 +409,7 @@ export interface FileRoutesByFullPath {
   '/aulas': typeof AppAulasRouteWithChildren
   '/biblioteca': typeof AppBibliotecaRouteWithChildren
   '/blog': typeof AppBlogRouteWithChildren
+  '/caderno-erros': typeof AppCadernoErrosRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
@@ -463,6 +470,7 @@ export interface FileRoutesByTo {
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/blog': typeof AppBlogRouteWithChildren
+  '/caderno-erros': typeof AppCadernoErrosRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
@@ -526,6 +534,7 @@ export interface FileRoutesById {
   '/_app/aulas': typeof AppAulasRouteWithChildren
   '/_app/biblioteca': typeof AppBibliotecaRouteWithChildren
   '/_app/blog': typeof AppBlogRouteWithChildren
+  '/_app/caderno-erros': typeof AppCadernoErrosRoute
   '/_app/flashcards': typeof AppFlashcardsRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/noticias': typeof AppNoticiasRouteWithChildren
@@ -591,6 +600,7 @@ export interface FileRouteTypes {
     | '/aulas'
     | '/biblioteca'
     | '/blog'
+    | '/caderno-erros'
     | '/flashcards'
     | '/materias'
     | '/noticias'
@@ -651,6 +661,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/audioaulas'
     | '/blog'
+    | '/caderno-erros'
     | '/flashcards'
     | '/materias'
     | '/noticias'
@@ -713,6 +724,7 @@ export interface FileRouteTypes {
     | '/_app/aulas'
     | '/_app/biblioteca'
     | '/_app/blog'
+    | '/_app/caderno-erros'
     | '/_app/flashcards'
     | '/_app/materias'
     | '/_app/noticias'
@@ -880,6 +892,13 @@ declare module '@tanstack/react-router' {
       path: '/flashcards'
       fullPath: '/flashcards'
       preLoaderRoute: typeof AppFlashcardsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/caderno-erros': {
+      id: '/_app/caderno-erros'
+      path: '/caderno-erros'
+      fullPath: '/caderno-erros'
+      preLoaderRoute: typeof AppCadernoErrosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/blog': {
@@ -1360,6 +1379,7 @@ interface AppRouteChildren {
   AppAulasRoute: typeof AppAulasRouteWithChildren
   AppBibliotecaRoute: typeof AppBibliotecaRouteWithChildren
   AppBlogRoute: typeof AppBlogRouteWithChildren
+  AppCadernoErrosRoute: typeof AppCadernoErrosRoute
   AppFlashcardsRoute: typeof AppFlashcardsRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
@@ -1399,6 +1419,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAulasRoute: AppAulasRouteWithChildren,
   AppBibliotecaRoute: AppBibliotecaRouteWithChildren,
   AppBlogRoute: AppBlogRouteWithChildren,
+  AppCadernoErrosRoute: AppCadernoErrosRoute,
   AppFlashcardsRoute: AppFlashcardsRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
   AppNoticiasRoute: AppNoticiasRouteWithChildren,
