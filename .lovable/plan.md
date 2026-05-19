@@ -1,119 +1,112 @@
-## Objetivo
+# Plano de melhoria geral do OAB na Risca
 
-Criar uma página no painel admin onde é possível selecionar um artigo já existente no Vade Mecum, gerar a narração via Gemini TTS (voz feminina PT-BR, ex: *Kore*), salvar o áudio no Storage e ouvir ali mesmo. Por enquanto só admin — sem expor pro usuário final.
+Diagnóstico rápido após varredura do código:
 
-## O que será criado
+- **Bundle gordo**: `framer-motion` (~50kb), `recharts`, `jspdf`, `embla-carousel`, todos os `@radix-ui/*` (>25 pacotes) carregados sem code-splitting estratégico. `lucide-react` importado solto em vários pontos (ok com tree-shake, mas precisa garantir).
+- **Rota gigante**: `_app.vade-mecum.estatutos.$slug.tsx` com **2.104 linhas e 25 `useState`** num único arquivo — playlist, narração, anotações, foco, chat, tudo junto. Re-render pesado a cada play/pause do áudio.
+- **Imagens**: `<img>` puro em capas de biblioteca, avatares e cards — sem `loading="lazy"`, sem `width/height` (CLS), sem `fetchpriority` no LCP, sem WebP/AVIF.
+- **Queries**: já há TanStack Query com `staleTime` 5min global (bom), mas várias rotas usam `supabase.from(...)` direto no client em vez de `createServerFn` + `ensureQueryData` no loader (perde SSR e prefetch).
+- **Animações**: existem keyframes bonitos (shimmer, sheen, pulse), mas faltam **transições de rota** consistentes, skeletons unificados, e micro-interações nos toques (mobile-first).
+- **Mobile UX**: viewport 390x844 é alvo principal, mas faltam `active:scale`, `:active` feedback nos cards, safe areas em mais locais, e `BottomNav` só aparece em `/app` (poderia ser persistente nas rotas principais).
+- **Arquitetura**: `_app.vade-mecum.estatutos.$slug.tsx` precisa quebrar em 5-6 componentes. Mistura de lógica de dados, UI e estado de player no mesmo arquivo.
 
-### 1. Banco de dados (migration)
+---
 
-Bucket de Storage e tabela `vade_mecum_narracoes`:
+## Fase única — execução em um ciclo
 
-- Bucket `narracoes` (privado — só admin lê via signed URL).
-- Tabela `vade_mecum_narracoes`:
-  - `artigo_id` (uuid, FK → `vade_mecum_artigos`, único)
-  - `lei_id` (uuid)
-  - `audio_path` (text — caminho no bucket)
-  - `voz` (text, default `Kore`)
-  - `texto_narrado` (text — o que foi efetivamente enviado pro TTS, pra debug)
-  - `duracao_ms` (int, nullable)
-  - `gerado_por` (uuid, FK auth.users)
-  - `created_at`, `updated_at`
-- RLS: SELECT/INSERT/UPDATE/DELETE apenas para `has_role(auth.uid(), 'admin')`.
-- Políticas no `storage.objects` para o bucket `narracoes`: leitura/escrita só para admin.
+### 1. Performance de bundle e carregamento
 
-### 2. Server functions (TanStack)
+- **Code-split agressivo nas rotas pesadas**: usar `.lazy.tsx` para `_app.vade-mecum.estatutos.$slug`, `_app.simulados.$slug.praticar`, `_app.admin.*`, `_app.resumos.capitulo.*`. Loader/`validateSearch` ficam no arquivo crítico, componente no lazy.
+- **Lazy import de libs pesadas**: `jspdf`, `recharts`, `framer-motion` (onde for opcional) via `React.lazy` ou `import()` dinâmico só nos pontos que usam. Hoje `framer-motion` está em 4 arquivos — manter só onde compensa, trocar restante por CSS `@keyframes` (já temos vários).
+- **Prefetch inteligente**: `defaultPreload: "intent"` + `defaultPreloadDelay: 0` já está. Adicionar `defaultPreloadStaleTime: 0` para deixar Query mandar.
+- **Imagens**:
+  - Adicionar `loading="lazy"`, `decoding="async"`, `width`/`height` explícitos em todas as `<img>` (capas de biblioteca, blog, avatares).
+  - LCP de cada rota com `fetchpriority="high"` + preload via `head()` da rota.
+  - Componente `<SmartImage>` central que aplica isso e fallback de skeleton.
+- **Queries → loaders**: migrar `supabase.from(...)` espalhado para `createServerFn` + `ensureQueryData` nos loaders das rotas mais visitadas (`vade-mecum`, `materias`, `noticias`, `blog`). Ganho real de SSR + 0ms de skeleton.
+- **React 19**: ativar `useTransition` nas trocas de filtro/aba pesadas (tabs do vade-mecum, filtros de biblioteca).
 
-`src/lib/narracoes.functions.ts`:
+### 2. Animações e fluidez (intensidade 3 — equilibrado)
 
-- `listarArtigosParaNarrar({ leiId?, busca?, page })` — lista artigos com flag `tem_narracao` (join com `vade_mecum_narracoes`). Paginado.
-- `listarLeis()` — leis disponíveis.
-- `gerarNarracaoArtigo({ artigoId, voz? })` — protegida por `requireSupabaseAuth` + check de admin:
-  1. Busca o artigo (`numero`, `texto`) e a lei (`titulo`).
-  2. Monta o texto a ser narrado (regras abaixo).
-  3. Chama Gemini TTS direto via `GEMINI_API_KEY` (modelo `gemini-2.5-flash-preview-tts`, `responseModalities: ["AUDIO"]`, `prebuiltVoiceConfig.voiceName = "Kore"`, languageCode `pt-BR`).
-  4. Recebe PCM base64 → embrulha em header WAV (24kHz mono 16-bit).
-  5. Upload no bucket `narracoes` em `${lei_id}/${artigo_id}.wav` (upsert).
-  6. Upsert em `vade_mecum_narracoes`.
-  7. Retorna signed URL (1h).
-- `obterNarracao({ artigoId })` — retorna signed URL atualizada.
-- `excluirNarracao({ artigoId })` — remove do storage e da tabela.
+- **Transição de rota global**: aplicar `animate-route-fade` (já existe) no `<Outlet />` via key do pathname — fade de 180ms em toda navegação.
+- **Skeletons unificados**: hoje quase tudo mostra spinner. Criar `<SkeletonCard>`, `<SkeletonRow>`, `<SkeletonArtigo>` reutilizáveis que respeitam o layout final (zero CLS).
+- **Micro-interações** sem exagero:
+  - Cards e botões: `active:scale-[0.98]` + `transition-transform duration-150` (feedback tátil mobile).
+  - Links da `BottomNav`: ripple sutil dourado ao tocar.
+  - Chips de filtro: slide horizontal suave ao trocar seleção.
+  - Hover gold nos cards principais (desktop).
+- **Sheet / Drawer**: animar com `vaul` (já instalado) o `PlaylistSheet` com snap points para sensação de app nativo.
+- **Reduce motion**: já respeitado em `styles.css` — manter ao adicionar novas animações.
 
-### 3. Regras de transformação do texto antes do TTS
+### 3. Responsividade e mobile UX
 
-Função pura `montarTextoNarracao({ leiTitulo, artigoNumero, artigoTexto })`:
+- **Touch targets**: revisar para 44x44 mínimo em chips, ícones de header, botões de áudio.
+- **Safe areas**: `pb-[env(safe-area-inset-bottom)]` em todos os players fixos (já tem no `BottomNav`, falta no `PlaylistPlayer` quando fixo).
+- **Header mobile**: adicionar `backdrop-blur` + sombra ao scroll (já parcial).
+- **Vade-mecum**: barra de leitura (progresso do artigo) no topo durante scroll longo.
+- **Gestos**: swipe horizontal entre artigos consecutivos no estatuto (usar `framer-motion` `drag="x"` só nessa tela — vale o peso).
+- **Tipografia fluida**: `clamp()` nos títulos das telas principais para escalar entre 320px e 1280px sem quebra.
+- **Tabela responsiva**: `markdown-body table` ganha `overflow-x-auto` wrapper.
 
-1. Prefixo: `"<LeiTitulo>, artigo <numero por extenso>."`
-   - Conversão por extenso: `1 → primeiro`, `2 → segundo`, …, `10 → décimo`. Acima de 10 usa ordinal composto até 999 (`11 → décimo primeiro`, `21 → vigésimo primeiro`, etc.). Se vier algo como `1-A`, fica `primeiro-A`.
-2. Remover qualquer trecho entre parênteses `(...)` (inclusive aninhados simples) — não é narrado.
-3. Normalizar nomenclatura inline:
-   - `Art. N` → `Artigo <ordinal>`
-   - `§ N` ou `§ único` → `Parágrafo <ordinal>` / `Parágrafo único`
-   - `I, II, III…` no início de linha (numeração romana até L) → `Inciso <ordinal>` (`I → primeiro`, `II → segundo`…)
-   - `a)`, `b)` no início de linha/segmento → `Alínea a`, `Alínea b`
-4. Colapsar múltiplos espaços/quebras e adicionar pontuação leve entre blocos pra dar pausa natural.
-5. Limite de segurança: trunca em ~4000 caracteres (TTS tem limite). Se exceder, retorna erro pedindo divisão.
+### 4. Arquitetura e qualidade de código
 
-Essa função fica isolada em `src/lib/narracoes.utils.ts` (sem deps de servidor) pra ser testável.
+- **Refatorar `_app.vade-mecum.estatutos.$slug.tsx`** (2.104 linhas → ~400):
+  - `src/components/vade-mecum/NarracaoButton.tsx` (botão dourado pulsante)
+  - `src/components/vade-mecum/PlaylistSheet.tsx` + `PlaylistPlayer.tsx`
+  - `src/components/vade-mecum/ArtigoCard.tsx`
+  - `src/components/vade-mecum/EstatutoHeader.tsx`
+  - `src/hooks/use-audio-player.ts` (encapsula `cur`, `dur`, `seek`, `play`, `ended`, auto-next)
+  - `src/hooks/use-narracao-queue.ts` (segmentação 1min, fila de áudios)
+- **Tipagem estrita**: rodar `tsc --noEmit` e corrigir `any` implícito em hooks de áudio e supabase queries.
+- **Hooks reutilizáveis**: `useDebounce`, `useIntersection` (para lazy-load de listas), `useMediaQuery` (já tem `use-mobile`, ampliar).
+- **Memoização**: `React.memo` em cards de lista (PostCard, MateriaCard, NoticiaCard, ArtigoCard) + `useCallback` nos handlers passados.
+- **Erros**: garantir `errorComponent` + `notFoundComponent` em todas as rotas com loader.
 
-### 4. UI — `src/routes/_app.admin.narracoes.tsx`
+### 5. SEO e polish
 
-Layout:
+- `head()` específico em cada rota pública (login, signup, blog/$slug, vade-mecum/$slug) com `og:title`, `og:description`, `og:image` próprios.
+- JSON-LD em `blog/$slug` (Article schema) e `vade-mecum/estatutos/$slug` (LegalDocument).
+- Manifest + ícones revisados para PWA-like (já tem manifest).
 
-```text
-┌─ Narração de Artigos ──────────────────────────────────┐
-│  [Select: Lei ▾]   [Busca por nº/texto ____________]   │
-├────────────────────────────────────────────────────────┤
-│  Art. 1º  · "Ninguém será obrigado..."    [▶ Narrar]   │
-│  Art. 2º  · "A lei não prejudicará..."    [♻ Regerar]  │  ← já tem
-│  Art. 3º  · ...                            [▶ Narrar]   │
-└────────────────────────────────────────────────────────┘
+### 6. Verificação
+
+- `vite build` para confirmar zero erros.
+- Lighthouse mobile na home + vade-mecum (meta: Performance > 90, CLS < 0.05).
+- Teste manual nas rotas principais a 390x844.
+
+---
+
+## Detalhes técnicos
+
+**Arquivos a criar**:
+```
+src/components/vade-mecum/NarracaoButton.tsx
+src/components/vade-mecum/PlaylistSheet.tsx
+src/components/vade-mecum/PlaylistPlayer.tsx
+src/components/vade-mecum/ArtigoCard.tsx
+src/components/vade-mecum/EstatutoHeader.tsx
+src/components/shared/SmartImage.tsx
+src/components/shared/SkeletonCard.tsx
+src/hooks/use-audio-player.ts
+src/hooks/use-narracao-queue.ts
+src/hooks/use-debounce.ts
+src/hooks/use-intersection.ts
 ```
 
-- Filtro por lei (select) e busca textual.
-- Cada linha mostra: número, preview do texto, badge "narrado" se já existe.
-- Ações por linha:
-  - **Narrar** (se não tem) → chama `gerarNarracaoArtigo`, mostra spinner, ao terminar abre player inline.
-  - **Ouvir** → `<audio controls>` com signed URL.
-  - **Ver texto narrado** (dialog) → mostra o resultado de `montarTextoNarracao` antes de gerar, pra revisar.
-  - **Regerar** → confirma e chama de novo (sobrescreve).
-  - **Excluir** → remove storage + linha.
-- Indicador de voz padrão (Kore) no topo, com possibilidade futura de trocar.
-- Adicionar link "Narração" no menu/cards do `_app.admin.index.tsx`.
+**Arquivos a modificar (principais)**:
+```
+src/routes/_app.vade-mecum.estatutos.$slug.tsx  (2104 → ~400 linhas)
+src/routes/_app.vade-mecum.estatutos.$slug.lazy.tsx  (novo: split do componente)
+src/router.tsx  (defaultPreloadStaleTime: 0)
+src/routes/_app.tsx  (route fade no Outlet)
+src/styles.css  (utilities mobile feedback + fluid type)
+src/components/blog/PostCard.tsx, MateriaCard.tsx, NoticiaCard.tsx  (memo + SmartImage)
+src/components/layout/MobileHeader.tsx  (scroll shadow)
+src/routes/__root.tsx  (preconnect supabase storage + meta padrão)
+```
 
-### 5. Detalhes técnicos relevantes
+**Estimativa**: ~25 arquivos tocados, ~12 novos, ~8 refatorados, ~5 ajustes pontuais. Tudo em uma execução conforme pedido.
 
-- **Gemini TTS endpoint**: `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=$GEMINI_API_KEY`
-  - Body:
-    ```json
-    {
-      "contents": [{ "parts": [{ "text": "<texto montado>" }] }],
-      "generationConfig": {
-        "responseModalities": ["AUDIO"],
-        "speechConfig": {
-          "voiceConfig": {
-            "prebuiltVoiceConfig": { "voiceName": "Kore" }
-          },
-          "languageCode": "pt-BR"
-        }
-      }
-    }
-    ```
-  - Resposta vem em `candidates[0].content.parts[0].inlineData.data` (PCM 16-bit LE 24kHz mono, base64).
-  - Convertemos pra WAV adicionando header de 44 bytes no servidor antes do upload.
-- Chamada feita no server function (`process.env.GEMINI_API_KEY`), nunca no client.
-- Sem streaming — gera o áudio inteiro e devolve URL.
+**Não toco em**: lógica de IA (Gemini direto continua como na memória), schema do Supabase, autenticação, RLS, sistema de pagamentos.
 
-### 6. Fora de escopo (não faremos agora)
-
-- Player no Vade Mecum do usuário final.
-- Trocar de voz na UI (fica fixo em Kore, mas o campo `voz` já existe).
-- Narração em lote ("narrar todos da lei X").
-- Geração paralela em background com fila.
-
-## Próximos passos depois do plano aprovado
-
-1. Migration (tabela + bucket + RLS).
-2. `narracoes.utils.ts` (texto → texto narrável) + função pura testada mentalmente.
-3. `narracoes.functions.ts` (server fns).
-4. Rota `_app.admin.narracoes.tsx` com UI completa.
-5. Link no admin index.
+Posso prosseguir e executar o plano inteiro?
