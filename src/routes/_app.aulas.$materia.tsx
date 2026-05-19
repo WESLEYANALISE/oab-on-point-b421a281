@@ -33,8 +33,8 @@ const NIVEL_LABEL: Record<string, string> = {
 
 function MateriaAulaPage() {
   const { materia } = Route.useLoaderData();
-  const totalResumos = materia.modulos.reduce((s, m) => s + m.resumos, 0);
-  const totalHoras = materia.modulos.reduce((s, m) => s + m.horas, 0);
+  const totalResumos = materia.modulos.reduce((s: number, m: AulaModulo) => s + m.resumos, 0);
+  const totalHoras = materia.modulos.reduce((s: number, m: AulaModulo) => s + m.horas, 0);
 
   return (
     <div className="pb-16">
