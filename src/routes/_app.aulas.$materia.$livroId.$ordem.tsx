@@ -100,25 +100,29 @@ function AulaCapitulo() {
 
   return (
     <div className="pb-28">
-      <header
-        className={cn(
-          "relative px-4 md:px-8 pt-4 pb-5 bg-gradient-to-br text-primary-foreground",
-          mat.cor,
-        )}
-      >
-        <Link
-          to="/aulas/$materia/$livroId"
-          params={{ materia, livroId }}
-          className="inline-flex items-center gap-1.5 text-[12px] text-white/85 hover:text-white mb-2"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-        </Link>
-        <p className="text-[10px] uppercase tracking-[0.18em] text-white/70">
-          {mat.nome} · Aula {atual.ordem} de {capitulos.length}
-        </p>
-        <h1 className="font-display text-xl md:text-2xl leading-tight mt-1">
-          {normalizarTitulo(atual.titulo)}
-        </h1>
+      <header className="relative px-4 md:px-8 pt-5 pb-6 overflow-hidden border-b border-border bg-card/40">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-60"
+          style={{
+            background:
+              "radial-gradient(60% 80% at 0% 0%, color-mix(in oklab, var(--gold) 14%, transparent), transparent 70%), radial-gradient(50% 60% at 100% 100%, color-mix(in oklab, var(--gold) 8%, transparent), transparent 70%)",
+          }}
+        />
+        <div className="relative">
+          <Link
+            to="/aulas/$materia/$livroId"
+            params={{ materia, livroId }}
+            className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-gold mb-2 transition"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+          </Link>
+          <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80">
+            {mat.nome} · Aula {atual.ordem} de {capitulos.length}
+          </p>
+          <h1 className="font-display leading-[1.15] mt-1 text-foreground text-[clamp(1.05rem,4.6vw,1.875rem)] max-w-[34ch] break-words hyphens-auto">
+            {normalizarTitulo(atual.titulo)}
+          </h1>
+        </div>
       </header>
 
       <div className="px-4 md:px-8 max-w-3xl mx-auto pt-5">
