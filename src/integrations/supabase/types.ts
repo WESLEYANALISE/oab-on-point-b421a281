@@ -110,6 +110,30 @@ export type Database = {
         }
         Relationships: []
       }
+      aula_capitulo_simulado: {
+        Row: {
+          created_at: string
+          id: string
+          ordem: number
+          questoes: Json
+          resumo_livro_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ordem: number
+          questoes: Json
+          resumo_livro_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ordem?: number
+          questoes?: Json
+          resumo_livro_id?: string
+        }
+        Relationships: []
+      }
       aulas_progresso: {
         Row: {
           created_at: string
