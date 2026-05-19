@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
+import { BookOpen, ChevronRight } from "lucide-react";
 import { resumoLivroQueryOptions } from "@/lib/resumos-queries";
 import { normalizarTitulo } from "@/lib/titulo";
 import { getMateriaAula } from "@/data/aulas-oab";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/aulas/$materia/$livroId/")({
   component: TrilhaCapitulos,
@@ -19,31 +18,26 @@ function TrilhaCapitulos() {
 
   return (
     <div className="pb-16">
-      <header
-        className={cn(
-          "relative px-4 md:px-8 pt-5 pb-6 bg-gradient-to-br text-primary-foreground",
-          mat.cor,
-        )}
-      >
-        <Link
-          to="/aulas/$materia"
-          params={{ materia }}
-          className="inline-flex items-center gap-1.5 text-[12px] text-white/85 hover:text-white mb-3"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-        </Link>
-        <div className="flex items-start gap-3">
-          <div className="h-12 w-12 rounded-xl bg-white/15 grid place-items-center text-2xl shrink-0">
+      <header className="relative px-4 md:px-8 pt-5 pb-6 overflow-hidden border-b border-border bg-card/40">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-60"
+          style={{
+            background:
+              "radial-gradient(60% 80% at 0% 0%, color-mix(in oklab, var(--gold) 14%, transparent), transparent 70%), radial-gradient(50% 60% at 100% 100%, color-mix(in oklab, var(--gold) 8%, transparent), transparent 70%)",
+          }}
+        />
+        <div className="relative flex items-start gap-3">
+          <div className="h-12 w-12 rounded-xl border border-gold/30 bg-gold/10 grid place-items-center text-2xl shrink-0">
             {mat.emoji}
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-wider text-white/70">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80">
               {mat.nome}
             </p>
-            <h1 className="font-display font-semibold text-2xl md:text-3xl tracking-tight leading-tight">
+            <h1 className="font-display font-semibold text-foreground leading-[1.15] mt-1 text-[clamp(1.15rem,4.8vw,1.875rem)] max-w-[24ch] break-words">
               {data.livro.titulo}
             </h1>
-            <p className="text-[12px] text-white/85 mt-1 inline-flex items-center gap-1">
+            <p className="text-[12px] text-muted-foreground mt-1.5 inline-flex items-center gap-1">
               <BookOpen className="h-3.5 w-3.5" /> {capitulos.length} aulas
             </p>
           </div>
@@ -65,21 +59,21 @@ function TrilhaCapitulos() {
                 <Link
                   to="/aulas/$materia/$livroId/$ordem"
                   params={{ materia, livroId, ordem: String(c.ordem) }}
-                  className="group block rounded-xl border border-gold/15 bg-gradient-to-br from-[oklch(0.28_0.07_18)] to-[oklch(0.19_0.04_18)] p-4 hover:border-gold/40 hover:-translate-y-0.5 transition-all shadow-md shadow-black/30"
+                  className="group block rounded-xl border border-border bg-card hover:border-gold/50 hover:-translate-y-0.5 transition-all p-4 shadow-sm shadow-black/10"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-[10px] uppercase tracking-[0.18em] text-gold/80 font-semibold">
                         Aula {c.ordem}
                       </p>
-                      <p className="font-display text-[15px] md:text-base leading-snug mt-1 break-words text-primary-foreground line-clamp-2">
+                      <p className="font-display text-[15px] md:text-base leading-snug mt-1 break-words text-foreground line-clamp-2">
                         {normalizarTitulo(c.titulo)}
                       </p>
-                      <p className="text-[10px] text-white/60 mt-1.5">
+                      <p className="text-[10px] text-muted-foreground mt-1.5">
                         Ler → Flashcards → Questões
                       </p>
                     </div>
-                    <div className="h-8 w-8 rounded-full bg-gold/15 border border-gold/30 grid place-items-center shrink-0 group-hover:bg-gold transition">
+                    <div className="h-8 w-8 rounded-full bg-gold/10 border border-gold/30 grid place-items-center shrink-0 group-hover:bg-gold transition">
                       <ChevronRight className="h-4 w-4 text-gold group-hover:text-gold-foreground" />
                     </div>
                   </div>
