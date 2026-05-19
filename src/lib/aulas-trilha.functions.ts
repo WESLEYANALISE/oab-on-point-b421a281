@@ -63,6 +63,7 @@ async function chamarGeminiJson(system: string, user: string, maxTokens = 6000):
 // ====================================================================
 
 export const obterFlashcardsCapitulo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
       resumo_livro_id: z.string().uuid(),
