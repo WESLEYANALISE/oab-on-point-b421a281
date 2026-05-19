@@ -426,8 +426,24 @@ function FlashcardsView({
             </p>
           </button>
 
-          {/* Verso */}
-          <div className="flip-face flip-face--back w-full min-h-[260px] rounded-2xl border border-gold/40 bg-card p-6 text-left shadow-lg shadow-black/30 flex flex-col">
+          {/* Verso — toque em qualquer lugar vira de volta */}
+          <div
+            role="button"
+            tabIndex={flip ? 0 : -1}
+            aria-label="Virar para a pergunta"
+            onClick={() => {
+              setFlip(false);
+              setVerExemplo(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setFlip(false);
+                setVerExemplo(false);
+              }
+            }}
+            className="flip-face flip-face--back w-full min-h-[260px] rounded-2xl border border-gold/40 bg-card p-6 text-left shadow-lg shadow-black/30 flex flex-col cursor-pointer hover:border-gold/60 transition-colors"
+          >
             <p className="text-[10px] uppercase tracking-[0.18em] text-gold mb-3">
               Resposta
             </p>
@@ -436,7 +452,7 @@ function FlashcardsView({
             </p>
 
             {card.exemplo && (
-              <div className="mt-4">
+              <div className="mt-4" onClick={(e) => e.stopPropagation()}>
                 {!verExemplo ? (
                   <button
                     type="button"
@@ -458,16 +474,9 @@ function FlashcardsView({
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={() => {
-                setFlip(false);
-                setVerExemplo(false);
-              }}
-              className="mt-auto pt-3 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-gold transition self-start inline-flex items-center gap-1.5"
-            >
-              <RotateCcw className="h-3 w-3" /> Voltar para pergunta
-            </button>
+            <p className="mt-auto pt-3 text-[10px] uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1.5">
+              <RotateCcw className="h-3 w-3" /> Tocar para virar
+            </p>
           </div>
         </div>
       </div>
