@@ -1,14 +1,15 @@
+import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import type { Atalho } from "@/data/atalhos";
 import { cn } from "@/lib/utils";
 
-export function AtalhoCard({ atalho }: { atalho: Atalho }) {
+function AtalhoCardInner({ atalho }: { atalho: Atalho }) {
   const Icon = atalho.icon;
   return (
     <Link
       to={atalho.to}
       className={cn(
-        "group relative overflow-hidden rounded-xl p-4 min-h-[110px] flex flex-col justify-between transition-all hover:-translate-y-0.5 hover:shadow-lg",
+        "group relative overflow-hidden rounded-xl p-4 min-h-[110px] flex flex-col justify-between tap-feedback hover:-translate-y-0.5 hover:shadow-lg",
         atalho.cor,
       )}
     >
@@ -20,3 +21,6 @@ export function AtalhoCard({ atalho }: { atalho: Atalho }) {
     </Link>
   );
 }
+
+export const AtalhoCard = memo(AtalhoCardInner);
+

@@ -18,13 +18,13 @@ const categoriaCor: Record<Noticia["categoria"], string> = {
   Exame: "bg-primary text-primary-foreground",
 };
 
-export function NoticiaCard({ noticia, variant = "default" }: { noticia: Noticia; variant?: "default" | "hero" | "compact" }) {
+function NoticiaCardInner({ noticia, variant = "default" }: { noticia: Noticia; variant?: "default" | "hero" | "compact" }) {
   return (
     <Link
       to="/noticias/$id"
       params={{ id: noticia.id }}
       className={cn(
-        "group block rounded-xl border border-border bg-card overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5",
+        "group block rounded-xl border border-border bg-card overflow-hidden tap-feedback hover:shadow-md hover:-translate-y-0.5",
         variant === "compact" ? "min-w-[280px] w-[280px]" : "",
         variant === "hero" ? "md:col-span-2 row-span-2" : "",
       )}
@@ -61,3 +61,7 @@ export function NoticiaCard({ noticia, variant = "default" }: { noticia: Noticia
     </Link>
   );
 }
+
+import { memo } from "react";
+export const NoticiaCard = memo(NoticiaCardInner);
+
