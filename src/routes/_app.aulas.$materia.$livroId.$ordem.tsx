@@ -656,7 +656,7 @@ function ErrosCapituloView({
   const fn = useServerFn(listarCadernoErros);
   const q = useQuery({
     queryKey: ["caderno-erros-capitulo", livroId, ordem],
-    queryFn: () => fn({}),
+    queryFn: () => fn(),
     staleTime: 30_000,
   });
 
