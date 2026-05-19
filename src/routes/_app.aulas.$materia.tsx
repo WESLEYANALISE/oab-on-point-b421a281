@@ -73,7 +73,7 @@ function MateriaAulaPage() {
               <span className="text-[11px] text-muted-foreground">{materia.modulos.length} módulos</span>
             </div>
             <ul className="space-y-2.5">
-              {materia.modulos.map((mod, i) => (
+              {materia.modulos.map((mod: AulaModulo, i: number) => (
                 <li key={mod.slug}>
                   <Link
                     to="/aulas/$materia/$modulo"
