@@ -1,19 +1,19 @@
-import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 import { resumoLivroQueryOptions } from "@/lib/resumos-queries";
 import { normalizarTitulo } from "@/lib/titulo";
+import { getMateriaAula } from "@/data/aulas-oab";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/aulas/$materia/$livroId/")({
   component: TrilhaCapitulos,
 });
 
-const trilhaRoute = getRouteApi("/_app/aulas/$materia/$livroId");
-
 function TrilhaCapitulos() {
   const { materia, livroId } = Route.useParams();
-  const { materia: mat } = trilhaRoute.useLoaderData();
+  const mat = getMateriaAula(materia);
+  if (!mat) return <div className="p-8">Matéria não encontrada.</div>;
   const { data } = useSuspenseQuery(resumoLivroQueryOptions(livroId));
   const capitulos = data.capitulos ?? [];
 
