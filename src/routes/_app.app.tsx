@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Calendar, Sparkles, ArrowRight,
   Library, Trophy, Video, Newspaper,
-  Target, FileText, BookOpen, CalendarDays, ClipboardList, Layers, ScrollText,
-  GraduationCap, Zap, Compass, Scale,
+  FileText,
+  Zap, Compass, Scale,
 } from "lucide-react";
 import { HomeTopCard } from "@/components/home/HomeTopCard";
 import { listBlogPosts, type BlogPostListItem } from "@/lib/blog.functions";
@@ -47,15 +47,6 @@ const ATALHOS = [
   { label: "Videoaulas", sub: "Aulas em vídeo",    icon: Video,    to: "/aulas" as const },
 ];
 
-const FERRAMENTAS = [
-  { label: "1ª Fase",        sub: "Trilhas objetivas",   icon: Target,        to: "/oab/primeira-fase" as const },
-  { label: "2ª Fase",        sub: "Peça e discursivas",  icon: FileText,      to: "/oab/segunda-fase" as const },
-  { label: "O que estudar",  sub: "Guia por edital",     icon: BookOpen,      to: "/oab/o-que-estudar" as const },
-  { label: "Calendário OAB", sub: "Datas oficiais",      icon: CalendarDays,  to: "/oab/calendario" as const },
-  { label: "Cronograma",     sub: "Plano semanal",       icon: ClipboardList, to: "/oab/cronograma" as const },
-  { label: "Flashcards",     sub: "Repetição espaçada",  icon: Layers,        to: "/flashcards" as const },
-  { label: "Peça-modelo",    sub: "Modelos comentados",  icon: ScrollText,    to: "/oab/peca-modelo" as const },
-];
 
 function AreaOABPage() {
   const blogQuery = useQuery({
@@ -143,28 +134,6 @@ function AreaOABPage() {
             </div>
           </>
         )}
-      </section>
-
-      {/* ===== Ferramentas ===== */}
-      <section className="px-4 md:px-8">
-        <SectionTitle icon={GraduationCap} eyebrow="Plano completo de aprovação" title="Ferramentas de estudo" />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-3">
-          {FERRAMENTAS.map(({ label, sub, icon: Icon, to }) => (
-            <Link
-              key={label}
-              to={to}
-              className="group relative overflow-hidden rounded-2xl border border-gold/12 bg-gradient-to-br from-[oklch(0.28_0.07_18)] to-[oklch(0.19_0.04_18)] p-3 min-h-[72px] flex items-start gap-2.5 hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30"
-            >
-              <div className="h-9 w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center shrink-0">
-                <Icon className="h-4 w-4 text-gold" strokeWidth={2} />
-              </div>
-              <div className="min-w-0 pt-0.5">
-                <p className="font-display font-semibold text-[13px] md:text-[15px] leading-tight tracking-tight truncate">{label}</p>
-                <p className="text-[10px] md:text-[11px] text-muted-foreground mt-0.5 leading-snug line-clamp-1">{sub}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
       </section>
     </div>
   );

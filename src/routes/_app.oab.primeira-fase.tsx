@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft, ArrowRight, Flame, Target, BookOpen, Clock,
   Play, Layers, FileText, Notebook, RefreshCw, ChevronRight,
-  Calendar, Sparkles, TrendingUp,
+  Calendar, Sparkles, TrendingUp, CalendarDays, ClipboardList, GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MATERIAS_OAB_46 } from "@/data/oab-materias-46";
@@ -56,8 +56,41 @@ function PrimeiraFasePage() {
       <div className="px-4 md:px-8 mt-6 md:mt-8 space-y-7">
         <AcoesPrincipais />
         <TrilhaTimeline />
+        <FerramentasEstudo />
       </div>
     </div>
+  );
+}
+
+// ==================== FERRAMENTAS DE ESTUDO ====================
+const FERRAMENTAS_PF = [
+  { label: "O que estudar",  sub: "Guia por edital",   icon: BookOpen,      to: "/oab/o-que-estudar" as const },
+  { label: "Calendário OAB", sub: "Datas oficiais",    icon: CalendarDays,  to: "/oab/calendario" as const },
+  { label: "Cronograma",     sub: "Plano semanal",     icon: ClipboardList, to: "/oab/cronograma" as const },
+];
+
+function FerramentasEstudo() {
+  return (
+    <section>
+      <SectionTitle icon={GraduationCap} eyebrow="Plano completo de aprovação" title="Ferramentas de estudo" />
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-3">
+        {FERRAMENTAS_PF.map(({ label, sub, icon: Icon, to }) => (
+          <Link
+            key={label}
+            to={to}
+            className="group relative overflow-hidden rounded-2xl border border-gold/12 bg-gradient-to-br from-[oklch(0.28_0.07_18)] to-[oklch(0.19_0.04_18)] p-3 min-h-[72px] flex items-start gap-2.5 hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30 tap-feedback"
+          >
+            <div className="h-9 w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center shrink-0">
+              <Icon className="h-4 w-4 text-gold" strokeWidth={2} />
+            </div>
+            <div className="min-w-0 pt-0.5">
+              <p className="font-display font-semibold text-[13px] md:text-[15px] leading-tight tracking-tight truncate">{label}</p>
+              <p className="text-[10px] md:text-[11px] text-muted-foreground mt-0.5 leading-snug line-clamp-1">{sub}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
