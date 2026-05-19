@@ -221,8 +221,8 @@ function AulaCapitulo() {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="max-w-3xl mx-auto px-3 pt-2.5 pb-2">
-          <EtapasFooter etapa={etapa} feitas={feitas} onPick={setEtapa} />
-          <div className="mt-2 grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2">
+
             {prev ? (
               <Link
                 to="/aulas/$materia/$livroId/$ordem"
