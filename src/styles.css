@@ -389,7 +389,8 @@
   font-weight: 700;
   line-height: 1.25;
 }
-.markdown-body h1 { font-size: 1.6em; margin: 1.4em 0 0.6em; }
+.markdown-body h1 { font-size: 1.35em; margin: 1.4em 0 0.6em; text-transform: none; letter-spacing: 0; }
+.markdown-body > h1:first-child { display: none; }
 .markdown-body h2 {
   font-size: 1.3em;
   margin: 1.8em 0 0.6em;
