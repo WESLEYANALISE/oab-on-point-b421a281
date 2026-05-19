@@ -109,13 +109,6 @@ function AulaCapitulo() {
           }}
         />
         <div className="relative">
-          <Link
-            to="/aulas/$materia/$livroId"
-            params={{ materia, livroId }}
-            className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-gold mb-2 transition"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-          </Link>
           <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80">
             {mat.nome} · Aula {atual.ordem} de {capitulos.length}
           </p>
