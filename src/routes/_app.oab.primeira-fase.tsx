@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  ArrowLeft, ArrowRight, Flame, Target, BookOpen, Clock,
+  ArrowRight, Flame, Target, BookOpen, Clock,
   Play, Layers, FileText, Notebook, RefreshCw, ChevronRight,
   Calendar, Sparkles, TrendingUp, CalendarDays, ClipboardList, GraduationCap,
+  CalendarClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EXAMES_OAB } from "@/data/oab-calendario";
 import { MATERIAS_OAB_46 } from "@/data/oab-materias-46";
 import { touchStreak } from "@/lib/streak";
 import { fraseDoDia } from "@/lib/motivacao";
@@ -54,11 +56,121 @@ function PrimeiraFasePage() {
       />
 
       <div className="px-4 md:px-8 mt-6 md:mt-8 space-y-7">
+        <CalendarioCarrossel />
         <AcoesPrincipais />
         <TrilhaTimeline />
         <FerramentasEstudo />
       </div>
     </div>
+  );
+}
+
+// ==================== CALENDÁRIO CARROSSEL ====================
+function CalendarioCarrossel() {
+  const eventos = useMemo(() => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const exame = EXAMES_OAB.find((e) => e.status === "em-andamento") ?? EXAMES_OAB[0];
+    return exame.eventos.map((ev) => {
+      let dias: number | null = null;
+      if (ev.data && ev.data !== "previsto") {
+        const d = new Date(ev.data + "T00:00:00");
+        dias = Math.round((d.getTime() - hoje.getTime()) / 86400000);
+      }
+      return { ...ev, dias };
+    });
+  }, []);
+
+  const proximaFase = eventos.find((e) => /1ª fase/i.test(e.titulo) && e.dias !== null && e.dias >= 0)
+    ?? eventos.find((e) => e.status === "atual")
+    ?? eventos.find((e) => e.status === "previsto");
+
+  return (
+    <section>
+      <div className="flex items-end justify-between gap-3 mb-3.5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-8 w-8 md:h-9 md:w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center shrink-0">
+            <CalendarClock className="h-4 w-4 text-gold" strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-gold/85 font-semibold">Datas oficiais</p>
+            <h2 className="font-display font-semibold text-[19px] md:text-[22px] leading-[1.1] tracking-tight truncate">
+              Próximas etapas
+            </h2>
+          </div>
+        </div>
+        <Link to="/oab/calendario" className="text-[11px] md:text-xs font-medium text-gold hover:text-gold/80 inline-flex items-center gap-0.5 shrink-0">
+          Ver tudo <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+
+      {proximaFase && (
+        <div className="mb-3 rounded-xl border border-gold/25 bg-gradient-to-r from-gold/12 to-transparent px-3.5 py-2.5 flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-gold/20 border border-gold/30 grid place-items-center shrink-0">
+            <CalendarClock className="h-4 w-4 text-gold" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-gold/85 font-semibold">Próxima etapa</p>
+            <p className="text-[13px] font-semibold leading-tight truncate">{proximaFase.titulo}</p>
+          </div>
+          <div className="text-right shrink-0">
+            {proximaFase.dias !== null && proximaFase.dias >= 0 ? (
+              <>
+                <p className="font-display font-bold text-gold text-[20px] leading-none tabular-nums">{proximaFase.dias}</p>
+                <p className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground font-semibold mt-0.5">
+                  {proximaFase.dias === 1 ? "dia" : "dias"}
+                </p>
+              </>
+            ) : (
+              <p className="text-[11px] font-semibold text-gold">{proximaFase.rotulo}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="-mx-4 md:mx-0 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2.5 px-4 md:px-0 snap-x snap-mandatory">
+          {eventos.map((ev, i) => {
+            const isPassado = ev.dias !== null && ev.dias < 0;
+            const isAtual = ev.status === "atual";
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "snap-start shrink-0 w-[150px] rounded-xl border p-3 flex flex-col gap-1.5 transition-all",
+                  isAtual
+                    ? "border-gold/40 bg-gold/10"
+                    : isPassado
+                      ? "border-border bg-muted/30 opacity-60"
+                      : "border-border bg-card hover:border-gold/30",
+                )}
+              >
+                <p className={cn(
+                  "text-[10px] uppercase tracking-[0.16em] font-semibold tabular-nums",
+                  isAtual ? "text-gold" : "text-muted-foreground",
+                )}>
+                  {ev.rotulo}
+                </p>
+                <p className="text-[12px] font-semibold leading-snug line-clamp-2 min-h-[2.4em]">{ev.titulo}</p>
+                <div className="mt-auto pt-1">
+                  {ev.dias !== null ? (
+                    ev.dias >= 0 ? (
+                      <p className="text-[10.5px] text-muted-foreground">
+                        em <span className="font-semibold text-foreground tabular-nums">{ev.dias}</span> {ev.dias === 1 ? "dia" : "dias"}
+                      </p>
+                    ) : (
+                      <p className="text-[10.5px] text-muted-foreground">concluído</p>
+                    )
+                  ) : (
+                    <p className="text-[10.5px] text-muted-foreground italic">data prevista</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -103,9 +215,6 @@ function StatsHero({
       <div className="absolute -top-20 -right-12 h-56 w-56 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-16 -left-6 h-44 w-44 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
 
-      <Link to="/app" className="relative inline-flex items-center gap-1.5 text-[12px] text-primary-foreground/80 hover:text-primary-foreground mb-3">
-        <ArrowLeft className="h-3.5 w-3.5" /> Início
-      </Link>
 
       <div className="relative">
         <p className="text-[10px] uppercase tracking-[0.24em] text-gold/85 font-semibold mb-2">
@@ -157,42 +266,34 @@ function AcoesPrincipais() {
     {
       to: "/plano-estudo" as const,
       icon: Calendar,
-      eyebrow: "Personalizado",
-      title: "Meu plano de estudo",
-      desc: "Defina sua meta e horas por dia",
+      title: "Meu plano",
+      desc: "Meta e horas",
     },
     {
       to: "/oab/progresso" as const,
       icon: Sparkles,
-      eyebrow: "Sua evolução",
       title: "Meu progresso",
-      desc: "Acertos, matérias e histórico",
+      desc: "Acertos e histórico",
     },
   ];
   return (
-    <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <section className="grid grid-cols-2 gap-2.5 md:gap-3">
       {acoes.map((a) => (
         <Link
           key={a.to}
           to={a.to}
-          className="group relative overflow-hidden rounded-2xl border border-gold/20 bg-card p-4 md:p-5 shadow-md shadow-black/20 hover:-translate-y-0.5 hover:border-gold/40 transition-all"
+          className="group relative overflow-hidden rounded-2xl border border-gold/20 bg-card p-3 md:p-4 shadow-md shadow-black/20 hover:-translate-y-0.5 hover:border-gold/40 transition-all tap-feedback"
         >
-          <div className="absolute -top-10 -right-8 h-28 w-28 rounded-full bg-gold/10 blur-2xl pointer-events-none" />
-          <div className="relative flex items-start gap-3">
-            <div className="h-11 w-11 rounded-xl bg-gold/15 border border-gold/30 grid place-items-center shrink-0">
-              <a.icon className="h-5 w-5 text-gold" strokeWidth={2} />
+          <div className="absolute -top-10 -right-8 h-24 w-24 rounded-full bg-gold/10 blur-2xl pointer-events-none" />
+          <div className="relative flex items-center gap-2.5">
+            <div className="h-10 w-10 rounded-xl bg-gold/15 border border-gold/30 grid place-items-center shrink-0">
+              <a.icon className="h-[18px] w-[18px] text-gold" strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-gold/90 font-semibold mb-1">
-                {a.eyebrow}
-              </p>
-              <h3 className="font-display font-semibold text-[16px] md:text-[17px] leading-tight tracking-tight">
+              <h3 className="font-display font-semibold text-[14px] md:text-[15px] leading-tight tracking-tight truncate">
                 {a.title}
               </h3>
-              <p className="text-[11.5px] text-muted-foreground mt-1 line-clamp-2">{a.desc}</p>
-            </div>
-            <div className="h-7 w-7 rounded-full bg-gold/15 border border-gold/30 grid place-items-center shrink-0 group-hover:translate-x-0.5 group-hover:bg-gold/30 transition-all">
-              <ChevronRight className="h-3.5 w-3.5 text-gold" />
+              <p className="text-[10.5px] md:text-[11px] text-muted-foreground mt-0.5 truncate">{a.desc}</p>
             </div>
           </div>
         </Link>
