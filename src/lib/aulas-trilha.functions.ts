@@ -113,6 +113,7 @@ export const obterFlashcardsCapitulo = createServerFn({ method: "POST" })
 // ====================================================================
 
 export const obterQuestoesCapitulo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
       resumo_livro_id: z.string().uuid(),
