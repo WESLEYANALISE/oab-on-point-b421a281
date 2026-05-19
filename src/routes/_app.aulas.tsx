@@ -31,16 +31,8 @@ function AulasIndex() {
       <section className="px-4 md:px-8 mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {AULAS_MATERIAS.map((m) => {
           const indisponivel = m.modulos.length === 0;
-          return (
-            <Link
-              key={m.materiaId}
-              to="/aulas/$materia"
-              params={{ materia: m.materiaId }}
-              className={cn(
-                "group relative overflow-hidden rounded-2xl border border-border bg-card tap-feedback hover:-translate-y-0.5 hover:border-gold/40 transition-all shadow-md shadow-black/20",
-                indisponivel && "opacity-60",
-              )}
-            >
+          const cardInner = (
+            <>
               <div className={cn("h-20 bg-gradient-to-br p-3 flex items-start justify-between", m.cor)}>
                 <span className="text-3xl">{m.emoji}</span>
                 {indisponivel && (
@@ -53,6 +45,24 @@ function AulasIndex() {
                   {indisponivel ? "Trilha em preparação" : `${m.modulos.length} módulos`}
                 </p>
               </div>
+            </>
+          );
+          const baseCls = "group relative overflow-hidden rounded-2xl border border-border bg-card transition-all shadow-md shadow-black/20";
+          if (indisponivel) {
+            return (
+              <div key={m.materiaId} aria-disabled className={cn(baseCls, "opacity-60 cursor-not-allowed")}>
+                {cardInner}
+              </div>
+            );
+          }
+          return (
+            <Link
+              key={m.materiaId}
+              to="/aulas/$materia"
+              params={{ materia: m.materiaId }}
+              className={cn(baseCls, "tap-feedback hover:-translate-y-0.5 hover:border-gold/40")}
+            >
+              {cardInner}
             </Link>
           );
         })}
