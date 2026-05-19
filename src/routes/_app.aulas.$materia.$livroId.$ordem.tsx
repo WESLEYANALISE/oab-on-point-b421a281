@@ -265,25 +265,45 @@ function Stepper({
   onPick: (e: Etapa) => void;
 }) {
   const atualIdx = ETAPAS.findIndex((e) => e.id === etapa);
+  // progresso 0..1 baseado em etapas concluídas + etapa ativa
+  const doneCount = ETAPAS.filter((e) => feitas[e.id]).length;
+  const progress = Math.min(
+    1,
+    Math.max(atualIdx, doneCount) / (ETAPAS.length - 1),
+  );
+
   return (
-    <div className="mb-6">
+    <div className="mb-7">
       <ol className="grid grid-cols-5 gap-1 relative">
         {/* trilha de fundo */}
-        <div className="absolute left-0 right-0 top-4 h-0.5 bg-border -z-0 mx-6" />
+        <div className="absolute left-0 right-0 top-4 h-[3px] bg-border/70 rounded-full -z-0 mx-6" />
+        {/* trilha preenchida animada */}
+        <div
+          className="absolute top-4 h-[3px] rounded-full -z-0 step-progress-fill transition-[width] duration-500 ease-out"
+          style={{
+            left: "calc(10% + 0px)",
+            width: `calc(${progress * 80}%)`,
+          }}
+        />
         {ETAPAS.map((e, i) => {
           const Icon = e.icon;
           const done = feitas[e.id];
           const active = i === atualIdx;
+          const isNext = i === atualIdx + 1;
           return (
             <li key={e.id} className="relative z-10 flex flex-col items-center">
               <button
                 type="button"
                 onClick={() => onPick(e.id)}
                 className={cn(
-                  "h-8 w-8 rounded-full grid place-items-center border-2 transition",
-                  done && "bg-gold border-gold text-background",
-                  !done && active && "border-gold bg-background text-gold",
-                  !done && !active && "border-border bg-background text-muted-foreground",
+                  "h-9 w-9 rounded-full grid place-items-center border-2 transition-all duration-300",
+                  done && "bg-gold border-gold text-background scale-100",
+                  !done && active &&
+                    "border-gold bg-background text-gold scale-110 step-active",
+                  !done && !active && !isNext &&
+                    "border-border bg-background text-muted-foreground",
+                  !done && isNext &&
+                    "border-gold/40 bg-background text-gold/80 step-next-hint",
                 )}
                 aria-current={active ? "step" : undefined}
                 aria-label={e.label}
@@ -291,13 +311,15 @@ function Stepper({
                 {done ? (
                   <CheckCircle2 className="h-4 w-4" />
                 ) : (
-                  <Icon className="h-3.5 w-3.5" />
+                  <Icon className="h-4 w-4" />
                 )}
               </button>
               <span
                 className={cn(
-                  "mt-1.5 text-[9px] md:text-[10px] uppercase tracking-wider text-center leading-tight",
-                  active ? "text-gold font-semibold" : "text-muted-foreground",
+                  "mt-2 text-[9px] md:text-[10px] uppercase tracking-wider text-center leading-tight transition-colors",
+                  active && "text-gold font-semibold",
+                  !active && done && "text-foreground/80",
+                  !active && !done && "text-muted-foreground",
                 )}
               >
                 {e.label}
