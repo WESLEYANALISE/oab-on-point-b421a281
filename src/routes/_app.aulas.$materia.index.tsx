@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen, ChevronRight, Loader2 } from "lucide-react";
@@ -10,8 +10,10 @@ export const Route = createFileRoute("/_app/aulas/$materia/")({
   component: MateriaAulaPage,
 });
 
+const materiaRoute = getRouteApi("/_app/aulas/$materia");
+
 function MateriaAulaPage() {
-  const { materia } = Route.useRouteContext({ from: "/_app/aulas/$materia" });
+  const { materia } = materiaRoute.useLoaderData();
   const temArea = getAreasDaMateria(materia.materiaId).length > 0;
   const listar = useServerFn(listarLivrosPorMateria);
   const { data, isLoading, error } = useQuery({
