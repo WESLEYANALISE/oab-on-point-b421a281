@@ -1,112 +1,104 @@
-# Plano de melhoria geral do OAB na Risca
+# Aulas OAB 1ª Fase — Plano de implementação
 
-Diagnóstico rápido após varredura do código:
+Sistema de estudo guiado, fiel ao print enviado: o usuário escolhe a matéria, depois o módulo, depois um subtema, e percorre uma trilha linear de 8 passos com bloqueio progressivo. Cada passo gera dados (erros, flashcards, tentativas) que alimentam o próximo.
 
-- **Bundle gordo**: `framer-motion` (~50kb), `recharts`, `jspdf`, `embla-carousel`, todos os `@radix-ui/*` (>25 pacotes) carregados sem code-splitting estratégico. `lucide-react` importado solto em vários pontos (ok com tree-shake, mas precisa garantir).
-- **Rota gigante**: `_app.vade-mecum.estatutos.$slug.tsx` com **2.104 linhas e 25 `useState`** num único arquivo — playlist, narração, anotações, foco, chat, tudo junto. Re-render pesado a cada play/pause do áudio.
-- **Imagens**: `<img>` puro em capas de biblioteca, avatares e cards — sem `loading="lazy"`, sem `width/height` (CLS), sem `fetchpriority` no LCP, sem WebP/AVIF.
-- **Queries**: já há TanStack Query com `staleTime` 5min global (bom), mas várias rotas usam `supabase.from(...)` direto no client em vez de `createServerFn` + `ensureQueryData` no loader (perde SSR e prefetch).
-- **Animações**: existem keyframes bonitos (shimmer, sheen, pulse), mas faltam **transições de rota** consistentes, skeletons unificados, e micro-interações nos toques (mobile-first).
-- **Mobile UX**: viewport 390x844 é alvo principal, mas faltam `active:scale`, `:active` feedback nos cards, safe areas em mais locais, e `BottomNav` só aparece em `/app` (poderia ser persistente nas rotas principais).
-- **Arquitetura**: `_app.vade-mecum.estatutos.$slug.tsx` precisa quebrar em 5-6 componentes. Mistura de lógica de dados, UI e estado de player no mesmo arquivo.
+## Decisões (tomadas com base nos defaults sensatos do projeto)
 
----
+- **Origem dos módulos/subtemas:** mapa estático em TypeScript (`src/data/aulas-oab.ts`) derivado do `MATERIAS_OAB_46` e do edital. Cada subtema referencia um `resumo_capitulo` existente (via `livro_slug` + `ordem`). Vantagem: zero latência, fácil de evoluir, sem dependência de IA para a estrutura. Pode virar tabela depois.
+- **Questões (Rodada 1, 2 e Simulado):** **híbrido**. Primeiro filtra `simulado_questoes` por `materia` (já existe). Se faltar para fechar a meta (8/12/20), Gemini gera questões inéditas específicas do subtema e salva em uma nova tabela `aulas_questoes_geradas` para reuso.
+- **Aula explicativa (passo 1):** usa o `resumo_capitulos.conteudo_markdown` já gerado + 3 botões de IA sob demanda (streaming Gemini): "Explicar melhor", "Exemplo prático", "Linguagem simples". Aproveita `gemini.server.ts`.
+- **Flashcards:** gerados sob demanda na primeira vez que o usuário chega ao passo 2, salvos em `flashcards` com `fonte_tipo='aula_subtema'` e `fonte_id=<subtema_slug>`. Revisão usa FSRS já implementado.
+- **Caderno de erros:** usa `erros_questao` filtrando por `materia` e por um novo campo `aula_subtema_slug` (nullable, adicionado por migration).
 
-## Fase única — execução em um ciclo
+## Fluxo do usuário
 
-### 1. Performance de bundle e carregamento
-
-- **Code-split agressivo nas rotas pesadas**: usar `.lazy.tsx` para `_app.vade-mecum.estatutos.$slug`, `_app.simulados.$slug.praticar`, `_app.admin.*`, `_app.resumos.capitulo.*`. Loader/`validateSearch` ficam no arquivo crítico, componente no lazy.
-- **Lazy import de libs pesadas**: `jspdf`, `recharts`, `framer-motion` (onde for opcional) via `React.lazy` ou `import()` dinâmico só nos pontos que usam. Hoje `framer-motion` está em 4 arquivos — manter só onde compensa, trocar restante por CSS `@keyframes` (já temos vários).
-- **Prefetch inteligente**: `defaultPreload: "intent"` + `defaultPreloadDelay: 0` já está. Adicionar `defaultPreloadStaleTime: 0` para deixar Query mandar.
-- **Imagens**:
-  - Adicionar `loading="lazy"`, `decoding="async"`, `width`/`height` explícitos em todas as `<img>` (capas de biblioteca, blog, avatares).
-  - LCP de cada rota com `fetchpriority="high"` + preload via `head()` da rota.
-  - Componente `<SmartImage>` central que aplica isso e fallback de skeleton.
-- **Queries → loaders**: migrar `supabase.from(...)` espalhado para `createServerFn` + `ensureQueryData` nos loaders das rotas mais visitadas (`vade-mecum`, `materias`, `noticias`, `blog`). Ganho real de SSR + 0ms de skeleton.
-- **React 19**: ativar `useTransition` nas trocas de filtro/aba pesadas (tabs do vade-mecum, filtros de biblioteca).
-
-### 2. Animações e fluidez (intensidade 3 — equilibrado)
-
-- **Transição de rota global**: aplicar `animate-route-fade` (já existe) no `<Outlet />` via key do pathname — fade de 180ms em toda navegação.
-- **Skeletons unificados**: hoje quase tudo mostra spinner. Criar `<SkeletonCard>`, `<SkeletonRow>`, `<SkeletonArtigo>` reutilizáveis que respeitam o layout final (zero CLS).
-- **Micro-interações** sem exagero:
-  - Cards e botões: `active:scale-[0.98]` + `transition-transform duration-150` (feedback tátil mobile).
-  - Links da `BottomNav`: ripple sutil dourado ao tocar.
-  - Chips de filtro: slide horizontal suave ao trocar seleção.
-  - Hover gold nos cards principais (desktop).
-- **Sheet / Drawer**: animar com `vaul` (já instalado) o `PlaylistSheet` com snap points para sensação de app nativo.
-- **Reduce motion**: já respeitado em `styles.css` — manter ao adicionar novas animações.
-
-### 3. Responsividade e mobile UX
-
-- **Touch targets**: revisar para 44x44 mínimo em chips, ícones de header, botões de áudio.
-- **Safe areas**: `pb-[env(safe-area-inset-bottom)]` em todos os players fixos (já tem no `BottomNav`, falta no `PlaylistPlayer` quando fixo).
-- **Header mobile**: adicionar `backdrop-blur` + sombra ao scroll (já parcial).
-- **Vade-mecum**: barra de leitura (progresso do artigo) no topo durante scroll longo.
-- **Gestos**: swipe horizontal entre artigos consecutivos no estatuto (usar `framer-motion` `drag="x"` só nessa tela — vale o peso).
-- **Tipografia fluida**: `clamp()` nos títulos das telas principais para escalar entre 320px e 1280px sem quebra.
-- **Tabela responsiva**: `markdown-body table` ganha `overflow-x-auto` wrapper.
-
-### 4. Arquitetura e qualidade de código
-
-- **Refatorar `_app.vade-mecum.estatutos.$slug.tsx`** (2.104 linhas → ~400):
-  - `src/components/vade-mecum/NarracaoButton.tsx` (botão dourado pulsante)
-  - `src/components/vade-mecum/PlaylistSheet.tsx` + `PlaylistPlayer.tsx`
-  - `src/components/vade-mecum/ArtigoCard.tsx`
-  - `src/components/vade-mecum/EstatutoHeader.tsx`
-  - `src/hooks/use-audio-player.ts` (encapsula `cur`, `dur`, `seek`, `play`, `ended`, auto-next)
-  - `src/hooks/use-narracao-queue.ts` (segmentação 1min, fila de áudios)
-- **Tipagem estrita**: rodar `tsc --noEmit` e corrigir `any` implícito em hooks de áudio e supabase queries.
-- **Hooks reutilizáveis**: `useDebounce`, `useIntersection` (para lazy-load de listas), `useMediaQuery` (já tem `use-mobile`, ampliar).
-- **Memoização**: `React.memo` em cards de lista (PostCard, MateriaCard, NoticiaCard, ArtigoCard) + `useCallback` nos handlers passados.
-- **Erros**: garantir `errorComponent` + `notFoundComponent` em todas as rotas com loader.
-
-### 5. SEO e polish
-
-- `head()` específico em cada rota pública (login, signup, blog/$slug, vade-mecum/$slug) com `og:title`, `og:description`, `og:image` próprios.
-- JSON-LD em `blog/$slug` (Article schema) e `vade-mecum/estatutos/$slug` (LegalDocument).
-- Manifest + ícones revisados para PWA-like (já tem manifest).
-
-### 6. Verificação
-
-- `vite build` para confirmar zero erros.
-- Lighthouse mobile na home + vade-mecum (meta: Performance > 90, CLS < 0.05).
-- Teste manual nas rotas principais a 390x844.
-
----
-
-## Detalhes técnicos
-
-**Arquivos a criar**:
-```
-src/components/vade-mecum/NarracaoButton.tsx
-src/components/vade-mecum/PlaylistSheet.tsx
-src/components/vade-mecum/PlaylistPlayer.tsx
-src/components/vade-mecum/ArtigoCard.tsx
-src/components/vade-mecum/EstatutoHeader.tsx
-src/components/shared/SmartImage.tsx
-src/components/shared/SkeletonCard.tsx
-src/hooks/use-audio-player.ts
-src/hooks/use-narracao-queue.ts
-src/hooks/use-debounce.ts
-src/hooks/use-intersection.ts
+```text
+/aulas                              → grid das 17 matérias (igual cards de matéria atuais)
+/aulas/$materia                     → lista de módulos da matéria (print 1)
+/aulas/$materia/$modulo             → lista de subtemas do módulo (print 2)
+/aulas/$materia/$modulo/$subtema    → trilha vertical de 8 passos (print 3/4)
+  passo=1 → Ler o resumo (resumo + IA)
+  passo=2 → Revisar com flashcards
+  passo=3 → Questões Rodada 1
+  passo=4 → Caderno de Erros Rodada 1
+  passo=5 → Questões Rodada 2 (só as erradas)
+  passo=6 → Simulado do Subtema
+  passo=7 → Caderno de Erros do Simulado
+  passo=8 → Feedback do Subtema
 ```
 
-**Arquivos a modificar (principais)**:
+Cada passo só desbloqueia quando o anterior está "concluído" (registro em `aulas_progresso`).
+
+## Arquitetura técnica
+
+### 1. Dados estáticos
+
+`src/data/aulas-oab.ts`:
+```text
+type Subtema  = { slug, titulo, resumoLivroSlug, capituloOrdem, nivel }
+type Modulo   = { slug, titulo, nivel: 'iniciante'|'intermediario'|'avancado', subtemas: Subtema[] }
+type MateriaAula = { materiaId, modulos: Modulo[] }
 ```
-src/routes/_app.vade-mecum.estatutos.$slug.tsx  (2104 → ~400 linhas)
-src/routes/_app.vade-mecum.estatutos.$slug.lazy.tsx  (novo: split do componente)
-src/router.tsx  (defaultPreloadStaleTime: 0)
-src/routes/_app.tsx  (route fade no Outlet)
-src/styles.css  (utilities mobile feedback + fluid type)
-src/components/blog/PostCard.tsx, MateriaCard.tsx, NoticiaCard.tsx  (memo + SmartImage)
-src/components/layout/MobileHeader.tsx  (scroll shadow)
-src/routes/__root.tsx  (preconnect supabase storage + meta padrão)
-```
+Construído manualmente a partir do edital, com referência ao livro de resumo correspondente já no banco (`resumo_livros.biblioteca_slug + livro_id`). Começamos com 3 matérias-piloto (Constitucional, Administrativo, Civil) e expandimos.
 
-**Estimativa**: ~25 arquivos tocados, ~12 novos, ~8 refatorados, ~5 ajustes pontuais. Tudo em uma execução conforme pedido.
+### 2. Banco de dados (1 migration)
 
-**Não toco em**: lógica de IA (Gemini direto continua como na memória), schema do Supabase, autenticação, RLS, sistema de pagamentos.
+Novas tabelas, todas com RLS:
+- `aulas_progresso` (user_id, subtema_slug, passo_atual, passos_concluidos jsonb, atualizado_em) — escopo por usuário.
+- `aulas_questoes_geradas` (id, subtema_slug, enunciado, alternativas jsonb, resposta_correta, justificativa, tipo: 'rodada'|'simulado', created_at) — leitura pública, escrita só por server fn admin.
+- `aulas_tentativas` (id, user_id, subtema_slug, passo: 'rodada1'|'rodada2'|'simulado', respostas jsonb, acertos, total, concluido_em) — escopo por usuário.
+- Coluna nova em `erros_questao`: `aula_subtema_slug text NULL`.
 
-Posso prosseguir e executar o plano inteiro?
+### 3. Server functions (Gemini direto, conforme memória do projeto)
+
+`src/lib/aulas.functions.ts`:
+- `getSubtemaConteudo({ subtemaSlug })` → resumo do capítulo + status de progresso.
+- `explicarAula({ subtemaSlug, modo: 'melhor'|'exemplo'|'simples', trecho? })` → streaming Gemini.
+- `gerarFlashcardsSubtema({ subtemaSlug })` → gera 10 cards via Gemini, insere em `flashcards`. Idempotente.
+- `montarRodadaQuestoes({ subtemaSlug, alvo: 8 })` → busca em `simulado_questoes` por matéria; se faltar, dispara `gerarQuestoesIA` para completar.
+- `gerarQuestoesIA({ subtemaSlug, quantidade, tipo })` → Gemini gera questões 4-alternativas no formato OAB, salva em `aulas_questoes_geradas`.
+- `responderQuestao({ tentativaId, questaoId, alternativa })` → grava resposta, se errar insere em `erros_questao` com `aula_subtema_slug`.
+- `concluirPasso({ subtemaSlug, passo })` → avança `aulas_progresso`.
+- `getFeedbackSubtema({ subtemaSlug })` → agrega tudo (acerto rodada 1, 2, simulado, tempo gasto, pontos fracos) + parágrafo motivacional via Gemini.
+
+### 4. Rotas (TanStack)
+
+- `src/routes/_app.aulas.tsx` (substitui ComingSoon) — grid de matérias.
+- `src/routes/_app.aulas.$materia.tsx` — hero da matéria + módulos (visual do print 1).
+- `src/routes/_app.aulas.$materia.$modulo.tsx` — header com badge nível + lista de subtemas com progresso ring (print 2).
+- `src/routes/_app.aulas.$materia.$modulo.$subtema.tsx` — trilha vertical de 8 passos com timeline (visual do print 3/4).
+- `src/routes/_app.aulas.$materia.$modulo.$subtema.passo.$passo.tsx` — tela do passo ativo (resumo, flashcards, questões, etc.).
+
+Todas com `head()` (SEO), `errorComponent` e `notFoundComponent`.
+
+### 5. Componentes novos
+
+`src/components/aulas/`:
+- `ModuloCard.tsx` — card roxo com gradiente do print 1.
+- `SubtemaCard.tsx` — círculo numerado + barra de progresso vermelha.
+- `TrilhaPasso.tsx` — item da timeline com estados: ativo (vermelho), concluído (verde), bloqueado (cinza+cadeado).
+- `passos/PassoResumo.tsx` — markdown + dock IA flutuante (3 ações).
+- `passos/PassoFlashcards.tsx` — reuso do componente de revisão SRS já existente.
+- `passos/PassoQuestoes.tsx` — UI de questão única com feedback inline (compartilhado entre rodada1/2/simulado).
+- `passos/PassoCadernoErros.tsx` — lista de erros com explicação contextual via IA por questão.
+- `passos/PassoFeedback.tsx` — gráfico de evolução + recomendação.
+
+### 6. Integração com home
+
+Atualizar `/oab/primeira-fase`: o card "Aulas" no `TrilhaTimeline` já aponta para `/aulas` — mantém. Acrescenta atalho rápido "Continuar de onde parou" lendo a última entrada de `aulas_progresso`.
+
+## Entrega faseada (mesmo cycle, ordem de execução)
+
+1. Migration + tipos Supabase.
+2. `src/data/aulas-oab.ts` com 3 matérias piloto (Constitucional, Administrativo, Civil) cobrindo ~9 módulos e ~30 subtemas.
+3. Server functions + integração Gemini.
+4. Rotas + componentes na ordem do fluxo (matéria → módulo → subtema → passos).
+5. Bloqueio progressivo, persistência de progresso, caderno de erros, feedback final.
+6. Polimento visual fiel aos prints (roxo do gradiente nos módulos, círculos numerados nos subtemas, timeline vermelha nos passos).
+
+## Notas
+
+- Reaproveitamento máximo: `flashcards` + FSRS, `erros_questao`, `simulado_questoes`, `resumo_capitulos`, `gemini.server.ts`, `SmartImage`, `SkeletonCard`.
+- Sem Lovable AI Gateway — só Gemini direto (`GEMINI_API_KEY`), conforme memória.
+- Streaming via SSE no `explicarAula` para sensação de "professor explicando".
+- Após o piloto de 3 matérias, expandir o dataset estático é trabalho de conteúdo, não de código.
