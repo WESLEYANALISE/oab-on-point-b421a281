@@ -15,6 +15,19 @@ export type Questao = {
   justificativa: string;
 };
 
+export type AulaParte = {
+  titulo: string;
+  resumo_curto?: string;
+  conteudo_markdown: string;
+  exemplo_pratico?: string;
+  pontos_chave?: string[];
+};
+export type AulaEstruturada = {
+  introducao: string;
+  partes: AulaParte[];
+  fechamento?: string;
+};
+
 async function getCapitulo(resumo_livro_id: string, ordem: number) {
   const { data, error } = await supabaseAdmin
     .from("resumo_capitulos")
