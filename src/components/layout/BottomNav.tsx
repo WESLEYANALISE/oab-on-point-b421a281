@@ -29,7 +29,7 @@ export function BottomNav() {
                 to={to}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2 text-[11px] transition-colors",
+                  "flex flex-col items-center gap-1 py-2 text-[11px] transition-colors tap-feedback rounded-lg",
                   active ? "text-primary" : "text-foreground hover:text-primary",
                 )}
               >
@@ -45,7 +45,7 @@ export function BottomNav() {
           <Link
             to="/questoes"
             aria-label="Praticar questões"
-            className="absolute left-1/2 -translate-x-1/2 -top-7 h-16 w-16 rounded-full bg-gradient-gold text-gold-foreground grid place-items-center shadow-[0_8px_20px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)] ring-4 ring-background hover:scale-105 transition-transform animate-questoes-shine"
+            className="absolute left-1/2 -translate-x-1/2 -top-7 h-16 w-16 rounded-full bg-gradient-gold text-gold-foreground grid place-items-center shadow-[0_8px_20px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)] ring-4 ring-background hover:scale-105 active:scale-95 transition-transform animate-questoes-shine"
           >
             <TargetArrowIcon className="h-7 w-7" />
           </Link>
@@ -65,7 +65,7 @@ export function BottomNav() {
                 to={to}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2 text-[11px] transition-colors",
+                  "flex flex-col items-center gap-1 py-2 text-[11px] transition-colors tap-feedback rounded-lg",
                   active ? "text-primary" : "text-foreground hover:text-primary",
                 )}
               >
