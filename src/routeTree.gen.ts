@@ -70,6 +70,7 @@ import { Route as AppBibliotecaSlugBookIdIndexRouteImport } from './routes/_app.
 import { Route as AppSimuladosSlugResultadoTentativaIdRouteImport } from './routes/_app.simulados.$slug.resultado.$tentativaId'
 import { Route as AppResumosCapituloLivroIdOrdemRouteImport } from './routes/_app.resumos.capitulo.$livroId.$ordem'
 import { Route as AppBibliotecaSlugBookIdLerRouteImport } from './routes/_app.biblioteca.$slug.$bookId.ler'
+import { Route as AppAulasMateriaLivroIdOrdemRouteImport } from './routes/_app.aulas.$materia.$livroId.$ordem'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -382,6 +383,12 @@ const AppBibliotecaSlugBookIdLerRoute =
     path: '/ler',
     getParentRoute: () => AppBibliotecaSlugBookIdRoute,
   } as any)
+const AppAulasMateriaLivroIdOrdemRoute =
+  AppAulasMateriaLivroIdOrdemRouteImport.update({
+    id: '/$ordem',
+    path: '/$ordem',
+    getParentRoute: () => AppAulasMateriaLivroIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -433,13 +440,14 @@ export interface FileRoutesByFullPath {
   '/resumos/': typeof AppResumosIndexRoute
   '/simulados/': typeof AppSimuladosIndexRoute
   '/vade-mecum/': typeof AppVadeMecumIndexRoute
-  '/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRoute
+  '/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRouteWithChildren
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
   '/vade-mecum/estatutos/': typeof AppVadeMecumEstatutosIndexRoute
+  '/aulas/$materia/$livroId/$ordem': typeof AppAulasMateriaLivroIdOrdemRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/resumos/capitulo/$livroId/$ordem': typeof AppResumosCapituloLivroIdOrdemRoute
   '/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
@@ -491,12 +499,13 @@ export interface FileRoutesByTo {
   '/resumos': typeof AppResumosIndexRoute
   '/simulados': typeof AppSimuladosIndexRoute
   '/vade-mecum': typeof AppVadeMecumIndexRoute
-  '/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRoute
+  '/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRouteWithChildren
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
   '/simulados/$slug': typeof AppSimuladosSlugIndexRoute
   '/vade-mecum/estatutos': typeof AppVadeMecumEstatutosIndexRoute
+  '/aulas/$materia/$livroId/$ordem': typeof AppAulasMateriaLivroIdOrdemRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/resumos/capitulo/$livroId/$ordem': typeof AppResumosCapituloLivroIdOrdemRoute
   '/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
@@ -554,13 +563,14 @@ export interface FileRoutesById {
   '/_app/resumos/': typeof AppResumosIndexRoute
   '/_app/simulados/': typeof AppSimuladosIndexRoute
   '/_app/vade-mecum/': typeof AppVadeMecumIndexRoute
-  '/_app/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRoute
+  '/_app/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRouteWithChildren
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/_app/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/_app/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/_app/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
   '/_app/vade-mecum/estatutos/': typeof AppVadeMecumEstatutosIndexRoute
+  '/_app/aulas/$materia/$livroId/$ordem': typeof AppAulasMateriaLivroIdOrdemRoute
   '/_app/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/_app/resumos/capitulo/$livroId/$ordem': typeof AppResumosCapituloLivroIdOrdemRoute
   '/_app/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
@@ -625,6 +635,7 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug/'
     | '/simulados/$slug/'
     | '/vade-mecum/estatutos/'
+    | '/aulas/$materia/$livroId/$ordem'
     | '/biblioteca/$slug/$bookId/ler'
     | '/resumos/capitulo/$livroId/$ordem'
     | '/simulados/$slug/resultado/$tentativaId'
@@ -682,6 +693,7 @@ export interface FileRouteTypes {
     | '/biblioteca/$slug'
     | '/simulados/$slug'
     | '/vade-mecum/estatutos'
+    | '/aulas/$materia/$livroId/$ordem'
     | '/biblioteca/$slug/$bookId/ler'
     | '/resumos/capitulo/$livroId/$ordem'
     | '/simulados/$slug/resultado/$tentativaId'
@@ -745,6 +757,7 @@ export interface FileRouteTypes {
     | '/_app/biblioteca/$slug/'
     | '/_app/simulados/$slug/'
     | '/_app/vade-mecum/estatutos/'
+    | '/_app/aulas/$materia/$livroId/$ordem'
     | '/_app/biblioteca/$slug/$bookId/ler'
     | '/_app/resumos/capitulo/$livroId/$ordem'
     | '/_app/simulados/$slug/resultado/$tentativaId'
@@ -1191,6 +1204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugBookIdLerRouteImport
       parentRoute: typeof AppBibliotecaSlugBookIdRoute
     }
+    '/_app/aulas/$materia/$livroId/$ordem': {
+      id: '/_app/aulas/$materia/$livroId/$ordem'
+      path: '/$ordem'
+      fullPath: '/aulas/$materia/$livroId/$ordem'
+      preLoaderRoute: typeof AppAulasMateriaLivroIdOrdemRouteImport
+      parentRoute: typeof AppAulasMateriaLivroIdRoute
+    }
   }
 }
 
@@ -1214,12 +1234,26 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
   AppAdminRouteChildren,
 )
 
+interface AppAulasMateriaLivroIdRouteChildren {
+  AppAulasMateriaLivroIdOrdemRoute: typeof AppAulasMateriaLivroIdOrdemRoute
+}
+
+const AppAulasMateriaLivroIdRouteChildren: AppAulasMateriaLivroIdRouteChildren =
+  {
+    AppAulasMateriaLivroIdOrdemRoute: AppAulasMateriaLivroIdOrdemRoute,
+  }
+
+const AppAulasMateriaLivroIdRouteWithChildren =
+  AppAulasMateriaLivroIdRoute._addFileChildren(
+    AppAulasMateriaLivroIdRouteChildren,
+  )
+
 interface AppAulasMateriaRouteChildren {
-  AppAulasMateriaLivroIdRoute: typeof AppAulasMateriaLivroIdRoute
+  AppAulasMateriaLivroIdRoute: typeof AppAulasMateriaLivroIdRouteWithChildren
 }
 
 const AppAulasMateriaRouteChildren: AppAulasMateriaRouteChildren = {
-  AppAulasMateriaLivroIdRoute: AppAulasMateriaLivroIdRoute,
+  AppAulasMateriaLivroIdRoute: AppAulasMateriaLivroIdRouteWithChildren,
 }
 
 const AppAulasMateriaRouteWithChildren = AppAulasMateriaRoute._addFileChildren(

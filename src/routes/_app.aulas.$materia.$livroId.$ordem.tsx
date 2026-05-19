@@ -4,7 +4,6 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState, useLayoutEffect, useRef } from "react";
 import {
   ArrowLeft,
-  BookOpen,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
