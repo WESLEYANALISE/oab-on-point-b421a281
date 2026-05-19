@@ -1,14 +1,15 @@
+import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import type { Materia } from "@/data/materias";
 import { cn } from "@/lib/utils";
 
-export function MateriaCard({ materia, compact = false }: { materia: Materia; compact?: boolean }) {
+function MateriaCardInner({ materia, compact = false }: { materia: Materia; compact?: boolean }) {
   return (
     <Link
       to="/materias/$slug"
       params={{ slug: materia.slug }}
       className={cn(
-        "group relative overflow-hidden rounded-xl border border-border bg-card transition-all hover:shadow-md hover:-translate-y-0.5",
+        "group relative overflow-hidden rounded-xl border border-border bg-card tap-feedback hover:shadow-md hover:-translate-y-0.5",
         compact ? "min-w-[180px] w-[180px]" : "w-full",
       )}
     >
@@ -23,3 +24,6 @@ export function MateriaCard({ materia, compact = false }: { materia: Materia; co
     </Link>
   );
 }
+
+export const MateriaCard = memo(MateriaCardInner);
+

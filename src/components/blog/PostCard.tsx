@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import { Clock, ArrowRight } from "lucide-react";
 import type { BlogPostListItem } from "@/lib/blog.functions";
@@ -5,14 +6,16 @@ import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
 const DATE = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" });
 
-export function PostCard({ post }: { post: BlogPostListItem }) {
+function PostCardInner({ post }: { post: BlogPostListItem }) {
+
   return (
     <Link
       to="/blog/$slug"
       params={{ slug: post.slug }}
-      className="group flex flex-col rounded-2xl overflow-hidden border border-border bg-card hover:border-gold/40 hover:-translate-y-0.5 transition-all"
+      className="group flex flex-col rounded-2xl overflow-hidden border border-border bg-card hover:border-gold/40 hover:-translate-y-0.5 tap-feedback"
     >
       <div className="aspect-[16/10] relative overflow-hidden bg-muted">
+
         {post.capa_url ? (
           <img
             src={supabaseImage(post.capa_url, { w: 640, q: 72 })}
