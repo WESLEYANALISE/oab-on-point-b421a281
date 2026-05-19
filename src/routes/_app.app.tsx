@@ -135,28 +135,6 @@ function AreaOABPage() {
           </>
         )}
       </section>
-
-      {/* ===== Ferramentas ===== */}
-      <section className="px-4 md:px-8">
-        <SectionTitle icon={GraduationCap} eyebrow="Plano completo de aprovação" title="Ferramentas de estudo" />
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-3">
-          {FERRAMENTAS.map(({ label, sub, icon: Icon, to }) => (
-            <Link
-              key={label}
-              to={to}
-              className="group relative overflow-hidden rounded-2xl border border-gold/12 bg-gradient-to-br from-[oklch(0.28_0.07_18)] to-[oklch(0.19_0.04_18)] p-3 min-h-[72px] flex items-start gap-2.5 hover:-translate-y-0.5 hover:border-gold/35 transition-all shadow-md shadow-black/30"
-            >
-              <div className="h-9 w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center shrink-0">
-                <Icon className="h-4 w-4 text-gold" strokeWidth={2} />
-              </div>
-              <div className="min-w-0 pt-0.5">
-                <p className="font-display font-semibold text-[13px] md:text-[15px] leading-tight tracking-tight truncate">{label}</p>
-                <p className="text-[10px] md:text-[11px] text-muted-foreground mt-0.5 leading-snug line-clamp-1">{sub}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
