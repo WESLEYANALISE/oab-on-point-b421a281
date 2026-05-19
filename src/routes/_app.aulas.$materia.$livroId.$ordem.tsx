@@ -120,7 +120,7 @@ function AulaCapitulo() {
   }
 
   return (
-    <div className="pb-36">
+    <div className="pb-24">
       {/* HEADER */}
       <header className="relative px-4 md:px-8 pt-5 pb-5 overflow-hidden border-b border-border bg-card/40">
         <div
