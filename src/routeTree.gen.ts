@@ -24,6 +24,7 @@ import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
 import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
+import { Route as AppCadernoErrosRouteImport } from './routes/_app.caderno-erros'
 import { Route as AppBlogRouteImport } from './routes/_app.blog'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
@@ -65,10 +66,12 @@ import { Route as AppBibliotecaSlugIndexRouteImport } from './routes/_app.biblio
 import { Route as AppVadeMecumEstatutosSlugRouteImport } from './routes/_app.vade-mecum.estatutos.$slug'
 import { Route as AppSimuladosSlugPraticarRouteImport } from './routes/_app.simulados.$slug.praticar'
 import { Route as AppBibliotecaSlugBookIdRouteImport } from './routes/_app.biblioteca.$slug.$bookId'
+import { Route as AppAulasMateriaLivroIdRouteImport } from './routes/_app.aulas.$materia.$livroId'
 import { Route as AppBibliotecaSlugBookIdIndexRouteImport } from './routes/_app.biblioteca.$slug.$bookId.index'
 import { Route as AppSimuladosSlugResultadoTentativaIdRouteImport } from './routes/_app.simulados.$slug.resultado.$tentativaId'
 import { Route as AppResumosCapituloLivroIdOrdemRouteImport } from './routes/_app.resumos.capitulo.$livroId.$ordem'
 import { Route as AppBibliotecaSlugBookIdLerRouteImport } from './routes/_app.biblioteca.$slug.$bookId.ler'
+import { Route as AppAulasMateriaLivroIdOrdemRouteImport } from './routes/_app.aulas.$materia.$livroId.$ordem'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -142,6 +145,11 @@ const AppMateriasRoute = AppMateriasRouteImport.update({
 const AppFlashcardsRoute = AppFlashcardsRouteImport.update({
   id: '/flashcards',
   path: '/flashcards',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCadernoErrosRoute = AppCadernoErrosRouteImport.update({
+  id: '/caderno-erros',
+  path: '/caderno-erros',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBlogRoute = AppBlogRouteImport.update({
@@ -352,6 +360,11 @@ const AppBibliotecaSlugBookIdRoute = AppBibliotecaSlugBookIdRouteImport.update({
   path: '/$bookId',
   getParentRoute: () => AppBibliotecaSlugRoute,
 } as any)
+const AppAulasMateriaLivroIdRoute = AppAulasMateriaLivroIdRouteImport.update({
+  id: '/$livroId',
+  path: '/$livroId',
+  getParentRoute: () => AppAulasMateriaRoute,
+} as any)
 const AppBibliotecaSlugBookIdIndexRoute =
   AppBibliotecaSlugBookIdIndexRouteImport.update({
     id: '/',
@@ -376,6 +389,12 @@ const AppBibliotecaSlugBookIdLerRoute =
     path: '/ler',
     getParentRoute: () => AppBibliotecaSlugBookIdRoute,
   } as any)
+const AppAulasMateriaLivroIdOrdemRoute =
+  AppAulasMateriaLivroIdOrdemRouteImport.update({
+    id: '/$ordem',
+    path: '/$ordem',
+    getParentRoute: () => AppAulasMateriaLivroIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -390,6 +409,7 @@ export interface FileRoutesByFullPath {
   '/aulas': typeof AppAulasRouteWithChildren
   '/biblioteca': typeof AppBibliotecaRouteWithChildren
   '/blog': typeof AppBlogRouteWithChildren
+  '/caderno-erros': typeof AppCadernoErrosRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
@@ -403,7 +423,7 @@ export interface FileRoutesByFullPath {
   '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
-  '/aulas/$materia': typeof AppAulasMateriaRoute
+  '/aulas/$materia': typeof AppAulasMateriaRouteWithChildren
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/blog/$slug': typeof AppBlogSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
@@ -427,12 +447,14 @@ export interface FileRoutesByFullPath {
   '/resumos/': typeof AppResumosIndexRoute
   '/simulados/': typeof AppSimuladosIndexRoute
   '/vade-mecum/': typeof AppVadeMecumIndexRoute
+  '/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRouteWithChildren
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
   '/vade-mecum/estatutos/': typeof AppVadeMecumEstatutosIndexRoute
+  '/aulas/$materia/$livroId/$ordem': typeof AppAulasMateriaLivroIdOrdemRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/resumos/capitulo/$livroId/$ordem': typeof AppResumosCapituloLivroIdOrdemRoute
   '/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
@@ -448,6 +470,7 @@ export interface FileRoutesByTo {
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/blog': typeof AppBlogRouteWithChildren
+  '/caderno-erros': typeof AppCadernoErrosRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
@@ -461,7 +484,7 @@ export interface FileRoutesByTo {
   '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
-  '/aulas/$materia': typeof AppAulasMateriaRoute
+  '/aulas/$materia': typeof AppAulasMateriaRouteWithChildren
   '/blog/$slug': typeof AppBlogSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
@@ -484,11 +507,13 @@ export interface FileRoutesByTo {
   '/resumos': typeof AppResumosIndexRoute
   '/simulados': typeof AppSimuladosIndexRoute
   '/vade-mecum': typeof AppVadeMecumIndexRoute
+  '/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRouteWithChildren
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
   '/simulados/$slug': typeof AppSimuladosSlugIndexRoute
   '/vade-mecum/estatutos': typeof AppVadeMecumEstatutosIndexRoute
+  '/aulas/$materia/$livroId/$ordem': typeof AppAulasMateriaLivroIdOrdemRoute
   '/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/resumos/capitulo/$livroId/$ordem': typeof AppResumosCapituloLivroIdOrdemRoute
   '/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
@@ -509,6 +534,7 @@ export interface FileRoutesById {
   '/_app/aulas': typeof AppAulasRouteWithChildren
   '/_app/biblioteca': typeof AppBibliotecaRouteWithChildren
   '/_app/blog': typeof AppBlogRouteWithChildren
+  '/_app/caderno-erros': typeof AppCadernoErrosRoute
   '/_app/flashcards': typeof AppFlashcardsRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/noticias': typeof AppNoticiasRouteWithChildren
@@ -522,7 +548,7 @@ export interface FileRoutesById {
   '/_app/admin/narracoes': typeof AppAdminNarracoesRoute
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
-  '/_app/aulas/$materia': typeof AppAulasMateriaRoute
+  '/_app/aulas/$materia': typeof AppAulasMateriaRouteWithChildren
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/_app/blog/$slug': typeof AppBlogSlugRoute
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
@@ -546,12 +572,14 @@ export interface FileRoutesById {
   '/_app/resumos/': typeof AppResumosIndexRoute
   '/_app/simulados/': typeof AppSimuladosIndexRoute
   '/_app/vade-mecum/': typeof AppVadeMecumIndexRoute
+  '/_app/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRouteWithChildren
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/_app/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/_app/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/_app/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
   '/_app/vade-mecum/estatutos/': typeof AppVadeMecumEstatutosIndexRoute
+  '/_app/aulas/$materia/$livroId/$ordem': typeof AppAulasMateriaLivroIdOrdemRoute
   '/_app/biblioteca/$slug/$bookId/ler': typeof AppBibliotecaSlugBookIdLerRoute
   '/_app/resumos/capitulo/$livroId/$ordem': typeof AppResumosCapituloLivroIdOrdemRoute
   '/_app/simulados/$slug/resultado/$tentativaId': typeof AppSimuladosSlugResultadoTentativaIdRoute
@@ -572,6 +600,7 @@ export interface FileRouteTypes {
     | '/aulas'
     | '/biblioteca'
     | '/blog'
+    | '/caderno-erros'
     | '/flashcards'
     | '/materias'
     | '/noticias'
@@ -609,12 +638,14 @@ export interface FileRouteTypes {
     | '/resumos/'
     | '/simulados/'
     | '/vade-mecum/'
+    | '/aulas/$materia/$livroId'
     | '/biblioteca/$slug/$bookId'
     | '/simulados/$slug/praticar'
     | '/vade-mecum/estatutos/$slug'
     | '/biblioteca/$slug/'
     | '/simulados/$slug/'
     | '/vade-mecum/estatutos/'
+    | '/aulas/$materia/$livroId/$ordem'
     | '/biblioteca/$slug/$bookId/ler'
     | '/resumos/capitulo/$livroId/$ordem'
     | '/simulados/$slug/resultado/$tentativaId'
@@ -630,6 +661,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/audioaulas'
     | '/blog'
+    | '/caderno-erros'
     | '/flashcards'
     | '/materias'
     | '/noticias'
@@ -666,11 +698,13 @@ export interface FileRouteTypes {
     | '/resumos'
     | '/simulados'
     | '/vade-mecum'
+    | '/aulas/$materia/$livroId'
     | '/simulados/$slug/praticar'
     | '/vade-mecum/estatutos/$slug'
     | '/biblioteca/$slug'
     | '/simulados/$slug'
     | '/vade-mecum/estatutos'
+    | '/aulas/$materia/$livroId/$ordem'
     | '/biblioteca/$slug/$bookId/ler'
     | '/resumos/capitulo/$livroId/$ordem'
     | '/simulados/$slug/resultado/$tentativaId'
@@ -690,6 +724,7 @@ export interface FileRouteTypes {
     | '/_app/aulas'
     | '/_app/biblioteca'
     | '/_app/blog'
+    | '/_app/caderno-erros'
     | '/_app/flashcards'
     | '/_app/materias'
     | '/_app/noticias'
@@ -727,12 +762,14 @@ export interface FileRouteTypes {
     | '/_app/resumos/'
     | '/_app/simulados/'
     | '/_app/vade-mecum/'
+    | '/_app/aulas/$materia/$livroId'
     | '/_app/biblioteca/$slug/$bookId'
     | '/_app/simulados/$slug/praticar'
     | '/_app/vade-mecum/estatutos/$slug'
     | '/_app/biblioteca/$slug/'
     | '/_app/simulados/$slug/'
     | '/_app/vade-mecum/estatutos/'
+    | '/_app/aulas/$materia/$livroId/$ordem'
     | '/_app/biblioteca/$slug/$bookId/ler'
     | '/_app/resumos/capitulo/$livroId/$ordem'
     | '/_app/simulados/$slug/resultado/$tentativaId'
@@ -855,6 +892,13 @@ declare module '@tanstack/react-router' {
       path: '/flashcards'
       fullPath: '/flashcards'
       preLoaderRoute: typeof AppFlashcardsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/caderno-erros': {
+      id: '/_app/caderno-erros'
+      path: '/caderno-erros'
+      fullPath: '/caderno-erros'
+      preLoaderRoute: typeof AppCadernoErrosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/blog': {
@@ -1144,6 +1188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugBookIdRouteImport
       parentRoute: typeof AppBibliotecaSlugRoute
     }
+    '/_app/aulas/$materia/$livroId': {
+      id: '/_app/aulas/$materia/$livroId'
+      path: '/$livroId'
+      fullPath: '/aulas/$materia/$livroId'
+      preLoaderRoute: typeof AppAulasMateriaLivroIdRouteImport
+      parentRoute: typeof AppAulasMateriaRoute
+    }
     '/_app/biblioteca/$slug/$bookId/': {
       id: '/_app/biblioteca/$slug/$bookId/'
       path: '/'
@@ -1172,6 +1223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugBookIdLerRouteImport
       parentRoute: typeof AppBibliotecaSlugBookIdRoute
     }
+    '/_app/aulas/$materia/$livroId/$ordem': {
+      id: '/_app/aulas/$materia/$livroId/$ordem'
+      path: '/$ordem'
+      fullPath: '/aulas/$materia/$livroId/$ordem'
+      preLoaderRoute: typeof AppAulasMateriaLivroIdOrdemRouteImport
+      parentRoute: typeof AppAulasMateriaLivroIdRoute
+    }
   }
 }
 
@@ -1195,13 +1253,39 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
   AppAdminRouteChildren,
 )
 
+interface AppAulasMateriaLivroIdRouteChildren {
+  AppAulasMateriaLivroIdOrdemRoute: typeof AppAulasMateriaLivroIdOrdemRoute
+}
+
+const AppAulasMateriaLivroIdRouteChildren: AppAulasMateriaLivroIdRouteChildren =
+  {
+    AppAulasMateriaLivroIdOrdemRoute: AppAulasMateriaLivroIdOrdemRoute,
+  }
+
+const AppAulasMateriaLivroIdRouteWithChildren =
+  AppAulasMateriaLivroIdRoute._addFileChildren(
+    AppAulasMateriaLivroIdRouteChildren,
+  )
+
+interface AppAulasMateriaRouteChildren {
+  AppAulasMateriaLivroIdRoute: typeof AppAulasMateriaLivroIdRouteWithChildren
+}
+
+const AppAulasMateriaRouteChildren: AppAulasMateriaRouteChildren = {
+  AppAulasMateriaLivroIdRoute: AppAulasMateriaLivroIdRouteWithChildren,
+}
+
+const AppAulasMateriaRouteWithChildren = AppAulasMateriaRoute._addFileChildren(
+  AppAulasMateriaRouteChildren,
+)
+
 interface AppAulasRouteChildren {
-  AppAulasMateriaRoute: typeof AppAulasMateriaRoute
+  AppAulasMateriaRoute: typeof AppAulasMateriaRouteWithChildren
   AppAulasIndexRoute: typeof AppAulasIndexRoute
 }
 
 const AppAulasRouteChildren: AppAulasRouteChildren = {
-  AppAulasMateriaRoute: AppAulasMateriaRoute,
+  AppAulasMateriaRoute: AppAulasMateriaRouteWithChildren,
   AppAulasIndexRoute: AppAulasIndexRoute,
 }
 
@@ -1295,6 +1379,7 @@ interface AppRouteChildren {
   AppAulasRoute: typeof AppAulasRouteWithChildren
   AppBibliotecaRoute: typeof AppBibliotecaRouteWithChildren
   AppBlogRoute: typeof AppBlogRouteWithChildren
+  AppCadernoErrosRoute: typeof AppCadernoErrosRoute
   AppFlashcardsRoute: typeof AppFlashcardsRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
@@ -1334,6 +1419,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAulasRoute: AppAulasRouteWithChildren,
   AppBibliotecaRoute: AppBibliotecaRouteWithChildren,
   AppBlogRoute: AppBlogRouteWithChildren,
+  AppCadernoErrosRoute: AppCadernoErrosRoute,
   AppFlashcardsRoute: AppFlashcardsRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
   AppNoticiasRoute: AppNoticiasRouteWithChildren,
