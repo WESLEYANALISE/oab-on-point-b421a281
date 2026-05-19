@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft, ArrowRight, Flame, Target, BookOpen, Clock,
   Play, Layers, FileText, Notebook, RefreshCw, ChevronRight,
-  Calendar, Sparkles, TrendingUp,
+  Calendar, Sparkles, TrendingUp, CalendarDays, ClipboardList, GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MATERIAS_OAB_46 } from "@/data/oab-materias-46";
