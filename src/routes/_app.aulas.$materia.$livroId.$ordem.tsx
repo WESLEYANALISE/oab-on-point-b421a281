@@ -32,7 +32,18 @@ import {
 } from "@/lib/aulas-trilha.functions";
 import { cn } from "@/lib/utils";
 
+type Etapa = "ler" | "flashcards" | "questoes" | "erros" | "simulado";
+const ETAPAS_IDS: Etapa[] = ["ler", "flashcards", "questoes", "erros", "simulado"];
+
 export const Route = createFileRoute("/_app/aulas/$materia/$livroId/$ordem")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const e = search.etapa;
+    return {
+      etapa: typeof e === "string" && (ETAPAS_IDS as string[]).includes(e)
+        ? (e as Etapa)
+        : ("ler" as Etapa),
+    };
+  },
   loader: ({ context, params }) => {
     const mat = getMateriaAula(params.materia);
     if (!mat) throw notFound();
@@ -46,7 +57,6 @@ export const Route = createFileRoute("/_app/aulas/$materia/$livroId/$ordem")({
   ),
 });
 
-type Etapa = "ler" | "flashcards" | "questoes" | "erros" | "simulado";
 const ETAPAS: { id: Etapa; label: string; icon: LucideIcon }[] = [
   { id: "ler", label: "Aula", icon: BookOpen },
   { id: "flashcards", label: "Flashcards", icon: Layers },
@@ -55,13 +65,18 @@ const ETAPAS: { id: Etapa; label: string; icon: LucideIcon }[] = [
   { id: "simulado", label: "Simulado", icon: GraduationCap },
 ];
 
+
 function AulaCapitulo() {
   const { materia, livroId, ordem } = Route.useParams();
+  const { etapa: etapaInicial } = Route.useSearch();
   const { materia: mat } = Route.useLoaderData();
   const ordemNum = Number(ordem);
   const { data } = useSuspenseQuery(resumoLivroQueryOptions(livroId));
 
-  const [etapa, setEtapa] = useState<Etapa>("ler");
+  const [etapa, setEtapa] = useState<Etapa>(etapaInicial);
+  useEffect(() => {
+    setEtapa(etapaInicial);
+  }, [etapaInicial]);
   const [feitas, setFeitas] = useState<Record<Etapa, boolean>>({
     ler: false,
     flashcards: false,
@@ -70,6 +85,7 @@ function AulaCapitulo() {
     simulado: false,
   });
   const marcarFeita = (e: Etapa) => setFeitas((p) => ({ ...p, [e]: true }));
+
 
   // estado das partes da aula (controlado aqui para o header mostrar)
   const [parteIdx, setParteIdx] = useState(0);
@@ -104,7 +120,7 @@ function AulaCapitulo() {
   }
 
   return (
-    <div className="pb-36">
+    <div className="pb-24">
       {/* HEADER */}
       <header className="relative px-4 md:px-8 pt-5 pb-5 overflow-hidden border-b border-border bg-card/40">
         <div
@@ -205,8 +221,8 @@ function AulaCapitulo() {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <div className="max-w-3xl mx-auto px-3 pt-2.5 pb-2">
-          <EtapasFooter etapa={etapa} feitas={feitas} onPick={setEtapa} />
-          <div className="mt-2 grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2">
+
             {prev ? (
               <Link
                 to="/aulas/$materia/$livroId/$ordem"
