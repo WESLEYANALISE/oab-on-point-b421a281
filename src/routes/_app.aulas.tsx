@@ -1,7 +1,62 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ComingSoon } from "@/components/shared/ComingSoon";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { AULAS_MATERIAS } from "@/data/aulas-oab";
+import { GraduationCap } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/aulas")({
-  head: () => ({ meta: [{ title: "Aulas Interativas — OAB na Risca" }, { name: "description", content: "Aulas em slides com quiz inline para todas as matérias da OAB." }] }),
-  component: () => <ComingSoon title="Aulas Interativas" subtitle="Cada aula é um conjunto de slides com texto, exemplos práticos e quiz inline. Você marca como concluída e segue para a próxima." />,
+  head: () => ({
+    meta: [
+      { title: "Aulas OAB 1ª Fase — OAB na Risca" },
+      { name: "description", content: "Aulas guiadas por módulo e subtema, com resumo, flashcards, questões e simulado em uma trilha de 8 passos." },
+    ],
+  }),
+  component: AulasIndex,
+  notFoundComponent: () => <div className="p-8">Página não encontrada.</div>,
+  errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
 });
+
+function AulasIndex() {
+  return (
+    <div className="pb-16">
+      <header className="px-4 md:px-8 pt-6 pb-5 bg-gradient-toga text-primary-foreground">
+        <div className="flex items-center gap-2 text-gold/85 text-[10px] uppercase tracking-[0.22em] font-semibold mb-1.5">
+          <GraduationCap className="h-3.5 w-3.5" /> Hub de aulas
+        </div>
+        <h1 className="font-display font-semibold text-[26px] md:text-4xl tracking-tight">Aulas OAB 1ª Fase</h1>
+        <p className="mt-1.5 text-[13px] md:text-sm text-primary-foreground/80 max-w-xl">
+          Escolha uma matéria, percorra os módulos e siga a trilha de 8 passos até dominar cada subtema.
+        </p>
+      </header>
+
+      <section className="px-4 md:px-8 mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {AULAS_MATERIAS.map((m) => {
+          const indisponivel = m.modulos.length === 0;
+          return (
+            <Link
+              key={m.materiaId}
+              to="/aulas/$materia"
+              params={{ materia: m.materiaId }}
+              className={cn(
+                "group relative overflow-hidden rounded-2xl border border-border bg-card tap-feedback hover:-translate-y-0.5 hover:border-gold/40 transition-all shadow-md shadow-black/20",
+                indisponivel && "opacity-60",
+              )}
+            >
+              <div className={cn("h-20 bg-gradient-to-br p-3 flex items-start justify-between", m.cor)}>
+                <span className="text-3xl">{m.emoji}</span>
+                {indisponivel && (
+                  <span className="text-[9px] uppercase tracking-wider text-white/90 font-semibold bg-black/30 rounded px-1.5 py-0.5">Em breve</span>
+                )}
+              </div>
+              <div className="p-3">
+                <h2 className="font-display text-[13px] md:text-sm leading-tight">{m.nome}</h2>
+                <p className="text-[10.5px] text-muted-foreground mt-1">
+                  {indisponivel ? "Trilha em preparação" : `${m.modulos.length} módulos`}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
+      </section>
+    </div>
+  );
+}
