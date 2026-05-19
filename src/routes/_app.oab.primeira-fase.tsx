@@ -56,11 +56,121 @@ function PrimeiraFasePage() {
       />
 
       <div className="px-4 md:px-8 mt-6 md:mt-8 space-y-7">
+        <CalendarioCarrossel />
         <AcoesPrincipais />
         <TrilhaTimeline />
         <FerramentasEstudo />
       </div>
     </div>
+  );
+}
+
+// ==================== CALENDÁRIO CARROSSEL ====================
+function CalendarioCarrossel() {
+  const eventos = useMemo(() => {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const exame = EXAMES_OAB.find((e) => e.status === "em-andamento") ?? EXAMES_OAB[0];
+    return exame.eventos.map((ev) => {
+      let dias: number | null = null;
+      if (ev.data && ev.data !== "previsto") {
+        const d = new Date(ev.data + "T00:00:00");
+        dias = Math.round((d.getTime() - hoje.getTime()) / 86400000);
+      }
+      return { ...ev, dias };
+    });
+  }, []);
+
+  const proximaFase = eventos.find((e) => /1ª fase/i.test(e.titulo) && e.dias !== null && e.dias >= 0)
+    ?? eventos.find((e) => e.status === "atual")
+    ?? eventos.find((e) => e.status === "previsto");
+
+  return (
+    <section>
+      <div className="flex items-end justify-between gap-3 mb-3.5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="h-8 w-8 md:h-9 md:w-9 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center shrink-0">
+            <CalendarClock className="h-4 w-4 text-gold" strokeWidth={2} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-gold/85 font-semibold">Datas oficiais</p>
+            <h2 className="font-display font-semibold text-[19px] md:text-[22px] leading-[1.1] tracking-tight truncate">
+              Próximas etapas
+            </h2>
+          </div>
+        </div>
+        <Link to="/oab/calendario" className="text-[11px] md:text-xs font-medium text-gold hover:text-gold/80 inline-flex items-center gap-0.5 shrink-0">
+          Ver tudo <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+
+      {proximaFase && (
+        <div className="mb-3 rounded-xl border border-gold/25 bg-gradient-to-r from-gold/12 to-transparent px-3.5 py-2.5 flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-gold/20 border border-gold/30 grid place-items-center shrink-0">
+            <CalendarClock className="h-4 w-4 text-gold" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-gold/85 font-semibold">Próxima etapa</p>
+            <p className="text-[13px] font-semibold leading-tight truncate">{proximaFase.titulo}</p>
+          </div>
+          <div className="text-right shrink-0">
+            {proximaFase.dias !== null && proximaFase.dias >= 0 ? (
+              <>
+                <p className="font-display font-bold text-gold text-[20px] leading-none tabular-nums">{proximaFase.dias}</p>
+                <p className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground font-semibold mt-0.5">
+                  {proximaFase.dias === 1 ? "dia" : "dias"}
+                </p>
+              </>
+            ) : (
+              <p className="text-[11px] font-semibold text-gold">{proximaFase.rotulo}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="-mx-4 md:mx-0 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2.5 px-4 md:px-0 snap-x snap-mandatory">
+          {eventos.map((ev, i) => {
+            const isPassado = ev.dias !== null && ev.dias < 0;
+            const isAtual = ev.status === "atual";
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "snap-start shrink-0 w-[150px] rounded-xl border p-3 flex flex-col gap-1.5 transition-all",
+                  isAtual
+                    ? "border-gold/40 bg-gold/10"
+                    : isPassado
+                      ? "border-border bg-muted/30 opacity-60"
+                      : "border-border bg-card hover:border-gold/30",
+                )}
+              >
+                <p className={cn(
+                  "text-[10px] uppercase tracking-[0.16em] font-semibold tabular-nums",
+                  isAtual ? "text-gold" : "text-muted-foreground",
+                )}>
+                  {ev.rotulo}
+                </p>
+                <p className="text-[12px] font-semibold leading-snug line-clamp-2 min-h-[2.4em]">{ev.titulo}</p>
+                <div className="mt-auto pt-1">
+                  {ev.dias !== null ? (
+                    ev.dias >= 0 ? (
+                      <p className="text-[10.5px] text-muted-foreground">
+                        em <span className="font-semibold text-foreground tabular-nums">{ev.dias}</span> {ev.dias === 1 ? "dia" : "dias"}
+                      </p>
+                    ) : (
+                      <p className="text-[10.5px] text-muted-foreground">concluído</p>
+                    )
+                  ) : (
+                    <p className="text-[10.5px] text-muted-foreground italic">data prevista</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
   );
 }
 
