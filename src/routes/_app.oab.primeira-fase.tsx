@@ -266,42 +266,34 @@ function AcoesPrincipais() {
     {
       to: "/plano-estudo" as const,
       icon: Calendar,
-      eyebrow: "Personalizado",
-      title: "Meu plano de estudo",
-      desc: "Defina sua meta e horas por dia",
+      title: "Meu plano",
+      desc: "Meta e horas",
     },
     {
       to: "/oab/progresso" as const,
       icon: Sparkles,
-      eyebrow: "Sua evolução",
       title: "Meu progresso",
-      desc: "Acertos, matérias e histórico",
+      desc: "Acertos e histórico",
     },
   ];
   return (
-    <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <section className="grid grid-cols-2 gap-2.5 md:gap-3">
       {acoes.map((a) => (
         <Link
           key={a.to}
           to={a.to}
-          className="group relative overflow-hidden rounded-2xl border border-gold/20 bg-card p-4 md:p-5 shadow-md shadow-black/20 hover:-translate-y-0.5 hover:border-gold/40 transition-all"
+          className="group relative overflow-hidden rounded-2xl border border-gold/20 bg-card p-3 md:p-4 shadow-md shadow-black/20 hover:-translate-y-0.5 hover:border-gold/40 transition-all tap-feedback"
         >
-          <div className="absolute -top-10 -right-8 h-28 w-28 rounded-full bg-gold/10 blur-2xl pointer-events-none" />
-          <div className="relative flex items-start gap-3">
-            <div className="h-11 w-11 rounded-xl bg-gold/15 border border-gold/30 grid place-items-center shrink-0">
-              <a.icon className="h-5 w-5 text-gold" strokeWidth={2} />
+          <div className="absolute -top-10 -right-8 h-24 w-24 rounded-full bg-gold/10 blur-2xl pointer-events-none" />
+          <div className="relative flex items-center gap-2.5">
+            <div className="h-10 w-10 rounded-xl bg-gold/15 border border-gold/30 grid place-items-center shrink-0">
+              <a.icon className="h-[18px] w-[18px] text-gold" strokeWidth={2} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] uppercase tracking-[0.2em] text-gold/90 font-semibold mb-1">
-                {a.eyebrow}
-              </p>
-              <h3 className="font-display font-semibold text-[16px] md:text-[17px] leading-tight tracking-tight">
+              <h3 className="font-display font-semibold text-[14px] md:text-[15px] leading-tight tracking-tight truncate">
                 {a.title}
               </h3>
-              <p className="text-[11.5px] text-muted-foreground mt-1 line-clamp-2">{a.desc}</p>
-            </div>
-            <div className="h-7 w-7 rounded-full bg-gold/15 border border-gold/30 grid place-items-center shrink-0 group-hover:translate-x-0.5 group-hover:bg-gold/30 transition-all">
-              <ChevronRight className="h-3.5 w-3.5 text-gold" />
+              <p className="text-[10.5px] md:text-[11px] text-muted-foreground mt-0.5 truncate">{a.desc}</p>
             </div>
           </div>
         </Link>
