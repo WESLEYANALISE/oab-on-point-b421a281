@@ -260,3 +260,56 @@ export const listarCadernoErros = createServerFn({ method: "POST" })
       })),
     };
   });
+
+// ====================================================================
+// SIMULADO DO CAPÍTULO — 10 questões, cache por capítulo
+// ====================================================================
+
+export const obterSimuladoCapitulo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      resumo_livro_id: z.string().uuid(),
+      ordem: z.number().int().min(1).max(999),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const existente = await supabaseAdmin
+      .from("aula_capitulo_simulado")
+      .select("questoes")
+      .eq("resumo_livro_id", data.resumo_livro_id)
+      .eq("ordem", data.ordem)
+      .maybeSingle();
+
+    if (existente.data) {
+      return { questoes: existente.data.questoes as Questao[] };
+    }
+
+    const cap = await getCapitulo(data.resumo_livro_id, data.ordem);
+    const conteudo = (cap.conteudo_markdown ?? "").slice(0, 6000);
+
+    const system =
+      "Você é examinador estilo FGV / OAB 1ª fase, em português do Brasil. " +
+      'Devolva APENAS JSON no formato {"questoes":[{"enunciado":"...","alternativas":{"A":"...","B":"...","C":"...","D":"...","E":"..."},"correta":"A","justificativa":"..."}]}. ' +
+      "Gere EXATAMENTE 10 questões de múltipla escolha (A–E) simulando prova OAB sobre o capítulo. " +
+      "Varie os temas dentro do capítulo. Enunciado: 3 a 6 linhas, com caso prático. " +
+      "Apenas UMA alternativa correta. Justificativa: 2-4 frases com fundamento legal.";
+    const user = `Capítulo: ${cap.titulo}\n\nConteúdo:\n${conteudo}`;
+
+    const parsed = await chamarGeminiJson(system, user, 14000);
+    const questoes: Questao[] = (parsed?.questoes ?? [])
+      .filter(
+        (q: any) =>
+          q?.enunciado && q?.alternativas?.A && q?.alternativas?.B && q?.correta,
+      )
+      .slice(0, 10);
+    if (!questoes.length) throw new Error("IA não gerou simulado");
+
+    await supabaseAdmin
+      .from("aula_capitulo_simulado")
+      .upsert(
+        { resumo_livro_id: data.resumo_livro_id, ordem: data.ordem, questoes },
+        { onConflict: "resumo_livro_id,ordem" },
+      );
+    return { questoes };
+  });
