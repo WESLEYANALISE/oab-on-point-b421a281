@@ -1,10 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, ChevronRight, Loader2 } from "lucide-react";
+import { BookOpen, ChevronRight, Loader2 } from "lucide-react";
 import { getAreasDaMateria, getMateriaAula } from "@/data/aulas-oab";
 import { listarLivrosPorMateria } from "@/lib/aulas.functions";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/aulas/$materia/")({
   component: MateriaAulaPage,
@@ -25,25 +24,36 @@ function MateriaAulaPage() {
 
   return (
     <div className="pb-16">
-      <header className={cn("relative px-4 md:px-8 pt-5 pb-6 bg-gradient-to-br text-primary-foreground", materia.cor)}>
-        <Link to="/aulas" className="inline-flex items-center gap-1.5 text-[12px] text-white/85 hover:text-white mb-3">
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-        </Link>
-        <div className="flex items-start gap-3">
-          <div className="h-12 w-12 rounded-xl bg-white/15 grid place-items-center text-2xl shrink-0">{materia.emoji}</div>
+      <header className="relative px-4 md:px-8 pt-5 pb-6 overflow-hidden border-b border-border bg-card/40">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-60"
+          style={{
+            background:
+              "radial-gradient(60% 80% at 0% 0%, color-mix(in oklab, var(--gold) 14%, transparent), transparent 70%), radial-gradient(50% 60% at 100% 100%, color-mix(in oklab, var(--gold) 8%, transparent), transparent 70%)",
+          }}
+        />
+        <div className="relative flex items-start gap-3">
+          <div className="h-12 w-12 rounded-xl border border-gold/30 bg-gold/10 grid place-items-center text-2xl shrink-0">
+            {materia.emoji}
+          </div>
           <div className="min-w-0">
-            <h1 className="font-display font-semibold text-2xl md:text-3xl tracking-tight">{materia.nome}</h1>
-            <p className="text-[13px] text-white/85 mt-1 max-w-xl">{materia.descricao}</p>
+            <h1 className="font-display font-semibold text-foreground leading-[1.15] text-[clamp(1.15rem,4.8vw,1.875rem)]">
+              {materia.nome}
+            </h1>
+            <p className="text-[13px] text-muted-foreground mt-1 max-w-xl">
+              {materia.descricao}
+            </p>
           </div>
         </div>
         {livros.length > 0 && (
-          <div className="mt-4 flex gap-2 text-[11px]">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5">
+          <div className="relative mt-4 flex gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 text-gold px-3 py-1.5">
               <BookOpen className="h-3.5 w-3.5" /> {livros.length} temas
             </span>
           </div>
         )}
       </header>
+
 
       <section className="px-4 md:px-8 mt-5">
         <div className="flex items-end justify-between mb-3">
