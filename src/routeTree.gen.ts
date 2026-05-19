@@ -36,6 +36,7 @@ import { Route as AppSimuladosIndexRouteImport } from './routes/_app.simulados.i
 import { Route as AppResumosIndexRouteImport } from './routes/_app.resumos.index'
 import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
+import { Route as AppAulasIndexRouteImport } from './routes/_app.aulas.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
 import { Route as ApiPublicSeedProvasRouteImport } from './routes/api.public.seed-provas'
 import { Route as AppResumosLivroIdRouteImport } from './routes/_app.resumos.$livroId'
@@ -202,6 +203,11 @@ const AppBibliotecaIndexRoute = AppBibliotecaIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppBibliotecaRoute,
+} as any)
+const AppAulasIndexRoute = AppAulasIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAulasRoute,
 } as any)
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/',
@@ -415,6 +421,7 @@ export interface FileRoutesByFullPath {
   '/resumos/$livroId': typeof AppResumosLivroIdRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/admin/': typeof AppAdminIndexRoute
+  '/aulas/': typeof AppAulasIndexRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/provas/': typeof AppProvasIndexRoute
   '/resumos/': typeof AppResumosIndexRoute
@@ -440,7 +447,6 @@ export interface FileRoutesByTo {
   '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
-  '/aulas': typeof AppAulasRouteWithChildren
   '/blog': typeof AppBlogRouteWithChildren
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
@@ -472,6 +478,7 @@ export interface FileRoutesByTo {
   '/resumos/$livroId': typeof AppResumosLivroIdRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/admin': typeof AppAdminIndexRoute
+  '/aulas': typeof AppAulasIndexRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
   '/provas': typeof AppProvasIndexRoute
   '/resumos': typeof AppResumosIndexRoute
@@ -533,6 +540,7 @@ export interface FileRoutesById {
   '/_app/resumos/$livroId': typeof AppResumosLivroIdRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/_app/admin/': typeof AppAdminIndexRoute
+  '/_app/aulas/': typeof AppAulasIndexRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/provas/': typeof AppProvasIndexRoute
   '/_app/resumos/': typeof AppResumosIndexRoute
@@ -595,6 +603,7 @@ export interface FileRouteTypes {
     | '/resumos/$livroId'
     | '/api/public/seed-provas'
     | '/admin/'
+    | '/aulas/'
     | '/biblioteca/'
     | '/provas/'
     | '/resumos/'
@@ -620,7 +629,6 @@ export interface FileRouteTypes {
     | '/app'
     | '/assistente'
     | '/audioaulas'
-    | '/aulas'
     | '/blog'
     | '/flashcards'
     | '/materias'
@@ -652,6 +660,7 @@ export interface FileRouteTypes {
     | '/resumos/$livroId'
     | '/api/public/seed-provas'
     | '/admin'
+    | '/aulas'
     | '/biblioteca'
     | '/provas'
     | '/resumos'
@@ -712,6 +721,7 @@ export interface FileRouteTypes {
     | '/_app/resumos/$livroId'
     | '/api/public/seed-provas'
     | '/_app/admin/'
+    | '/_app/aulas/'
     | '/_app/biblioteca/'
     | '/_app/provas/'
     | '/_app/resumos/'
@@ -930,6 +940,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/biblioteca/'
       preLoaderRoute: typeof AppBibliotecaIndexRouteImport
       parentRoute: typeof AppBibliotecaRoute
+    }
+    '/_app/aulas/': {
+      id: '/_app/aulas/'
+      path: '/'
+      fullPath: '/aulas/'
+      preLoaderRoute: typeof AppAulasIndexRouteImport
+      parentRoute: typeof AppAulasRoute
     }
     '/_app/admin/': {
       id: '/_app/admin/'
@@ -1180,10 +1197,12 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 
 interface AppAulasRouteChildren {
   AppAulasMateriaRoute: typeof AppAulasMateriaRoute
+  AppAulasIndexRoute: typeof AppAulasIndexRoute
 }
 
 const AppAulasRouteChildren: AppAulasRouteChildren = {
   AppAulasMateriaRoute: AppAulasMateriaRoute,
+  AppAulasIndexRoute: AppAulasIndexRoute,
 }
 
 const AppAulasRouteWithChildren = AppAulasRoute._addFileChildren(
