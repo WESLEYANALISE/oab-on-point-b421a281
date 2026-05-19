@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      aula_capitulo_flashcards: {
+        Row: {
+          cards: Json
+          created_at: string
+          id: string
+          ordem: number
+          resumo_livro_id: string
+        }
+        Insert: {
+          cards: Json
+          created_at?: string
+          id?: string
+          ordem: number
+          resumo_livro_id: string
+        }
+        Update: {
+          cards?: Json
+          created_at?: string
+          id?: string
+          ordem?: number
+          resumo_livro_id?: string
+        }
+        Relationships: []
+      }
+      aula_capitulo_questoes: {
+        Row: {
+          created_at: string
+          id: string
+          ordem: number
+          questoes: Json
+          resumo_livro_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ordem: number
+          questoes: Json
+          resumo_livro_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ordem?: number
+          questoes?: Json
+          resumo_livro_id?: string
+        }
+        Relationships: []
+      }
+      aula_capitulo_respostas: {
+        Row: {
+          acertou: boolean
+          alternativa_correta: string
+          alternativa_escolhida: string
+          alternativas_snapshot: Json
+          created_at: string
+          enunciado_snapshot: string
+          id: string
+          justificativa_snapshot: string | null
+          materia: string | null
+          ordem: number
+          questao_idx: number
+          resumo_livro_id: string
+          user_id: string
+        }
+        Insert: {
+          acertou: boolean
+          alternativa_correta: string
+          alternativa_escolhida: string
+          alternativas_snapshot: Json
+          created_at?: string
+          enunciado_snapshot: string
+          id?: string
+          justificativa_snapshot?: string | null
+          materia?: string | null
+          ordem: number
+          questao_idx: number
+          resumo_livro_id: string
+          user_id: string
+        }
+        Update: {
+          acertou?: boolean
+          alternativa_correta?: string
+          alternativa_escolhida?: string
+          alternativas_snapshot?: Json
+          created_at?: string
+          enunciado_snapshot?: string
+          id?: string
+          justificativa_snapshot?: string | null
+          materia?: string | null
+          ordem?: number
+          questao_idx?: number
+          resumo_livro_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       aulas_progresso: {
         Row: {
           created_at: string
