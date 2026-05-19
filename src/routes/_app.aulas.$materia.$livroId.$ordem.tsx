@@ -100,25 +100,29 @@ function AulaCapitulo() {
 
   return (
     <div className="pb-28">
-      <header
-        className={cn(
-          "relative px-4 md:px-8 pt-4 pb-5 bg-gradient-to-br text-primary-foreground",
-          mat.cor,
-        )}
-      >
-        <Link
-          to="/aulas/$materia/$livroId"
-          params={{ materia, livroId }}
-          className="inline-flex items-center gap-1.5 text-[12px] text-white/85 hover:text-white mb-2"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-        </Link>
-        <p className="text-[10px] uppercase tracking-[0.18em] text-white/70">
-          {mat.nome} · Aula {atual.ordem} de {capitulos.length}
-        </p>
-        <h1 className="font-display text-xl md:text-2xl leading-tight mt-1">
-          {normalizarTitulo(atual.titulo)}
-        </h1>
+      <header className="relative px-4 md:px-8 pt-5 pb-6 overflow-hidden border-b border-border bg-card/40">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-60"
+          style={{
+            background:
+              "radial-gradient(60% 80% at 0% 0%, color-mix(in oklab, var(--gold) 14%, transparent), transparent 70%), radial-gradient(50% 60% at 100% 100%, color-mix(in oklab, var(--gold) 8%, transparent), transparent 70%)",
+          }}
+        />
+        <div className="relative">
+          <Link
+            to="/aulas/$materia/$livroId"
+            params={{ materia, livroId }}
+            className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-gold mb-2 transition"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+          </Link>
+          <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80">
+            {mat.nome} · Aula {atual.ordem} de {capitulos.length}
+          </p>
+          <h1 className="font-display leading-[1.15] mt-1 text-foreground text-[clamp(1.05rem,4.6vw,1.875rem)] max-w-[34ch] break-words hyphens-auto">
+            {normalizarTitulo(atual.titulo)}
+          </h1>
+        </div>
       </header>
 
       <div className="px-4 md:px-8 max-w-3xl mx-auto pt-5">
@@ -261,25 +265,45 @@ function Stepper({
   onPick: (e: Etapa) => void;
 }) {
   const atualIdx = ETAPAS.findIndex((e) => e.id === etapa);
+  // progresso 0..1 baseado em etapas concluídas + etapa ativa
+  const doneCount = ETAPAS.filter((e) => feitas[e.id]).length;
+  const progress = Math.min(
+    1,
+    Math.max(atualIdx, doneCount) / (ETAPAS.length - 1),
+  );
+
   return (
-    <div className="mb-6">
+    <div className="mb-7">
       <ol className="grid grid-cols-5 gap-1 relative">
         {/* trilha de fundo */}
-        <div className="absolute left-0 right-0 top-4 h-0.5 bg-border -z-0 mx-6" />
+        <div className="absolute left-0 right-0 top-4 h-[3px] bg-border/70 rounded-full -z-0 mx-6" />
+        {/* trilha preenchida animada */}
+        <div
+          className="absolute top-4 h-[3px] rounded-full -z-0 step-progress-fill transition-[width] duration-500 ease-out"
+          style={{
+            left: "calc(10% + 0px)",
+            width: `calc(${progress * 80}%)`,
+          }}
+        />
         {ETAPAS.map((e, i) => {
           const Icon = e.icon;
           const done = feitas[e.id];
           const active = i === atualIdx;
+          const isNext = i === atualIdx + 1;
           return (
             <li key={e.id} className="relative z-10 flex flex-col items-center">
               <button
                 type="button"
                 onClick={() => onPick(e.id)}
                 className={cn(
-                  "h-8 w-8 rounded-full grid place-items-center border-2 transition",
-                  done && "bg-gold border-gold text-background",
-                  !done && active && "border-gold bg-background text-gold",
-                  !done && !active && "border-border bg-background text-muted-foreground",
+                  "h-9 w-9 rounded-full grid place-items-center border-2 transition-all duration-300",
+                  done && "bg-gold border-gold text-background scale-100",
+                  !done && active &&
+                    "border-gold bg-background text-gold scale-110 step-active",
+                  !done && !active && !isNext &&
+                    "border-border bg-background text-muted-foreground",
+                  !done && isNext &&
+                    "border-gold/40 bg-background text-gold/80 step-next-hint",
                 )}
                 aria-current={active ? "step" : undefined}
                 aria-label={e.label}
@@ -287,13 +311,15 @@ function Stepper({
                 {done ? (
                   <CheckCircle2 className="h-4 w-4" />
                 ) : (
-                  <Icon className="h-3.5 w-3.5" />
+                  <Icon className="h-4 w-4" />
                 )}
               </button>
               <span
                 className={cn(
-                  "mt-1.5 text-[9px] md:text-[10px] uppercase tracking-wider text-center leading-tight",
-                  active ? "text-gold font-semibold" : "text-muted-foreground",
+                  "mt-2 text-[9px] md:text-[10px] uppercase tracking-wider text-center leading-tight transition-colors",
+                  active && "text-gold font-semibold",
+                  !active && done && "text-foreground/80",
+                  !active && !done && "text-muted-foreground",
                 )}
               >
                 {e.label}
@@ -345,6 +371,7 @@ function FlashcardsView({
   });
   const [i, setI] = useState(0);
   const [flip, setFlip] = useState(false);
+  const [verExemplo, setVerExemplo] = useState(false);
 
   if (q.isPending) {
     return (
@@ -380,25 +407,85 @@ function FlashcardsView({
       <div className="text-[11px] text-muted-foreground text-center mb-3">
         {i + 1} de {cards.length}
       </div>
-      <button
-        type="button"
-        onClick={() => setFlip((f) => !f)}
-        className="w-full min-h-[220px] rounded-2xl border border-gold/30 bg-gradient-to-br from-[oklch(0.28_0.07_18)] to-[oklch(0.19_0.04_18)] p-6 text-left hover:border-gold/60 transition shadow-lg shadow-black/30"
-      >
-        <p className="text-[10px] uppercase tracking-wider text-gold/80 mb-2">
-          {flip ? "Resposta" : "Pergunta"}
-        </p>
-        <p className="text-base md:text-lg text-primary-foreground leading-relaxed whitespace-pre-wrap">
-          {flip ? card.verso : card.frente}
-        </p>
-        <p className="text-[10px] text-white/40 mt-4">Tocar para virar</p>
-      </button>
-      <div className="mt-4 flex items-center justify-between gap-2">
+
+      <div className="flip-perspective">
+        <div
+          className={cn(
+            "flip-card relative w-full min-h-[260px] rounded-2xl",
+            flip && "is-flipped",
+          )}
+        >
+          {/* Frente */}
+          <button
+            type="button"
+            onClick={() => setFlip(true)}
+            aria-label="Virar para a resposta"
+            className="flip-face w-full min-h-[260px] rounded-2xl border border-border bg-card p-6 text-left shadow-lg shadow-black/20 hover:border-gold/50 transition-colors flex flex-col"
+          >
+            <p className="text-[10px] uppercase tracking-[0.18em] text-gold/80 mb-3">
+              Pergunta
+            </p>
+            <p className="text-base md:text-lg text-foreground leading-relaxed whitespace-pre-wrap flex-1">
+              {card.frente}
+            </p>
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-4 inline-flex items-center gap-1.5">
+              <RotateCcw className="h-3 w-3" /> Tocar para virar
+            </p>
+          </button>
+
+          {/* Verso */}
+          <div className="flip-face flip-face--back w-full min-h-[260px] rounded-2xl border border-gold/40 bg-card p-6 text-left shadow-lg shadow-black/30 flex flex-col">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-gold mb-3">
+              Resposta
+            </p>
+            <p className="text-base md:text-lg text-foreground leading-relaxed whitespace-pre-wrap">
+              {card.verso}
+            </p>
+
+            {card.exemplo && (
+              <div className="mt-4">
+                {!verExemplo ? (
+                  <button
+                    type="button"
+                    onClick={() => setVerExemplo(true)}
+                    className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-gold border border-gold/40 rounded-full px-3 py-1.5 hover:bg-gold/10 transition"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" /> Ver exemplo
+                  </button>
+                ) : (
+                  <div className="animate-fade-in rounded-xl border-l-2 border-gold bg-muted/30 px-3 py-2.5">
+                    <p className="text-[10px] uppercase tracking-wider text-gold/80 mb-1">
+                      Exemplo prático
+                    </p>
+                    <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                      {card.exemplo}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setFlip(false);
+                setVerExemplo(false);
+              }}
+              className="mt-auto pt-3 text-[10px] uppercase tracking-wider text-muted-foreground hover:text-gold transition self-start inline-flex items-center gap-1.5"
+            >
+              <RotateCcw className="h-3 w-3" /> Voltar para pergunta
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center justify-between gap-2">
         <button
           type="button"
           disabled={i === 0}
           onClick={() => {
             setFlip(false);
+            setVerExemplo(false);
             setI((v) => Math.max(0, v - 1));
           }}
           className="flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-30 px-3 py-2"
@@ -409,6 +496,7 @@ function FlashcardsView({
           type="button"
           onClick={() => {
             setFlip(false);
+            setVerExemplo(false);
             setI(0);
           }}
           className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground px-3 py-2 inline-flex items-center gap-1"
@@ -420,6 +508,7 @@ function FlashcardsView({
           disabled={ultimo}
           onClick={() => {
             setFlip(false);
+            setVerExemplo(false);
             setI((v) => Math.min(cards.length - 1, v + 1));
           }}
           className="flex items-center gap-1 text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-30 px-3 py-2"

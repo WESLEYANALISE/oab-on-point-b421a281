@@ -7,7 +7,7 @@ import { geminiGenerateContent } from "@/lib/gemini.server";
 const MODEL = "gemini-2.5-flash";
 
 // ---------- tipos ----------
-export type Flashcard = { frente: string; verso: string };
+export type Flashcard = { frente: string; verso: string; exemplo?: string };
 export type Questao = {
   enunciado: string;
   alternativas: { A: string; B: string; C: string; D: string; E: string };
@@ -87,13 +87,14 @@ export const obterFlashcardsCapitulo = createServerFn({ method: "POST" })
 
     const system =
       "Você gera flashcards de estudo para concursos jurídicos brasileiros (OAB). " +
-      'Devolva APENAS JSON no formato {"cards":[{"frente":"...","verso":"..."}]}. ' +
+      'Devolva APENAS JSON no formato {"cards":[{"frente":"...","verso":"...","exemplo":"..."}]}. ' +
       "Frente: uma pergunta objetiva e clara (uma frase). " +
       "Verso: resposta direta em 1 a 3 frases, com fundamento legal quando pertinente. " +
+      "Exemplo: um caso prático curto (2 a 4 frases) que ilustre a aplicação concreta do conceito, no estilo enunciado de prova OAB. " +
       "Gere EXATAMENTE 10 cards cobrindo os pontos mais importantes do capítulo. Sem markdown.";
     const user = `Capítulo: ${cap.titulo}\n\nConteúdo:\n${conteudo}`;
 
-    const parsed = await chamarGeminiJson(system, user, 4000);
+    const parsed = await chamarGeminiJson(system, user, 6000);
     const cards: Flashcard[] = (parsed?.cards ?? [])
       .filter((c: any) => c?.frente && c?.verso)
       .slice(0, 12);
