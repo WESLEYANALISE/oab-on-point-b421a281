@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, Clock, ChevronRight } from "lucide-react";
-import { getMateriaAula } from "@/data/aulas-oab";
+import { getMateriaAula, type AulaModulo } from "@/data/aulas-oab";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/aulas/$materia")({
@@ -33,8 +33,8 @@ const NIVEL_LABEL: Record<string, string> = {
 
 function MateriaAulaPage() {
   const { materia } = Route.useLoaderData();
-  const totalResumos = materia.modulos.reduce((s, m) => s + m.resumos, 0);
-  const totalHoras = materia.modulos.reduce((s, m) => s + m.horas, 0);
+  const totalResumos = materia.modulos.reduce((s: number, m: AulaModulo) => s + m.resumos, 0);
+  const totalHoras = materia.modulos.reduce((s: number, m: AulaModulo) => s + m.horas, 0);
 
   return (
     <div className="pb-16">
@@ -73,7 +73,7 @@ function MateriaAulaPage() {
               <span className="text-[11px] text-muted-foreground">{materia.modulos.length} módulos</span>
             </div>
             <ul className="space-y-2.5">
-              {materia.modulos.map((mod, i) => (
+              {materia.modulos.map((mod: AulaModulo, i: number) => (
                 <li key={mod.slug}>
                   <Link
                     to="/aulas/$materia/$modulo"
