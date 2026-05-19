@@ -327,3 +327,81 @@ export const obterSimuladoCapitulo = createServerFn({ method: "POST" })
       );
     return { questoes };
   });
+
+// ====================================================================
+// AULA ESTRUTURADA — cache por capítulo
+// ====================================================================
+
+export const gerarAulaCapitulo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      resumo_livro_id: z.string().uuid(),
+      ordem: z.number().int().min(1).max(999),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const existente = await supabaseAdmin
+      .from("aula_capitulo_aulas")
+      .select("aula")
+      .eq("resumo_livro_id", data.resumo_livro_id)
+      .eq("ordem", data.ordem)
+      .maybeSingle();
+
+    if (existente.data) {
+      return { aula: existente.data.aula as AulaEstruturada };
+    }
+
+    const cap = await getCapitulo(data.resumo_livro_id, data.ordem);
+    const conteudo = (cap.conteudo_markdown ?? "").slice(0, 8000);
+
+    const system =
+      "Você é um professor brasileiro experiente preparando alunos para a OAB. " +
+      "Seu tom é ao mesmo tempo AMIGÁVEL e TÉCNICO: você fala com o aluno como se estivesse em sala, " +
+      'usa "você", cumprimenta no começo, explica tim-tim por tim-tim, dá exemplos práticos do dia a dia jurídico, ' +
+      "cita fundamento legal (lei + artigo) sempre que pertinente, e nunca é arrogante. " +
+      "Você NÃO está apenas resumindo um livro — está construindo uma AULA estruturada a partir do material-base. " +
+      "Devolva APENAS JSON estritamente no formato: " +
+      '{"introducao":"...","partes":[{"titulo":"...","resumo_curto":"...","conteudo_markdown":"...","exemplo_pratico":"...","pontos_chave":["...","..."]}],"fechamento":"..."}. ' +
+      "Regras: " +
+      "• introducao: 2–4 frases, com uma saudação curta (ex.: 'Vamos lá!') e por que essa aula importa para a OAB. " +
+      "• partes: entre 3 e 6 partes, divididas por tema lógico do capítulo. Cada parte deve ter: " +
+      "   - titulo: nome curto (até 6 palavras). " +
+      "   - resumo_curto: 1 frase do que será visto. " +
+      "   - conteudo_markdown: explicação didática completa, em markdown simples (parágrafos, **negritos**, listas quando ajudar). Use linguagem clara, defina termos, " +
+      "     traga fundamento legal e dicas de prova. Sem títulos H1/H2 (o título da parte já é renderizado fora). " +
+      "   - exemplo_pratico: 2–4 frases de caso concreto estilo enunciado de OAB que ilustre o conceito. " +
+      "   - pontos_chave: 3 a 5 bullets curtos (frases ou expressões) com o que NÃO pode esquecer. " +
+      "• fechamento: 1–3 frases amarrando a aula e convidando o aluno a praticar nos flashcards/questões a seguir. " +
+      "Não use emojis. Não envolva o JSON em ```.";
+    const user = `Capítulo: ${cap.titulo}\n\nMaterial-base (use como insumo, NÃO copie como resumo):\n${conteudo}`;
+
+    const parsed = await chamarGeminiJson(system, user, 16000);
+    const partes: AulaParte[] = (parsed?.partes ?? [])
+      .filter((p: any) => p?.titulo && p?.conteudo_markdown)
+      .slice(0, 8)
+      .map((p: any) => ({
+        titulo: String(p.titulo),
+        resumo_curto: p.resumo_curto ? String(p.resumo_curto) : undefined,
+        conteudo_markdown: String(p.conteudo_markdown),
+        exemplo_pratico: p.exemplo_pratico ? String(p.exemplo_pratico) : undefined,
+        pontos_chave: Array.isArray(p.pontos_chave)
+          ? p.pontos_chave.map((b: any) => String(b)).slice(0, 6)
+          : undefined,
+      }));
+    if (!partes.length) throw new Error("IA não gerou aula");
+
+    const aula: AulaEstruturada = {
+      introducao: String(parsed?.introducao ?? "Vamos começar?"),
+      partes,
+      fechamento: parsed?.fechamento ? String(parsed.fechamento) : undefined,
+    };
+
+    await supabaseAdmin
+      .from("aula_capitulo_aulas")
+      .upsert(
+        { resumo_livro_id: data.resumo_livro_id, ordem: data.ordem, aula },
+        { onConflict: "resumo_livro_id,ordem" },
+      );
+    return { aula };
+  });
