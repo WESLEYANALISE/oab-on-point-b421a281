@@ -32,7 +32,18 @@ import {
 } from "@/lib/aulas-trilha.functions";
 import { cn } from "@/lib/utils";
 
+type Etapa = "ler" | "flashcards" | "questoes" | "erros" | "simulado";
+const ETAPAS_IDS: Etapa[] = ["ler", "flashcards", "questoes", "erros", "simulado"];
+
 export const Route = createFileRoute("/_app/aulas/$materia/$livroId/$ordem")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const e = search.etapa;
+    return {
+      etapa: typeof e === "string" && (ETAPAS_IDS as string[]).includes(e)
+        ? (e as Etapa)
+        : ("ler" as Etapa),
+    };
+  },
   loader: ({ context, params }) => {
     const mat = getMateriaAula(params.materia);
     if (!mat) throw notFound();
@@ -46,7 +57,6 @@ export const Route = createFileRoute("/_app/aulas/$materia/$livroId/$ordem")({
   ),
 });
 
-type Etapa = "ler" | "flashcards" | "questoes" | "erros" | "simulado";
 const ETAPAS: { id: Etapa; label: string; icon: LucideIcon }[] = [
   { id: "ler", label: "Aula", icon: BookOpen },
   { id: "flashcards", label: "Flashcards", icon: Layers },
@@ -54,6 +64,7 @@ const ETAPAS: { id: Etapa; label: string; icon: LucideIcon }[] = [
   { id: "erros", label: "Erros", icon: Notebook },
   { id: "simulado", label: "Simulado", icon: GraduationCap },
 ];
+
 
 function AulaCapitulo() {
   const { materia, livroId, ordem } = Route.useParams();
