@@ -267,60 +267,67 @@ function Stepper({
 
   return (
     <div className="mb-7">
-      <ol className="grid grid-cols-5 gap-1 relative">
-        {/* trilha de fundo */}
-        <div className="absolute left-0 right-0 top-4 h-[3px] bg-border/70 rounded-full -z-0 mx-6" />
-        {/* trilha preenchida animada */}
-        <div
-          className="absolute top-4 h-[3px] rounded-full -z-0 step-progress-fill transition-[width] duration-500 ease-out"
-          style={{
-            left: "calc(10% + 0px)",
-            width: `calc(${progress * 80}%)`,
-          }}
-        />
-        {ETAPAS.map((e, i) => {
-          const Icon = e.icon;
-          const done = feitas[e.id];
-          const active = i === atualIdx;
-          const isNext = i === atualIdx + 1;
-          return (
-            <li key={e.id} className="relative z-10 flex flex-col items-center">
-              <button
-                type="button"
-                onClick={() => onPick(e.id)}
-                className={cn(
-                  "h-9 w-9 rounded-full grid place-items-center border-2 transition-all duration-300",
-                  done && "bg-gold border-gold text-background scale-100",
-                  !done && active &&
-                    "border-gold bg-background text-gold scale-110 step-active",
-                  !done && !active && !isNext &&
-                    "border-border bg-background text-muted-foreground",
-                  !done && isNext &&
-                    "border-gold/40 bg-background text-gold/80 step-next-hint",
-                )}
-                aria-current={active ? "step" : undefined}
-                aria-label={e.label}
-              >
-                {done ? (
-                  <CheckCircle2 className="h-4 w-4" />
-                ) : (
-                  <Icon className="h-4 w-4" />
-                )}
-              </button>
-              <span
-                className={cn(
-                  "mt-2 text-[9px] md:text-[10px] uppercase tracking-wider text-center leading-tight transition-colors",
-                  active && "text-gold font-semibold",
-                  !active && done && "text-foreground/80",
-                  !active && !done && "text-muted-foreground",
-                )}
-              >
-                {e.label}
-              </span>
-            </li>
-          );
-        })}
-      </ol>
+      <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-md px-3 py-3.5 shadow-sm shadow-black/10">
+        <ol className="grid grid-cols-5 gap-1 relative">
+          {/* trilha de fundo */}
+          <div className="absolute left-0 right-0 top-4 h-[3px] bg-border/70 rounded-full -z-0 mx-[10%]" />
+          {/* trilha preenchida animada */}
+          <div
+            className="absolute top-4 h-[3px] rounded-full -z-0 step-progress-fill transition-[width] duration-700 ease-out"
+            style={{
+              left: "10%",
+              width: `calc(${progress * 80}%)`,
+            }}
+          />
+          {/* ponto caminhante na ponta da trilha */}
+          <div
+            className="absolute top-[10px] -ml-[7px] h-[14px] w-[14px] rounded-full bg-gold shadow-[0_0_0_4px_color-mix(in_oklab,var(--gold)_25%,transparent)] step-walker -z-0 transition-[left] duration-700 ease-out"
+            style={{ left: `calc(10% + ${progress * 80}%)` }}
+          />
+          {ETAPAS.map((e, i) => {
+            const Icon = e.icon;
+            const done = feitas[e.id];
+            const active = i === atualIdx;
+            const isNext = i === atualIdx + 1;
+            return (
+              <li key={e.id} className="relative z-10 flex flex-col items-center">
+                <button
+                  type="button"
+                  onClick={() => onPick(e.id)}
+                  className={cn(
+                    "h-9 w-9 rounded-full grid place-items-center border-2 transition-all duration-300",
+                    done && "bg-gold border-gold text-background scale-100",
+                    !done && active &&
+                      "border-gold bg-background text-gold scale-110 step-active",
+                    !done && !active && !isNext &&
+                      "border-border bg-background text-muted-foreground",
+                    !done && isNext &&
+                      "border-gold/40 bg-background text-gold/80 step-next-hint",
+                  )}
+                  aria-current={active ? "step" : undefined}
+                  aria-label={e.label}
+                >
+                  {done ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <Icon className="h-4 w-4" />
+                  )}
+                </button>
+                <span
+                  className={cn(
+                    "mt-2 text-[9px] md:text-[10px] uppercase tracking-wider text-center leading-tight transition-colors",
+                    active && "text-gold font-semibold",
+                    !active && done && "text-foreground/80",
+                    !active && !done && "text-muted-foreground",
+                  )}
+                >
+                  {e.label}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
     </div>
   );
 }
