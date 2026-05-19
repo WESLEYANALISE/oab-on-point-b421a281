@@ -1,9 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft,
   BookOpen,
   CheckCircle2,
   ChevronLeft,
@@ -13,6 +12,7 @@ import {
   Loader2,
   Notebook,
   RotateCcw,
+  Sparkles,
   XCircle,
   type LucideIcon,
 } from "lucide-react";
@@ -23,6 +23,7 @@ import { resumoLivroQueryOptions } from "@/lib/resumos-queries";
 import { normalizarTitulo } from "@/lib/titulo";
 import { getMateriaAula } from "@/data/aulas-oab";
 import {
+  gerarAulaCapitulo,
   listarCadernoErros,
   obterFlashcardsCapitulo,
   obterQuestoesCapitulo,
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/_app/aulas/$materia/$livroId/$ordem")({
 
 type Etapa = "ler" | "flashcards" | "questoes" | "erros" | "simulado";
 const ETAPAS: { id: Etapa; label: string; icon: LucideIcon }[] = [
-  { id: "ler", label: "Ler", icon: BookOpen },
+  { id: "ler", label: "Aula", icon: BookOpen },
   { id: "flashcards", label: "Flashcards", icon: Layers },
   { id: "questoes", label: "Questões", icon: CheckCircle2 },
   { id: "erros", label: "Erros", icon: Notebook },
@@ -70,6 +71,11 @@ function AulaCapitulo() {
   });
   const marcarFeita = (e: Etapa) => setFeitas((p) => ({ ...p, [e]: true }));
 
+  // estado das partes da aula (controlado aqui para o header mostrar)
+  const [parteIdx, setParteIdx] = useState(0);
+  const [totalPartes, setTotalPartes] = useState(0);
+  const [parteTitulo, setParteTitulo] = useState<string>("");
+
   const capitulos = data?.capitulos ?? [];
   const atual = useMemo(
     () => capitulos.find((c) => c.ordem === ordemNum),
@@ -79,9 +85,8 @@ function AulaCapitulo() {
   const prev = idx > 0 ? capitulos[idx - 1] : null;
   const next = idx >= 0 && idx < capitulos.length - 1 ? capitulos[idx + 1] : null;
 
-  const etapaIdx = ETAPAS.findIndex((e) => e.id === etapa);
-  const proxEtapa = etapaIdx < ETAPAS.length - 1 ? ETAPAS[etapaIdx + 1] : null;
-  const etapaAnt = etapaIdx > 0 ? ETAPAS[etapaIdx - 1] : null;
+  const etapaAtual = ETAPAS.find((e) => e.id === etapa)!;
+  const EtapaIcon = etapaAtual.icon;
 
   if (!atual) {
     return (
@@ -99,8 +104,9 @@ function AulaCapitulo() {
   }
 
   return (
-    <div className="pb-28">
-      <header className="relative px-4 md:px-8 pt-5 pb-6 overflow-hidden border-b border-border bg-card/40">
+    <div className="pb-36">
+      {/* HEADER */}
+      <header className="relative px-4 md:px-8 pt-5 pb-5 overflow-hidden border-b border-border bg-card/40">
         <div
           className="pointer-events-none absolute inset-0 opacity-60"
           style={{
@@ -112,31 +118,46 @@ function AulaCapitulo() {
           <p className="text-[10px] uppercase tracking-[0.22em] text-gold/80">
             {mat.nome} · Aula {atual.ordem} de {capitulos.length}
           </p>
-          <h1 className="font-display leading-[1.15] mt-1 text-foreground text-[clamp(1.05rem,4.6vw,1.875rem)] max-w-[34ch] break-words hyphens-auto">
+          <h1 className="font-display leading-[1.15] mt-1 text-foreground text-[clamp(1rem,4.4vw,1.5rem)] max-w-[34ch] break-words hyphens-auto">
             {normalizarTitulo(atual.titulo)}
           </h1>
+
+          {etapa === "ler" && totalPartes > 0 ? (
+            <PartesHeader
+              total={totalPartes}
+              atual={parteIdx}
+              tituloParte={parteTitulo}
+              onPick={(i) => setParteIdx(i)}
+            />
+          ) : (
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3 py-1">
+              <EtapaIcon className="h-3.5 w-3.5 text-gold" />
+              <span className="text-[11px] uppercase tracking-wider text-gold font-semibold">
+                {etapaAtual.label}
+              </span>
+            </div>
+          )}
         </div>
       </header>
 
+      {/* CONTEÚDO */}
       <div className="px-4 md:px-8 max-w-3xl mx-auto pt-5">
-        <Stepper etapa={etapa} feitas={feitas} onPick={setEtapa} />
-
-        <div key={etapa} className="animate-tab-fade mt-2">
+        <div key={etapa} className="animate-tab-fade">
           {etapa === "ler" && (
-            <>
-              <article className="markdown-body max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
-                  {atual.conteudo_markdown ?? ""}
-                </ReactMarkdown>
-              </article>
-              <EtapaConcluirCta
-                onConcluir={() => {
-                  marcarFeita("ler");
-                  if (proxEtapa) setEtapa(proxEtapa.id);
-                }}
-                label="Concluir leitura"
-              />
-            </>
+            <AulaLerView
+              livroId={livroId}
+              ordem={ordemNum}
+              parteIdx={parteIdx}
+              onParteIdx={setParteIdx}
+              onMeta={(total, titulo) => {
+                setTotalPartes(total);
+                setParteTitulo(titulo);
+              }}
+              onConcluir={() => {
+                marcarFeita("ler");
+                setEtapa("flashcards");
+              }}
+            />
           )}
           {etapa === "flashcards" && (
             <FlashcardsView
@@ -144,7 +165,7 @@ function AulaCapitulo() {
               ordem={ordemNum}
               onConcluir={() => {
                 marcarFeita("flashcards");
-                if (proxEtapa) setEtapa(proxEtapa.id);
+                setEtapa("questoes");
               }}
             />
           )}
@@ -154,7 +175,7 @@ function AulaCapitulo() {
               ordem={ordemNum}
               onConcluir={() => {
                 marcarFeita("questoes");
-                if (proxEtapa) setEtapa(proxEtapa.id);
+                setEtapa("erros");
               }}
             />
           )}
@@ -164,7 +185,7 @@ function AulaCapitulo() {
               ordem={ordemNum}
               onConcluir={() => {
                 marcarFeita("erros");
-                if (proxEtapa) setEtapa(proxEtapa.id);
+                setEtapa("simulado");
               }}
             />
           )}
@@ -176,79 +197,106 @@ function AulaCapitulo() {
             />
           )}
         </div>
-
-        {/* Navegação entre etapas */}
-        <div className="mt-8 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            disabled={!etapaAnt}
-            onClick={() => etapaAnt && setEtapa(etapaAnt.id)}
-            className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-30 inline-flex items-center gap-1.5 px-3 py-2"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            {etapaAnt ? etapaAnt.label : "Início"}
-          </button>
-          <button
-            type="button"
-            disabled={!proxEtapa}
-            onClick={() => proxEtapa && setEtapa(proxEtapa.id)}
-            className="text-xs uppercase tracking-wider inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gold/40 bg-gradient-toga text-gold disabled:opacity-30"
-          >
-            {proxEtapa ? proxEtapa.label : "Fim"}
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
       </div>
 
-      {/* Navegação entre capítulos */}
+      {/* RODAPÉ */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/85 backdrop-blur-md"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/90 backdrop-blur-md"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="max-w-3xl mx-auto px-3 py-2.5 grid grid-cols-3 gap-2">
-          {prev ? (
+        <div className="max-w-3xl mx-auto px-3 pt-2.5 pb-2">
+          <EtapasFooter etapa={etapa} feitas={feitas} onPick={setEtapa} />
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {prev ? (
+              <Link
+                to="/aulas/$materia/$livroId/$ordem"
+                params={{ materia, livroId, ordem: String(prev.ordem) }}
+                className="flex items-center gap-1.5 rounded-lg border border-border bg-card/60 hover:border-gold/40 transition px-2.5 py-1.5 min-w-0"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 text-gold shrink-0" />
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                  Anterior
+                </span>
+              </Link>
+            ) : (
+              <span />
+            )}
             <Link
-              to="/aulas/$materia/$livroId/$ordem"
-              params={{ materia, livroId, ordem: String(prev.ordem) }}
-              className="flex items-center gap-2 rounded-xl border border-border bg-card/60 hover:border-gold/40 transition px-3 py-2 min-w-0"
+              to="/aulas/$materia/$livroId"
+              params={{ materia, livroId }}
+              className="flex items-center justify-center rounded-lg border border-border bg-card/60 hover:border-gold/40 text-[10px] uppercase tracking-wider text-muted-foreground px-2.5 py-1.5"
             >
-              <ChevronLeft className="h-4 w-4 text-gold shrink-0" />
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
-                Aula ant.
-              </span>
+              Trilha
             </Link>
-          ) : (
-            <span />
-          )}
-          <Link
-            to="/aulas/$materia/$livroId"
-            params={{ materia, livroId }}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-border bg-card/60 hover:border-gold/40 text-[10px] uppercase tracking-wider text-muted-foreground px-3 py-2"
-          >
-            Trilha
-          </Link>
-          {next ? (
-            <Link
-              to="/aulas/$materia/$livroId/$ordem"
-              params={{ materia, livroId, ordem: String(next.ordem) }}
-              className="flex items-center justify-end gap-2 rounded-xl border border-border bg-card/60 hover:border-gold/40 transition px-3 py-2 min-w-0"
-            >
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
-                Próx. aula
-              </span>
-              <ChevronRight className="h-4 w-4 text-gold shrink-0" />
-            </Link>
-          ) : (
-            <span />
-          )}
+            {next ? (
+              <Link
+                to="/aulas/$materia/$livroId/$ordem"
+                params={{ materia, livroId, ordem: String(next.ordem) }}
+                className="flex items-center justify-end gap-1.5 rounded-lg border border-border bg-card/60 hover:border-gold/40 transition px-2.5 py-1.5 min-w-0"
+              >
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                  Próxima
+                </span>
+                <ChevronRight className="h-3.5 w-3.5 text-gold shrink-0" />
+              </Link>
+            ) : (
+              <span />
+            )}
+          </div>
         </div>
       </nav>
     </div>
   );
 }
 
-// ------------ Stepper (timeline) ------------
-function Stepper({
+// ------------ Header das partes ------------
+function PartesHeader({
+  total,
+  atual,
+  tituloParte,
+  onPick,
+}: {
+  total: number;
+  atual: number;
+  tituloParte: string;
+  onPick: (i: number) => void;
+}) {
+  return (
+    <div className="mt-3">
+      <div className="flex items-center justify-between gap-2 mb-1.5">
+        <span className="text-[10px] uppercase tracking-wider text-gold font-semibold">
+          {atual === 0 ? "Introdução" : `Parte ${atual} de ${total - 1}`}
+        </span>
+        <span className="text-[10px] text-muted-foreground truncate ml-2 max-w-[60%] text-right">
+          {tituloParte}
+        </span>
+      </div>
+      <div className="flex items-center gap-1">
+        {Array.from({ length: total }).map((_, i) => {
+          const done = i < atual;
+          const active = i === atual;
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onPick(i)}
+              aria-label={`Ir para parte ${i}`}
+              className={cn(
+                "h-1.5 flex-1 rounded-full transition-all duration-500",
+                done && "bg-gold",
+                active && "bg-gold/80 step-walker",
+                !done && !active && "bg-border/70 hover:bg-border",
+              )}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ------------ Rodapé de etapas ------------
+function EtapasFooter({
   etapa,
   feitas,
   onPick,
@@ -258,75 +306,244 @@ function Stepper({
   onPick: (e: Etapa) => void;
 }) {
   const atualIdx = ETAPAS.findIndex((e) => e.id === etapa);
-  // progresso 0..1 baseado em etapas concluídas + etapa ativa
-  const doneCount = ETAPAS.filter((e) => feitas[e.id]).length;
-  const progress = Math.min(
-    1,
-    Math.max(atualIdx, doneCount) / (ETAPAS.length - 1),
+  return (
+    <ol className="grid grid-cols-5 gap-1">
+      {ETAPAS.map((e, i) => {
+        const Icon = e.icon;
+        const done = feitas[e.id];
+        const active = i === atualIdx;
+        const isNext = i === atualIdx + 1;
+        return (
+          <li key={e.id}>
+            <button
+              type="button"
+              onClick={() => onPick(e.id)}
+              className={cn(
+                "w-full flex flex-col items-center gap-1 py-1.5 rounded-lg transition",
+                active && "bg-gold/10",
+              )}
+              aria-current={active ? "step" : undefined}
+            >
+              <span
+                className={cn(
+                  "h-8 w-8 rounded-full grid place-items-center border-2 transition-all duration-300",
+                  done && "bg-gold border-gold text-background",
+                  !done && active && "border-gold bg-background text-gold scale-110",
+                  !done && !active && !isNext && "border-border bg-background text-muted-foreground",
+                  !done && isNext && "border-gold/40 bg-background text-gold/80 step-next-hint",
+                )}
+              >
+                {done ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+              </span>
+              <span
+                className={cn(
+                  "text-[9px] uppercase tracking-wider leading-none",
+                  active ? "text-gold font-semibold" : done ? "text-foreground/80" : "text-muted-foreground",
+                )}
+              >
+                {e.label}
+              </span>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
   );
+}
+
+// ------------ Aula estruturada (aba "Aula") ------------
+function AulaLerView({
+  livroId,
+  ordem,
+  parteIdx,
+  onParteIdx,
+  onMeta,
+  onConcluir,
+}: {
+  livroId: string;
+  ordem: number;
+  parteIdx: number;
+  onParteIdx: (i: number) => void;
+  onMeta: (total: number, titulo: string) => void;
+  onConcluir: () => void;
+}) {
+  const fn = useServerFn(gerarAulaCapitulo);
+  const q = useQuery({
+    queryKey: ["aula-estruturada", livroId, ordem],
+    queryFn: () => fn({ data: { resumo_livro_id: livroId, ordem } }),
+    staleTime: 60 * 60_000,
+    retry: 0,
+  });
+  const [verExemplo, setVerExemplo] = useState(false);
+
+  const aula = q.data?.aula;
+  const total = aula ? aula.partes.length + 1 : 0;
+  const tituloAtual = useMemo(() => {
+    if (!aula) return "";
+    if (parteIdx === 0) return "Vamos começar";
+    return aula.partes[parteIdx - 1]?.titulo ?? "";
+  }, [aula, parteIdx]);
+
+  useEffect(() => {
+    if (total > 0) onMeta(total, tituloAtual);
+  }, [total, tituloAtual, onMeta]);
+
+  if (q.isPending) {
+    return (
+      <div className="py-20 text-center text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin mx-auto mb-3 text-gold" />
+        <p className="text-sm">Preparando sua aula…</p>
+        <p className="text-[11px] text-muted-foreground/70 mt-1">
+          Pode levar alguns segundos na primeira vez.
+        </p>
+      </div>
+    );
+  }
+  if (q.error || !aula) {
+    return (
+      <div className="py-10 text-center">
+        <p className="text-sm text-muted-foreground mb-3">
+          Não foi possível gerar a aula agora.
+        </p>
+        <button
+          type="button"
+          onClick={() => q.refetch()}
+          className="text-xs uppercase tracking-wider text-gold border border-gold/40 rounded-full px-4 py-1.5"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    );
+  }
+
+  const ehIntro = parteIdx === 0;
+  const parte = ehIntro ? null : aula.partes[parteIdx - 1];
+  const ultimaParte = parteIdx === total - 1;
+  const ehFechamento = ultimaParte && !!aula.fechamento;
+
+  const irPara = (i: number) => {
+    setVerExemplo(false);
+    onParteIdx(Math.max(0, Math.min(total - 1, i)));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
-    <div className="mb-7">
-      <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-md px-3 py-3.5 shadow-sm shadow-black/10">
-        <ol className="grid grid-cols-5 gap-1 relative">
-          {/* trilha de fundo */}
-          <div className="absolute left-0 right-0 top-4 h-[3px] bg-border/70 rounded-full -z-0 mx-[10%]" />
-          {/* trilha preenchida animada */}
-          <div
-            className="absolute top-4 h-[3px] rounded-full -z-0 step-progress-fill transition-[width] duration-700 ease-out"
-            style={{
-              left: "10%",
-              width: `calc(${progress * 80}%)`,
-            }}
-          />
-          {/* ponto caminhante na ponta da trilha */}
-          <div
-            className="absolute top-[10px] -ml-[7px] h-[14px] w-[14px] rounded-full bg-gold shadow-[0_0_0_4px_color-mix(in_oklab,var(--gold)_25%,transparent)] step-walker -z-0 transition-[left] duration-700 ease-out"
-            style={{ left: `calc(10% + ${progress * 80}%)` }}
-          />
-          {ETAPAS.map((e, i) => {
-            const Icon = e.icon;
-            const done = feitas[e.id];
-            const active = i === atualIdx;
-            const isNext = i === atualIdx + 1;
-            return (
-              <li key={e.id} className="relative z-10 flex flex-col items-center">
+    <div key={parteIdx} className="animate-tab-fade py-2">
+      {ehIntro ? (
+        <div className="rounded-2xl border border-gold/30 bg-gradient-toga p-6 shadow-lg shadow-black/20">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-background/60 px-3 py-1 mb-3">
+            <Sparkles className="h-3.5 w-3.5 text-gold" />
+            <span className="text-[10px] uppercase tracking-wider text-gold font-semibold">
+              Bem-vindo(a) à aula
+            </span>
+          </div>
+          <p className="text-base md:text-lg leading-relaxed text-foreground whitespace-pre-wrap">
+            {aula.introducao}
+          </p>
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground mt-5">
+            {aula.partes.length} {aula.partes.length === 1 ? "parte" : "partes"} pela frente
+          </p>
+        </div>
+      ) : (
+        <article className="space-y-5">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.18em] text-gold/80 font-semibold">
+              Parte {parteIdx} de {aula.partes.length}
+            </p>
+            <h2 className="font-display text-xl md:text-2xl mt-1 leading-tight text-foreground">
+              {parte!.titulo}
+            </h2>
+            {parte!.resumo_curto && (
+              <p className="text-sm text-muted-foreground mt-1.5 italic">
+                {parte!.resumo_curto}
+              </p>
+            )}
+          </div>
+
+          <div className="markdown-body max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+              {parte!.conteudo_markdown}
+            </ReactMarkdown>
+          </div>
+
+          {parte!.exemplo_pratico && (
+            <div>
+              {!verExemplo ? (
                 <button
                   type="button"
-                  onClick={() => onPick(e.id)}
-                  className={cn(
-                    "h-9 w-9 rounded-full grid place-items-center border-2 transition-all duration-300",
-                    done && "bg-gold border-gold text-background scale-100",
-                    !done && active &&
-                      "border-gold bg-background text-gold scale-110 step-active",
-                    !done && !active && !isNext &&
-                      "border-border bg-background text-muted-foreground",
-                    !done && isNext &&
-                      "border-gold/40 bg-background text-gold/80 step-next-hint",
-                  )}
-                  aria-current={active ? "step" : undefined}
-                  aria-label={e.label}
+                  onClick={() => setVerExemplo(true)}
+                  className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-gold border border-gold/40 rounded-full px-3.5 py-1.5 hover:bg-gold/10 transition"
                 >
-                  {done ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <Icon className="h-4 w-4" />
-                  )}
+                  <BookOpen className="h-3.5 w-3.5" /> Ver exemplo prático
                 </button>
-                <span
-                  className={cn(
-                    "mt-2 text-[9px] md:text-[10px] uppercase tracking-wider text-center leading-tight transition-colors",
-                    active && "text-gold font-semibold",
-                    !active && done && "text-foreground/80",
-                    !active && !done && "text-muted-foreground",
-                  )}
-                >
-                  {e.label}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
+              ) : (
+                <div className="animate-fade-in rounded-xl border-l-2 border-gold bg-muted/30 px-4 py-3">
+                  <p className="text-[10px] uppercase tracking-wider text-gold/80 mb-1.5">
+                    Exemplo prático
+                  </p>
+                  <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                    {parte!.exemplo_pratico}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {parte!.pontos_chave && parte!.pontos_chave.length > 0 && (
+            <div className="rounded-2xl border border-border bg-card/60 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-gold mb-2 inline-flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3" /> Pontos-chave
+              </p>
+              <ul className="space-y-1.5">
+                {parte!.pontos_chave.map((b, i) => (
+                  <li key={i} className="flex gap-2 text-sm text-foreground/90 leading-snug">
+                    <span className="text-gold mt-0.5">•</span>
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {ehFechamento && (
+            <div className="rounded-xl border border-gold/30 bg-gold/5 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-gold mb-1.5">
+                Fechamento
+              </p>
+              <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                {aula.fechamento}
+              </p>
+            </div>
+          )}
+        </article>
+      )}
+
+      <div className="mt-7 flex items-center justify-between gap-3">
+        <button
+          type="button"
+          disabled={parteIdx === 0}
+          onClick={() => irPara(parteIdx - 1)}
+          className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-30 inline-flex items-center gap-1.5 px-3 py-2"
+        >
+          <ChevronLeft className="h-4 w-4" /> Anterior
+        </button>
+        {ultimaParte ? (
+          <button
+            type="button"
+            onClick={onConcluir}
+            className="text-xs uppercase tracking-wider inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full border border-gold/40 bg-gradient-toga text-gold"
+          >
+            <CheckCircle2 className="h-4 w-4" /> Concluir → Flashcards
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => irPara(parteIdx + 1)}
+            className="text-xs uppercase tracking-wider inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-gold/40 bg-gradient-toga text-gold"
+          >
+            {parteIdx === 0 ? "Começar" : "Próxima parte"} <ChevronRight className="h-4 w-4" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -351,6 +568,7 @@ function EtapaConcluirCta({
     </div>
   );
 }
+
 
 // ------------ Flashcards ------------
 function FlashcardsView({
