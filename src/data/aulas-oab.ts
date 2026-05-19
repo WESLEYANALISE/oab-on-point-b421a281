@@ -217,6 +217,32 @@ export const AULAS_MATERIAS: AulaMateria[] = MATERIAS_OAB_46.map((m) => {
   return stub(m.id, m.nome);
 });
 
+/**
+ * Mapeamento matéria do edital → área(s) da tabela `resumo_livros`.
+ * Cada livro publicado vira um "módulo/tema" listável dentro da matéria.
+ */
+export const MATERIA_AREAS: Record<string, string[]> = {
+  constitucional: ["Direito Constitucional"],
+  trabalho: ["Direito Do Trabalho"],
+  civil: ["Direito Civil"],
+  "processo-civil": ["Direito Processual Civil"],
+  penal: ["Direito Penal", "Lei Penal Especial"],
+  "processo-penal": ["Direito Processual Penal"],
+  administrativo: ["Direito Administrativo"],
+  tributario: ["Direito Tributario"],
+  empresarial: ["Direito Empresarial"],
+  "processo-trabalho": ["Direito Processual Do Trabalho"],
+  internacional: ["Direito Internacional Público", "Direito Internacional Privado"],
+  humanos: ["Direitos Humanos"],
+  ambiental: ["Direito Ambiental"],
+  filosofia: ["Teoria E Filosofia Do Direito"],
+  // sem material próprio ainda: etica, eca
+};
+
+export function getAreasDaMateria(materiaId: string): string[] {
+  return MATERIA_AREAS[materiaId] ?? [];
+}
+
 export function getMateriaAula(materiaId: string): AulaMateria | undefined {
   return AULAS_MATERIAS.find((m) => m.materiaId === materiaId);
 }
