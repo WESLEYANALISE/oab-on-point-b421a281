@@ -68,11 +68,15 @@ const ETAPAS: { id: Etapa; label: string; icon: LucideIcon }[] = [
 
 function AulaCapitulo() {
   const { materia, livroId, ordem } = Route.useParams();
+  const { etapa: etapaInicial } = Route.useSearch();
   const { materia: mat } = Route.useLoaderData();
   const ordemNum = Number(ordem);
   const { data } = useSuspenseQuery(resumoLivroQueryOptions(livroId));
 
-  const [etapa, setEtapa] = useState<Etapa>("ler");
+  const [etapa, setEtapa] = useState<Etapa>(etapaInicial);
+  useEffect(() => {
+    setEtapa(etapaInicial);
+  }, [etapaInicial]);
   const [feitas, setFeitas] = useState<Record<Etapa, boolean>>({
     ler: false,
     flashcards: false,
@@ -81,6 +85,7 @@ function AulaCapitulo() {
     simulado: false,
   });
   const marcarFeita = (e: Etapa) => setFeitas((p) => ({ ...p, [e]: true }));
+
 
   // estado das partes da aula (controlado aqui para o header mostrar)
   const [parteIdx, setParteIdx] = useState(0);
