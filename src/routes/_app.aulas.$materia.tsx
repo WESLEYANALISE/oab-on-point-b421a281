@@ -85,8 +85,8 @@ function MateriaAulaPage() {
             {livros.map((livro, i) => (
               <li key={livro.id}>
                 <Link
-                  to="/resumos/$livroId"
-                  params={{ livroId: livro.id }}
+                  to="/aulas/$materia/$livroId"
+                  params={{ materia: materia.materiaId, livroId: livro.id }}
                   className="group flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-gold/40 hover:bg-card/80 transition-all"
                 >
                   <div className="shrink-0 w-9 h-9 rounded-lg bg-muted text-muted-foreground grid place-items-center font-display font-semibold tabular-nums text-sm">
