@@ -14,6 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
+      aulas_progresso: {
+        Row: {
+          created_at: string
+          id: string
+          passo_atual: number
+          passos_concluidos: Json
+          subtema_slug: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          passo_atual?: number
+          passos_concluidos?: Json
+          subtema_slug: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          passo_atual?: number
+          passos_concluidos?: Json
+          subtema_slug?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      aulas_questoes_geradas: {
+        Row: {
+          alternativas: Json
+          created_at: string
+          enunciado: string
+          id: string
+          justificativa: string | null
+          materia: string | null
+          resposta_correta: string
+          subtema_slug: string
+          tipo: string
+        }
+        Insert: {
+          alternativas: Json
+          created_at?: string
+          enunciado: string
+          id?: string
+          justificativa?: string | null
+          materia?: string | null
+          resposta_correta: string
+          subtema_slug: string
+          tipo?: string
+        }
+        Update: {
+          alternativas?: Json
+          created_at?: string
+          enunciado?: string
+          id?: string
+          justificativa?: string | null
+          materia?: string | null
+          resposta_correta?: string
+          subtema_slug?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
+      aulas_tentativas: {
+        Row: {
+          acertos: number
+          concluido_em: string | null
+          created_at: string
+          id: string
+          iniciado_em: string
+          passo: string
+          respostas: Json
+          subtema_slug: string
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acertos?: number
+          concluido_em?: string | null
+          created_at?: string
+          id?: string
+          iniciado_em?: string
+          passo: string
+          respostas?: Json
+          subtema_slug: string
+          total?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acertos?: number
+          concluido_em?: string | null
+          created_at?: string
+          id?: string
+          iniciado_em?: string
+          passo?: string
+          respostas?: Json
+          subtema_slug?: string
+          total?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       "BIBLIOTECA-CLASSICOS": {
         Row: {
           analise_status: string | null
@@ -380,6 +488,7 @@ export type Database = {
       erros_questao: {
         Row: {
           alternativa_marcada: string | null
+          aula_subtema_slug: string | null
           created_at: string
           flashcard_id: string | null
           id: string
@@ -395,6 +504,7 @@ export type Database = {
         }
         Insert: {
           alternativa_marcada?: string | null
+          aula_subtema_slug?: string | null
           created_at?: string
           flashcard_id?: string | null
           id?: string
@@ -410,6 +520,7 @@ export type Database = {
         }
         Update: {
           alternativa_marcada?: string | null
+          aula_subtema_slug?: string | null
           created_at?: string
           flashcard_id?: string | null
           id?: string

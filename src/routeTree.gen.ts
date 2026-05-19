@@ -53,6 +53,7 @@ import { Route as AppNoticiasIdRouteImport } from './routes/_app.noticias.$id'
 import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slug'
 import { Route as AppBlogSlugRouteImport } from './routes/_app.blog.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
+import { Route as AppAulasMateriaRouteImport } from './routes/_app.aulas.$materia'
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
 import { Route as AppAdminResumosRouteImport } from './routes/_app.admin.resumos'
 import { Route as AppAdminNarracoesRouteImport } from './routes/_app.admin.narracoes'
@@ -287,6 +288,11 @@ const AppBibliotecaSlugRoute = AppBibliotecaSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => AppBibliotecaRoute,
 } as any)
+const AppAulasMateriaRoute = AppAulasMateriaRouteImport.update({
+  id: '/$materia',
+  path: '/$materia',
+  getParentRoute: () => AppAulasRoute,
+} as any)
 const AppAdminSimuladosRoute = AppAdminSimuladosRouteImport.update({
   id: '/simulados',
   path: '/simulados',
@@ -375,7 +381,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
-  '/aulas': typeof AppAulasRoute
+  '/aulas': typeof AppAulasRouteWithChildren
   '/biblioteca': typeof AppBibliotecaRouteWithChildren
   '/blog': typeof AppBlogRouteWithChildren
   '/flashcards': typeof AppFlashcardsRoute
@@ -391,6 +397,7 @@ export interface FileRoutesByFullPath {
   '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
+  '/aulas/$materia': typeof AppAulasMateriaRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/blog/$slug': typeof AppBlogSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
@@ -433,7 +440,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
-  '/aulas': typeof AppAulasRoute
+  '/aulas': typeof AppAulasRouteWithChildren
   '/blog': typeof AppBlogRouteWithChildren
   '/flashcards': typeof AppFlashcardsRoute
   '/materias': typeof AppMateriasRouteWithChildren
@@ -448,6 +455,7 @@ export interface FileRoutesByTo {
   '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
+  '/aulas/$materia': typeof AppAulasMateriaRoute
   '/blog/$slug': typeof AppBlogSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
@@ -491,7 +499,7 @@ export interface FileRoutesById {
   '/_app/app': typeof AppAppRoute
   '/_app/assistente': typeof AppAssistenteRoute
   '/_app/audioaulas': typeof AppAudioaulasRoute
-  '/_app/aulas': typeof AppAulasRoute
+  '/_app/aulas': typeof AppAulasRouteWithChildren
   '/_app/biblioteca': typeof AppBibliotecaRouteWithChildren
   '/_app/blog': typeof AppBlogRouteWithChildren
   '/_app/flashcards': typeof AppFlashcardsRoute
@@ -507,6 +515,7 @@ export interface FileRoutesById {
   '/_app/admin/narracoes': typeof AppAdminNarracoesRoute
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
+  '/_app/aulas/$materia': typeof AppAulasMateriaRoute
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/_app/blog/$slug': typeof AppBlogSlugRoute
   '/_app/materias/$slug': typeof AppMateriasSlugRoute
@@ -568,6 +577,7 @@ export interface FileRouteTypes {
     | '/admin/narracoes'
     | '/admin/resumos'
     | '/admin/simulados'
+    | '/aulas/$materia'
     | '/biblioteca/$slug'
     | '/blog/$slug'
     | '/materias/$slug'
@@ -625,6 +635,7 @@ export interface FileRouteTypes {
     | '/admin/narracoes'
     | '/admin/resumos'
     | '/admin/simulados'
+    | '/aulas/$materia'
     | '/blog/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
@@ -683,6 +694,7 @@ export interface FileRouteTypes {
     | '/_app/admin/narracoes'
     | '/_app/admin/resumos'
     | '/_app/admin/simulados'
+    | '/_app/aulas/$materia'
     | '/_app/biblioteca/$slug'
     | '/_app/blog/$slug'
     | '/_app/materias/$slug'
@@ -1038,6 +1050,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaSlugRouteImport
       parentRoute: typeof AppBibliotecaRoute
     }
+    '/_app/aulas/$materia': {
+      id: '/_app/aulas/$materia'
+      path: '/$materia'
+      fullPath: '/aulas/$materia'
+      preLoaderRoute: typeof AppAulasMateriaRouteImport
+      parentRoute: typeof AppAulasRoute
+    }
     '/_app/admin/simulados': {
       id: '/_app/admin/simulados'
       path: '/simulados'
@@ -1159,6 +1178,18 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
   AppAdminRouteChildren,
 )
 
+interface AppAulasRouteChildren {
+  AppAulasMateriaRoute: typeof AppAulasMateriaRoute
+}
+
+const AppAulasRouteChildren: AppAulasRouteChildren = {
+  AppAulasMateriaRoute: AppAulasMateriaRoute,
+}
+
+const AppAulasRouteWithChildren = AppAulasRoute._addFileChildren(
+  AppAulasRouteChildren,
+)
+
 interface AppBibliotecaSlugBookIdRouteChildren {
   AppBibliotecaSlugBookIdLerRoute: typeof AppBibliotecaSlugBookIdLerRoute
   AppBibliotecaSlugBookIdIndexRoute: typeof AppBibliotecaSlugBookIdIndexRoute
@@ -1242,7 +1273,7 @@ interface AppRouteChildren {
   AppAppRoute: typeof AppAppRoute
   AppAssistenteRoute: typeof AppAssistenteRoute
   AppAudioaulasRoute: typeof AppAudioaulasRoute
-  AppAulasRoute: typeof AppAulasRoute
+  AppAulasRoute: typeof AppAulasRouteWithChildren
   AppBibliotecaRoute: typeof AppBibliotecaRouteWithChildren
   AppBlogRoute: typeof AppBlogRouteWithChildren
   AppFlashcardsRoute: typeof AppFlashcardsRoute
@@ -1281,7 +1312,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAppRoute: AppAppRoute,
   AppAssistenteRoute: AppAssistenteRoute,
   AppAudioaulasRoute: AppAudioaulasRoute,
-  AppAulasRoute: AppAulasRoute,
+  AppAulasRoute: AppAulasRouteWithChildren,
   AppBibliotecaRoute: AppBibliotecaRouteWithChildren,
   AppBlogRoute: AppBlogRouteWithChildren,
   AppFlashcardsRoute: AppFlashcardsRoute,
