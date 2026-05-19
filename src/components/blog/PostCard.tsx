@@ -60,3 +60,5 @@ function PostCardInner({ post }: { post: BlogPostListItem }) {
     </Link>
   );
 }
+
+export const PostCard = memo(PostCardInner);
