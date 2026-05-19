@@ -371,6 +371,7 @@ function FlashcardsView({
   });
   const [i, setI] = useState(0);
   const [flip, setFlip] = useState(false);
+  const [verExemplo, setVerExemplo] = useState(false);
 
   if (q.isPending) {
     return (
