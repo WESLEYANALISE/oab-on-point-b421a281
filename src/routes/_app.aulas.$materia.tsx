@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, Clock, ChevronRight } from "lucide-react";
-import { getMateriaAula } from "@/data/aulas-oab";
+import { getMateriaAula, type AulaModulo } from "@/data/aulas-oab";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/aulas/$materia")({
