@@ -29,7 +29,7 @@ export function BottomNav() {
                 to={to}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1 py-2 text-[11px] transition-colors",
+                  "flex flex-col items-center gap-1 py-2 text-[11px] transition-colors tap-feedback rounded-lg",
                   active ? "text-primary" : "text-foreground hover:text-primary",
                 )}
               >
