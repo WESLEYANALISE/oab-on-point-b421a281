@@ -458,3 +458,55 @@ export const getFeedbackSubtema = createServerFn({ method: "POST" })
       tentativasTotais: tents?.length ?? 0,
     };
   });
+
+// ====================================================================
+// 10) Catálogo dinâmico de livros por matéria (vira lista de temas)
+// ====================================================================
+
+import { MATERIA_AREAS as _MA } from "@/data/aulas-oab";
+
+export const listarLivrosPorMateria = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ materiaId: z.string().min(1).max(80) }).parse(d))
+  .handler(async ({ data }) => {
+    const areas = _MA[data.materiaId] ?? [];
+    if (areas.length === 0) return { livros: [] as Array<{ id: string; titulo: string; capa: string | null; area: string; capitulos: number }> };
+    const { data: livros, error } = await supabaseAdmin
+      .from("resumo_livros")
+      .select("id, titulo, capa, area, capitulos_gerados")
+      .in("area", areas)
+      .gt("capitulos_gerados", 0)
+      .order("area", { ascending: true })
+      .order("titulo", { ascending: true });
+    if (error) throw new Error(error.message);
+    return {
+      livros: (livros ?? []).map((l) => ({
+        id: l.id,
+        titulo: l.titulo,
+        capa: l.capa,
+        area: l.area ?? "",
+        capitulos: l.capitulos_gerados ?? 0,
+      })),
+    };
+  });
+
+export const contarLivrosPorMaterias = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const allAreas = Array.from(new Set(Object.values(_MA).flat()));
+    if (allAreas.length === 0) return {} as Record<string, number>;
+    const { data, error } = await supabaseAdmin
+      .from("resumo_livros")
+      .select("area, capitulos_gerados")
+      .in("area", allAreas)
+      .gt("capitulos_gerados", 0);
+    if (error) throw new Error(error.message);
+    const porArea = new Map<string, number>();
+    for (const r of data ?? []) {
+      if (!r.area) continue;
+      porArea.set(r.area, (porArea.get(r.area) ?? 0) + 1);
+    }
+    const out: Record<string, number> = {};
+    for (const [materiaId, areas] of Object.entries(_MA)) {
+      out[materiaId] = areas.reduce((s, a) => s + (porArea.get(a) ?? 0), 0);
+    }
+    return out;
+  });

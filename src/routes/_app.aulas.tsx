@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AULAS_MATERIAS } from "@/data/aulas-oab";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { AULAS_MATERIAS, getAreasDaMateria } from "@/data/aulas-oab";
+import { contarLivrosPorMaterias } from "@/lib/aulas.functions";
 import { GraduationCap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -7,7 +10,7 @@ export const Route = createFileRoute("/_app/aulas")({
   head: () => ({
     meta: [
       { title: "Aulas OAB 1ª Fase — OAB na Risca" },
-      { name: "description", content: "Aulas guiadas por módulo e subtema, com resumo, flashcards, questões e simulado em uma trilha de 8 passos." },
+      { name: "description", content: "Aulas guiadas por matéria, com lista completa de temas para estudar e trilha integrada com resumos, flashcards, questões e simulado." },
     ],
   }),
   component: AulasIndex,
@@ -16,6 +19,13 @@ export const Route = createFileRoute("/_app/aulas")({
 });
 
 function AulasIndex() {
+  const contar = useServerFn(contarLivrosPorMaterias);
+  const { data: counts } = useQuery({
+    queryKey: ["aulas", "counts"],
+    queryFn: () => contar(),
+    staleTime: 60_000,
+  });
+
   return (
     <div className="pb-16">
       <header className="px-4 md:px-8 pt-6 pb-5 bg-gradient-toga text-primary-foreground">
@@ -24,25 +34,32 @@ function AulasIndex() {
         </div>
         <h1 className="font-display font-semibold text-[26px] md:text-4xl tracking-tight">Aulas OAB 1ª Fase</h1>
         <p className="mt-1.5 text-[13px] md:text-sm text-primary-foreground/80 max-w-xl">
-          Escolha uma matéria, percorra os módulos e siga a trilha de 8 passos até dominar cada subtema.
+          Escolha uma matéria e veja todos os temas do edital com material pronto para estudo.
         </p>
       </header>
 
       <section className="px-4 md:px-8 mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {AULAS_MATERIAS.map((m) => {
-          const indisponivel = m.modulos.length === 0;
+          const temArea = getAreasDaMateria(m.materiaId).length > 0;
+          const total = counts?.[m.materiaId] ?? 0;
+          const indisponivel = !temArea || total === 0;
+          const carregando = temArea && !counts;
           const cardInner = (
             <>
               <div className={cn("h-20 bg-gradient-to-br p-3 flex items-start justify-between", m.cor)}>
                 <span className="text-3xl">{m.emoji}</span>
-                {indisponivel && (
+                {indisponivel && !carregando && (
                   <span className="text-[9px] uppercase tracking-wider text-white/90 font-semibold bg-black/30 rounded px-1.5 py-0.5">Em breve</span>
                 )}
               </div>
               <div className="p-3">
                 <h2 className="font-display text-[13px] md:text-sm leading-tight">{m.nome}</h2>
                 <p className="text-[10.5px] text-muted-foreground mt-1">
-                  {indisponivel ? "Trilha em preparação" : `${m.modulos.length} módulos`}
+                  {carregando
+                    ? "Carregando…"
+                    : indisponivel
+                      ? "Trilha em preparação"
+                      : `${total} ${total === 1 ? "tema" : "temas"}`}
                 </p>
               </div>
             </>
