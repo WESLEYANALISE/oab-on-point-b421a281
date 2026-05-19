@@ -7,7 +7,7 @@ import { geminiGenerateContent } from "@/lib/gemini.server";
 const MODEL = "gemini-2.5-flash";
 
 // ---------- tipos ----------
-export type Flashcard = { frente: string; verso: string };
+export type Flashcard = { frente: string; verso: string; exemplo?: string };
 export type Questao = {
   enunciado: string;
   alternativas: { A: string; B: string; C: string; D: string; E: string };
