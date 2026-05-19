@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      aula_capitulo_aulas: {
+        Row: {
+          aula: Json
+          created_at: string
+          id: string
+          ordem: number
+          resumo_livro_id: string
+        }
+        Insert: {
+          aula: Json
+          created_at?: string
+          id?: string
+          ordem: number
+          resumo_livro_id: string
+        }
+        Update: {
+          aula?: Json
+          created_at?: string
+          id?: string
+          ordem?: number
+          resumo_livro_id?: string
+        }
+        Relationships: []
+      }
       aula_capitulo_flashcards: {
         Row: {
           cards: Json
