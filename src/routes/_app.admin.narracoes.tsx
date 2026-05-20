@@ -43,7 +43,7 @@ function AdminNarracoes() {
   const [page, setPage] = useState(0);
   const [soFaltantes, setSoFaltantes] = useState(true);
 
-  const { data: leis } = useQuery({
+  const { data: leis, isLoading: leisLoading } = useQuery({
     queryKey: ["admin-narracoes", "leis"],
     queryFn: () => fnLeis(),
   });
