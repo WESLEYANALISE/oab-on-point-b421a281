@@ -180,6 +180,20 @@ export function removerArtigoInicial(texto: string): string {
   );
 }
 
+/**
+ * Remove o prefixo abreviado dos nomes de leis pra TTS não falar a sigla.
+ * Ex.: "CF - Constituição Federal" → "Constituição Federal".
+ *      "CTB Código de Trânsito Brasileiro" → "Código de Trânsito Brasileiro".
+ *      "LC 75 - MINISTERIO PUBLICO UNIAO" → "MINISTERIO PUBLICO UNIAO".
+ *      "ESTATUTO - ECA" → "ESTATUTO - ECA" (mantém, restante é curto).
+ */
+export function limparTituloLei(nome: string): string {
+  const t = (nome || "").trim();
+  const m = t.match(/^([A-Z]{1,6}(?:\s*\d+)?)\s*[-–—]?\s+(.+)$/);
+  if (m && m[2].trim().length >= 6) return m[2].trim();
+  return t;
+}
+
 /** Pipeline final: prefixo + transformações + limpeza. */
 export function montarTextoNarracao({
   leiTitulo,
