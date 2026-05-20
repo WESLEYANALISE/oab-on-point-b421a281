@@ -42,6 +42,14 @@ function NotFoundComponent() {
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
+  // Reporta para o Sentry se estiver habilitado.
+  if (typeof window !== "undefined") {
+    try {
+      Sentry.captureException(error);
+    } catch {
+      /* noop */
+    }
+  }
   const router = useRouter();
 
   return (
