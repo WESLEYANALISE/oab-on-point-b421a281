@@ -41,7 +41,7 @@ function AdminNarracoes() {
   const [leiId, setLeiId] = useState<string>("");
   const [busca, setBusca] = useState("");
   const [page, setPage] = useState(0);
-  const [soFaltantes, setSoFaltantes] = useState(true);
+  const [soFaltantes, setSoFaltantes] = useState(false);
 
   const { data: leis, isLoading: leisLoading } = useQuery({
     queryKey: ["admin-narracoes", "leis"],
