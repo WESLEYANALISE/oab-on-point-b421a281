@@ -890,7 +890,7 @@ function ArtigoSheet({
     <Sheet open={!!artigoId} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         side="bottom"
-        className="h-[95vh] sm:h-[92vh] w-full sm:max-w-[640px] sm:mx-auto p-0 flex flex-col gap-0 rounded-t-3xl border border-border/60 [&>button]:hidden bg-background"
+        className="inset-0 h-[100svh] w-full max-w-none sm:max-w-none p-0 flex flex-col gap-0 rounded-none border-0 [&>button]:hidden bg-background"
       >
         {/* Header */}
         <div className="relative px-5 pt-5 pb-3 border-b border-border/60 bg-gradient-to-b from-card/80 to-card/40">
