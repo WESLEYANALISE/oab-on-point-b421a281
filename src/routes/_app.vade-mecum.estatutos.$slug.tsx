@@ -448,7 +448,7 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
       <ArtigoSheet
         artigoId={artigoId}
         leiId={data?.lei.id ?? null}
-        leiRotulo={meta?.nomeCompleto?.toUpperCase() ?? data?.lei.nome.toUpperCase() ?? "ESTATUTO"}
+        leiRotulo={(tituloOverride ?? meta?.nomeCompleto ?? data?.lei.nome ?? "ESTATUTO").toUpperCase()}
         planaltoUrl={meta?.planaltoUrl}
         userId={userId}
         favorito={!!artigoId && !!favoritos?.has(artigoId)}
