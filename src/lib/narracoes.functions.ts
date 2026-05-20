@@ -379,3 +379,96 @@ export const excluirNarracao = createServerFn({ method: "POST" })
       .eq("id", data.artigoId);
     return { ok: true };
   });
+
+// ---------- SUGERIR RECOMENDADOS COM IA ----------
+// Usa Gemini pra marcar os artigos mais cobrados na OAB da lei (`relevancia`).
+// Sobrescreve as marcações anteriores da lei (limpa antes).
+export const sugerirRecomendacoesLei = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ leiId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+
+    const { data: lei } = await supabaseAdmin
+      .from("vade_mecum_leis")
+      .select("nome, nome_curto")
+      .eq("id", data.leiId)
+      .single();
+    if (!lei) throw new Error("Lei não encontrada");
+
+    // Pega TODOS os artigos numerados da lei (apenas número + 1ª linha do texto pra contextualizar)
+    const { data: artigos, error } = await supabaseAdmin
+      .from("vade_mecum_artigos")
+      .select("id, numero, texto")
+      .eq("lei_id", data.leiId)
+      .not("numero", "is", null)
+      .neq("numero", "")
+      .order("ordem", { ascending: true });
+    if (error) throw new Error(error.message);
+    if (!artigos || artigos.length === 0) return { atualizados: 0 };
+
+    const lista = artigos
+      .map((a) => `${a.numero}: ${(a.texto ?? "").replace(/\s+/g, " ").slice(0, 140)}`)
+      .join("\n");
+
+    const prompt = `Você é um especialista em Exame da OAB. Com base na lei "${lei.nome}", aponte os artigos MAIS COBRADOS historicamente na 1ª e 2ª fase da OAB.
+
+Classifique em duas listas:
+- "muito_alta": artigos absolutamente clássicos, cobrados em quase todo exame.
+- "alta": artigos muito cobrados, frequentes mas não em todos.
+
+Responda APENAS um JSON válido no formato:
+{"muito_alta": ["1","5","37"], "alta": ["18","20"]}
+
+Use exatamente os números no formato que aparecem na lista (ex.: "1", "5", "1-A").
+Lista de artigos disponíveis:
+${lista.slice(0, 18000)}`;
+
+    const res = await geminiGenerateContent("gemini-2.5-flash", {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Gemini falhou (${res.status}): ${body.slice(0, 300)}`);
+    }
+    const json = (await res.json()) as any;
+    const txt: string = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    let parsed: { muito_alta?: string[]; alta?: string[] } = {};
+    try {
+      parsed = JSON.parse(txt);
+    } catch {
+      const m = txt.match(/\{[\s\S]*\}/);
+      if (m) parsed = JSON.parse(m[0]);
+    }
+    const muitoAlta = new Set((parsed.muito_alta ?? []).map((n) => String(n).trim()));
+    const alta = new Set((parsed.alta ?? []).map((n) => String(n).trim()));
+
+    // Limpa marcações anteriores da lei
+    await supabaseAdmin
+      .from("vade_mecum_artigos")
+      .update({ relevancia: null })
+      .eq("lei_id", data.leiId)
+      .in("relevancia", ["alta", "muito_alta"]);
+
+    let atualizados = 0;
+    for (const a of artigos) {
+      const num = String(a.numero ?? "").trim();
+      const novo = muitoAlta.has(num)
+        ? "muito_alta"
+        : alta.has(num)
+          ? "alta"
+          : null;
+      if (novo) {
+        const { error: upErr } = await supabaseAdmin
+          .from("vade_mecum_artigos")
+          .update({ relevancia: novo })
+          .eq("id", a.id);
+        if (!upErr) atualizados++;
+      }
+    }
+
+    return { atualizados };
+  });
