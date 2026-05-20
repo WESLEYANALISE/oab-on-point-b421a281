@@ -305,16 +305,18 @@ function ArtigoRow({ artigo }: { artigo: Artigo }) {
           <Eye className="h-3.5 w-3.5" />
         </button>
 
-        {artigo.tem_narracao && !audioUrl && (
-          <button
-            disabled={busy}
-            onClick={() => carregar.mutate()}
-            title="Ouvir"
-            className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-accent disabled:opacity-40"
-          >
+        <button
+          disabled={busy || !artigo.tem_narracao || !!audioUrl}
+          onClick={() => carregar.mutate()}
+          title={artigo.tem_narracao ? "Ouvir" : "Sem narração ainda"}
+          className="h-8 w-8 grid place-items-center rounded-md border border-border hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          {carregar.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
             <Play className="h-3.5 w-3.5" />
-          </button>
-        )}
+          )}
+        </button>
 
         <button
           disabled={busy}
