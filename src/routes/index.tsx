@@ -13,6 +13,8 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import heroImage from "@/assets/oab-landing-hero.jpg";
+import heroAvif from "@/assets/oab-landing-hero.jpg?format=avif&w=640;960;1280&as=srcset";
+import heroWebp from "@/assets/oab-landing-hero.jpg?format=webp&w=640;960;1280&as=srcset";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -47,17 +49,21 @@ function LandingPage() {
             aria-hidden
             className={`absolute inset-0 bg-gradient-toga transition-opacity duration-700 ${heroLoaded ? "opacity-0" : "opacity-100"}`}
           />
-          <img
-            src={heroImage}
-            alt="Estátua da deusa Themis com balança e advogado em traje formal contemplando a luz divina"
-            width={1280}
-            height={1600}
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            onLoad={() => setHeroLoaded(true)}
-            className={`absolute inset-0 h-full w-full object-cover transition-all duration-1000 ${heroLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}`}
-          />
+          <picture>
+            <source type="image/avif" srcSet={heroAvif} sizes="100vw" />
+            <source type="image/webp" srcSet={heroWebp} sizes="100vw" />
+            <img
+              src={heroImage}
+              alt="Estátua da deusa Themis com balança e advogado em traje formal contemplando a luz divina"
+              width={1280}
+              height={1600}
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              onLoad={() => setHeroLoaded(true)}
+              className={`absolute inset-0 h-full w-full object-cover transition-all duration-1000 ${heroLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}`}
+            />
+          </picture>
           <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/60 to-black/95" />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
           <div className="absolute -top-20 -right-20 h-96 w-96 rounded-full bg-gold/15 blur-3xl pointer-events-none" />
