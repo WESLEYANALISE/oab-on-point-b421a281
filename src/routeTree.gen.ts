@@ -66,6 +66,7 @@ import { Route as AppVadeMecumCfIndexRouteImport } from './routes/_app.vade-mecu
 import { Route as AppSimuladosSlugIndexRouteImport } from './routes/_app.simulados.$slug.index'
 import { Route as AppBibliotecaSlugIndexRouteImport } from './routes/_app.biblioteca.$slug.index'
 import { Route as AppAulasMateriaIndexRouteImport } from './routes/_app.aulas.$materia.index'
+import { Route as ApiPublicHooksCfSyncRouteImport } from './routes/api/public/hooks.cf-sync'
 import { Route as AppVadeMecumEstatutosSlugRouteImport } from './routes/_app.vade-mecum.estatutos.$slug'
 import { Route as AppVadeMecumCfParteRouteImport } from './routes/_app.vade-mecum.cf.$parte'
 import { Route as AppSimuladosSlugPraticarRouteImport } from './routes/_app.simulados.$slug.praticar'
@@ -363,6 +364,11 @@ const AppAulasMateriaIndexRoute = AppAulasMateriaIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppAulasMateriaRoute,
 } as any)
+const ApiPublicHooksCfSyncRoute = ApiPublicHooksCfSyncRouteImport.update({
+  id: '/api/public/hooks/cf-sync',
+  path: '/api/public/hooks/cf-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppVadeMecumEstatutosSlugRoute =
   AppVadeMecumEstatutosSlugRouteImport.update({
     id: '/vade-mecum/estatutos/$slug',
@@ -484,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/vade-mecum/cf/$parte': typeof AppVadeMecumCfParteRoute
   '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
+  '/api/public/hooks/cf-sync': typeof ApiPublicHooksCfSyncRoute
   '/aulas/$materia/': typeof AppAulasMateriaIndexRoute
   '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
@@ -546,6 +553,7 @@ export interface FileRoutesByTo {
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/vade-mecum/cf/$parte': typeof AppVadeMecumCfParteRoute
   '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
+  '/api/public/hooks/cf-sync': typeof ApiPublicHooksCfSyncRoute
   '/aulas/$materia': typeof AppAulasMateriaIndexRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
   '/simulados/$slug': typeof AppSimuladosSlugIndexRoute
@@ -617,6 +625,7 @@ export interface FileRoutesById {
   '/_app/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/_app/vade-mecum/cf/$parte': typeof AppVadeMecumCfParteRoute
   '/_app/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
+  '/api/public/hooks/cf-sync': typeof ApiPublicHooksCfSyncRoute
   '/_app/aulas/$materia/': typeof AppAulasMateriaIndexRoute
   '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/_app/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
@@ -688,6 +697,7 @@ export interface FileRouteTypes {
     | '/simulados/$slug/praticar'
     | '/vade-mecum/cf/$parte'
     | '/vade-mecum/estatutos/$slug'
+    | '/api/public/hooks/cf-sync'
     | '/aulas/$materia/'
     | '/biblioteca/$slug/'
     | '/simulados/$slug/'
@@ -750,6 +760,7 @@ export interface FileRouteTypes {
     | '/simulados/$slug/praticar'
     | '/vade-mecum/cf/$parte'
     | '/vade-mecum/estatutos/$slug'
+    | '/api/public/hooks/cf-sync'
     | '/aulas/$materia'
     | '/biblioteca/$slug'
     | '/simulados/$slug'
@@ -820,6 +831,7 @@ export interface FileRouteTypes {
     | '/_app/simulados/$slug/praticar'
     | '/_app/vade-mecum/cf/$parte'
     | '/_app/vade-mecum/estatutos/$slug'
+    | '/api/public/hooks/cf-sync'
     | '/_app/aulas/$materia/'
     | '/_app/biblioteca/$slug/'
     | '/_app/simulados/$slug/'
@@ -842,6 +854,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApiArtigoChatRoute: typeof ApiArtigoChatRoute
   ApiPublicSeedProvasRoute: typeof ApiPublicSeedProvasRoute
+  ApiPublicHooksCfSyncRoute: typeof ApiPublicHooksCfSyncRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1245,6 +1258,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAulasMateriaIndexRouteImport
       parentRoute: typeof AppAulasMateriaRoute
     }
+    '/api/public/hooks/cf-sync': {
+      id: '/api/public/hooks/cf-sync'
+      path: '/api/public/hooks/cf-sync'
+      fullPath: '/api/public/hooks/cf-sync'
+      preLoaderRoute: typeof ApiPublicHooksCfSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/vade-mecum/estatutos/$slug': {
       id: '/_app/vade-mecum/estatutos/$slug'
       path: '/vade-mecum/estatutos/$slug'
@@ -1565,6 +1585,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ApiArtigoChatRoute: ApiArtigoChatRoute,
   ApiPublicSeedProvasRoute: ApiPublicSeedProvasRoute,
+  ApiPublicHooksCfSyncRoute: ApiPublicHooksCfSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -101,7 +101,7 @@ export async function executarSyncCF(opts: { useBrowserless?: boolean } = {}) {
       .from("vade_mecum_artigos")
       .update({
         ult_alteracao_em: u.ult_alteracao_em,
-        alteracoes: u.alteracoes as unknown as object,
+        alteracoes: JSON.parse(JSON.stringify(u.alteracoes)),
         revogado: u.revogado,
       })
       .eq("id", u.id);
