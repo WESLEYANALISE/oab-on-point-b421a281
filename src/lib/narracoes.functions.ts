@@ -125,12 +125,16 @@ export const listarArtigosParaNarrar = createServerFn({ method: "POST" })
 
     let q = supabaseAdmin
       .from("vade_mecum_artigos")
-      .select("id, numero, texto, ordem", { count: "exact" })
+      .select("id, numero, texto, ordem, relevancia", { count: "exact" })
       .eq("lei_id", data.leiId)
       .not("numero", "is", null)
       .neq("numero", "")
       .order("ordem", { ascending: true })
       .range(data.page * data.pageSize, (data.page + 1) * data.pageSize - 1);
+
+    if (data.apenasRecomendados) {
+      q = q.in("relevancia", ["alta", "muito_alta"]);
+    }
 
     if (data.busca && data.busca.trim()) {
       const b = data.busca.trim();
