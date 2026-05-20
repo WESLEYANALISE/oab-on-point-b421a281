@@ -17,6 +17,12 @@ import { getMateriaAula } from "@/data/aulas-oab";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/aulas/$materia/$livroId/")({
+  head: () => ({
+    meta: [
+      { title: "Trilha de aulas · OAB na Risca" },
+      { name: "description", content: "Capítulos da trilha de aulas com leitura, flashcards, questões e simulado." },
+    ],
+  }),
   component: TrilhaCapitulos,
 });
 

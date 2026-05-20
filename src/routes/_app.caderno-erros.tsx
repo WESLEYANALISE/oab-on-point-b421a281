@@ -5,6 +5,12 @@ import { ArrowLeft, Loader2, Notebook, XCircle } from "lucide-react";
 import { listarCadernoErros } from "@/lib/aulas-trilha.functions";
 
 export const Route = createFileRoute("/_app/caderno-erros")({
+  head: () => ({
+    meta: [
+      { title: "Caderno de erros · OAB na Risca" },
+      { name: "description", content: "Revise todas as questões que você errou nas aulas e simulados." },
+    ],
+  }),
   component: CadernoErros,
 });
 

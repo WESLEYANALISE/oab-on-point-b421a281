@@ -9,6 +9,12 @@ import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 const PAGE_SIZE = 60;
 
 export const Route = createFileRoute("/_app/biblioteca/$slug/")({
+  head: ({ params }) => ({
+    meta: [
+      { title: `${BIB_MAP[params.slug]?.title ?? "Biblioteca"} · OAB na Risca` },
+      { name: "description", content: `Livros de ${BIB_MAP[params.slug]?.title ?? "biblioteca"} para preparação da OAB.` },
+    ],
+  }),
   loader: ({ params, context }) => {
     if (BIB_MAP[params.slug]?.hasAreas) {
       context.queryClient.prefetchQuery(areasQueryOptions(params.slug));

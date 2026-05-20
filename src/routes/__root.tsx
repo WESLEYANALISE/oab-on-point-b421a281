@@ -126,6 +126,7 @@ export const Route = createRootRouteWithContext<{
       { rel: "preconnect", href: "https://ajbzwnzbuukwjaydfqui.supabase.co", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://ajbzwnzbuukwjaydfqui.supabase.co" },
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
   }),

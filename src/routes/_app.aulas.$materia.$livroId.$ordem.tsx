@@ -44,6 +44,15 @@ export const Route = createFileRoute("/_app/aulas/$materia/$livroId/$ordem")({
         : ("ler" as Etapa),
     };
   },
+  head: ({ params }) => {
+    const m = getMateriaAula(params.materia);
+    return {
+      meta: [
+        { title: `Aula ${params.ordem} · ${m?.nome ?? "OAB na Risca"}` },
+        { name: "description", content: `Aula ${params.ordem} de ${m?.nome ?? "OAB"} — leia, pratique com flashcards, questões e simulado.` },
+      ],
+    };
+  },
   loader: ({ context, params }) => {
     const mat = getMateriaAula(params.materia);
     if (!mat) throw notFound();

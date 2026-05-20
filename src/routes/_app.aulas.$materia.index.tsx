@@ -6,6 +6,17 @@ import { getAreasDaMateria, getMateriaAula } from "@/data/aulas-oab";
 import { listarLivrosPorMateria } from "@/lib/aulas.functions";
 
 export const Route = createFileRoute("/_app/aulas/$materia/")({
+  head: ({ params }) => {
+    const m = getMateriaAula(params.materia);
+    const titulo = m?.nome ?? "Aulas";
+    return {
+      meta: [
+        { title: `${titulo} · Aulas OAB` },
+        { name: "description", content: `Aulas de ${titulo} para o Exame da OAB com leitura, flashcards, questões e simulado.` },
+        { property: "og:title", content: `${titulo} · Aulas OAB` },
+      ],
+    };
+  },
   component: MateriaAulaPage,
 });
 
