@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -158,7 +158,8 @@ function limparPrefixoArtigo(texto: string): string {
 
 // ----------- Page -----------
 function EstatutoArtigosPage() {
-  const { slug } = Route.useParams();
+  const params = useParams({ strict: false }) as { slug?: string };
+  const slug = params.slug ?? "";
   const [query, setQuery] = useState("");
   const [artigoId, setArtigoId] = useState<string | null>(null);
   const [aba, setAba] = useState<Aba>("artigos");
