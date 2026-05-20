@@ -1290,6 +1290,7 @@ export type Database = {
       }
       vade_mecum_artigos: {
         Row: {
+          alteracoes: Json | null
           aula: string | null
           comentario: string | null
           created_at: string
@@ -1309,13 +1310,16 @@ export type Database = {
           relevancia: string | null
           relevancia_fontes: Json | null
           relevancia_nota: string | null
+          revogado: boolean
           source_id: number | null
           termos: Json | null
           termos_aprofundados: Json | null
           texto: string
+          ult_alteracao_em: string | null
           updated_at: string
         }
         Insert: {
+          alteracoes?: Json | null
           aula?: string | null
           comentario?: string | null
           created_at?: string
@@ -1335,13 +1339,16 @@ export type Database = {
           relevancia?: string | null
           relevancia_fontes?: Json | null
           relevancia_nota?: string | null
+          revogado?: boolean
           source_id?: number | null
           termos?: Json | null
           termos_aprofundados?: Json | null
           texto: string
+          ult_alteracao_em?: string | null
           updated_at?: string
         }
         Update: {
+          alteracoes?: Json | null
           aula?: string | null
           comentario?: string | null
           created_at?: string
@@ -1361,10 +1368,12 @@ export type Database = {
           relevancia?: string | null
           relevancia_fontes?: Json | null
           relevancia_nota?: string | null
+          revogado?: boolean
           source_id?: number | null
           termos?: Json | null
           termos_aprofundados?: Json | null
           texto?: string
+          ult_alteracao_em?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1551,6 +1560,54 @@ export type Database = {
         }
         Relationships: []
       }
+      vade_mecum_sync_relatorios: {
+        Row: {
+          alterados: Json
+          created_at: string
+          erro_msg: string | null
+          executado_em: string
+          fonte_url: string
+          id: string
+          lei_id: string
+          novos: Json
+          resumo_md: string | null
+          revogados: Json
+          status: string
+          total_banco: number
+          total_planalto: number
+        }
+        Insert: {
+          alterados?: Json
+          created_at?: string
+          erro_msg?: string | null
+          executado_em?: string
+          fonte_url: string
+          id?: string
+          lei_id: string
+          novos?: Json
+          resumo_md?: string | null
+          revogados?: Json
+          status?: string
+          total_banco?: number
+          total_planalto?: number
+        }
+        Update: {
+          alterados?: Json
+          created_at?: string
+          erro_msg?: string | null
+          executado_em?: string
+          fonte_url?: string
+          id?: string
+          lei_id?: string
+          novos?: Json
+          resumo_md?: string | null
+          revogados?: Json
+          status?: string
+          total_banco?: number
+          total_planalto?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1559,6 +1616,7 @@ export type Database = {
       get_artigo_full: {
         Args: { _id: string }
         Returns: {
+          alteracoes: Json | null
           aula: string | null
           comentario: string | null
           created_at: string
@@ -1578,10 +1636,12 @@ export type Database = {
           relevancia: string | null
           relevancia_fontes: Json | null
           relevancia_nota: string | null
+          revogado: boolean
           source_id: number | null
           termos: Json | null
           termos_aprofundados: Json | null
           texto: string
+          ult_alteracao_em: string | null
           updated_at: string
         }[]
         SetofOptions: {
