@@ -10,29 +10,36 @@ export async function fetchRendered(url: string): Promise<string> {
   }
 
   const endpoint = `https://chrome.browserless.io/content?token=${encodeURIComponent(token)}`;
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      url,
-      gotoOptions: { waitUntil: "networkidle0", timeout: 60000 },
-    }),
-  });
+  // Planalto é instável com networkidle0 (frame detach). Tentamos estratégias
+  // mais leves com retry até obter um HTML válido.
+  const attempts: Array<Record<string, unknown>> = [
+    { gotoOptions: { waitUntil: "domcontentloaded", timeout: 45000 }, waitFor: 4000 },
+    { gotoOptions: { waitUntil: "load", timeout: 60000 }, waitFor: 6000 },
+    { gotoOptions: { waitUntil: "networkidle2", timeout: 60000 }, waitFor: 3000 },
+  ];
 
-  if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(
-      `Browserless ${res.status} ${res.statusText} :: ${detail.slice(0, 300)}`,
-    );
+  let lastErr = "";
+  for (const opts of attempts) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, ...opts }),
+      });
+      if (res.ok) return await res.text();
+      const detail = (await res.text().catch(() => "")).slice(0, 200);
+      lastErr = `${res.status} ${res.statusText} :: ${detail}`;
+      if (res.status < 500) break; // 4xx não adianta retentar
+    } catch (e) {
+      lastErr = e instanceof Error ? e.message : String(e);
+    }
   }
-
-  return res.text();
+  throw new Error(`Browserless falhou após retries :: ${lastErr}`);
 }
 
 // Detecta página de bot-challenge do Planalto (retorna 200 mas só com JS de proteção).
 function isBotChallenge(html: string): boolean {
   if (html.length < 25000 && /bobcmn|TSPD|challenge|window\["bobcmn"\]/i.test(html)) return true;
-  // Página real da resenha contém marcadores claros
   if (!/resenha|legisla|planalto/i.test(html)) return true;
   return false;
 }
