@@ -34,8 +34,14 @@ function ResumoTimeline() {
       <header className="mb-6 flex gap-4 items-start">
         {data.livro.capa && (
           <img
-            src={data.livro.capa}
+            src={supabaseImage(data.livro.capa, { w: 160, q: 78 }) ?? data.livro.capa}
+            srcSet={supabaseImageSrcSet(data.livro.capa, 80, 78)}
+            sizes="80px"
             alt=""
+            loading="eager"
+            decoding="async"
+            width={80}
+            height={107}
             className="w-16 md:w-20 aspect-[3/4] object-cover rounded-md flex-shrink-0"
           />
         )}
