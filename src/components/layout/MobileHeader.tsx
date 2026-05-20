@@ -25,12 +25,15 @@ export function MobileHeader() {
     >
       <div className="flex items-center justify-between px-4 h-16">
         {isHome ? (
-          <Link to="/app" className="flex items-center gap-2 tap-feedback">
-            <div className="h-8 w-8 rounded-md bg-gradient-toga grid place-items-center">
+          <Link to="/app" className="flex items-center gap-2 tap-feedback min-w-0">
+            <div className="h-8 w-8 shrink-0 rounded-md bg-gradient-toga grid place-items-center">
               <Scale className="h-4 w-4 text-primary-foreground" />
             </div>
-            <div className="leading-none">
-              <p className="font-display text-lg leading-none">OAB na Risca</p>
+            <div className="leading-tight min-w-0">
+              <p className="font-display text-lg leading-none truncate">OAB na Risca</p>
+              <p className="text-[10px] text-muted-foreground leading-none mt-1 truncate">
+                Sua aprovação na medida certa
+              </p>
             </div>
           </Link>
         ) : (
@@ -47,8 +50,27 @@ export function MobileHeader() {
             Voltar
           </Link>
         )}
-        <div className="flex items-center gap-1">
-          {!isHome && (
+        <div className="flex items-center gap-1.5">
+          {isHome ? (
+            <>
+              <button
+                type="button"
+                onClick={() => toast.info("Busca chegando em breve")}
+                className="h-10 w-10 grid place-items-center rounded-full bg-muted/70 border border-border text-foreground hover:bg-muted tap-feedback"
+                aria-label="Pesquisar"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => toast.info("Sem novas notificações")}
+                className="h-10 w-10 grid place-items-center rounded-full bg-muted/70 border border-border text-foreground hover:bg-muted tap-feedback"
+                aria-label="Notificações"
+              >
+                <Bell className="h-4 w-4" />
+              </button>
+            </>
+          ) : (
             <button
               type="button"
               onClick={() => navigate({ to: "/app" })}
