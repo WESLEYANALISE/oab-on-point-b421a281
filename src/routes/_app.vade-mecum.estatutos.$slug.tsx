@@ -704,19 +704,18 @@ type ContentTab = "artigo" | "explicacao" | "exemplo" | "termos";
 function formatarQuebrasArtigo(texto: string): string {
   if (!texto) return texto;
   let t = texto.replace(/\s+/g, " ").trim();
+  // Remove links em colchetes ex: [https://www.planalto.gov.br/...]
+  t = t.replace(/\s*\[\s*https?:\/\/[^\]]+\]\s*/gi, " ");
   // Parágrafos: § 1º, § 2º...
-  t = t.replace(/\s*(§\s*\d+[ºo]?)/g, "\n\n$1");
+  t = t.replace(/\s*(§\s*\d+[ºo]?)/g, "\n$1");
   // Parágrafo único
-  t = t.replace(/\s*(Parágrafo único)/gi, "\n\n$1");
+  t = t.replace(/\s*(Parágrafo único)/gi, "\n$1");
   // Incisos romanos: " I - ", " II – ", " III — "
   t = t.replace(/\s+([IVXLCDM]+)\s*[-–—]\s+/g, "\n$1 – ");
   // Alíneas: " a) ", " b) "
   t = t.replace(/\s+([a-z])\)\s+/g, "\n$1) ");
-  // Quebra após ":" e ";"
-  t = t.replace(/:\s+/g, ":\n\n");
-  t = t.replace(/;\s+/g, ";\n");
   // Normaliza quebras em excesso
-  t = t.replace(/\n{3,}/g, "\n\n");
+  t = t.replace(/\n{2,}/g, "\n");
   return t;
 }
 
@@ -749,28 +748,31 @@ function renderParenteses(texto: string, mostrarParenteses: boolean, baseKey: st
   return out;
 }
 
-/** Quebra em linhas e destaca prefixos legais (§, incisos, alíneas) em dourado. */
+/** Quebra em blocos e destaca prefixos legais (§, incisos, alíneas) em dourado. Espaçamento padronizado. */
 function renderTextoArtigo(texto: string, mostrarParenteses: boolean): React.ReactNode[] {
-  const linhas = texto.split("\n");
-  const out: React.ReactNode[] = [];
-  linhas.forEach((linha, idx) => {
-    if (idx > 0) out.push(<br key={`br-${idx}`} />);
-    if (!linha) return;
+  const linhas = texto.split("\n").filter((l) => l.trim().length > 0);
+  return linhas.map((linha, idx) => {
     const m = linha.match(PREFIXO_LEGAL_RE);
+    const isFirst = idx === 0;
+    const content: React.ReactNode[] = [];
     if (m) {
       const prefix = m[1];
       const sep = m[2] ?? "";
       const resto = linha.slice(prefix.length + sep.length);
-      out.push(
-        <span key={`p-${idx}`} className="font-bold text-gold">{prefix}</span>
+      content.push(
+        <span key={`p-${idx}`} className="font-bold text-gold">{prefix}</span>,
+        <span key={`s-${idx}`}>{sep || " "}</span>,
+        ...renderParenteses(resto, mostrarParenteses, `r-${idx}`),
       );
-      out.push(<span key={`s-${idx}`}>{sep || " "}</span>);
-      out.push(...renderParenteses(resto, mostrarParenteses, `r-${idx}`));
     } else {
-      out.push(...renderParenteses(linha, mostrarParenteses, `l-${idx}`));
+      content.push(...renderParenteses(linha, mostrarParenteses, `l-${idx}`));
     }
+    return (
+      <div key={`bloco-${idx}`} className={isFirst ? undefined : "mt-3"}>
+        {content}
+      </div>
+    );
   });
-  return out;
 }
 
 
