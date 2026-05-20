@@ -13,6 +13,12 @@ import { normalizarTitulo } from "@/lib/titulo";
 import { useFontScale } from "@/hooks/use-font-scale";
 
 export const Route = createFileRoute("/_app/resumos/capitulo/$livroId/$ordem")({
+  head: ({ params }) => ({
+    meta: [
+      { title: `Capítulo ${params.ordem} · Resumo OAB` },
+      { name: "description", content: `Capítulo ${params.ordem} do resumo com explicação, exemplo prático e termos jurídicos.` },
+    ],
+  }),
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(resumoLivroQueryOptions(params.livroId)),
   component: CapituloView,

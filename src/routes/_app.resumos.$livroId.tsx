@@ -5,6 +5,12 @@ import { resumoLivroQueryOptions } from "@/lib/resumos-queries";
 import { normalizarTitulo } from "@/lib/titulo";
 
 export const Route = createFileRoute("/_app/resumos/$livroId")({
+  head: () => ({
+    meta: [
+      { title: "Resumo · OAB na Risca" },
+      { name: "description", content: "Resumo em capítulos pronto para estudo da OAB." },
+    ],
+  }),
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(resumoLivroQueryOptions(params.livroId)),
   component: ResumoTimeline,

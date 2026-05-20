@@ -4,6 +4,12 @@ import { ArrowLeft, BookOpen, Download } from "lucide-react";
 import { BIB_MAP, livroQueryOptions } from "@/lib/biblioteca";
 
 export const Route = createFileRoute("/_app/biblioteca/$slug/$bookId/")({
+  head: ({ params }) => ({
+    meta: [
+      { title: `${BIB_MAP[params.slug]?.title ?? "Livro"} · OAB na Risca` },
+      { name: "description", content: "Detalhes do livro na biblioteca jurídica." },
+    ],
+  }),
   loader: ({ params, context }) => {
     context.queryClient.prefetchQuery(livroQueryOptions(params.slug, params.bookId));
   },
