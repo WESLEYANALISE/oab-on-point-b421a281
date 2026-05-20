@@ -40,6 +40,7 @@ import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca
 import { Route as AppAulasIndexRouteImport } from './routes/_app.aulas.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
 import { Route as ApiPublicSeedProvasRouteImport } from './routes/api.public.seed-provas'
+import { Route as AppVadeMecumSlugRouteImport } from './routes/_app.vade-mecum.$slug'
 import { Route as AppResumosLivroIdRouteImport } from './routes/_app.resumos.$livroId'
 import { Route as AppProvasNumeroRouteImport } from './routes/_app.provas.$numero'
 import { Route as AppOabSegundaFaseRouteImport } from './routes/_app.oab.segunda-fase'
@@ -228,6 +229,11 @@ const ApiPublicSeedProvasRoute = ApiPublicSeedProvasRouteImport.update({
   id: '/api/public/seed-provas',
   path: '/api/public/seed-provas',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppVadeMecumSlugRoute = AppVadeMecumSlugRouteImport.update({
+  id: '/vade-mecum/$slug',
+  path: '/vade-mecum/$slug',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppResumosLivroIdRoute = AppResumosLivroIdRouteImport.update({
   id: '/resumos/$livroId',
@@ -452,6 +458,7 @@ export interface FileRoutesByFullPath {
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
   '/resumos/$livroId': typeof AppResumosLivroIdRoute
+  '/vade-mecum/$slug': typeof AppVadeMecumSlugRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/admin/': typeof AppAdminIndexRoute
   '/aulas/': typeof AppAulasIndexRoute
@@ -513,6 +520,7 @@ export interface FileRoutesByTo {
   '/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/provas/$numero': typeof AppProvasNumeroRoute
   '/resumos/$livroId': typeof AppResumosLivroIdRoute
+  '/vade-mecum/$slug': typeof AppVadeMecumSlugRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/admin': typeof AppAdminIndexRoute
   '/aulas': typeof AppAulasIndexRoute
@@ -579,6 +587,7 @@ export interface FileRoutesById {
   '/_app/oab/segunda-fase': typeof AppOabSegundaFaseRoute
   '/_app/provas/$numero': typeof AppProvasNumeroRoute
   '/_app/resumos/$livroId': typeof AppResumosLivroIdRoute
+  '/_app/vade-mecum/$slug': typeof AppVadeMecumSlugRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/aulas/': typeof AppAulasIndexRoute
@@ -647,6 +656,7 @@ export interface FileRouteTypes {
     | '/oab/segunda-fase'
     | '/provas/$numero'
     | '/resumos/$livroId'
+    | '/vade-mecum/$slug'
     | '/api/public/seed-provas'
     | '/admin/'
     | '/aulas/'
@@ -708,6 +718,7 @@ export interface FileRouteTypes {
     | '/oab/segunda-fase'
     | '/provas/$numero'
     | '/resumos/$livroId'
+    | '/vade-mecum/$slug'
     | '/api/public/seed-provas'
     | '/admin'
     | '/aulas'
@@ -773,6 +784,7 @@ export interface FileRouteTypes {
     | '/_app/oab/segunda-fase'
     | '/_app/provas/$numero'
     | '/_app/resumos/$livroId'
+    | '/_app/vade-mecum/$slug'
     | '/api/public/seed-provas'
     | '/_app/admin/'
     | '/_app/aulas/'
@@ -1026,6 +1038,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/seed-provas'
       preLoaderRoute: typeof ApiPublicSeedProvasRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/vade-mecum/$slug': {
+      id: '/_app/vade-mecum/$slug'
+      path: '/vade-mecum/$slug'
+      fullPath: '/vade-mecum/$slug'
+      preLoaderRoute: typeof AppVadeMecumSlugRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/resumos/$livroId': {
       id: '/_app/resumos/$livroId'
@@ -1438,6 +1457,7 @@ interface AppRouteChildren {
   AppOabSegundaFaseRoute: typeof AppOabSegundaFaseRoute
   AppProvasNumeroRoute: typeof AppProvasNumeroRoute
   AppResumosLivroIdRoute: typeof AppResumosLivroIdRoute
+  AppVadeMecumSlugRoute: typeof AppVadeMecumSlugRoute
   AppProvasIndexRoute: typeof AppProvasIndexRoute
   AppResumosIndexRoute: typeof AppResumosIndexRoute
   AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
@@ -1478,6 +1498,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOabSegundaFaseRoute: AppOabSegundaFaseRoute,
   AppProvasNumeroRoute: AppProvasNumeroRoute,
   AppResumosLivroIdRoute: AppResumosLivroIdRoute,
+  AppVadeMecumSlugRoute: AppVadeMecumSlugRoute,
   AppProvasIndexRoute: AppProvasIndexRoute,
   AppResumosIndexRoute: AppResumosIndexRoute,
   AppSimuladosIndexRoute: AppSimuladosIndexRoute,
