@@ -163,6 +163,7 @@ export const listarArtigosParaNarrar = createServerFn({ method: "POST" })
         numero: (a.numero ?? "") as string,
         texto: (a.texto ?? "") as string,
         ordem: a.ordem as number,
+        relevancia: (a.relevancia ?? null) as string | null,
         tem_narracao: narrados.has(a.id as string),
       })),
     };
