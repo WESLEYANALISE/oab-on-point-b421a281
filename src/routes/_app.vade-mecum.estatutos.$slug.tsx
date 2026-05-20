@@ -208,7 +208,21 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
     [data?.favoritos],
   );
 
-  const artigos = data?.artigos ?? [];
+  const artigosRaw = data?.artigos ?? [];
+  const artigos = useMemo(() => {
+    if (!parteCF || artigosRaw.length === 0) return artigosRaw;
+    // ADCT começa quando o numero "1º" reaparece após ordem 1.
+    let corte = -1;
+    for (let i = 1; i < artigosRaw.length; i++) {
+      const n = (artigosRaw[i].numero ?? "").trim();
+      if (n === "1º" || n === "1°" || n === "1") {
+        corte = i;
+        break;
+      }
+    }
+    if (corte === -1) return artigosRaw;
+    return parteCF === "adct" ? artigosRaw.slice(corte) : artigosRaw.slice(0, corte);
+  }, [artigosRaw, parteCF]);
   const apenasArtigos = useMemo(() => artigos.filter((a) => !!a.numero && !tipoEstrutura(a.numero)), [artigos]);
 
   const filtrar = (lista: ArtigoLista[]) => {
