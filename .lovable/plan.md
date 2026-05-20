@@ -1,61 +1,83 @@
-## O que existe hoje
+## Mudança de estratégia
 
-Em `src/routes/_app.tsx` (linha 55) já há um wrapper com `animate-route-fade` aplicado por `key={pathname}`, mas a animação no CSS é só um **fade de opacidade** de 180ms (`src/styles.css` linhas 195–199). Sem deslocamento, sem direção — por isso parece que "não tem animação".
+Em vez de comparar texto integral artigo-a-artigo (lento e barulhento), vamos usar como "carimbo de alteração" os parênteses que o Planalto coloca embaixo de cada dispositivo:
 
-## Objetivo
+- `(Redação dada pela Emenda Constitucional nº 132, de 2023)`
+- `(Incluído pela Emenda Constitucional nº 19, de 1998)`
+- `(Revogado pela Emenda Constitucional nº 45, de 2004)`
+- `(Vide ADIN nº ...)` ← ignorar, não é alteração de texto.
 
-Quando o usuário navegar entre telas no app, a página nova deve **deslizar da direita pra esquerda** (entrando) com leve fade, no estilo das transições nativas de iOS/Android. Aplicar a todas as rotas filhas de `_app`.
+A presença/ausência desses marcadores, e a **data mais recente** entre eles por artigo, dá um sinal preciso e barato de "esse artigo mudou". Comparando contra um snapshot anterior do mesmo artigo, sabemos exatamente o que foi alterado/incluído/revogado desde a última checagem.
 
-## Mudanças
+## Por que Browserless
 
-### 1. Nova keyframe no `src/styles.css`
+A página da Constituição no Planalto é HTML antigo (latin-1, tabelas aninhadas, sem JS), então `fetch` simples funciona — **não precisaria** de Browserless **para a CF**. Mas para padronizar e cobrir outras leis (CTB, CLT, etc. que às vezes carregam por JS, redirecionam ou bloqueiam por User-Agent), Browserless é a escolha certa: roda Chrome headless e devolve HTML renderizado e estável.
 
-Substituir a keyframe `route-fade` por uma slide + fade combinados:
+Usaremos via REST:
+- `POST https://chrome.browserless.io/content?token=$BROWSERLESS_API_KEY` com `{ url, gotoOptions: { waitUntil: 'networkidle0' } }` → devolve HTML pronto.
+- Cota controlada por `BROWSERLESS_API_KEY` (a registrar como secret).
 
-```css
-@keyframes route-slide-in {
-  from { opacity: 0; transform: translate3d(24px, 0, 0); }
-  to   { opacity: 1; transform: translate3d(0, 0, 0); }
-}
-.animate-route-slide {
-  animation: route-slide-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: transform, opacity;
-}
+## Estrutura da solução
 
-@media (prefers-reduced-motion: reduce) {
-  .animate-route-slide { animation: none; }
-}
+```text
+Browserless (POST /content)
+        │  HTML renderizado
+        ▼
+parser de marcadores de alteração
+        │  por artigo: { numero, ult_alteracao_em, fontes[], status: ativo|revogado }
+        ▼
+diff contra snapshot anterior salvo no Supabase
+        │
+        ▼
+relatório em vade_mecum_sync_relatorios + atualização incremental
 ```
 
-- `cubic-bezier(0.22, 1, 0.36, 1)` é uma "ease-out-expo" — começa rápido e desacelera, sensação fluida.
-- `translate3d` força aceleração GPU.
-- Respeita `prefers-reduced-motion`.
+### 1. Migration (banco)
+Tabelas/colunas novas:
+- `vade_mecum_artigos.ult_alteracao_em date` (data extraída do parêntese mais recente).
+- `vade_mecum_artigos.alteracoes jsonb` (lista: `[{ tipo: 'redacao'|'inclusao'|'revogacao', norma: 'EC 132', data: '2023-12-20' }]`).
+- `vade_mecum_artigos.revogado boolean default false`.
+- `vade_mecum_sync_relatorios` (id, lei_id, fonte_url, executado_em, status, novos jsonb, alterados jsonb, revogados jsonb, resumo_md).
+- RLS: leitura admin; escrita só via service role.
 
-A keyframe antiga `route-fade` pode ser mantida (outras partes do app talvez usem fade) ou removida — vou manter pra evitar regressão.
+### 2. Server-side
+- **`src/lib/browserless.server.ts`** — helper `fetchRendered(url)` que chama Browserless e retorna o HTML cru. Lê `process.env.BROWSERLESS_API_KEY`. Lança erro claro se ausente.
+- **`src/lib/cf-parser.ts`** (puro, testável) —
+  - corta o documento em "Principal" e "ADCT" pelo marcador `ATO DAS DISPOSIÇÕES…`;
+  - encontra cada bloco de artigo via regex `Art\.\s*(\d+[ºo°]?(?:-[A-Z])?)`;
+  - dentro do bloco, captura os trechos `(\(.*?(Redação|Incluíd|Revogad|Acrescentad).*?(\d{4})\))` e extrai `{ tipo, norma, data }`;
+  - retorna `Map<numero, { texto, alteracoes[], ult_alteracao_em, revogado }>`.
+- **`src/lib/cf-sync.functions.ts`** — `executarSyncCF()`:
+  1. baixa via Browserless;
+  2. roda parser;
+  3. busca `vade_mecum_artigos` da CF com colunas `numero, ult_alteracao_em, alteracoes, revogado`;
+  4. classifica cada artigo em: `igual`, `alterado` (ult_alteracao_em diferente), `novo` (não existia no banco), `revogado_novo` (passou a estar revogado);
+  5. grava relatório; atualiza apenas os campos novos (`ult_alteracao_em`, `alteracoes`, `revogado`) — **não toca em `texto`** para preservar narrações/comentários até aprovação manual.
+- **`src/routes/api/public/hooks/cf-sync.ts`** — rota POST chamada pelo cron, com verificação `apikey` (padrão do projeto). Internamente chama `executarSyncCF`.
 
-### 2. Trocar a classe em `_app.tsx`
-
-Linha 55:
-
-```tsx
-<div key={pathname} className="mx-auto w-full max-w-[1120px] animate-route-slide">
-  <Outlet />
-</div>
+### 3. Cron (`pg_cron` + `pg_net`)
+Agendamento semanal (domingo 03:00):
+```sql
+select cron.schedule('cf-sync-weekly','0 3 * * 0', $$
+  select net.http_post(
+    url:='https://project--7143ea90-be27-484f-9f3e-f50d2fa31549.lovable.app/api/public/hooks/cf-sync',
+    headers:='{"Content-Type":"application/json","apikey":"<ANON>"}'::jsonb,
+    body:='{}'::jsonb) $$);
 ```
 
-O `key={pathname}` já existe e força React a desmontar/montar o wrapper a cada mudança de rota, disparando a animação de entrada.
+### 4. Tela admin
+Nova entrada em `/admin` → **Vade Mecum · Sync**:
+- botão "Rodar agora" (chama `executarSyncCF`);
+- lista de relatórios com badge (✓ nada novo / ⚠ N artigos alterados / 🆕 N novos / ⛔ N revogados);
+- ao abrir um relatório: tabela com `numero | status | norma | data` e botão **"Reimportar texto deste artigo"** (só aí roda comparação de texto completo, focada, e atualiza `texto`/`texto_hash`).
 
-### 3. Garantir que o container não corte a animação
+### 5. Secret necessário
+- `BROWSERLESS_API_KEY` — você pega em https://www.browserless.io (plano free tem cota suficiente para rodar 1x/semana). Depois eu peço pra você adicionar via o tool de secrets.
 
-`main` já tem `overflow-x-hidden` (linha 54) — isso evita scroll horizontal durante o slide. Mantém.
+## Escopo desta entrega
+Só CF (principal + ADCT). Mesmo motor depois é parametrizado por `vade_mecum_leis.fonte_url` para cobrir o restante.
 
-## Por que não usar AnimatePresence/framer-motion
-
-Para transições com **exit** (saída deslizando pra esquerda enquanto a nova entra pela direita) seria preciso `AnimatePresence mode="wait"` controlando o `Outlet`, o que adiciona complexidade (precisa do `location.pathname` como key, exige `motion.div` cobrindo o Outlet, e em SSR pode causar flicker). O slide-in puro em CSS já entrega a sensação fluida pedida com zero custo e sem risco.
-
-## Arquivos afetados
-
-- `src/styles.css` — adicionar `route-slide-in` + classe `.animate-route-slide`.
-- `src/routes/_app.tsx` — trocar `animate-route-fade` por `animate-route-slide`.
-
-Nada mais.
+## O que você decide antes de eu implementar
+1. **Browserless** — confirma que vai criar a conta e me passar a `BROWSERLESS_API_KEY`? (ou prefere começar com `fetch` direto e Browserless só depois?)
+2. **Periodicidade** do cron — semanal (sugerido) ou diário?
+3. **Notificação** quando o relatório acusar mudança — só dentro de `/admin` (sugerido) ou também e-mail/WhatsApp?
