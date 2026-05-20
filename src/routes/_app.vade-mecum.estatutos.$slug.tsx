@@ -158,9 +158,14 @@ function limparPrefixoArtigo(texto: string): string {
 }
 
 // ----------- Page -----------
-export function EstatutoArtigosPage() {
+type EstatutoArtigosPageProps = {
+  slugOverride?: string;
+  parteCF?: "principal" | "adct" | null;
+  tituloOverride?: string;
+};
+export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: EstatutoArtigosPageProps = {}) {
   const params = useParams({ strict: false }) as { slug?: string };
-  const slug = params.slug ?? "";
+  const slug = slugOverride ?? params.slug ?? "";
   const [query, setQuery] = useState("");
   const [artigoId, setArtigoId] = useState<string | null>(null);
   const [aba, setAba] = useState<Aba>("artigos");
