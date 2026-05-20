@@ -41,6 +41,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
 
 const ATALHOS = [
   { label: "Vade Mecum", sub: "Legislação rápida", icon: Scale, to: "/vade-mecum" as const },
+  { label: "Atualizações de Leis", sub: "Novidades do D.O.U.", icon: BellRing, to: "/atualizacoes-leis" as const },
   { label: "Biblioteca", sub: "Livros e PDFs",     icon: Library,  to: "/biblioteca" as const },
   { label: "Resumos",    sub: "Por matéria",       icon: FileText, to: "/resumos" as const },
   { label: "Simulados",  sub: "Treine no tempo",   icon: Trophy,   to: "/simulados" as const },
