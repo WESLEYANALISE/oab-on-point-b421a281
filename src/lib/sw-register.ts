@@ -1,13 +1,11 @@
 /**
- * Registro do service worker com guards de segurança para o preview do Lovable.
+ * Registro do service worker com guards para o preview do Lovable.
  *
  * Regras:
  *   1. Nunca registrar em iframe (preview do editor roda em iframe).
- *   2. Nunca registrar em hosts de preview (lovableproject.com, id-preview--).
- *   3. Sempre desregistrar SWs antigos nos hosts acima — protege devs que
- *      visitaram a versão publicada e ficaram com cache do SW preso.
- *
- * Chamado uma única vez no client a partir do __root.
+ *   2. Nunca registrar em hosts de preview (lovableproject.com, id-preview--, localhost).
+ *   3. Sempre desregistrar SWs antigos nos hosts acima — protege contra
+ *      cache antigo preso após visitar a versão publicada.
  */
 export function registerServiceWorker() {
   if (typeof window === "undefined") return;
@@ -29,7 +27,6 @@ export function registerServiceWorker() {
     host === "127.0.0.1";
 
   if (isInIframe || isPreviewHost) {
-    // Limpa qualquer SW remanescente para não interferir no preview.
     navigator.serviceWorker
       .getRegistrations()
       .then((regs) => regs.forEach((r) => r.unregister()))
@@ -37,23 +34,7 @@ export function registerServiceWorker() {
     return;
   }
 
-  // Carregamento dinâmico para não puxar workbox-window no bundle inicial.
-  import("workbox-window")
-    .then(({ Workbox }) => {
-      const wb = new Workbox("/sw.js", { scope: "/" });
-      // Auto-update: quando uma nova versão estiver pronta, ativa em silêncio.
-      wb.addEventListener("waiting", () => {
-        wb.messageSkipWaiting();
-      });
-      wb.addEventListener("controlling", () => {
-        // Recarrega para pegar os novos assets ativos.
-        window.location.reload();
-      });
-      wb.register().catch((err) => {
-        console.warn("[sw] registration failed", err);
-      });
-    })
-    .catch(() => {
-      // workbox-window não carregou — sem PWA, sem erro fatal.
-    });
+  navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch((err) => {
+    console.warn("[sw] registration failed", err);
+  });
 }
