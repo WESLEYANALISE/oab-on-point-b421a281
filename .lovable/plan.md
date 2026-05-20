@@ -1,97 +1,51 @@
-# O que ainda falta — Fase 3 (impacto alto, esforço médio)
+## Fase 3 — Polimento (sem pré-geração de IA)
 
-Resumo do estado atual: Fases 1 e 2 já entregaram PWA, SEO em 11 rotas, dynamic imports do `jspdf` e decomposição do arquivo monstro de aulas (1.296 → 324 linhas). Sobraram **6 frentes** que continuam custando performance e robustez.
+Vou fazer os 4 itens de polimento agora. O item 1 (pré-geração de IA em background) fica para depois, como você pediu.
 
-## 1. Vade-Mecum — refactor + virtualização (maior dívida técnica)
+### 1. Sentry — monitoramento de erros (~30min)
+- Instalar `@sentry/react` e `@sentry/tanstackstart-react`.
+- Inicializar no `src/start.ts` (server) e no client entry, lendo `SENTRY_DSN` de env.
+- Configurar:
+  - `tracesSampleRate: 0.1` (10% de transações, suficiente para Web Vitals)
+  - `replaysOnErrorSampleRate: 1.0` (gravação de sessão só quando há erro)
+  - Filtrar erros de extensões de browser e ResizeObserver (ruído).
+- Adicionar `ErrorBoundary` global no `__root.tsx` que reporta pro Sentry.
+- **Precisa do secret `SENTRY_DSN`** — vou pedir quando começar.
 
-`_app.vade-mecum.estatutos.$slug.tsx` tem **2.104 linhas** e renderiza listas de até 2.000+ artigos sem virtualização — trava em celular médio.
+### 2. Listas mais leves (biblioteca e blog) (~30min)
+- Auditar as queries de listagem que ainda trazem campos pesados:
+  - `blog_posts` na home/listagem → trocar `select("*")` por `select("id,titulo,slug,categoria,capa,resumo,publicado_em")` (deixa o `conteudo` de fora, que pode ter 50–100KB por post).
+  - Qualquer outra listagem que esteja puxando colunas grandes sem necessidade.
+- Manter `select("*")` apenas em telas de detalhe (uma linha só).
 
-- Quebrar em 5 componentes (`ArtigoCard`, `ArtigoSearch`, `ArtigoNav`, `ArtigoActions`, `ArtigoHighlight`) sob `src/components/vade-mecum/`.
-- Adicionar `@tanstack/react-virtual` (já é a mesma família — zero config) para renderizar só os artigos visíveis.
-- Indexes Postgres complementares: `(lei_id, ordem)` composto + GIN em `tsvector(texto)` para busca full-text instantânea.
+### 3. Capas da biblioteca em AVIF/WebP (~45min)
+- As capas vêm do Supabase Storage como JPG/PNG. Não dá pra usar `vite-imagetools` (são URLs dinâmicas, não bundle).
+- Solução: criar um helper `getCoverUrl(url, { width, format })` que usa o **Supabase Image Transformation** (já incluso no plano), gerando URLs com `?width=300&format=webp&quality=80`.
+- Aplicar em todos os `<img>` de capa (biblioteca, "continuar lendo", resumos).
+- Adicionar `loading="lazy"` e `decoding="async"` onde ainda não tem.
+- Ganho esperado: ~60–70% menos bytes por capa, LCP melhor em listagens.
 
-Ganho: scroll fluido em 2k+ artigos, busca <50ms, chunk inicial da rota -60%.
+### 4. Cache offline melhor (PWA) (~45min)
+- Hoje o `manifest.webmanifest` está OK, mas não há service worker — o app não funciona offline.
+- Adicionar `vite-plugin-pwa` com configuração **segura para o preview do Lovable**:
+  - `devOptions.enabled: false` (SW só em produção).
+  - Guard no registro: não registrar dentro de iframe nem em hosts `lovableproject.com` / `id-preview--`.
+  - `NetworkFirst` para HTML (não trava em build antigo).
+  - `CacheFirst` com expiração de 30 dias para: fontes, ícones, capas do Storage.
+  - `navigateFallbackDenylist: [/^\/api/, /^\/~oauth/]`.
+- Resultado: estudante no metrô abre o app e continua de onde parou (rotas já visitadas + capas).
+- **Aviso:** offline só funciona no site publicado, não no preview do editor.
 
-## 2. Hero + capas — AVIF/WebP responsive
+### Ordem de execução
+1. Listas mais leves (rápido, ganho imediato)
+2. Capas AVIF/WebP (rápido, visível)
+3. Sentry (precisa do DSN)
+4. PWA offline (mais delicado, deixo por último para isolar se algo quebrar)
 
-Hero da landing é `.jpg` 1280×1600 (~280KB). Capas da biblioteca idem.
+### Métricas-alvo após esta fase
+- Listagem do blog: ~80% menos bytes transferidos
+- Listagem da biblioteca: LCP -300ms em mobile
+- 100% dos erros em produção visíveis no Sentry
+- App utilizável offline para conteúdo já visitado
 
-- Instalar `vite-imagetools` no Vite config.
-- Converter `oab-landing-hero.jpg` e as 6 capas `biblio-*.jpg` para AVIF + WebP em 3 tamanhos (640/960/1280).
-- `<picture>` com `srcset` + `sizes` apropriado.
-- Preload do hero LCP no `head()` da landing com `fetchpriority="high"`.
-
-Ganho: LCP -400ms no 4G, ~70% menos bytes nas capas.
-
-## 3. Pré-geração das 4 IAs em background
-
-Hoje cada aluno, na primeira visita a um capítulo, espera **6–12s** enquanto Gemini gera aula/flashcards/questões/simulado sob demanda.
-
-- Quando admin marca resumo como pronto, enfileirar job que chama as 4 funções (`gerar-aula`, `gerar-flashcards`, `gerar-questoes`, `gerar-simulado`) e persiste o resultado.
-- Implementar como server route `/api/public/queue-ai-precompute` com signature HMAC + chamada disparada do trigger Postgres (`pg_net`) na transição `resumo.status → 'publicado'`.
-- Tabela `ia_precompute_jobs` (resumo_id, etapa, status, attempts, last_error) com retry exponencial.
-
-Ganho: primeira aula carrega <1s em vez de 6–12s.
-
-## 4. `select("*")` → colunas explícitas (11 funções)
-
-Listas trazem `conteudo_markdown` inteiro (até 80KB por linha) só pra mostrar título.
-
-Arquivos a trocar:
-- `src/lib/simulados.functions.ts`
-- `src/lib/flashcards.functions.ts`
-- `src/lib/caderno-erros.functions.ts`
-- `src/lib/aulas.functions.ts`
-- `src/lib/blog-admin.functions.ts`
-- `src/lib/simulados-admin.functions.ts`
-- `src/routes/_app.provas.$numero.tsx` (loader)
-
-Ganho: -200KB a -1MB por listagem em rede, mais responsivo.
-
-## 5. Sentry — observabilidade
-
-Erros em produção viram screenshot do usuário no WhatsApp. Sem visibilidade real.
-
-- `@sentry/tanstackstart-react` (adapter oficial).
-- Capturar erros + Web Vitals (LCP/INP/CLS reais por dispositivo).
-- Sample rate 100% em erros, 10% em traces (free tier aguenta).
-
-Ganho: descobrir bugs antes do aluno reclamar.
-
-## 6. Persister → IndexedDB
-
-`PersistQueryClient` hoje grava até ~3MB em `localStorage` (cota varia por device — pode estourar em iOS Safari).
-
-- Substituir por `idb-keyval` como storage do persister.
-- Cota IDB é ~50MB confortavelmente.
-
-Ganho: cache de dados sobrevive sessões longas sem ser despejado.
-
----
-
-## Ordem sugerida de execução (por ganho/esforço)
-
-| Ordem | Item | Esforço | Ganho percebido |
-|---|---|---|---|
-| 1 | `select("*")` → colunas (item 4) | 30min | Médio (rede) |
-| 2 | Hero/capas AVIF (item 2) | 45min | **Alto** (LCP) |
-| 3 | Vade-Mecum virtualização + refactor (item 1) | 2h | **Muito alto** |
-| 4 | Sentry (item 5) | 30min | Estratégico |
-| 5 | IndexedDB persister (item 6) | 30min | Médio |
-| 6 | Pré-geração IA em background (item 3) | 2h | **Muito alto** (UX) |
-
-## Métricas-alvo pós-Fase 3
-
-| Métrica | Hoje | Após Fase 3 |
-|---|---|---|
-| LCP landing (4G) | ~2.0s | ~1.2s |
-| Scroll vade-mecum 2k artigos | trava | 60fps |
-| Primeira aula nova | 6–12s | <1s |
-| Bundle inicial gzip | ~280KB | ~230KB |
-| Visibilidade de erros | 0% | 100% |
-
----
-
-## Pergunta
-
-Quer que eu execute **tudo na ordem acima** ou prefere começar por um item específico (sugiro o **vade-mecum**, é a maior dor visível hoje)?
+Posso começar?
