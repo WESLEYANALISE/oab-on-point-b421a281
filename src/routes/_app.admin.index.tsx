@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Target, ChevronRight, FileText, Newspaper, AudioLines, BookOpenCheck } from "lucide-react";
+import { Target, ChevronRight, FileText, Newspaper, AudioLines, BookOpenCheck, BellRing } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin/")({
   component: AdminHome,
