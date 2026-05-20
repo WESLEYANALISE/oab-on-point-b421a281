@@ -14,6 +14,7 @@ import { useEffect, useMemo } from "react";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { registerServiceWorker } from "@/lib/sw-register";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
