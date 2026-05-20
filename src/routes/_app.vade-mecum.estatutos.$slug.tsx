@@ -300,7 +300,7 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
               loading="eager"
             />
             <h1 className="font-display font-semibold text-[15px] sm:text-[18px] md:text-[24px] tracking-[0.04em] mt-2.5 leading-tight uppercase px-2 max-w-full break-words">
-              {meta?.nomeCompleto ?? (limparTituloLei(data?.lei.nome ?? "") || "Estatuto")}
+              {tituloOverride ?? meta?.nomeCompleto ?? (limparTituloLei(data?.lei.nome ?? "") || "Estatuto")}
             </h1>
             <p className="text-[12.5px] text-muted-foreground mt-1.5">
               {slug === "cf"
