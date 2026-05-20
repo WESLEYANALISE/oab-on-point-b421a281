@@ -15,6 +15,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { registerServiceWorker } from "@/lib/sw-register";
+import { initSentry, Sentry } from "@/lib/sentry";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
