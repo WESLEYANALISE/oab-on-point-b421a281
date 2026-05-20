@@ -208,6 +208,11 @@ function AuthCacheBridge() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Registra o service worker (PWA) — guards internos impedem rodar
+  // em iframe ou em hosts de preview do Lovable.
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
   const persister = useMemo(() => {
     if (typeof window === "undefined") return null;
     return createSyncStoragePersister({
