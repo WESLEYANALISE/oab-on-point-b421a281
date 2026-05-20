@@ -753,7 +753,6 @@ function renderTextoArtigo(texto: string, mostrarParenteses: boolean): React.Rea
   const linhas = texto.split("\n").filter((l) => l.trim().length > 0);
   return linhas.map((linha, idx) => {
     const m = linha.match(PREFIXO_LEGAL_RE);
-    const isFirst = idx === 0;
     const content: React.ReactNode[] = [];
     if (m) {
       const prefix = m[1];
@@ -767,8 +766,11 @@ function renderTextoArtigo(texto: string, mostrarParenteses: boolean): React.Rea
     } else {
       content.push(...renderParenteses(linha, mostrarParenteses, `l-${idx}`));
     }
+    if (idx === 0) {
+      return <span key={`bloco-${idx}`}>{content}</span>;
+    }
     return (
-      <div key={`bloco-${idx}`} className={isFirst ? undefined : "mt-3"}>
+      <div key={`bloco-${idx}`} className="mt-3">
         {content}
       </div>
     );
