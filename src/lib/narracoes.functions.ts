@@ -256,7 +256,7 @@ export const gerarNarracaoArtigo = createServerFn({ method: "POST" })
       .eq("id", art.lei_id as string)
       .single();
     // Usa sempre o nome COMPLETO da lei (sem abreviação) na narração.
-    const titulo = (lei?.nome as string) || (lei?.nome_curto as string) || "";
+    const titulo = limparTituloLei((lei?.nome as string) || (lei?.nome_curto as string) || "");
 
     const texto = montarTextoNarracao({
       leiTitulo: titulo,
