@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { geminiGenerateContent } from "@/lib/gemini.server";
-import { MAX_TTS_CHARS, dividirTextoEmChunks, montarTextoNarracao } from "@/lib/narracoes.utils";
+import { MAX_TTS_CHARS, dividirTextoEmChunks, limparTituloLei, montarTextoNarracao } from "@/lib/narracoes.utils";
 
 async function assertAdmin(supabase: any, userId: string) {
   const { data } = await supabase
