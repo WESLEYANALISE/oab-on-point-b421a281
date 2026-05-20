@@ -158,9 +158,14 @@ function limparPrefixoArtigo(texto: string): string {
 }
 
 // ----------- Page -----------
-export function EstatutoArtigosPage() {
+type EstatutoArtigosPageProps = {
+  slugOverride?: string;
+  parteCF?: "principal" | "adct" | null;
+  tituloOverride?: string;
+};
+export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: EstatutoArtigosPageProps = {}) {
   const params = useParams({ strict: false }) as { slug?: string };
-  const slug = params.slug ?? "";
+  const slug = slugOverride ?? params.slug ?? "";
   const [query, setQuery] = useState("");
   const [artigoId, setArtigoId] = useState<string | null>(null);
   const [aba, setAba] = useState<Aba>("artigos");
@@ -203,7 +208,21 @@ export function EstatutoArtigosPage() {
     [data?.favoritos],
   );
 
-  const artigos = data?.artigos ?? [];
+  const artigosRaw = data?.artigos ?? [];
+  const artigos = useMemo(() => {
+    if (!parteCF || artigosRaw.length === 0) return artigosRaw;
+    // ADCT começa quando o numero "1º" reaparece após ordem 1.
+    let corte = -1;
+    for (let i = 1; i < artigosRaw.length; i++) {
+      const n = (artigosRaw[i].numero ?? "").trim();
+      if (n === "1º" || n === "1°" || n === "1") {
+        corte = i;
+        break;
+      }
+    }
+    if (corte === -1) return artigosRaw;
+    return parteCF === "adct" ? artigosRaw.slice(corte) : artigosRaw.slice(0, corte);
+  }, [artigosRaw, parteCF]);
   const apenasArtigos = useMemo(() => artigos.filter((a) => !!a.numero && !tipoEstrutura(a.numero)), [artigos]);
 
   const filtrar = (lista: ArtigoLista[]) => {
@@ -281,7 +300,7 @@ export function EstatutoArtigosPage() {
               loading="eager"
             />
             <h1 className="font-display font-semibold text-[15px] sm:text-[18px] md:text-[24px] tracking-[0.04em] mt-2.5 leading-tight uppercase px-2 max-w-full break-words">
-              {meta?.nomeCompleto ?? (limparTituloLei(data?.lei.nome ?? "") || "Estatuto")}
+              {tituloOverride ?? meta?.nomeCompleto ?? (limparTituloLei(data?.lei.nome ?? "") || "Estatuto")}
             </h1>
             <p className="text-[12.5px] text-muted-foreground mt-1.5">
               {slug === "cf"
@@ -429,7 +448,7 @@ export function EstatutoArtigosPage() {
       <ArtigoSheet
         artigoId={artigoId}
         leiId={data?.lei.id ?? null}
-        leiRotulo={meta?.nomeCompleto?.toUpperCase() ?? data?.lei.nome.toUpperCase() ?? "ESTATUTO"}
+        leiRotulo={(tituloOverride ?? meta?.nomeCompleto ?? data?.lei.nome ?? "ESTATUTO").toUpperCase()}
         planaltoUrl={meta?.planaltoUrl}
         userId={userId}
         favorito={!!artigoId && !!favoritos?.has(artigoId)}
@@ -871,7 +890,7 @@ function ArtigoSheet({
     <Sheet open={!!artigoId} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         side="bottom"
-        className="h-[95vh] sm:h-[92vh] w-full sm:max-w-[640px] sm:mx-auto p-0 flex flex-col gap-0 rounded-t-3xl border border-border/60 [&>button]:hidden bg-background"
+        className="inset-0 h-[100svh] w-full max-w-none sm:max-w-none p-0 flex flex-col gap-0 rounded-none border-0 [&>button]:hidden bg-background"
       >
         {/* Header */}
         <div className="relative px-5 pt-5 pb-3 border-b border-border/60 bg-gradient-to-b from-card/80 to-card/40">
