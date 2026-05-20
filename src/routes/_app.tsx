@@ -52,7 +52,7 @@ function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         {!isBiblioteca && <MobileHeader />}
         <main id="conteudo-principal" className={`flex-1 ${showBottomNav ? "pb-20 md:pb-0" : ""} overflow-x-hidden`}>
-          <div key={pathname} className="mx-auto w-full max-w-[1120px] animate-route-fade">
+          <div key={pathname} className="mx-auto w-full max-w-[1120px] animate-route-slide">
             <Outlet />
           </div>
         </main>
