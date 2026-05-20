@@ -29,6 +29,7 @@ import { Route as AppBlogRouteImport } from './routes/_app.blog'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
+import { Route as AppAtualizacoesLeisRouteImport } from './routes/_app.atualizacoes-leis'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
 import { Route as AppAppRouteImport } from './routes/_app.app'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
@@ -178,6 +179,11 @@ const AppAulasRoute = AppAulasRouteImport.update({
 const AppAudioaulasRoute = AppAudioaulasRouteImport.update({
   id: '/audioaulas',
   path: '/audioaulas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAtualizacoesLeisRoute = AppAtualizacoesLeisRouteImport.update({
+  id: '/atualizacoes-leis',
+  path: '/atualizacoes-leis',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAssistenteRoute = AppAssistenteRouteImport.update({
@@ -455,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRouteWithChildren
   '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
+  '/atualizacoes-leis': typeof AppAtualizacoesLeisRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRouteWithChildren
   '/biblioteca': typeof AppBibliotecaRouteWithChildren
@@ -526,6 +533,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
+  '/atualizacoes-leis': typeof AppAtualizacoesLeisRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/blog': typeof AppBlogRouteWithChildren
   '/caderno-erros': typeof AppCadernoErrosRoute
@@ -594,6 +602,7 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/app': typeof AppAppRoute
   '/_app/assistente': typeof AppAssistenteRoute
+  '/_app/atualizacoes-leis': typeof AppAtualizacoesLeisRoute
   '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRouteWithChildren
   '/_app/biblioteca': typeof AppBibliotecaRouteWithChildren
@@ -668,6 +677,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/assistente'
+    | '/atualizacoes-leis'
     | '/audioaulas'
     | '/aulas'
     | '/biblioteca'
@@ -739,6 +749,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/app'
     | '/assistente'
+    | '/atualizacoes-leis'
     | '/audioaulas'
     | '/blog'
     | '/caderno-erros'
@@ -806,6 +817,7 @@ export interface FileRouteTypes {
     | '/_app/admin'
     | '/_app/app'
     | '/_app/assistente'
+    | '/_app/atualizacoes-leis'
     | '/_app/audioaulas'
     | '/_app/aulas'
     | '/_app/biblioteca'
@@ -1023,6 +1035,13 @@ declare module '@tanstack/react-router' {
       path: '/audioaulas'
       fullPath: '/audioaulas'
       preLoaderRoute: typeof AppAudioaulasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/atualizacoes-leis': {
+      id: '/_app/atualizacoes-leis'
+      path: '/atualizacoes-leis'
+      fullPath: '/atualizacoes-leis'
+      preLoaderRoute: typeof AppAtualizacoesLeisRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/assistente': {
@@ -1533,6 +1552,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAppRoute: typeof AppAppRoute
   AppAssistenteRoute: typeof AppAssistenteRoute
+  AppAtualizacoesLeisRoute: typeof AppAtualizacoesLeisRoute
   AppAudioaulasRoute: typeof AppAudioaulasRoute
   AppAulasRoute: typeof AppAulasRouteWithChildren
   AppBibliotecaRoute: typeof AppBibliotecaRouteWithChildren
@@ -1576,6 +1596,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppAppRoute: AppAppRoute,
   AppAssistenteRoute: AppAssistenteRoute,
+  AppAtualizacoesLeisRoute: AppAtualizacoesLeisRoute,
   AppAudioaulasRoute: AppAudioaulasRoute,
   AppAulasRoute: AppAulasRouteWithChildren,
   AppBibliotecaRoute: AppBibliotecaRouteWithChildren,
