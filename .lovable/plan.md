@@ -1,51 +1,70 @@
-## Fase 3 — Polimento (sem pré-geração de IA)
+## O que o auditor está dizendo
 
-Vou fazer os 4 itens de polimento agora. O item 1 (pré-geração de IA em background) fica para depois, como você pediu.
+O linter do Supabase encontrou **73 avisos**, todos da categoria **PERFORMANCE** (nenhum problema de segurança). São dois tipos:
 
-### 1. Sentry — monitoramento de erros (~30min)
-- Instalar `@sentry/react` e `@sentry/tanstackstart-react`.
-- Inicializar no `src/start.ts` (server) e no client entry, lendo `SENTRY_DSN` de env.
-- Configurar:
-  - `tracesSampleRate: 0.1` (10% de transações, suficiente para Web Vitals)
-  - `replaysOnErrorSampleRate: 1.0` (gravação de sessão só quando há erro)
-  - Filtrar erros de extensões de browser e ResizeObserver (ruído).
-- Adicionar `ErrorBoundary` global no `__root.tsx` que reporta pro Sentry.
-- **Precisa do secret `SENTRY_DSN`** — vou pedir quando começar.
+### 1. `auth_rls_initplan` — 55 avisos
+As políticas RLS chamam `auth.uid()` / `auth.role()` diretamente. O Postgres re-executa essa função **uma vez para cada linha** verificada. Em tabelas grandes (vade_mecum_artigos, blog_posts, etc.) isso fica lento.
 
-### 2. Listas mais leves (biblioteca e blog) (~30min)
-- Auditar as queries de listagem que ainda trazem campos pesados:
-  - `blog_posts` na home/listagem → trocar `select("*")` por `select("id,titulo,slug,categoria,capa,resumo,publicado_em")` (deixa o `conteudo` de fora, que pode ter 50–100KB por post).
-  - Qualquer outra listagem que esteja puxando colunas grandes sem necessidade.
-- Manter `select("*")` apenas em telas de detalhe (uma linha só).
+**Correção:** envolver em subquery — `(select auth.uid())` — para o Postgres avaliar **uma vez por query** e reutilizar o resultado. Mesma semântica, mesma segurança, muito mais rápido em escala.
 
-### 3. Capas da biblioteca em AVIF/WebP (~45min)
-- As capas vêm do Supabase Storage como JPG/PNG. Não dá pra usar `vite-imagetools` (são URLs dinâmicas, não bundle).
-- Solução: criar um helper `getCoverUrl(url, { width, format })` que usa o **Supabase Image Transformation** (já incluso no plano), gerando URLs com `?width=300&format=webp&quality=80`.
-- Aplicar em todos os `<img>` de capa (biblioteca, "continuar lendo", resumos).
-- Adicionar `loading="lazy"` e `decoding="async"` onde ainda não tem.
-- Ganho esperado: ~60–70% menos bytes por capa, LCP melhor em listagens.
+### 2. `multiple_permissive_policies` — 18 avisos
+Várias tabelas têm **duas políticas permissivas** para SELECT no mesmo papel (`authenticated`): uma de "Leitura pública" + uma de "Admins gerenciam tudo". O Postgres precisa avaliar as duas em cada linha, mesmo que a pública já libere tudo.
 
-### 4. Cache offline melhor (PWA) (~45min)
-- Hoje o `manifest.webmanifest` está OK, mas não há service worker — o app não funciona offline.
-- Adicionar `vite-plugin-pwa` com configuração **segura para o preview do Lovable**:
-  - `devOptions.enabled: false` (SW só em produção).
-  - Guard no registro: não registrar dentro de iframe nem em hosts `lovableproject.com` / `id-preview--`.
-  - `NetworkFirst` para HTML (não trava em build antigo).
-  - `CacheFirst` com expiração de 30 dias para: fontes, ícones, capas do Storage.
-  - `navigateFallbackDenylist: [/^\/api/, /^\/~oauth/]`.
-- Resultado: estudante no metrô abre o app e continua de onde parou (rotas já visitadas + capas).
-- **Aviso:** offline só funciona no site publicado, não no preview do editor.
+**Correção:** como admin já é coberto pela leitura pública no SELECT, basta **restringir a policy de admin para INSERT/UPDATE/DELETE** (em vez de ALL), eliminando a sobreposição em SELECT.
 
-### Ordem de execução
-1. Listas mais leves (rápido, ganho imediato)
-2. Capas AVIF/WebP (rápido, visível)
-3. Sentry (precisa do DSN)
-4. PWA offline (mais delicado, deixo por último para isolar se algo quebrar)
+---
 
-### Métricas-alvo após esta fase
-- Listagem do blog: ~80% menos bytes transferidos
-- Listagem da biblioteca: LCP -300ms em mobile
-- 100% dos erros em produção visíveis no Sentry
-- App utilizável offline para conteúdo já visitado
+## Plano
 
-Posso começar?
+Uma única migration SQL que reescreve as policies afetadas. Sem mudanças no código frontend/backend — o comportamento (quem pode ler/escrever o quê) fica idêntico.
+
+### Etapa 1 — Reescrever 55 policies para usar `(select auth.<fn>())`
+
+Tabelas afetadas: `profiles`, `user_roles`, `simulado_tentativas`, `simulados`, `simulado_questoes`, `simulado_jobs`, `blog_posts`, `resumo_livros`, `resumo_capitulos`, `vade_mecum_leis`, `vade_mecum_artigos`, `vade_mecum_narracoes`, `vade_mecum_favoritos`, `vade_mecum_anotacoes`, `aula_capitulo_aulas`, `aula_capitulo_flashcards`, `aula_capitulo_questoes`, `aulas_questoes_geradas`, todas as `BIBLIOTECA-*`.
+
+Padrão da reescrita:
+```sql
+-- antes
+USING (auth.uid() = user_id)
+-- depois
+USING ((select auth.uid()) = user_id)
+
+-- antes
+USING (has_role(auth.uid(), 'admin'))
+-- depois
+USING (has_role((select auth.uid()), 'admin'))
+```
+
+### Etapa 2 — Eliminar policies permissivas duplicadas em SELECT
+
+Para cada uma das 18 tabelas com duplicidade, trocar a policy `Admins gerenciam X` (que usa `FOR ALL`) por **três policies separadas** restritas a `INSERT`, `UPDATE` e `DELETE`. Assim a "Leitura pública" continua sendo a única policy de SELECT.
+
+```sql
+-- antes (cobre SELECT também → duplicidade)
+CREATE POLICY "Admins gerenciam X" ON public.X
+  FOR ALL USING (has_role((select auth.uid()),'admin'));
+
+-- depois (não cobre mais SELECT)
+CREATE POLICY "Admins inserem X"   ON public.X FOR INSERT WITH CHECK (has_role((select auth.uid()),'admin'));
+CREATE POLICY "Admins atualizam X" ON public.X FOR UPDATE USING     (has_role((select auth.uid()),'admin'));
+CREATE POLICY "Admins removem X"   ON public.X FOR DELETE USING     (has_role((select auth.uid()),'admin'));
+```
+
+### Etapa 3 — Rodar o linter de novo
+Esperado: zero avisos de `auth_rls_initplan` e `multiple_permissive_policies`.
+
+---
+
+## Detalhes técnicos
+
+- Nenhuma alteração de schema, dados ou regra de acesso — apenas reescrita das expressões das policies.
+- Migration roda como `DROP POLICY ... ; CREATE POLICY ...` dentro de uma transação. Se algo falhar, faz rollback automático.
+- O arquivo `src/integrations/supabase/types.ts` **não** muda (não há alteração de colunas).
+- Não exige nada do frontend.
+
+## Ganhos esperados
+
+- Consultas em tabelas grandes (`vade_mecum_artigos` ~ milhares de linhas, `blog_posts`, `simulado_questoes`) ficam significativamente mais rápidas, principalmente em `SELECT` com filtros amplos.
+- Menor uso de CPU no Postgres → menos chance de hit no plano gratuito do Supabase.
+
+Se aprovar, eu gero a migration completa em build mode.
