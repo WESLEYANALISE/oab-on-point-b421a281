@@ -6,6 +6,7 @@ import { z } from "zod";
 import { FileText, BookOpen, ChevronRight, ArrowLeft, FolderOpen } from "lucide-react";
 import { listarLivrosComResumo } from "@/lib/resumos.functions";
 import { cn } from "@/lib/utils";
+import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
 // Ordem cronológica de incidência na 1ª fase da OAB + emoji/gradiente
 // (mesma paleta dos cards de matérias na home)
@@ -196,10 +197,14 @@ function ResumosIndex() {
                 <div className="w-14 h-20 rounded overflow-hidden bg-muted border border-border flex-shrink-0">
                   {l.capa ? (
                     <img
-                      src={l.capa}
+                      src={supabaseImage(l.capa, { w: 112, q: 78 }) ?? l.capa}
+                      srcSet={supabaseImageSrcSet(l.capa, 56, 78)}
+                      sizes="56px"
                       alt={l.titulo}
                       loading="lazy"
                       decoding="async"
+                      width={56}
+                      height={80}
                       className="w-full h-full object-cover"
                     />
                   ) : (

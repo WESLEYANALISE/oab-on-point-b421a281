@@ -14,6 +14,8 @@ import { useEffect, useMemo } from "react";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { registerServiceWorker } from "@/lib/sw-register";
+import { initSentry, Sentry } from "@/lib/sentry";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -40,6 +42,14 @@ function NotFoundComponent() {
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
+  // Reporta para o Sentry se estiver habilitado.
+  if (typeof window !== "undefined") {
+    try {
+      Sentry.captureException(error);
+    } catch {
+      /* noop */
+    }
+  }
   const router = useRouter();
 
   return (
@@ -207,6 +217,12 @@ function AuthCacheBridge() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Inicializa Sentry e registra o service worker (PWA).
+  // Ambos têm guards internos contra iframe/preview do Lovable.
+  useEffect(() => {
+    initSentry();
+    registerServiceWorker();
+  }, []);
   const persister = useMemo(() => {
     if (typeof window === "undefined") return null;
     return createSyncStoragePersister({
