@@ -217,9 +217,10 @@ function AuthCacheBridge() {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  // Registra o service worker (PWA) — guards internos impedem rodar
-  // em iframe ou em hosts de preview do Lovable.
+  // Inicializa Sentry e registra o service worker (PWA).
+  // Ambos têm guards internos contra iframe/preview do Lovable.
   useEffect(() => {
+    initSentry();
     registerServiceWorker();
   }, []);
   const persister = useMemo(() => {
