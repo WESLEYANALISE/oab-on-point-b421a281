@@ -57,6 +57,7 @@ import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slu
 import { Route as AppBlogSlugRouteImport } from './routes/_app.blog.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
 import { Route as AppAulasMateriaRouteImport } from './routes/_app.aulas.$materia'
+import { Route as AppAdminVadeMecumSyncRouteImport } from './routes/_app.admin.vade-mecum-sync'
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
 import { Route as AppAdminResumosRouteImport } from './routes/_app.admin.resumos'
 import { Route as AppAdminNarracoesRouteImport } from './routes/_app.admin.narracoes'
@@ -318,6 +319,11 @@ const AppAulasMateriaRoute = AppAulasMateriaRouteImport.update({
   path: '/$materia',
   getParentRoute: () => AppAulasRoute,
 } as any)
+const AppAdminVadeMecumSyncRoute = AppAdminVadeMecumSyncRouteImport.update({
+  id: '/vade-mecum-sync',
+  path: '/vade-mecum-sync',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminSimuladosRoute = AppAdminSimuladosRouteImport.update({
   id: '/simulados',
   path: '/simulados',
@@ -460,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
+  '/admin/vade-mecum-sync': typeof AppAdminVadeMecumSyncRoute
   '/aulas/$materia': typeof AppAulasMateriaRouteWithChildren
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/blog/$slug': typeof AppBlogSlugRoute
@@ -527,6 +534,7 @@ export interface FileRoutesByTo {
   '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
+  '/admin/vade-mecum-sync': typeof AppAdminVadeMecumSyncRoute
   '/blog/$slug': typeof AppBlogSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
@@ -595,6 +603,7 @@ export interface FileRoutesById {
   '/_app/admin/narracoes': typeof AppAdminNarracoesRoute
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
+  '/_app/admin/vade-mecum-sync': typeof AppAdminVadeMecumSyncRoute
   '/_app/aulas/$materia': typeof AppAulasMateriaRouteWithChildren
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/_app/blog/$slug': typeof AppBlogSlugRoute
@@ -667,6 +676,7 @@ export interface FileRouteTypes {
     | '/admin/narracoes'
     | '/admin/resumos'
     | '/admin/simulados'
+    | '/admin/vade-mecum-sync'
     | '/aulas/$materia'
     | '/biblioteca/$slug'
     | '/blog/$slug'
@@ -734,6 +744,7 @@ export interface FileRouteTypes {
     | '/admin/narracoes'
     | '/admin/resumos'
     | '/admin/simulados'
+    | '/admin/vade-mecum-sync'
     | '/blog/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
@@ -801,6 +812,7 @@ export interface FileRouteTypes {
     | '/_app/admin/narracoes'
     | '/_app/admin/resumos'
     | '/_app/admin/simulados'
+    | '/_app/admin/vade-mecum-sync'
     | '/_app/aulas/$materia'
     | '/_app/biblioteca/$slug'
     | '/_app/blog/$slug'
@@ -1195,6 +1207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAulasMateriaRouteImport
       parentRoute: typeof AppAulasRoute
     }
+    '/_app/admin/vade-mecum-sync': {
+      id: '/_app/admin/vade-mecum-sync'
+      path: '/vade-mecum-sync'
+      fullPath: '/admin/vade-mecum-sync'
+      preLoaderRoute: typeof AppAdminVadeMecumSyncRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/admin/simulados': {
       id: '/_app/admin/simulados'
       path: '/simulados'
@@ -1350,6 +1369,7 @@ interface AppAdminRouteChildren {
   AppAdminNarracoesRoute: typeof AppAdminNarracoesRoute
   AppAdminResumosRoute: typeof AppAdminResumosRoute
   AppAdminSimuladosRoute: typeof AppAdminSimuladosRoute
+  AppAdminVadeMecumSyncRoute: typeof AppAdminVadeMecumSyncRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
@@ -1358,6 +1378,7 @@ const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminNarracoesRoute: AppAdminNarracoesRoute,
   AppAdminResumosRoute: AppAdminResumosRoute,
   AppAdminSimuladosRoute: AppAdminSimuladosRoute,
+  AppAdminVadeMecumSyncRoute: AppAdminVadeMecumSyncRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }
 
