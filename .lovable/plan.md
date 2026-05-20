@@ -55,11 +55,11 @@ App edu offline-first (`nexora-learn`, `RuralEdu`) confirma o caminho **PWA + In
 3. **`head:` SEO** nas 15 rotas faltando (`aulas`, `biblioteca/slug`, `resumos/capítulo`, etc.).
 4. **Substituir `select("*")`** por colunas explícitas nas 11 funções.
 
-### Fase 2 — Estrutura (2 sessões, médio-alto)
-5. **Prerender** das rotas estáticas (`/`, `/blog`, `/biblioteca`, `/provas`, `/vade-mecum`).
-6. **Decompor `aulas/$ordem.tsx` (1.287 linhas)** em 5 chunks lazy: `AulaLer`, `AulaFlashcards`, `AulaQuestoes`, `AulaErros`, `AulaSimulado`.
-7. **Decompor `vade-mecum/estatutos/$slug.tsx` (2.104 linhas)** + virtualizar lista de artigos.
-8. **Hero AVIF + srcset** com `vite-imagetools`.
+### Fase 2 — Estrutura (parcial)
+5. ⏳ **Prerender** das rotas estáticas — pendente.
+6. ✅ **Decompor `aulas/$ordem.tsx`** — feito (1.296 → 324 linhas; 5 chunks lazy).
+7. ⏳ **Decompor `vade-mecum/estatutos/$slug.tsx` (2.104 linhas)** + virtualizar — pendente (refactor grande, próxima sessão).
+8. ⏳ **Hero AVIF + srcset** — pendente.
 
 ### Fase 3 — Robustez (1 sessão)
 9. **Sentry** com TanStack adapter — captura erros + Web Vitals.
