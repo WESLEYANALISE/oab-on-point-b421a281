@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { HomeTopCard } from "@/components/home/HomeTopCard";
 import { listBlogPosts, type BlogPostListItem } from "@/lib/blog.functions";
+import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 import primeiraFaseCover from "@/assets/oab-primeira-fase-cover.webp";
 import segundaFaseCover from "@/assets/oab-segunda-fase-cover.webp";
 
@@ -151,7 +152,15 @@ function BlogCardLink({ p, className = "" }: { p: BlogPostListItem; className?: 
     >
       <div className="relative h-28 md:h-36 bg-gradient-to-br from-[oklch(0.32_0.1_60)] via-[oklch(0.22_0.08_60)] to-[oklch(0.16_0.05_60)] flex items-center justify-center overflow-hidden">
         {p.capa_url ? (
-          <img src={p.capa_url} alt={p.titulo} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+          <img
+            src={supabaseImage(p.capa_url, { w: 640, q: 72 }) ?? p.capa_url}
+            srcSet={supabaseImageSrcSet(p.capa_url, 400, 72)}
+            sizes="(min-width: 768px) 400px, 90vw"
+            alt={p.titulo}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
         ) : (
           <>
             <div className="absolute inset-0 opacity-20" style={{

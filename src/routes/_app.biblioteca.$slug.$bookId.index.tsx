@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen, Download } from "lucide-react";
 import { BIB_MAP, livroQueryOptions } from "@/lib/biblioteca";
+import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
 export const Route = createFileRoute("/_app/biblioteca/$slug/$bookId/")({
   head: ({ params }) => ({
@@ -56,7 +57,18 @@ function BookDetail() {
         <div className="flex gap-4 mb-5">
           <div className="w-28 h-40 rounded-lg overflow-hidden bg-muted border border-border flex-shrink-0 shadow-lg">
             {capa ? (
-              <img src={capa} alt={titulo} width={112} height={160} loading="eager" decoding="async" className="w-full h-full object-cover" />
+              <img
+                src={supabaseImage(capa, { w: 224, q: 80 }) ?? capa}
+                srcSet={supabaseImageSrcSet(capa, 112, 80)}
+                sizes="112px"
+                alt={titulo}
+                width={112}
+                height={160}
+                loading="eager"
+                decoding="async"
+                fetchPriority="high"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground p-2 text-center font-sans">{titulo}</div>
             )}
