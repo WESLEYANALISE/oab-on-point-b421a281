@@ -75,7 +75,6 @@ function AdminHome() {
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </Link>
         </li>
-        </li>
         <li>
           <Link
             to="/admin/vade-mecum-sync"
