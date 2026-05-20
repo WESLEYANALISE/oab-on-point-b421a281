@@ -1,7 +1,49 @@
 // Parser puro da página "Resenha Diária" do Planalto.
 // Recebe o HTML do mês e devolve a lista de dias com seus atos.
 
-import { createHash } from "crypto";
+// SHA-1 puro em JS — evita import de "crypto" (Node) no bundle do cliente.
+function sha1Hex(input: string): string {
+  const msg: number[] = [];
+  for (let i = 0; i < input.length; i++) {
+    let c = input.charCodeAt(i);
+    if (c < 0x80) msg.push(c);
+    else if (c < 0x800) { msg.push(0xc0 | (c >> 6), 0x80 | (c & 0x3f)); }
+    else if (c < 0xd800 || c >= 0xe000) { msg.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f)); }
+    else {
+      i++;
+      const c2 = 0x10000 + (((c & 0x3ff) << 10) | (input.charCodeAt(i) & 0x3ff));
+      msg.push(0xf0 | (c2 >> 18), 0x80 | ((c2 >> 12) & 0x3f), 0x80 | ((c2 >> 6) & 0x3f), 0x80 | (c2 & 0x3f));
+    }
+  }
+  const ml = msg.length * 8;
+  msg.push(0x80);
+  while ((msg.length % 64) !== 56) msg.push(0);
+  for (let i = 7; i >= 0; i--) msg.push((ml >>> (i * 8)) & 0xff);
+  let h0 = 0x67452301, h1 = 0xefcdab89, h2 = 0x98badcfe, h3 = 0x10325476, h4 = 0xc3d2e1f0;
+  const w = new Array<number>(80);
+  for (let i = 0; i < msg.length; i += 64) {
+    for (let j = 0; j < 16; j++) {
+      w[j] = (msg[i + j * 4] << 24) | (msg[i + j * 4 + 1] << 16) | (msg[i + j * 4 + 2] << 8) | msg[i + j * 4 + 3];
+    }
+    for (let j = 16; j < 80; j++) {
+      const x = w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16];
+      w[j] = (x << 1) | (x >>> 31);
+    }
+    let a = h0, b = h1, c = h2, d = h3, e = h4;
+    for (let j = 0; j < 80; j++) {
+      let f: number, k: number;
+      if (j < 20) { f = (b & c) | ((~b) & d); k = 0x5a827999; }
+      else if (j < 40) { f = b ^ c ^ d; k = 0x6ed9eba1; }
+      else if (j < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8f1bbcdc; }
+      else { f = b ^ c ^ d; k = 0xca62c1d6; }
+      const t = (((a << 5) | (a >>> 27)) + f + e + k + w[j]) | 0;
+      e = d; d = c; c = ((b << 30) | (b >>> 2)) | 0; b = a; a = t;
+    }
+    h0 = (h0 + a) | 0; h1 = (h1 + b) | 0; h2 = (h2 + c) | 0; h3 = (h3 + d) | 0; h4 = (h4 + e) | 0;
+  }
+  const toHex = (n: number) => ("00000000" + (n >>> 0).toString(16)).slice(-8);
+  return toHex(h0) + toHex(h1) + toHex(h2) + toHex(h3) + toHex(h4);
+}
 
 const MESES_PT: Record<string, number> = {
   janeiro: 1, fevereiro: 2, marco: 3, "março": 3, abril: 4, maio: 5, junho: 6,
