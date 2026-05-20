@@ -546,7 +546,7 @@ function ListaArtigos({
   return (
     <div
       ref={parentRef}
-      className="overflow-y-auto overscroll-contain"
+      className="overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       style={{ height: "calc(100svh - 220px)", contain: "strict" }}
     >
       <div style={{ height: virtualizer.getTotalSize(), position: "relative", width: "100%" }}>
