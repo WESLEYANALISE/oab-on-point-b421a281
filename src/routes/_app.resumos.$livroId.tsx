@@ -3,6 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
 import { resumoLivroQueryOptions } from "@/lib/resumos-queries";
 import { normalizarTitulo } from "@/lib/titulo";
+import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
 export const Route = createFileRoute("/_app/resumos/$livroId")({
   head: () => ({
