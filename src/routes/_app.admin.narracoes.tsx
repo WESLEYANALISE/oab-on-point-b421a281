@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -43,7 +43,7 @@ function AdminNarracoes() {
   const [page, setPage] = useState(0);
   const [soFaltantes, setSoFaltantes] = useState(true);
 
-  const { data: leis } = useQuery({
+  const { data: leis, isLoading: leisLoading } = useQuery({
     queryKey: ["admin-narracoes", "leis"],
     queryFn: () => fnLeis(),
   });
@@ -57,13 +57,6 @@ function AdminNarracoes() {
 
   return (
     <div className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
-      <Link
-        to="/admin"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
-      >
-        <ChevronLeft className="h-4 w-4" /> Admin
-      </Link>
-
       <header className="mb-6 flex items-start gap-3">
         <div className="h-12 w-12 rounded-lg bg-gradient-gold grid place-items-center text-gold-foreground">
           <AudioLines className="h-6 w-6" />
@@ -77,7 +70,13 @@ function AdminNarracoes() {
         </div>
       </header>
 
-      {!leiId && <LeisLista leis={leis ?? []} onSelect={(id) => { setLeiId(id); setPage(0); setBusca(""); }} />}
+      {!leiId && leisLoading && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground py-8">
+          <Loader2 className="h-4 w-4 animate-spin" /> Carregando leis…
+        </div>
+      )}
+
+      {!leiId && !leisLoading && <LeisLista leis={leis ?? []} onSelect={(id) => { setLeiId(id); setPage(0); setBusca(""); }} />}
 
       {leiId && (
         <>
