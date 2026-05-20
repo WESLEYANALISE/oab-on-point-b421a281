@@ -70,7 +70,7 @@ export function HomeTopCard() {
       </Link>
 
       {/* Linha 2: rótulo "Próximo exame" + countdown + data + botão calendário */}
-      <div className="relative border-t border-primary-foreground/12 px-3.5 py-2.5 md:px-5 md:py-3">
+      <div className="relative border-t border-primary-foreground/12 px-2.5 py-2.5 md:px-3.5 md:py-3">
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <p className="text-[9px] uppercase tracking-[0.22em] text-primary-foreground/60 font-semibold leading-none">
             Próximo exame · 1ª fase
