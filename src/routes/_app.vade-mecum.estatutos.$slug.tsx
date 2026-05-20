@@ -280,10 +280,12 @@ function EstatutoArtigosPage() {
               loading="eager"
             />
             <h1 className="font-display font-semibold text-[15px] sm:text-[18px] md:text-[24px] tracking-[0.04em] mt-2.5 leading-tight uppercase px-2 max-w-full break-words">
-              {meta?.nomeCompleto ?? data?.lei.nome ?? "Estatuto"}
+              {meta?.nomeCompleto ?? limparTituloLei(data?.lei.nome ?? "") || "Estatuto"}
             </h1>
             <p className="text-[12.5px] text-muted-foreground mt-1.5">
-              {meta?.decreto ?? `${data?.lei.total_artigos.toLocaleString("pt-BR") ?? "—"} artigos`}
+              {slug === "cf"
+                ? "1988"
+                : meta?.decreto ?? `${data?.lei.total_artigos.toLocaleString("pt-BR") ?? "—"} artigos`}
             </p>
             {meta?.planaltoUrl && (
               <a
