@@ -29,16 +29,27 @@ export async function fetchRendered(url: string): Promise<string> {
   return res.text();
 }
 
-// Fallback simples (fetch direto). Útil para o Planalto (HTML estático em latin-1).
+// Fetch direto com fallback automático para Browserless.
+// O Planalto bloqueia IPs de cloud, então fetch direto costuma falhar com "fetch failed".
 export async function fetchDirect(url: string): Promise<string> {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (compatible; OABNaRiscaBot/1.0; +https://oab-on-point.lovable.app)",
-    },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} em ${url}`);
-  const buf = await res.arrayBuffer();
-  // Planalto serve em ISO-8859-1
-  return new TextDecoder("latin1").decode(buf);
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml",
+      },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = await res.arrayBuffer();
+    return new TextDecoder("latin1").decode(buf);
+  } catch (e) {
+    // Fallback para Browserless (Planalto geralmente bloqueia IPs de cloud).
+    if (process.env.BROWSERLESS_API_KEY) {
+      return fetchRendered(url);
+    }
+    throw new Error(
+      `Falha ao buscar ${url}: ${e instanceof Error ? e.message : String(e)}. Configure BROWSERLESS_API_KEY para usar o renderizador.`,
+    );
+  }
 }
