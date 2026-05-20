@@ -127,7 +127,7 @@ function stripTags(html: string): string {
 }
 
 function hashAto(tipo: string, numero: string, data: string | null): string {
-  return createHash("sha1").update(`${tipo}|${numero}|${data ?? ""}`).digest("hex");
+  return sha1Hex(`${tipo}|${numero}|${data ?? ""}`);
 }
 
 /**
