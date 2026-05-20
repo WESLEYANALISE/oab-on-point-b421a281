@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { geminiGenerateContent } from "@/lib/gemini.server";
-import { MAX_TTS_CHARS, dividirTextoEmChunks, montarTextoNarracao } from "@/lib/narracoes.utils";
+import { MAX_TTS_CHARS, dividirTextoEmChunks, limparTituloLei, montarTextoNarracao } from "@/lib/narracoes.utils";
 
 async function assertAdmin(supabase: any, userId: string) {
   const { data } = await supabase
@@ -114,6 +114,7 @@ const ListInput = z.object({
   busca: z.string().max(120).optional(),
   page: z.number().int().min(0).default(0),
   pageSize: z.number().int().min(10).max(200).default(50),
+  apenasRecomendados: z.boolean().optional().default(false),
 });
 
 export const listarArtigosParaNarrar = createServerFn({ method: "POST" })
@@ -124,12 +125,16 @@ export const listarArtigosParaNarrar = createServerFn({ method: "POST" })
 
     let q = supabaseAdmin
       .from("vade_mecum_artigos")
-      .select("id, numero, texto, ordem", { count: "exact" })
+      .select("id, numero, texto, ordem, relevancia", { count: "exact" })
       .eq("lei_id", data.leiId)
       .not("numero", "is", null)
       .neq("numero", "")
       .order("ordem", { ascending: true })
       .range(data.page * data.pageSize, (data.page + 1) * data.pageSize - 1);
+
+    if (data.apenasRecomendados) {
+      q = q.in("relevancia", ["alta", "muito_alta"]);
+    }
 
     if (data.busca && data.busca.trim()) {
       const b = data.busca.trim();
@@ -158,6 +163,7 @@ export const listarArtigosParaNarrar = createServerFn({ method: "POST" })
         numero: (a.numero ?? "") as string,
         texto: (a.texto ?? "") as string,
         ordem: a.ordem as number,
+        relevancia: (a.relevancia ?? null) as string | null,
         tem_narracao: narrados.has(a.id as string),
       })),
     };
@@ -183,7 +189,7 @@ export const previewTextoNarracao = createServerFn({ method: "POST" })
       .eq("id", art.lei_id as string)
       .single();
     // Usa sempre o nome COMPLETO da lei (sem abreviação) na narração.
-    const titulo = (lei?.nome as string) || (lei?.nome_curto as string) || "";
+    const titulo = limparTituloLei((lei?.nome as string) || (lei?.nome_curto as string) || "");
     const texto = montarTextoNarracao({
       leiTitulo: titulo,
       artigoNumero: art.numero ?? "",
@@ -250,7 +256,7 @@ export const gerarNarracaoArtigo = createServerFn({ method: "POST" })
       .eq("id", art.lei_id as string)
       .single();
     // Usa sempre o nome COMPLETO da lei (sem abreviação) na narração.
-    const titulo = (lei?.nome as string) || (lei?.nome_curto as string) || "";
+    const titulo = limparTituloLei((lei?.nome as string) || (lei?.nome_curto as string) || "");
 
     const texto = montarTextoNarracao({
       leiTitulo: titulo,
@@ -372,4 +378,97 @@ export const excluirNarracao = createServerFn({ method: "POST" })
       .update({ narracao_url: null })
       .eq("id", data.artigoId);
     return { ok: true };
+  });
+
+// ---------- SUGERIR RECOMENDADOS COM IA ----------
+// Usa Gemini pra marcar os artigos mais cobrados na OAB da lei (`relevancia`).
+// Sobrescreve as marcações anteriores da lei (limpa antes).
+export const sugerirRecomendacoesLei = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ leiId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.supabase, context.userId);
+
+    const { data: lei } = await supabaseAdmin
+      .from("vade_mecum_leis")
+      .select("nome, nome_curto")
+      .eq("id", data.leiId)
+      .single();
+    if (!lei) throw new Error("Lei não encontrada");
+
+    // Pega TODOS os artigos numerados da lei (apenas número + 1ª linha do texto pra contextualizar)
+    const { data: artigos, error } = await supabaseAdmin
+      .from("vade_mecum_artigos")
+      .select("id, numero, texto")
+      .eq("lei_id", data.leiId)
+      .not("numero", "is", null)
+      .neq("numero", "")
+      .order("ordem", { ascending: true });
+    if (error) throw new Error(error.message);
+    if (!artigos || artigos.length === 0) return { atualizados: 0 };
+
+    const lista = artigos
+      .map((a) => `${a.numero}: ${(a.texto ?? "").replace(/\s+/g, " ").slice(0, 140)}`)
+      .join("\n");
+
+    const prompt = `Você é um especialista em Exame da OAB. Com base na lei "${lei.nome}", aponte os artigos MAIS COBRADOS historicamente na 1ª e 2ª fase da OAB.
+
+Classifique em duas listas:
+- "muito_alta": artigos absolutamente clássicos, cobrados em quase todo exame.
+- "alta": artigos muito cobrados, frequentes mas não em todos.
+
+Responda APENAS um JSON válido no formato:
+{"muito_alta": ["1","5","37"], "alta": ["18","20"]}
+
+Use exatamente os números no formato que aparecem na lista (ex.: "1", "5", "1-A").
+Lista de artigos disponíveis:
+${lista.slice(0, 18000)}`;
+
+    const res = await geminiGenerateContent("gemini-2.5-flash", {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Gemini falhou (${res.status}): ${body.slice(0, 300)}`);
+    }
+    const json = (await res.json()) as any;
+    const txt: string = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    let parsed: { muito_alta?: string[]; alta?: string[] } = {};
+    try {
+      parsed = JSON.parse(txt);
+    } catch {
+      const m = txt.match(/\{[\s\S]*\}/);
+      if (m) parsed = JSON.parse(m[0]);
+    }
+    const muitoAlta = new Set((parsed.muito_alta ?? []).map((n) => String(n).trim()));
+    const alta = new Set((parsed.alta ?? []).map((n) => String(n).trim()));
+
+    // Limpa marcações anteriores da lei
+    await supabaseAdmin
+      .from("vade_mecum_artigos")
+      .update({ relevancia: null })
+      .eq("lei_id", data.leiId)
+      .in("relevancia", ["alta", "muito_alta"]);
+
+    let atualizados = 0;
+    for (const a of artigos) {
+      const num = String(a.numero ?? "").trim();
+      const novo = muitoAlta.has(num)
+        ? "muito_alta"
+        : alta.has(num)
+          ? "alta"
+          : null;
+      if (novo) {
+        const { error: upErr } = await supabaseAdmin
+          .from("vade_mecum_artigos")
+          .update({ relevancia: novo })
+          .eq("id", a.id);
+        if (!upErr) atualizados++;
+      }
+    }
+
+    return { atualizados };
   });
