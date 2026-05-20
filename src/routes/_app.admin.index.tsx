@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Target, ChevronRight, FileText, Newspaper, AudioLines, BookOpenCheck } from "lucide-react";
+import { Target, ChevronRight, FileText, Newspaper, AudioLines, BookOpenCheck, BellRing } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin/")({
   component: AdminHome,
@@ -86,6 +86,21 @@ function AdminHome() {
             <div className="flex-1 min-w-0">
               <p className="font-display text-lg">Vade Mecum · Sync</p>
               <p className="text-xs text-muted-foreground">Verificar alterações da CF no Planalto</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </Link>
+        </li>
+        <li>
+          <Link
+            to="/atualizacoes-leis"
+            className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors"
+          >
+            <div className="h-12 w-12 rounded-lg bg-gradient-gold grid place-items-center text-gold-foreground">
+              <BellRing className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-lg">Resenha · Sync</p>
+              <p className="text-xs text-muted-foreground">Calendário de leis publicadas no D.O.U. + sync manual</p>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </Link>

@@ -787,6 +787,111 @@ export type Database = {
         }
         Relationships: []
       }
+      legis_atos: {
+        Row: {
+          created_at: string
+          data_assinatura: string | null
+          data_dou: string
+          edicao_extra: boolean
+          ementa: string
+          hash: string
+          id: string
+          numero: string
+          texto_importado: boolean
+          tipo: string
+          updated_at: string
+          url: string
+          vade_mecum_lei_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_assinatura?: string | null
+          data_dou: string
+          edicao_extra?: boolean
+          ementa?: string
+          hash: string
+          id?: string
+          numero: string
+          texto_importado?: boolean
+          tipo: string
+          updated_at?: string
+          url: string
+          vade_mecum_lei_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_assinatura?: string | null
+          data_dou?: string
+          edicao_extra?: boolean
+          ementa?: string
+          hash?: string
+          id?: string
+          numero?: string
+          texto_importado?: boolean
+          tipo?: string
+          updated_at?: string
+          url?: string
+          vade_mecum_lei_id?: string | null
+        }
+        Relationships: []
+      }
+      legis_resenha_dia: {
+        Row: {
+          data_dou: string
+          edicao_extra: boolean
+          extraido_em: string
+          fonte_url: string
+          mes_ref: string
+          total_atos: number
+        }
+        Insert: {
+          data_dou: string
+          edicao_extra?: boolean
+          extraido_em?: string
+          fonte_url: string
+          mes_ref: string
+          total_atos?: number
+        }
+        Update: {
+          data_dou?: string
+          edicao_extra?: boolean
+          extraido_em?: string
+          fonte_url?: string
+          mes_ref?: string
+          total_atos?: number
+        }
+        Relationships: []
+      }
+      legis_sync_runs: {
+        Row: {
+          atualizados: number
+          erro: string | null
+          executado_em: string
+          gatilho: string
+          id: string
+          mes_ref: string | null
+          novos: number
+        }
+        Insert: {
+          atualizados?: number
+          erro?: string | null
+          executado_em?: string
+          gatilho: string
+          id?: string
+          mes_ref?: string | null
+          novos?: number
+        }
+        Update: {
+          atualizados?: number
+          erro?: string | null
+          executado_em?: string
+          gatilho?: string
+          id?: string
+          mes_ref?: string | null
+          novos?: number
+        }
+        Relationships: []
+      }
       livros_favoritos: {
         Row: {
           created_at: string
