@@ -161,7 +161,7 @@ function VadeMecumPage() {
             cat.id === "constituicao" ? (
               <Link
                 key={cat.id}
-                to="/vade-mecum/estatutos/$slug"
+                to="/vade-mecum/$slug"
                 params={{ slug: "cf" }}
                 className="block h-full"
               >
