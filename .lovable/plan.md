@@ -1,63 +1,61 @@
+## O que existe hoje
+
+Em `src/routes/_app.tsx` (linha 55) já há um wrapper com `animate-route-fade` aplicado por `key={pathname}`, mas a animação no CSS é só um **fade de opacidade** de 180ms (`src/styles.css` linhas 195–199). Sem deslocamento, sem direção — por isso parece que "não tem animação".
+
 ## Objetivo
 
-1. Ao clicar em **Constituição Federal** na home do Vade Mecum, **não** abrir direto a lista de artigos. Mostrar antes uma tela de escolha com duas opções:
-   - **Constituição Federal** (corpo principal — arts. 1º ao 250)
-   - **ADCT — Ato das Disposições Constitucionais Transitórias** (arts. 1º em diante, dentro do mesmo registro `cf` no banco)
-2. A tela de leitura do artigo (sheet) deve ser **fixa em tela cheia**, sem scroll por trás — só a área do texto do artigo rola. Hoje o sheet abre em `95vh` deixando o cabeçalho do app ("Voltar / Início") visível atrás, o que faz parecer que a tela "scrolla por inteiro".
-
-## Contexto técnico (banco)
-
-- Existe **um único registro** em `vade_mecum_leis` com `slug = 'cf'` (`id 107454fe…`, 417 artigos).
-- Os artigos estão na mesma tabela `vade_mecum_artigos`, ordenados por `ordem`:
-  - `ordem 1–272` → CF principal (numero "1º"…"250").
-  - `ordem 273–417` → ADCT (numero reinicia em "1º").
-- A divisão é detectada pelo "reset" do `numero` (cai de 250 para 1º entre `ordem 272` e `273`).
-
-Nenhuma mudança de banco necessária — a separação é feita no client a partir do ponto onde o `numero` reinicia.
+Quando o usuário navegar entre telas no app, a página nova deve **deslizar da direita pra esquerda** (entrando) com leve fade, no estilo das transições nativas de iOS/Android. Aplicar a todas as rotas filhas de `_app`.
 
 ## Mudanças
 
-### 1. Roteamento
+### 1. Nova keyframe no `src/styles.css`
 
-- Nova rota `/_app/vade-mecum/cf/index.tsx` → tela de seleção (CF principal × ADCT).
-- Nova rota `/_app/vade-mecum/cf/$parte.tsx` onde `$parte` é `"principal"` ou `"adct"` → renderiza `EstatutoArtigosPage` filtrando os artigos.
-- Remover o fallback genérico `/_app/vade-mecum/$slug.tsx` para o slug `cf` (continua valendo para outros futuros slugs).
-- Na home (`_app.vade-mecum.index.tsx`), o card "Constituição Federal" passa a apontar para `/vade-mecum/cf` (a tela de seleção).
+Substituir a keyframe `route-fade` por uma slide + fade combinados:
 
-### 2. Tela de seleção
+```css
+@keyframes route-slide-in {
+  from { opacity: 0; transform: translate3d(24px, 0, 0); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+.animate-route-slide {
+  animation: route-slide-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
 
-Novo componente em `cf/index.tsx`:
-- Cabeçalho com brasão + "Constituição Federal · 1988" (mesmo estilo da página de estatuto).
-- Dois cards grandes:
-  - **Constituição Federal** — "Corpo principal · 250 artigos"
-  - **ADCT** — "Ato das Disposições Constitucionais Transitórias · 145 artigos"
-- Ambos com `Link` para `/vade-mecum/cf/principal` e `/vade-mecum/cf/adct`.
+@media (prefers-reduced-motion: reduce) {
+  .animate-route-slide { animation: none; }
+}
+```
 
-### 3. Filtro CF principal × ADCT em `EstatutoArtigosPage`
+- `cubic-bezier(0.22, 1, 0.36, 1)` é uma "ease-out-expo" — começa rápido e desacelera, sensação fluida.
+- `translate3d` força aceleração GPU.
+- Respeita `prefers-reduced-motion`.
 
-- Aceitar uma prop opcional `parteCF: "principal" | "adct" | null` (ou inferir do path).
-- Após carregar `data.artigos`, calcular o índice de corte: primeiro item após `ordem 1` cujo `numero === "1º"` e cujo `ordem > 1` → começo do ADCT.
-- `principal` → `slice(0, corte)`; `adct` → `slice(corte)`.
-- Ajustar o título do header (`meta?.nomeCompleto` vira `"Constituição Federal"` ou `"ADCT — Ato das Disposições Constitucionais Transitórias"`) e o subtítulo (mantém "1988").
-- Botão "Voltar" no header da página deve voltar para `/vade-mecum/cf` (tela de seleção), não para a home.
+A keyframe antiga `route-fade` pode ser mantida (outras partes do app talvez usem fade) ou removida — vou manter pra evitar regressão.
 
-### 4. Sheet de leitura "tela toda fixa"
+### 2. Trocar a classe em `_app.tsx`
 
-No `ArtigoSheet` (`_app.vade-mecum.estatutos.$slug.tsx`, linha ~870):
+Linha 55:
 
-- Trocar `h-[95vh] sm:h-[92vh]` por `h-[100svh] sm:h-[100svh]` e `rounded-t-3xl` por `rounded-none` no mobile.
-- Garantir `inset-0` para cobrir 100% da viewport (evita o cabeçalho "Voltar / Início" aparecer atrás).
-- Manter a área de conteúdo interna como única região rolável (`overflow-y-auto` já existe na linha 988).
-- Resultado: cabeçalho do sheet, rodapé com Anterior/Próximo e menu inferior ficam fixos; só o texto do artigo rola por dentro.
+```tsx
+<div key={pathname} className="mx-auto w-full max-w-[1120px] animate-route-slide">
+  <Outlet />
+</div>
+```
+
+O `key={pathname}` já existe e força React a desmontar/montar o wrapper a cada mudança de rota, disparando a animação de entrada.
+
+### 3. Garantir que o container não corte a animação
+
+`main` já tem `overflow-x-hidden` (linha 54) — isso evita scroll horizontal durante o slide. Mantém.
+
+## Por que não usar AnimatePresence/framer-motion
+
+Para transições com **exit** (saída deslizando pra esquerda enquanto a nova entra pela direita) seria preciso `AnimatePresence mode="wait"` controlando o `Outlet`, o que adiciona complexidade (precisa do `location.pathname` como key, exige `motion.div` cobrindo o Outlet, e em SSR pode causar flicker). O slide-in puro em CSS já entrega a sensação fluida pedida com zero custo e sem risco.
 
 ## Arquivos afetados
 
-```text
-src/routes/_app.vade-mecum.index.tsx         → link CF aponta p/ /vade-mecum/cf
-src/routes/_app.vade-mecum.cf.index.tsx      → NOVO: tela de seleção
-src/routes/_app.vade-mecum.cf.$parte.tsx     → NOVO: lista filtrada (principal | adct)
-src/routes/_app.vade-mecum.$slug.tsx         → ignorar slug "cf" (ou remover)
-src/routes/_app.vade-mecum.estatutos.$slug.tsx → suportar prop `parteCF`; sheet em 100svh
-```
+- `src/styles.css` — adicionar `route-slide-in` + classe `.animate-route-slide`.
+- `src/routes/_app.tsx` — trocar `animate-route-fade` por `animate-route-slide`.
 
-Nenhuma migração SQL necessária.
+Nada mais.
