@@ -236,7 +236,8 @@ export const MATERIA_AREAS: Record<string, string[]> = {
   humanos: ["Direitos Humanos"],
   ambiental: ["Direito Ambiental"],
   filosofia: ["Teoria E Filosofia Do Direito"],
-  // sem material próprio ainda: etica, eca
+  etica: ["Ética Profissional"],
+  // sem material próprio ainda: eca
 };
 
 export function getAreasDaMateria(materiaId: string): string[] {
