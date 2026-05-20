@@ -158,7 +158,7 @@ function limparPrefixoArtigo(texto: string): string {
 }
 
 // ----------- Page -----------
-function EstatutoArtigosPage() {
+export function EstatutoArtigosPage() {
   const params = useParams({ strict: false }) as { slug?: string };
   const slug = params.slug ?? "";
   const [query, setQuery] = useState("");
