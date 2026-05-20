@@ -114,6 +114,7 @@ const ListInput = z.object({
   busca: z.string().max(120).optional(),
   page: z.number().int().min(0).default(0),
   pageSize: z.number().int().min(10).max(200).default(50),
+  apenasRecomendados: z.boolean().optional().default(false),
 });
 
 export const listarArtigosParaNarrar = createServerFn({ method: "POST" })
