@@ -2,7 +2,7 @@
 // Roda apenas no server. Lê BROWSERLESS_API_KEY do ambiente em runtime.
 
 export async function fetchRendered(url: string): Promise<string> {
-export async function fetchRendered(url: string): Promise<string> {
+
   const token = process.env.BROWSERLESS_API_KEY;
   if (!token) {
     throw new Error(
