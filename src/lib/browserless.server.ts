@@ -66,8 +66,9 @@ export async function fetchRendered(url: string): Promise<string> {
 }
 
 function isBotChallenge(html: string): boolean {
-  if (html.length < 25000 && /bobcmn|TSPD|challenge|window\["bobcmn"\]/i.test(html)) return true;
-  if (!/resenha|legisla|planalto/i.test(html)) return true;
+  if (!html || html.length < 2000) return true;
+  // Só considera challenge se houver marcadores explícitos E o HTML for curto.
+  if (html.length < 25000 && /bobcmn|TSPD|window\["bobcmn"\]|Just a moment|cf-challenge/i.test(html)) return true;
   return false;
 }
 
