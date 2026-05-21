@@ -29,6 +29,10 @@ export const getRouter = () => {
     // Reaproveita por 60s o que o preload já buscou.
     defaultPreloadStaleTime: 60_000,
     defaultPreloadGcTime: 5 * 60_000,
+    // Pending rapidinho (80ms) com tempo mínimo (200ms) pra evitar flash.
+    // Sem isso, navegação parece travar olhando a tela antiga.
+    defaultPendingMs: 80,
+    defaultPendingMinMs: 200,
   });
 
   return router;
