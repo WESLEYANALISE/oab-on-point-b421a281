@@ -73,12 +73,13 @@ export async function fetchRendered(url: string): Promise<string> {
 
   throw new Error(`Browserless falhou após retries :: ${lastErr}`);
 }
-
 function isBotChallenge(html: string): boolean {
   if (!html || html.length < 2000) return true;
-  // Só considera challenge se houver marcadores explícitos E o HTML for curto.
-  if (html.length < 25000 && /bobcmn|TSPD|window\["bobcmn"\]|Just a moment|cf-challenge/i.test(html)) return true;
+  // Só considera challenge se for curto E tiver o script de proteção ativo.
+  if (html.length < 25000 && /window\["bobcmn"\]|bobcmn|Just a moment|cf-challenge/i.test(html)) return true;
   return false;
+}
+
 }
 
 // Fetch direto; se vier challenge do Planalto, faz fallback automático para Browserless.
