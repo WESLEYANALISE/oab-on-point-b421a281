@@ -41,19 +41,28 @@ export async function fetchRendered(url: string): Promise<string> {
       lastErr = e instanceof Error ? e.message : String(e);
     }
   }
-
   // Último recurso: /unblock (passa por challenges JS tipo bobcmn/TSPD).
+  // O Planalto exige espera longa + waitForSelector para a tabela renderizar
+  // após o desafio TSPD ser resolvido pelo Chrome.
   try {
     const unblockEndpoint = `https://production-sfo.browserless.io/unblock?token=${encodeURIComponent(token)}`;
     const res = await fetch(unblockEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, content: true, cookies: false, browserWSEndpoint: false, ttl: 0 }),
+      body: JSON.stringify({
+        url,
+        content: true,
+        cookies: false,
+        browserWSEndpoint: false,
+        ttl: 0,
+        waitForTimeout: 15000,
+        waitForSelector: { selector: "table", timeout: 30000 },
+      }),
     });
     if (res.ok) {
       const json = (await res.json().catch(() => null)) as { content?: string } | null;
       if (json?.content && !isBotChallenge(json.content)) return json.content;
-      lastErr = "/unblock retornou vazio ou challenge persistente";
+      lastErr = `/unblock retornou ${json?.content?.length ?? 0} chars (challenge persistente)`;
     } else {
       const detail = (await res.text().catch(() => "")).slice(0, 200);
       lastErr = `/unblock ${res.status} ${res.statusText} :: ${detail}`;
@@ -64,13 +73,13 @@ export async function fetchRendered(url: string): Promise<string> {
 
   throw new Error(`Browserless falhou após retries :: ${lastErr}`);
 }
-
 function isBotChallenge(html: string): boolean {
   if (!html || html.length < 2000) return true;
-  // Só considera challenge se houver marcadores explícitos E o HTML for curto.
-  if (html.length < 25000 && /bobcmn|TSPD|window\["bobcmn"\]|Just a moment|cf-challenge/i.test(html)) return true;
+  // Só considera challenge se for curto E tiver o script de proteção ativo.
+  if (html.length < 25000 && /window\["bobcmn"\]|bobcmn|Just a moment|cf-challenge/i.test(html)) return true;
   return false;
 }
+
 
 // Fetch direto; se vier challenge do Planalto, faz fallback automático para Browserless.
 export async function fetchDirect(url: string): Promise<string> {
