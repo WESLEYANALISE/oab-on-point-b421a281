@@ -2,6 +2,7 @@
 // Roda apenas no server. Lê BROWSERLESS_API_KEY do ambiente em runtime.
 
 export async function fetchRendered(url: string): Promise<string> {
+
   const token = process.env.BROWSERLESS_API_KEY;
   if (!token) {
     throw new Error(
@@ -9,13 +10,14 @@ export async function fetchRendered(url: string): Promise<string> {
     );
   }
 
-  const endpoint = `https://chrome.browserless.io/content?token=${encodeURIComponent(token)}`;
-  // Planalto é instável com networkidle0 (frame detach). Tentamos estratégias
-  // mais leves com retry até obter um HTML válido.
+  const endpoint = `https://production-sfo.browserless.io/content?token=${encodeURIComponent(token)}`;
+  // API v2: usar `waitForTimeout` (number, top-level, ms) em vez de `waitFor`.
+  // Planalto é instável com networkidle0 — tentamos estratégias progressivamente
+  // mais agressivas até obter HTML válido.
   const attempts: Array<Record<string, unknown>> = [
-    { gotoOptions: { waitUntil: "domcontentloaded", timeout: 45000 }, waitFor: 4000 },
-    { gotoOptions: { waitUntil: "load", timeout: 60000 }, waitFor: 6000 },
-    { gotoOptions: { waitUntil: "networkidle2", timeout: 60000 }, waitFor: 3000 },
+    { gotoOptions: { waitUntil: "domcontentloaded", timeout: 45000 }, waitForTimeout: 4000 },
+    { gotoOptions: { waitUntil: "load", timeout: 60000 }, waitForTimeout: 6000 },
+    { gotoOptions: { waitUntil: "networkidle2", timeout: 60000 }, waitForTimeout: 3000 },
   ];
 
   let lastErr = "";
@@ -26,7 +28,12 @@ export async function fetchRendered(url: string): Promise<string> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, ...opts }),
       });
-      if (res.ok) return await res.text();
+      if (res.ok) {
+        const html = await res.text();
+        if (html && !isBotChallenge(html)) return html;
+        lastErr = "resposta vazia ou bloqueada por challenge";
+        continue;
+      }
       const detail = (await res.text().catch(() => "")).slice(0, 200);
       lastErr = `${res.status} ${res.statusText} :: ${detail}`;
       if (res.status < 500) break; // 4xx não adianta retentar
@@ -34,10 +41,30 @@ export async function fetchRendered(url: string): Promise<string> {
       lastErr = e instanceof Error ? e.message : String(e);
     }
   }
+
+  // Último recurso: /unblock (passa por challenges JS tipo bobcmn/TSPD).
+  try {
+    const unblockEndpoint = `https://production-sfo.browserless.io/unblock?token=${encodeURIComponent(token)}`;
+    const res = await fetch(unblockEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, content: true, cookies: false, browserWSEndpoint: false, ttl: 0 }),
+    });
+    if (res.ok) {
+      const json = (await res.json().catch(() => null)) as { content?: string } | null;
+      if (json?.content && !isBotChallenge(json.content)) return json.content;
+      lastErr = "/unblock retornou vazio ou challenge persistente";
+    } else {
+      const detail = (await res.text().catch(() => "")).slice(0, 200);
+      lastErr = `/unblock ${res.status} ${res.statusText} :: ${detail}`;
+    }
+  } catch (e) {
+    lastErr = e instanceof Error ? e.message : String(e);
+  }
+
   throw new Error(`Browserless falhou após retries :: ${lastErr}`);
 }
 
-// Detecta página de bot-challenge do Planalto (retorna 200 mas só com JS de proteção).
 function isBotChallenge(html: string): boolean {
   if (html.length < 25000 && /bobcmn|TSPD|challenge|window\["bobcmn"\]/i.test(html)) return true;
   if (!/resenha|legisla|planalto/i.test(html)) return true;
