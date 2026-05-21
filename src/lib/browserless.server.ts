@@ -80,7 +80,6 @@ function isBotChallenge(html: string): boolean {
   return false;
 }
 
-}
 
 // Fetch direto; se vier challenge do Planalto, faz fallback automático para Browserless.
 export async function fetchDirect(url: string): Promise<string> {
