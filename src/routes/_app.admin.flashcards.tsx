@@ -160,7 +160,7 @@ function AdminFlashcards() {
         </div>
       )}
 
-      {!isLoading && areaSelecionada && (
+      {areaSelecionada && (data || !isLoading) && (
         <div>
           <div className="flex items-center justify-between gap-2 mb-3">
             <button
