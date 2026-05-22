@@ -17,7 +17,7 @@ const SYSTEM_ESQUELETO = `Você é um arquiteto pedagógico que vai PLANEJAR um 
 Sua tarefa AQUI é apenas o ESQUELETO: módulos e aulas (sem slides).
 
 Regras:
-- 2 a 6 módulos. Cada módulo tem 2 a 4 aulas. Total máximo: 18 aulas.
+- 2 a 5 módulos. Cada módulo tem 2 a 3 aulas. Total máximo: 12 aulas.
 - "escopo" da aula deve ser 2-4 frases descrevendo exatamente o que aquela aula vai cobrir, com termos-chave do material. Isso será usado depois para gerar os slides.
 - IGNORE conteúdo que não seja jurídico (citações ao professor, logos, propaganda, redes sociais).
 - NÃO invente: use só o que está no material.
@@ -158,7 +158,7 @@ function buildLessonMaterial(
   }).join("\n\n---\n\n");
 }
 
-function limitarTotalAulas(modulos: any[], limite = 18) {
+function limitarTotalAulas(modulos: any[], limite = 12) {
   let total = 0;
   return modulos
     .map((m) => {
@@ -169,6 +169,29 @@ function limitarTotalAulas(modulos: any[], limite = 18) {
       return { ...m, aulas: aulasCortadas };
     })
     .filter((m) => Array.isArray(m.aulas) && m.aulas.length > 0);
+}
+
+function fallbackEsqueleto(titulo: string, materia: string, paginas: PaginaFonte[], markdown: string) {
+  const total = paginas.length || 9;
+  const modulos = Array.from({ length: 3 }, (_, mi) => {
+    const ini = Math.floor((total / 3) * mi);
+    const fim = Math.max(ini + 1, Math.floor((total / 3) * (mi + 1)));
+    const trecho = compactText(
+      paginas.slice(ini, fim).map((p) => p.texto ?? "").join(" ") || markdown,
+      520,
+    );
+    return {
+      titulo: `${materia} — Parte ${mi + 1}`,
+      descricao: `Tópicos centrais do material, páginas ${ini + 1} a ${fim}.`,
+      aulas: [1, 2, 3].map((n) => ({
+        titulo: `${materia}: aula ${mi * 3 + n}`,
+        descricao: `Estudo guiado da parte ${mi + 1}.${n}.`,
+        duracao_min: 10,
+        escopo: trecho || `Conceitos e aplicações principais de ${materia}.`,
+      })),
+    };
+  });
+  return { titulo_sugerido: titulo, materia_sugerida: materia, modulos };
 }
 
 function fallbackSlides(aula: any) {
