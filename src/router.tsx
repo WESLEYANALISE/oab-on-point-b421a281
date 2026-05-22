@@ -33,6 +33,18 @@ export const getRouter = () => {
     // Sem isso, navegação parece travar olhando a tela antiga.
     defaultPendingMs: 80,
     defaultPendingMinMs: 200,
+    defaultPendingComponent: () => (
+      <div className="px-4 py-6 space-y-4 md:px-8">
+        <div className="h-7 w-44 rounded-md bg-muted animate-pulse" />
+        <div className="h-32 w-full rounded-2xl bg-muted animate-pulse" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="h-24 rounded-2xl bg-muted animate-pulse" />
+          <div className="h-24 rounded-2xl bg-muted animate-pulse" />
+          <div className="h-24 rounded-2xl bg-muted animate-pulse" />
+          <div className="h-24 rounded-2xl bg-muted animate-pulse" />
+        </div>
+      </div>
+    ),
   });
 
   return router;
