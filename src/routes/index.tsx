@@ -12,6 +12,7 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import heroImage from "@/assets/oab-landing-hero.jpg";
+import logoNaRisca from "@/assets/logo-oab-na-risca.webp";
 import heroAvif from "@/assets/oab-landing-hero.jpg?format=avif&w=640;960;1280&as=srcset";
 import heroWebp from "@/assets/oab-landing-hero.jpg?format=webp&w=640;960;1280&as=srcset";
 
