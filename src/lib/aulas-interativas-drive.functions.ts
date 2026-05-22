@@ -6,7 +6,7 @@ export type ArquivoDrive = {
   id: string;
   nome_arquivo: string;
   subpasta: string;
-  tipo: "material" | "mapa";
+  tipo: "material" | "mapa" | "cronograma" | "bonus";
   storage_bucket: string;
   storage_path: string;
   pdf_url: string | null;
