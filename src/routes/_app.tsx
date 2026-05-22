@@ -23,6 +23,7 @@ function AppLayout() {
   const { data: profile } = useProfile();
   const { data: isAdmin } = useIsAdmin();
   const isBiblioteca = pathname.startsWith("/biblioteca");
+  const isLeitor = /^\/biblioteca\/[^/]+\/[^/]+\/ler$/.test(pathname);
   const isHome = pathname === "/inicio";
   const showBottomNav = isHome;
 
