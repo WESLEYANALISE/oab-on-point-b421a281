@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Notebook, XCircle } from "lucide-react";
+import { Loader2, Notebook, XCircle } from "lucide-react";
 import { listarCadernoErros } from "@/lib/aulas-trilha.functions";
 
 export const Route = createFileRoute("/_app/caderno-erros")({
@@ -32,12 +32,6 @@ function CadernoErros() {
   return (
     <div className="pb-16 max-w-3xl mx-auto">
       <header className="px-4 md:px-8 pt-5 pb-4 border-b border-border">
-        <Link
-          to="/aulas"
-          className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground mb-3"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Aulas
-        </Link>
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-gradient-toga grid place-items-center">
             <Notebook className="h-5 w-5 text-gold" />
