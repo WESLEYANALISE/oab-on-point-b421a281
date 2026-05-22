@@ -255,26 +255,28 @@ function Welcome() {
               </motion.div>
             </div>
 
-            <BadgeCarousel />
+            <div className="lg:hidden">
+              <BadgeCarousel />
 
-            <motion.p
-              initial={false}
-              className="relative text-center text-[clamp(1.1rem,3.5vw,1.4rem)] font-semibold tracking-wide mb-4 overflow-hidden"
-              style={{
-                fontFamily: "'Georgia', 'Times New Roman', serif",
-                color: "rgba(255,255,255,0.9)",
-                textShadow: "0 0 12px rgba(255,255,255,0.3), 0 0 30px rgba(255,255,255,0.1)",
-              }}
-            >
-              <span className="relative z-10">Alcance a aprovação no Exame da Ordem.</span>
-              <span
-                className="absolute inset-0 pointer-events-none"
+              <motion.p
+                initial={false}
+                className="relative text-center text-[clamp(1.1rem,3.5vw,1.4rem)] font-semibold tracking-wide mb-4 overflow-hidden"
                 style={{
-                  background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.4) 55%, transparent 70%)",
-                  animation: "shimmerSlide 3s ease-in-out infinite",
+                  fontFamily: "'Georgia', 'Times New Roman', serif",
+                  color: "rgba(255,255,255,0.9)",
+                  textShadow: "0 0 12px rgba(255,255,255,0.3), 0 0 30px rgba(255,255,255,0.1)",
                 }}
-              />
-            </motion.p>
+              >
+                <span className="relative z-10">Alcance a aprovação no Exame da Ordem.</span>
+                <span
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.4) 55%, transparent 70%)",
+                    animation: "shimmerSlide 3s ease-in-out infinite",
+                  }}
+                />
+              </motion.p>
+            </div>
           </motion.div>
 
           <DesktopMockupRotator />
