@@ -150,6 +150,35 @@ function SlideRenderer({
     return <SlideQuiz quiz={slide.quiz_json} titulo={titulo} onAvancar={onResponderQuiz} />;
   }
 
+  if (slide.tipo === "mapa_mental") {
+    const pdfUrl = (c as any).pdf_url as string | undefined;
+    return (
+      <div className="min-h-full px-4 md:px-8 py-6 flex flex-col">
+        <p className="text-xs uppercase tracking-widest text-gold mb-2">Mapa mental</p>
+        <h2 className="font-display text-2xl md:text-3xl mb-4">{titulo || "Mapa mental"}</h2>
+        {pdfUrl ? (
+          <div className="flex-1 min-h-[60vh] rounded-xl border border-border overflow-hidden bg-card">
+            <object data={pdfUrl} type="application/pdf" className="w-full h-full min-h-[60vh]">
+              <iframe src={pdfUrl} title={titulo} className="w-full h-full min-h-[60vh]" />
+            </object>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Mapa não disponível.</p>
+        )}
+        {pdfUrl && (
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex items-center self-start gap-2 text-xs text-gold hover:underline"
+          >
+            Abrir em nova aba
+          </a>
+        )}
+      </div>
+    );
+  }
+
   if (slide.tipo === "capa") {
     return (
       <div className="min-h-full grid place-items-center px-6 py-10">
