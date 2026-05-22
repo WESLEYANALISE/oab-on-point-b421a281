@@ -325,13 +325,13 @@ function AtoItem({ ato }: { ato: { id: string; tipo: string; numero: string; dat
       <Link
         to="/atualizacoes-leis/$atoId"
         params={{ atoId: ato.id }}
-        className="block rounded-xl border border-border bg-card p-3.5 hover:border-gold/40 transition-colors"
+        className="flex h-[7.5rem] rounded-xl border border-border bg-card p-3.5 hover:border-gold/40 transition-colors"
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3 w-full">
           <span className={cn("shrink-0 inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold tracking-wider", t.cor)}>
             {t.short}
           </span>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex flex-col">
             <p className="font-display text-sm leading-tight">
               {t.label} nº {ato.numero}
               {ato.data_assinatura && <span className="text-muted-foreground font-sans"> · {formatarDia(ato.data_assinatura)}</span>}
