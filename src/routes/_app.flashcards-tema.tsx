@@ -39,19 +39,15 @@ function FlashcardsTema() {
   return <AreasView onArea={(a) => navigate({ to: "/flashcards-tema", search: { area: a } })} />;
 }
 
-function Header({ title, sub, back }: { title: string; sub?: string; back?: () => void }) {
+function Header({ title, sub }: { title: string; sub?: string; back?: () => void }) {
   return (
     <header className="mb-5">
-      {back && (
-        <button onClick={back} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2">
-          <ArrowLeft className="h-4 w-4" /> Voltar
-        </button>
-      )}
       <h1 className="font-display text-2xl md:text-3xl">{title}</h1>
       {sub && <p className="text-sm text-muted-foreground mt-1">{sub}</p>}
     </header>
   );
 }
+
 
 function AreasView({ onArea }: { onArea: (area: string) => void }) {
   const fn = useServerFn(listarAreasFlashcardsCurados);
