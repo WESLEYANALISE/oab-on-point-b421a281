@@ -231,7 +231,14 @@ async function callGeminiJson(system: string, user: string, maxTokens: number): 
     throw new Error(`Gemini ${res.status}: ${txt.slice(0, 300)}`);
   }
   const j = await res.json();
+  const finishReason = j?.candidates?.[0]?.finishReason;
   const text = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join("") ?? "";
+  if (!text && finishReason) {
+    throw new Error(`Gemini terminou sem texto (motivo: ${finishReason})`);
+  }
+  if (finishReason === "MAX_TOKENS") {
+    throw new Error(`Resposta do Gemini truncada por limite de tokens (len=${text.length})`);
+  }
   return tryParseJson(text);
 }
 
