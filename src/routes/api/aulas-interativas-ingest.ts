@@ -5,17 +5,11 @@ import { geminiGenerateContent } from "@/lib/gemini.server";
 
 const MODEL = "gemini-2.5-flash";
 
+// 1 chunk por request — evita timeout do Worker.
 const Input = z.object({
   tituloCurso: z.string().min(1).max(200),
-  chunks: z
-    .array(
-      z.object({
-        modulo: z.string().min(1).max(200),
-        texto: z.string().min(50).max(180_000),
-      }),
-    )
-    .min(1)
-    .max(40),
+  modulo: z.string().min(1).max(200),
+  texto: z.string().min(50).max(180_000),
 });
 
 const SYSTEM = `Você é um arquiteto pedagógico que transforma textos de Direito em AULAS INTERATIVAS de slides para estudantes brasileiros do Exame de Ordem (OAB).
@@ -69,49 +63,44 @@ export const Route = createFileRoute("/api/aulas-interativas-ingest")({
           return new Response(`Bad request: ${e?.message ?? "invalid"}`, { status: 400 });
         }
 
-        const modulos: Array<{ titulo: string; descricao: string; aulas: any[] }> = [];
-
-        for (const chunk of parsed.chunks) {
-          const prompt = `Curso: ${parsed.tituloCurso}\nCapítulo (módulo): ${chunk.modulo}\n\nTEXTO BRUTO DO CAPÍTULO:\n${chunk.texto}`;
-          const res = await geminiGenerateContent(
-            MODEL,
-            {
-              system_instruction: { parts: [{ text: SYSTEM }] },
-              contents: [{ role: "user", parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.4,
-                responseMimeType: "application/json",
-                maxOutputTokens: 32000,
-              },
+        const prompt = `Curso: ${parsed.tituloCurso}\nCapítulo (módulo): ${parsed.modulo}\n\nTEXTO BRUTO DO CAPÍTULO:\n${parsed.texto}`;
+        const res = await geminiGenerateContent(
+          MODEL,
+          {
+            system_instruction: { parts: [{ text: SYSTEM }] },
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.4,
+              responseMimeType: "application/json",
+              maxOutputTokens: 32000,
             },
-            { maxAttemptsPerKey: 2, backoffMs: 1500 },
+          },
+          { maxAttemptsPerKey: 2, backoffMs: 1500 },
+        );
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          return new Response(
+            JSON.stringify({ error: `Gemini ${res.status}: ${txt.slice(0, 400)}` }),
+            { status: 502, headers: { "Content-Type": "application/json" } },
           );
-          if (!res.ok) {
-            const txt = await res.text().catch(() => "");
-            return new Response(
-              JSON.stringify({ error: `Gemini ${res.status}: ${txt.slice(0, 400)}` }),
-              { status: 502, headers: { "Content-Type": "application/json" } },
-            );
-          }
-          const json = await res.json();
-          const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-          let estrutura: any;
-          try {
-            estrutura = JSON.parse(text);
-          } catch {
-            // tenta extrair JSON entre {}
-            const m = text.match(/\{[\s\S]*\}/);
-            estrutura = m ? JSON.parse(m[0]) : { aulas: [] };
-          }
-
-          modulos.push({
-            titulo: chunk.modulo,
-            descricao: "",
-            aulas: Array.isArray(estrutura?.aulas) ? estrutura.aulas : [],
-          });
+        }
+        const json = await res.json();
+        const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+        let estrutura: any;
+        try {
+          estrutura = JSON.parse(text);
+        } catch {
+          const m = text.match(/\{[\s\S]*\}/);
+          estrutura = m ? JSON.parse(m[0]) : { aulas: [] };
         }
 
-        return Response.json({ modulos });
+        return Response.json({
+          modulo: {
+            titulo: parsed.modulo,
+            descricao: "",
+            aulas: Array.isArray(estrutura?.aulas) ? estrutura.aulas : [],
+          },
+        });
       },
     },
   },
