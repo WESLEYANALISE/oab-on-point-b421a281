@@ -785,6 +785,51 @@ function statusColor(s: string) {
   return "text-muted-foreground";
 }
 
+function statusLabel(s: string) {
+  if (s === "concluido") return "Concluído";
+  if (s === "erro") return "Erro";
+  if (s === "processando") return "Processando";
+  return "Pendente";
+}
+
+/** Ordem cronológica oficial da 1ª fase da OAB. */
+const OAB_ORDEM: string[] = [
+  "Ética Profissional",
+  "Filosofia do Direito",
+  "Direito Constitucional",
+  "Direitos Humanos",
+  "Direito Internacional",
+  "Direito Tributário",
+  "Direito Financeiro",
+  "Direito Administrativo",
+  "Direito Ambiental",
+  "Direito Civil",
+  "Direito do Consumidor",
+  "Direito da Criança e do Adolescente",
+  "Direito Empresarial",
+  "Direito do Trabalho",
+  "Direito Processual do Trabalho",
+  "Direito Penal",
+  "Direito Processual Civil",
+  "Direito Processual Penal",
+  "Direito Previdenciário",
+  "Direito Eleitoral",
+];
+
+function ordemOAB(subpasta: string): number {
+  const i = OAB_ORDEM.findIndex((m) => m.toLowerCase() === (subpasta ?? "").toLowerCase());
+  return i === -1 ? 999 : i;
+}
+
+function ordenarOAB<T extends { subpasta: string; nome_arquivo: string }>(arr: T[]): T[] {
+  return [...arr].sort((a, b) => {
+    const da = ordemOAB(a.subpasta);
+    const db = ordemOAB(b.subpasta);
+    if (da !== db) return da - db;
+    return a.nome_arquivo.localeCompare(b.nome_arquivo, "pt-BR");
+  });
+}
+
 function slugify(s: string): string {
   return s
     .toLowerCase()
