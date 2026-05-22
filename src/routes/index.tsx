@@ -59,12 +59,21 @@ function Welcome() {
   const [choiceOpen, setChoiceOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
 
-  const handleStart = useCallback(() => setChoiceOpen(true), []);
+  const [transitioning, setTransitioning] = useState(false);
+
+  const handleStart = useCallback(() => {
+    setTransitioning(true);
+    window.setTimeout(() => {
+      setChoiceOpen(true);
+      window.setTimeout(() => setTransitioning(false), 250);
+    }, 650);
+  }, []);
   const handleChoice = useCallback((mode: "login" | "signup") => {
     setChoiceOpen(false);
     setAuthTab(mode);
     setAuthOpen(true);
   }, []);
+
 
   return (
     <div className="min-h-[100dvh] w-full bg-black overflow-x-hidden relative">
