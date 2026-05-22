@@ -370,9 +370,10 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
               const userEsq = `Curso sugerido: ${tituloIn}\nMatéria: ${materiaIn}\n\nAMOSTRA REPRESENTATIVA DO MATERIAL EM MARKDOWN:\n${markdownPlanejamento}`;
               let esqueleto: any;
               try {
-                esqueleto = await callGeminiJson(SYSTEM_ESQUELETO, userEsq, 16_000);
+                esqueleto = await callGeminiJson(SYSTEM_ESQUELETO, userEsq, 12_000);
               } catch (e: any) {
-                throw new Error(`Falha no esqueleto: ${e?.message ?? e}`);
+                console.error("[preview] esqueleto falhou; usando fallback:", e?.message);
+                esqueleto = fallbackEsqueleto(tituloIn, materiaIn, paginasFonte, markdownCompleto);
               }
 
               const titulo_sugerido = esqueleto?.titulo_sugerido ?? tituloIn;
