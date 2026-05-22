@@ -385,6 +385,21 @@ function Welcome() {
       <WelcomeAuthModal open={authOpen} onClose={() => setAuthOpen(false)} initialTab={authTab} sidePanel={isDesktop} />
       <StartChoiceSheet open={choiceOpen} onClose={() => setChoiceOpen(false)} onChoose={handleChoice} />
       <SupportSheet open={supportOpen} onClose={() => setSupportOpen(false)} />
+
+      {/* Page-open curtain (left → right) */}
+      {transitioning && (
+        <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
+          <div
+            className="absolute inset-y-0 left-0 w-full"
+            style={{
+              background: "linear-gradient(110deg, #7f1d1d 0%, #b91c1c 45%, #dc2626 70%, #000 100%)",
+              boxShadow: "0 0 80px rgba(220,38,38,0.6)",
+              animation: "curtainSweep 900ms cubic-bezier(0.77, 0, 0.175, 1) forwards",
+            }}
+          />
+        </div>
+      )}
+
     </div>
   );
 }
