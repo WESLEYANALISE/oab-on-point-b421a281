@@ -1,33 +1,68 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, X, Check, CheckCircle2, MessageCircleQuestion } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Check,
+  CheckCircle2,
+  MessageCircleQuestion,
+  Lightbulb,
+  AlertTriangle,
+  Target,
+  Sparkles,
+  ArrowRight,
+  Eye,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Link } from "@tanstack/react-router";
-import type { SlideRow, QuizJson } from "@/lib/aulas-interativas.functions";
+import { Link, useNavigate } from "@tanstack/react-router";
+import type { SlideRow, QuizJson, ParTermo, DicaItem } from "@/lib/aulas-interativas.functions";
 
 type Props = {
   slides: SlideRow[];
   tituloAula: string;
   voltarHref: string;
+  proximaAulaHref?: string;
+  proximaAulaTitulo?: string;
   slideInicial?: number;
   onProgresso?: (slideIdx: number, concluida: boolean) => void;
 };
+
+const TIPOS_INTERATIVOS = new Set(["ligar_termos"]);
 
 export function SlidePlayer({
   slides,
   tituloAula,
   voltarHref,
+  proximaAulaHref,
+  proximaAulaTitulo,
   slideInicial = 0,
   onProgresso,
 }: Props) {
+  const navigate = useNavigate();
   const [idx, setIdx] = useState(Math.min(slideInicial, slides.length - 1));
+  const [saindo, setSaindo] = useState<null | "proxima" | "concluir">(null);
+  const [concluidos, setConcluidos] = useState<Set<string>>(new Set());
   const total = slides.length;
   const slide = slides[idx];
 
+  const marcarConcluido = useCallback((id: string) => {
+    setConcluidos((s) => {
+      if (s.has(id)) return s;
+      const n = new Set(s);
+      n.add(id);
+      return n;
+    });
+  }, []);
+
+  const proximoBloqueado =
+    !!slide && TIPOS_INTERATIVOS.has(slide.tipo) && !concluidos.has(slide.id);
+
   const proximo = useCallback(() => {
+    if (proximoBloqueado) return;
     setIdx((i) => Math.min(total - 1, i + 1));
-  }, [total]);
+  }, [total, proximoBloqueado]);
 
   const anterior = useCallback(() => {
     setIdx((i) => Math.max(0, i - 1));
@@ -49,11 +84,26 @@ export function SlidePlayer({
     return () => window.removeEventListener("keydown", onKey);
   }, [proximo, anterior]);
 
+  function irParaProximaAula() {
+    if (!proximaAulaHref) return;
+    setSaindo("proxima");
+    setTimeout(() => navigate({ to: proximaAulaHref }), 480);
+  }
+
   if (!slide) return null;
   const ehUltimo = idx === total - 1;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+    <motion.div
+      className="fixed inset-0 z-50 bg-background flex flex-col"
+      initial={false}
+      animate={
+        saindo === "proxima"
+          ? { x: "-100%", opacity: 0 }
+          : { x: 0, opacity: 1 }
+      }
+      transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
+    >
       {/* Header */}
       <header className="flex items-center gap-3 px-4 md:px-8 py-3 border-b border-border">
         <Link
@@ -91,7 +141,16 @@ export function SlidePlayer({
             transition={{ duration: 0.25 }}
             className="absolute inset-0 overflow-y-auto"
           >
-            <SlideRenderer slide={slide} onResponderQuiz={proximo} />
+            <SlideRenderer
+              slide={slide}
+              onResponderQuiz={proximo}
+              onConcluir={() => marcarConcluido(slide.id)}
+              proximaAulaHref={proximaAulaHref}
+              proximaAulaTitulo={proximaAulaTitulo}
+              onIrProximaAula={irParaProximaAula}
+              voltarHref={voltarHref}
+              ehUltimo={ehUltimo}
+            />
           </motion.div>
         </AnimatePresence>
       </div>
@@ -115,24 +174,35 @@ export function SlidePlayer({
         </Link>
         <div className="flex-1" />
         {ehUltimo ? (
-          <Link
-            to={voltarHref}
-            className="h-11 px-5 rounded-full bg-gradient-gold text-gold-foreground font-display text-sm inline-flex items-center gap-2 hover:opacity-95"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Concluir aula
-          </Link>
+          proximaAulaHref ? (
+            <button
+              onClick={irParaProximaAula}
+              className="h-11 px-5 rounded-full bg-gradient-gold text-gold-foreground font-display text-sm inline-flex items-center gap-2 hover:opacity-95"
+            >
+              Próxima aula
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <Link
+              to={voltarHref}
+              className="h-11 px-5 rounded-full bg-gradient-gold text-gold-foreground font-display text-sm inline-flex items-center gap-2 hover:opacity-95"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Concluir curso
+            </Link>
+          )
         ) : (
           <button
             onClick={proximo}
-            className="h-11 px-5 rounded-full bg-gradient-toga text-primary-foreground font-display text-sm inline-flex items-center gap-2 hover:opacity-95"
+            disabled={proximoBloqueado}
+            className="h-11 px-5 rounded-full bg-gradient-toga text-primary-foreground font-display text-sm inline-flex items-center gap-2 hover:opacity-95 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Próximo
             <ChevronRight className="h-4 w-4" />
           </button>
         )}
       </footer>
-    </div>
+    </motion.div>
   );
 }
 
@@ -159,9 +229,21 @@ function MD({ children, className }: { children: string; className?: string }) {
 function SlideRenderer({
   slide,
   onResponderQuiz,
+  onConcluir,
+  proximaAulaHref,
+  proximaAulaTitulo,
+  onIrProximaAula,
+  voltarHref,
+  ehUltimo,
 }: {
   slide: SlideRow;
   onResponderQuiz: () => void;
+  onConcluir: () => void;
+  proximaAulaHref?: string;
+  proximaAulaTitulo?: string;
+  onIrProximaAula: () => void;
+  voltarHref: string;
+  ehUltimo: boolean;
 }) {
   const c = slide.conteudo ?? {};
   const titulo = c.titulo ?? "";
@@ -170,6 +252,25 @@ function SlideRenderer({
 
   if (slide.tipo === "quiz" && slide.quiz_json) {
     return <SlideQuiz quiz={slide.quiz_json} titulo={titulo} onAvancar={onResponderQuiz} />;
+  }
+
+  if (slide.tipo === "ligar_termos") {
+    return <SlideLigarTermos titulo={titulo} pares={(c.pares ?? []) as ParTermo[]} onConcluir={onConcluir} />;
+  }
+
+  if (slide.tipo === "dicas") {
+    return <SlideDicas titulo={titulo} dicas={(c.dicas ?? []) as DicaItem[]} />;
+  }
+
+  if (slide.tipo === "caso_pratico") {
+    return (
+      <SlideCasoPratico
+        titulo={titulo}
+        enunciado={(c.enunciado ?? c.texto ?? "") as string}
+        pergunta={(c.pergunta ?? "") as string}
+        analise={(c.analise ?? c.destaque ?? "") as string}
+      />
+    );
   }
 
   if (slide.tipo === "mapa_mental") {
@@ -270,6 +371,7 @@ function SlideRenderer({
   }
 
   // conceito / exemplo / resumo / conclusao
+  const ehConclusao = slide.tipo === "conclusao";
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
       {slide.tipo === "exemplo" && (
@@ -278,7 +380,7 @@ function SlideRenderer({
       {slide.tipo === "resumo" && (
         <p className="text-xs uppercase tracking-widest text-gold mb-2">O que vimos</p>
       )}
-      {slide.tipo === "conclusao" && (
+      {ehConclusao && (
         <p className="text-xs uppercase tracking-widest text-gold mb-2">Conclusão</p>
       )}
       <h2 className="font-display text-2xl md:text-3xl mb-6">{titulo}</h2>
@@ -313,10 +415,289 @@ function SlideRenderer({
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{c.destaque}</ReactMarkdown>
         </div>
       )}
+
+      {ehConclusao && ehUltimo && (
+        <div className="mt-10 flex flex-col sm:flex-row gap-3">
+          {proximaAulaHref ? (
+            <button
+              onClick={onIrProximaAula}
+              className="h-12 px-6 rounded-full bg-gradient-gold text-gold-foreground font-display text-sm inline-flex items-center justify-center gap-2 hover:opacity-95"
+            >
+              Próxima aula
+              {proximaAulaTitulo && (
+                <span className="hidden sm:inline opacity-80 max-w-[14ch] truncate">
+                  — {proximaAulaTitulo}
+                </span>
+              )}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <Link
+              to={voltarHref}
+              className="h-12 px-6 rounded-full bg-gradient-gold text-gold-foreground font-display text-sm inline-flex items-center justify-center gap-2 hover:opacity-95"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Concluir curso
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
+/* ============================================================
+   Slide: Ligar Termos
+   ============================================================ */
+function SlideLigarTermos({
+  titulo,
+  pares,
+  onConcluir,
+}: {
+  titulo: string;
+  pares: ParTermo[];
+  onConcluir: () => void;
+}) {
+  const paresValidos = useMemo(
+    () => (pares ?? []).filter((p) => p?.termo && p?.definicao).slice(0, 6),
+    [pares],
+  );
+
+  const ordemTermos = useMemo(() => shuffle(paresValidos.map((_, i) => i)), [paresValidos]);
+  const ordemDefs = useMemo(() => shuffle(paresValidos.map((_, i) => i)), [paresValidos]);
+
+  const [termoSel, setTermoSel] = useState<number | null>(null);
+  const [defSel, setDefSel] = useState<number | null>(null);
+  const [acertados, setAcertados] = useState<Set<number>>(new Set());
+  const [erro, setErro] = useState<{ termo: number; def: number } | null>(null);
+
+  useEffect(() => {
+    if (termoSel === null || defSel === null) return;
+    if (termoSel === defSel) {
+      setAcertados((s) => {
+        const n = new Set(s);
+        n.add(termoSel);
+        return n;
+      });
+      setTermoSel(null);
+      setDefSel(null);
+    } else {
+      setErro({ termo: termoSel, def: defSel });
+      const t = setTimeout(() => {
+        setErro(null);
+        setTermoSel(null);
+        setDefSel(null);
+      }, 600);
+      return () => clearTimeout(t);
+    }
+  }, [termoSel, defSel]);
+
+  useEffect(() => {
+    if (paresValidos.length > 0 && acertados.size === paresValidos.length) {
+      onConcluir();
+    }
+  }, [acertados.size, paresValidos.length, onConcluir]);
+
+  if (paresValidos.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto px-6 py-10">
+        <p className="text-sm text-muted-foreground">Atividade indisponível.</p>
+      </div>
+    );
+  }
+
+  const completo = acertados.size === paresValidos.length;
+
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-10">
+      <p className="text-xs uppercase tracking-widest text-gold mb-2">Ligar termos</p>
+      <h2 className="font-display text-2xl md:text-3xl mb-2">{titulo || "Associe termo e definição"}</h2>
+      <p className="text-sm text-muted-foreground mb-6">
+        Toque em um <strong>termo</strong> e depois na sua <strong>definição</strong>.{" "}
+        {acertados.size}/{paresValidos.length} acertos.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Termos</p>
+          {ordemTermos.map((origIdx) => {
+            const acertou = acertados.has(origIdx);
+            const sel = termoSel === origIdx;
+            const errou = erro?.termo === origIdx;
+            return (
+              <button
+                key={origIdx}
+                disabled={acertou}
+                onClick={() => setTermoSel(origIdx)}
+                className={`w-full text-left rounded-xl border p-3 text-sm transition-all ${
+                  acertou
+                    ? "border-emerald-500 bg-emerald-500/10 opacity-70"
+                    : errou
+                      ? "border-red-500 bg-red-500/10 animate-pulse"
+                      : sel
+                        ? "border-gold bg-gold/10"
+                        : "border-border hover:bg-accent"
+                }`}
+              >
+                <span className="font-display">{paresValidos[origIdx].termo}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="space-y-2">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Definições</p>
+          {ordemDefs.map((origIdx) => {
+            const acertou = acertados.has(origIdx);
+            const sel = defSel === origIdx;
+            const errou = erro?.def === origIdx;
+            return (
+              <button
+                key={origIdx}
+                disabled={acertou}
+                onClick={() => setDefSel(origIdx)}
+                className={`w-full text-left rounded-xl border p-3 text-sm transition-all ${
+                  acertou
+                    ? "border-emerald-500 bg-emerald-500/10 opacity-70"
+                    : errou
+                      ? "border-red-500 bg-red-500/10 animate-pulse"
+                      : sel
+                        ? "border-gold bg-gold/10"
+                        : "border-border hover:bg-accent"
+                }`}
+              >
+                <MD>{paresValidos[origIdx].definicao}</MD>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {completo && (
+        <div className="mt-6 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm inline-flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+          Tudo certo! Pode avançar.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ============================================================
+   Slide: Dicas
+   ============================================================ */
+function SlideDicas({ titulo, dicas }: { titulo: string; dicas: DicaItem[] }) {
+  const items = (dicas ?? []).filter((d) => d?.texto).slice(0, 6);
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-10">
+      <p className="text-xs uppercase tracking-widest text-gold mb-2 inline-flex items-center gap-1">
+        <Sparkles className="h-3.5 w-3.5" /> Dicas de prova
+      </p>
+      <h2 className="font-display text-2xl md:text-3xl mb-6">{titulo || "Antes do quiz, fixe isto"}</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {items.map((d, i) => {
+          const Icon =
+            d.tipo === "atencao" ? AlertTriangle : d.tipo === "alvo" ? Target : d.tipo === "estrela" ? Sparkles : Lightbulb;
+          const cor =
+            d.tipo === "atencao"
+              ? "text-amber-400 border-amber-500/30 bg-amber-500/5"
+              : d.tipo === "alvo"
+                ? "text-emerald-400 border-emerald-500/30 bg-emerald-500/5"
+                : d.tipo === "estrela"
+                  ? "text-fuchsia-400 border-fuchsia-500/30 bg-fuchsia-500/5"
+                  : "text-gold border-gold/30 bg-gold/5";
+          return (
+            <div key={i} className={`rounded-xl border p-4 ${cor}`}>
+              <Icon className="h-5 w-5 mb-2" />
+              <div className="text-sm text-foreground leading-relaxed">
+                <MD>{d.texto}</MD>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   Slide: Caso Prático
+   ============================================================ */
+function SlideCasoPratico({
+  titulo,
+  enunciado,
+  pergunta,
+  analise,
+}: {
+  titulo: string;
+  enunciado: string;
+  pergunta: string;
+  analise: string;
+}) {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <div className="max-w-3xl mx-auto px-6 py-10">
+      <p className="text-xs uppercase tracking-widest text-gold mb-2">Caso prático</p>
+      <h2 className="font-display text-2xl md:text-3xl mb-6">{titulo || "Aplique no caso"}</h2>
+
+      {enunciado && (
+        <div className="rounded-2xl border border-border bg-card p-5 mb-4">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Enunciado</p>
+          <div className="text-sm md:text-base leading-relaxed prose prose-invert max-w-none prose-strong:text-gold">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{enunciado}</ReactMarkdown>
+          </div>
+        </div>
+      )}
+
+      {pergunta && (
+        <div className="rounded-xl border-l-4 border-gold bg-gold/5 p-4 mb-4 text-sm md:text-base">
+          <MD>{pergunta}</MD>
+        </div>
+      )}
+
+      {!aberto && analise && (
+        <button
+          onClick={() => setAberto(true)}
+          className="h-11 px-5 rounded-full bg-gradient-toga text-primary-foreground font-display text-sm inline-flex items-center gap-2 hover:opacity-95"
+        >
+          <Eye className="h-4 w-4" />
+          Ver análise
+        </button>
+      )}
+
+      <AnimatePresence>
+        {aberto && analise && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="rounded-2xl border border-border bg-card p-5 mt-2">
+              <p className="text-[11px] uppercase tracking-widest text-gold mb-2">Análise</p>
+              <div className="text-sm md:text-base leading-relaxed prose prose-invert max-w-none prose-strong:text-gold">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{analise}</ReactMarkdown>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ============================================================
+   Slide: Quiz
+   ============================================================ */
 function SlideQuiz({
   quiz,
   titulo,

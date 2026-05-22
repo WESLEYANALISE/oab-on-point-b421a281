@@ -13,7 +13,13 @@ export type SlideTipo =
   | "quiz"
   | "resumo"
   | "conclusao"
-  | "mapa_mental";
+  | "mapa_mental"
+  | "ligar_termos"
+  | "dicas"
+  | "caso_pratico";
+
+export type ParTermo = { termo: string; definicao: string };
+export type DicaItem = { tipo?: "dica" | "atencao" | "alvo" | "estrela"; texto: string };
 
 export type SlideConteudo = {
   titulo?: string;
@@ -23,6 +29,14 @@ export type SlideConteudo = {
   objetivos?: string[];
   colunas?: { titulo: string; itens: string[] }[];
   pdf_url?: string;
+  // ligar_termos
+  pares?: ParTermo[];
+  // dicas
+  dicas?: DicaItem[];
+  // caso_pratico
+  enunciado?: string;
+  pergunta?: string;
+  analise?: string;
 };
 
 export type QuizJson = {
@@ -86,6 +100,9 @@ const SlideInput = z.object({
     "resumo",
     "conclusao",
     "mapa_mental",
+    "ligar_termos",
+    "dicas",
+    "caso_pratico",
   ]),
   conteudo: z.record(z.string(), z.unknown()).default({}),
   imagem_url: z.string().url().nullable().optional(),
@@ -104,7 +121,7 @@ const AulaInput = z.object({
   titulo: z.string().min(1).max(200),
   descricao: z.string().max(500).default(""),
   duracao_min: z.number().int().min(1).max(180).default(10),
-  slides: z.array(SlideInput).max(80),
+  slides: z.array(SlideInput).max(200),
 });
 
 const ModuloInput = z.object({
@@ -213,10 +230,42 @@ export const getAulaCompleta = createServerFn({ method: "POST" })
       .eq("aula_id", aula.id)
       .order("ordem", { ascending: true });
 
+    // Próxima e anterior aula (ordenadas por módulo.ordem, aula.ordem)
+    const { data: modulosAll } = await sb
+      .from("aulas_interativas_modulos")
+      .select("id, ordem")
+      .eq("curso_id", curso.id)
+      .order("ordem", { ascending: true });
+    const { data: aulasAll } = await sb
+      .from("aulas_interativas_aulas")
+      .select("id, slug, titulo, modulo_id, ordem")
+      .eq("curso_id", curso.id);
+
+    const moduloOrdemPorId = new Map<string, number>(
+      (modulosAll ?? []).map((m) => [m.id, m.ordem ?? 0]),
+    );
+    const todasOrdenadas = [...(aulasAll ?? [])].sort((a, b) => {
+      const ma = moduloOrdemPorId.get(a.modulo_id) ?? 0;
+      const mb = moduloOrdemPorId.get(b.modulo_id) ?? 0;
+      if (ma !== mb) return ma - mb;
+      return (a.ordem ?? 0) - (b.ordem ?? 0);
+    });
+    const idxAtual = todasOrdenadas.findIndex((x) => x.id === aula.id);
+    const proximaAula =
+      idxAtual >= 0 && idxAtual < todasOrdenadas.length - 1
+        ? { slug: todasOrdenadas[idxAtual + 1].slug, titulo: todasOrdenadas[idxAtual + 1].titulo }
+        : null;
+    const aulaAnterior =
+      idxAtual > 0
+        ? { slug: todasOrdenadas[idxAtual - 1].slug, titulo: todasOrdenadas[idxAtual - 1].titulo }
+        : null;
+
     return {
       curso: curso as Pick<CursoRow, "id" | "titulo" | "slug">,
       aula: aula as AulaRow,
       slides: (slides ?? []) as unknown as SlideRow[],
+      proximaAula,
+      aulaAnterior,
     };
   });
 
