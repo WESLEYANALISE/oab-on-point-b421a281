@@ -237,6 +237,73 @@ function AtualizacoesLeisPage() {
   );
 }
 
+type DiaInfo = { iso: string; dia: number; count: number; status: "ultimo" | "com-atos" | "sem-atos" | "futuro" };
+
+function DiasCarrossel({
+  dias, diaSel, ano, mes, onSelect,
+}: {
+  dias: DiaInfo[]; diaSel: string | null; ano: number; mes: number;
+  onSelect: (iso: string) => void;
+}) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+
+  useEffect(() => {
+    const hojeStr = new Date().toISOString().slice(0, 10);
+    const hojeNoMes = dias.find((d) => d.iso === hojeStr);
+    const ultimo = dias.find((d) => d.status === "ultimo");
+    const alvo = diaSel ?? hojeNoMes?.iso ?? ultimo?.iso;
+    if (!alvo) return;
+    const scroller = scrollerRef.current;
+    const el = itemRefs.current.get(alvo);
+    if (!scroller || !el) return;
+    const targetLeft = el.offsetLeft - scroller.clientWidth / 2 + el.clientWidth / 2;
+    scroller.scrollTo({ left: Math.max(0, targetLeft), behavior: "smooth" });
+  }, [dias, diaSel, ano, mes]);
+
+  return (
+    <div ref={scrollerRef} className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1 scroll-smooth">
+      {dias.map((d) => {
+        const ativo = diaSel === d.iso;
+        const isUltimo = d.status === "ultimo";
+        const isFuturo = d.status === "futuro";
+        const isSemAtos = d.status === "sem-atos";
+        return (
+          <button
+            key={d.iso}
+            ref={(el) => {
+              if (el) itemRefs.current.set(d.iso, el);
+              else itemRefs.current.delete(d.iso);
+            }}
+            onClick={() => onSelect(d.iso)}
+            className={cn(
+              "shrink-0 h-14 w-14 rounded-xl border flex flex-col items-center justify-center transition-all relative",
+              ativo
+                ? "bg-gold text-gold-foreground border-gold font-bold"
+                : isUltimo
+                ? "bg-gold/15 border-gold text-foreground shadow-[0_0_18px_-2px_var(--gold)] animate-pulse"
+                : isFuturo
+                ? "bg-card/40 border-border/50 text-muted-foreground/40"
+                : isSemAtos
+                ? "bg-card/60 border-border/60 text-muted-foreground/60"
+                : "bg-card border-border hover:border-gold/50 text-foreground",
+            )}
+          >
+            <span className="font-display text-lg leading-none">{String(d.dia).padStart(2, "0")}</span>
+            <span className={cn(
+              "text-[10px] mt-0.5",
+              ativo ? "text-gold-foreground/80" : isUltimo ? "text-gold" : "text-muted-foreground",
+            )}>
+              {isFuturo ? "—" : d.count > 0 ? `${d.count} ${d.count === 1 ? "ato" : "atos"}` : "vazio"}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+
 function Calendario({
   ano, mes, diasComAtos, diaSelecionado, onSelect,
 }: {
