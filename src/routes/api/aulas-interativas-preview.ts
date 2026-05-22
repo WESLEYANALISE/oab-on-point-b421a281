@@ -17,7 +17,7 @@ const SYSTEM_ESQUELETO = `Você é um arquiteto pedagógico que vai PLANEJAR um 
 Sua tarefa AQUI é apenas o ESQUELETO: módulos e aulas (sem slides).
 
 Regras:
-- 2 a 5 módulos. Cada módulo tem 2 a 3 aulas. Total máximo: 12 aulas.
+- 2 a 3 módulos. Cada módulo tem 2 a 3 aulas. Total máximo: 9 aulas.
 - "escopo" da aula deve ser 2-4 frases descrevendo exatamente o que aquela aula vai cobrir, com termos-chave do material. Isso será usado depois para gerar os slides.
 - IGNORE conteúdo que não seja jurídico (citações ao professor, logos, propaganda, redes sociais).
 - NÃO invente: use só o que está no material.
@@ -149,7 +149,7 @@ function buildLessonMaterial(
   }).join("\n\n---\n\n");
 }
 
-function limitarTotalAulas(modulos: any[], limite = 12) {
+function limitarTotalAulas(modulos: any[], limite = 9) {
   let total = 0;
   return modulos
     .map((m) => {
