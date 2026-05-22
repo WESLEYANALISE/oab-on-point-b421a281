@@ -468,7 +468,7 @@ function ArquivoMaterialItem({
   const temExtracao = !!extracaoQ.data;
 
   return (
-    <li className="rounded-xl border border-border bg-background p-3">
+    <li className="rounded-xl border border-border bg-background px-2 py-3 sm:p-3">
       <div className="flex items-start gap-3">
         <div className="shrink-0 h-10 w-10 rounded-lg bg-gold/10 border border-gold/30 flex flex-col items-center justify-center">
           <span className="text-[9px] uppercase tracking-wider text-gold/70 leading-none">OAB</span>
