@@ -419,27 +419,31 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
               const modulosOut: any[] = [];
               for (const mod of modulosBase) {
                 const aulasIn: any[] = Array.isArray(mod?.aulas) ? mod.aulas : [];
-                const aulasOut: any[] = [];
-                for (const aul of aulasIn) {
-                  const userSlides =
-                    `MÓDULO: ${mod.titulo}\nDescrição do módulo: ${mod.descricao ?? ""}\n\n` +
-                    `AULA: ${aul.titulo}\nDescrição: ${aul.descricao ?? ""}\nEscopo: ${aul.escopo ?? ""}\n\n` +
-                    `Gere os slides apenas desta aula, conforme o escopo.\n\n` +
-                    `TRECHOS MAIS RELEVANTES DO MATERIAL EM MARKDOWN:\n${buildLessonMaterial(paginasFonte, markdownCompleto, {
+                const userModulo =
+                  `MÓDULO: ${mod.titulo}\nDescrição do módulo: ${mod.descricao ?? ""}\n\n` +
+                  aulasIn.map((aul, i) =>
+                    `AULA ${i + 1}: ${aul.titulo}\nDescrição: ${aul.descricao ?? ""}\nEscopo: ${aul.escopo ?? ""}\n` +
+                    `TRECHOS:\n${buildLessonMaterial(paginasFonte, markdownCompleto, {
                       modulo: mod.titulo,
                       aula: aul.titulo,
                       descricao: aul.descricao,
                       escopo: aul.escopo,
-                    })}`;
-                  let slidesJson: any;
-                  try {
-                    slidesJson = await callGeminiJson(SYSTEM_SLIDES, userSlides, 8_000);
-                  } catch (e: any) {
-                    // não derruba tudo — gera uma aula mínima revisável e segue
-                    slidesJson = { slides: fallbackSlides(aul) };
-                    console.error("[preview] aula falhou:", aul?.titulo, e?.message);
-                  }
-                  const slides = Array.isArray(slidesJson?.slides) ? slidesJson.slides : [];
+                    }, 12_000)}`,
+                  ).join("\n\n=====\n\n");
+                let moduloSlides: any;
+                try {
+                  moduloSlides = await callGeminiJson(SYSTEM_SLIDES_MODULO, userModulo, 14_000);
+                } catch (e: any) {
+                  console.error("[preview] módulo falhou; usando fallback:", mod?.titulo, e?.message);
+                  moduloSlides = { aulas: aulasIn.map((aul) => ({ titulo: aul.titulo, slides: fallbackSlides(aul) })) };
+                }
+                const slidesPorTitulo = new Map<string, any[]>();
+                for (const aulaGerada of Array.isArray(moduloSlides?.aulas) ? moduloSlides.aulas : []) {
+                  slidesPorTitulo.set(String(aulaGerada?.titulo ?? "").trim().toLowerCase(), Array.isArray(aulaGerada?.slides) ? aulaGerada.slides : []);
+                }
+                const aulasOut: any[] = [];
+                for (const aul of aulasIn) {
+                  const slides = slidesPorTitulo.get(String(aul.titulo ?? "").trim().toLowerCase()) ?? fallbackSlides(aul);
                   aulasOut.push({
                     titulo: aul.titulo,
                     descricao: aul.descricao ?? "",
