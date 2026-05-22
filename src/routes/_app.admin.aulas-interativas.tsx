@@ -847,8 +847,9 @@ function AbaUpload() {
         throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
       }
       const { estrutura: e } = (await res.json()) as { estrutura: Estrutura };
-      setEstrutura(e);
-      setProgresso(`Pronto! ${e.modulos.length} módulo(s).`);
+      const longa = ensureLongCourseStructure(e);
+      setEstrutura(longa);
+      setProgresso(`Pronto! ${longa.modulos.length} módulo(s).`);
     } catch (err: any) {
       toast.error(err?.message ?? "Falha");
       setProgresso(`Erro: ${err?.message ?? "?"}`);
