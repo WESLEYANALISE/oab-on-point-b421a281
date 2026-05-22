@@ -1,12 +1,12 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight, Sparkles, Headphones, Star, BookOpen, Target, FileText, Layers,
   Trophy, Newspaper, ScrollText, CalendarDays, ClipboardList, Library,
   CheckCircle2, ShieldCheck, GraduationCap, Brain, Clock,
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { Reveal } from "@/components/landing/Reveal";
 import { CountdownExame } from "@/components/shared/CountdownExame";
 import {

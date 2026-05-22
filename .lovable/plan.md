@@ -1,87 +1,24 @@
-## Diagnóstico
+## Problema
 
-A URL muda na hora, mas o conteúdo demora porque **duas coisas estão quebradas ao mesmo tempo**:
+Quando o usuário (já logado) acessa a rota raiz `/`, a landing page antiga (hero "OAB na Risca / Iniciar jornada") aparece por alguns instantes antes do redirecionamento para `/inicio`. Isso acontece porque o redirect está dentro de um `useEffect` no componente — ou seja, a landing **renderiza primeiro** e só depois o efeito dispara o `navigate`. Resultado: flash da página antiga.
 
-### 1. Preload do TanStack Router está crashando (causa raiz)
+## Solução
 
-No console do preview aparece, toda vez que o usuário aponta/toca em um link:
+Mover a checagem de sessão para **antes da renderização** da rota `/`, usando `beforeLoad` do TanStack Router + `supabase.auth.getSession()`. Se houver sessão, `throw redirect({ to: "/inicio" })` — o componente da landing nunca chega a montar.
 
-```
-TypeError: Cannot read properties of undefined (reading '_nonReactive')
-  at loadRouteMatch (@tanstack/router-core)
-  at RouterCore.preloadRoute
-```
+### Alteração única em `src/routes/index.tsx`
 
-Isso é um **mismatch de versão** dentro do TanStack:
+1. Adicionar `beforeLoad` no `createFileRoute("/")`:
+   - Chamar `supabase.auth.getSession()` (client `@/integrations/supabase/client`).
+   - Se `session?.user` existir, `throw redirect({ to: "/inicio" })`.
+2. Remover o `useEffect` + `useNavigate` + `useAuth` do `LandingPage` (não são mais necessários — quem está logado nunca renderiza esse componente).
 
-| Pacote | Versão |
-|---|---|
-| `@tanstack/react-router` | **1.168.25** |
-| `@tanstack/react-start` | 1.167.50 |
-| `@tanstack/router-plugin` | 1.167.28 |
+### Por que não mexer em mais nada
 
-O `react-router` 1.168 fala com um `router-core` novo que expõe `_nonReactive` em cada match; o resto do ecossistema ainda está em 1.167 e carrega um core antigo que não tem esse campo. Resultado: **toda chamada `preloadRoute` joga uma exception silenciosa**.
+- A landing continua acessível normalmente para visitantes não-logados.
+- SEO/head meta da rota `/` permanece intacto.
+- Nenhuma outra rota é afetada.
 
-Como o router está configurado com `defaultPreload: "intent"` + `defaultPreloadDelay: 0` justamente para deixar a navegação "instantânea" no mobile, quando o preload morre **nenhum chunk é baixado antes do clique**. No clique:
+### Detalhe técnico
 
-1. URL muda (client-side routing é síncrono).
-2. O chunk JS da rota destino ainda nem começou a baixar.
-3. A página antiga fica na tela até o chunk chegar + loader/queries rodarem.
-
-Por isso a sensação é "rota troca, conteúdo demora".
-
-### 2. Não existe `defaultPendingComponent`
-
-Mesmo se um dia o preload falhar (rede ruim, primeira visita), o router não tem componente de "pending" global. Enquanto o chunk/loader não chegam, o TanStack mantém a tela antiga renderizada — sem skeleton, sem spinner, sem nada. Isso amplifica a percepção de travamento.
-
-`defaultPendingMs: 80` + `defaultPendingMinMs: 200` já estão configurados em `src/router.tsx`, mas só funcionam se houver um `defaultPendingComponent`.
-
----
-
-## Plano de correção
-
-### Passo 1 — Alinhar versões do TanStack
-
-Subir todos os pacotes do TanStack Router/Start para a mesma minor (1.168.x) para o `router-core` voltar a ter a forma esperada:
-
-- `@tanstack/react-router` → manter 1.168.x
-- `@tanstack/react-start` → bump para 1.168.x
-- `@tanstack/router-plugin` → bump para 1.168.x
-- `@tanstack/zod-adapter` → bump para 1.168.x
-
-Comando: `bun add @tanstack/react-router@latest @tanstack/react-start@latest @tanstack/router-plugin@latest @tanstack/zod-adapter@latest`
-
-Validação: abrir Início, passar o mouse/dedo nos atalhos, verificar que o erro `_nonReactive` sumiu do console e que requisições de chunks `_app.*.tsx` aparecem na aba Network **antes** do clique.
-
-### Passo 2 — Adicionar `defaultPendingComponent` no router
-
-Em `src/router.tsx`, registrar um skeleton leve (reaproveitando `src/components/shared/SkeletonCard.tsx` ou um placeholder simples com a paleta gold/primary). Assim, mesmo em cenário pessimista (chunk frio, conexão lenta), o usuário vê feedback visual em ~80ms em vez da página antiga "congelada".
-
-```text
-defaultPendingComponent: () => (
-  <div className="px-4 py-6 space-y-3">
-    <div className="h-7 w-40 rounded-md bg-muted animate-pulse" />
-    <div className="h-32 w-full rounded-2xl bg-muted animate-pulse" />
-    <div className="grid grid-cols-2 gap-3">
-      <div className="h-24 rounded-2xl bg-muted animate-pulse" />
-      <div className="h-24 rounded-2xl bg-muted animate-pulse" />
-    </div>
-  </div>
-)
-```
-
-### Passo 3 — Garantir preload agressivo nos atalhos da Home (opcional, mas recomendado)
-
-Os 8 `<Link>` de atalhos em `_app.inicio.tsx` herdam `preload: "intent"` do router. Após o passo 1, isso volta a funcionar. Se ainda quisermos blindar, dá para forçar `preload="viewport"` nesse grid específico — assim que aparecem na tela, os chunks já começam a baixar, e o clique vira navegação instantânea.
-
----
-
-## Resumo técnico
-
-| O que | Por quê |
-|---|---|
-| Subir `react-start`, `router-plugin`, `zod-adapter` para 1.168.x | Acabar com o crash `_nonReactive` no `preloadRoute` |
-| Adicionar `defaultPendingComponent` | Feedback visual imediato quando o chunk não está pré-carregado |
-| (Opcional) `preload="viewport"` nos atalhos da Home | Pré-carregar as 8 rotas mais clicadas assim que a Home renderizar |
-
-Sem o Passo 1, o Passo 2 só esconde o sintoma. Sem o Passo 2, qualquer falha futura de preload volta a parecer travamento. Os dois juntos resolvem a queixa.
+`beforeLoad` roda no client ao navegar e durante prerender no SSR. No SSR não há sessão Supabase (cookies do usuário não estão presentes nesse fluxo), então o `getSession()` retorna `null` e a landing é servida normalmente — exatamente o comportamento desejado para visitantes. No client, ao acessar `/` já logado, o redirect dispara antes de qualquer render.
