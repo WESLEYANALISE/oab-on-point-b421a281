@@ -10,6 +10,7 @@ import {
   ChevronDown,
   SlidersHorizontal,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { listResenhaMes } from "@/lib/resenha-sync.functions";
 import { cn } from "@/lib/utils";
