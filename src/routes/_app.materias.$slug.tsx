@@ -36,9 +36,6 @@ function MateriaPage() {
     <div className="pb-16">
       <div className={`bg-gradient-to-br ${materia.cor} text-primary-foreground px-4 md:px-10 py-10 md:py-14`}>
         <div className="max-w-6xl">
-          <Link to="/materias" className="inline-flex items-center gap-1.5 text-xs text-primary-foreground/80 hover:text-primary-foreground mb-4">
-            <ArrowLeft className="h-3.5 w-3.5" /> Todas as matérias
-          </Link>
           <div className="flex items-start gap-4">
             <div className="text-6xl">{materia.emoji}</div>
             <div className="flex-1">
