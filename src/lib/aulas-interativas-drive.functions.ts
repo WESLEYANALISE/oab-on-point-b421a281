@@ -38,7 +38,17 @@ export const atualizarStatusDrive = createServerFn({ method: "POST" })
     z
       .object({
         id: z.string().uuid(),
-        status_ingestao: z.enum(["pendente", "processando", "concluido", "erro"]),
+        status_ingestao: z.enum([
+          "pendente",
+          "processando",
+          "extraindo",
+          "extraido",
+          "gerando_previa",
+          "previa_pronta",
+          "publicando",
+          "concluido",
+          "erro",
+        ]),
         curso_id: z.string().uuid().nullable().optional(),
         aula_id: z.string().uuid().nullable().optional(),
         erro_msg: z.string().nullable().optional(),
