@@ -5,7 +5,7 @@ import {
   Calendar, Sparkles, ArrowRight,
   Library, Trophy, Video, Newspaper,
   FileText,
-  Zap, Compass, Scale, BellRing,
+  Zap, Compass, Scale, BellRing, MessageCircle,
 } from "lucide-react";
 import { HomeTopCard } from "@/components/home/HomeTopCard";
 import { listBlogPosts, type BlogPostListItem } from "@/lib/blog.functions";
