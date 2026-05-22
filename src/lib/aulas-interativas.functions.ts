@@ -20,6 +20,7 @@ export type SlideConteudo = {
   texto?: string;
   destaque?: string;
   bullets?: string[];
+  objetivos?: string[];
   colunas?: { titulo: string; itens: string[] }[];
   pdf_url?: string;
 };
