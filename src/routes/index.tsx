@@ -82,7 +82,7 @@ function Welcome() {
       <motion.div className="relative min-h-[100dvh] flex flex-col">
         {/* Background image */}
         <div className="absolute inset-0 overflow-hidden bg-black">
-          <div className="relative w-full pt-[420px] sm:pt-[460px] lg:pt-[380px]">
+          <div className="relative w-full pt-[360px] sm:pt-[400px] lg:pt-[320px]">
             <img
               src={welcomeHero}
               alt=""
