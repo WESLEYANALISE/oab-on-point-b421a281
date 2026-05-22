@@ -176,40 +176,13 @@ function AtualizacoesLeisPage() {
               ))}
             </div>
           ) : (
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
-              {diasDoMes.map((d) => {
-                const ativo = diaSel === d.iso;
-                const isUltimo = d.status === "ultimo";
-                const isFuturo = d.status === "futuro";
-                const isSemAtos = d.status === "sem-atos";
-                return (
-                  <button
-                    key={d.iso}
-                    onClick={() => setDiaSel(ativo ? null : d.iso)}
-                    className={cn(
-                      "shrink-0 h-14 w-14 rounded-xl border flex flex-col items-center justify-center transition-all relative",
-                      ativo
-                        ? "bg-gold text-gold-foreground border-gold font-bold"
-                        : isUltimo
-                        ? "bg-gold/15 border-gold text-foreground shadow-[0_0_18px_-2px_var(--gold)] animate-pulse"
-                        : isFuturo
-                        ? "bg-card/40 border-border/50 text-muted-foreground/40"
-                        : isSemAtos
-                        ? "bg-card/60 border-border/60 text-muted-foreground/60"
-                        : "bg-card border-border hover:border-gold/50 text-foreground",
-                    )}
-                  >
-                    <span className="font-display text-lg leading-none">{String(d.dia).padStart(2, "0")}</span>
-                    <span className={cn(
-                      "text-[10px] mt-0.5",
-                      ativo ? "text-gold-foreground/80" : isUltimo ? "text-gold" : "text-muted-foreground",
-                    )}>
-                      {isFuturo ? "—" : d.count > 0 ? `${d.count} ${d.count === 1 ? "ato" : "atos"}` : "vazio"}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            <DiasCarrossel
+              dias={diasDoMes}
+              diaSel={diaSel}
+              ano={ano}
+              mes={mes}
+              onSelect={(iso) => setDiaSel(diaSel === iso ? null : iso)}
+            />
           )
         )}
       </div>
