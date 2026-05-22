@@ -1,99 +1,83 @@
-## Problema
-
-Hoje existem dois "voltar" empilhados em várias telas:
-1. O `MobileHeader` global (botão "Voltar" fixo no topo).
-2. Um botão extra dentro do conteúdo da rota (ex.: "← Todas as áreas" em `/resumos?area=...`, "← Voltar" em `_app.resumos.$livroId.tsx`, headers próprios em `vade-mecum`, `oab.*`, `noticias`, `blog`, `biblioteca`, `aulas`, `simulados`, `admin.*`, etc.).
-
-Além disso, o botão global hoje diz sempre "Voltar", sem indicar pra onde leva.
 
 ## Objetivo
 
-- **Um único cabeçalho** em todas as telas internas: o `MobileHeader`.
-- O botão de voltar mostra **o nome do destino** (ex.: "Ética Profissional", "Resumos", "Início", "Vade-Mécum").
-- O destino é o **nível imediatamente acima** na navegação lógica (não `history.back()`), inclusive respeitando filtros de área via `search`.
+Adicionar um botão flutuante (FAB) no canto inferior direito da página `/atualizacoes-leis`. Ao tocar, abre um painel lateral deslizando da direita para a esquerda com filtros temáticos (códigos, Constituição, estatutos) e opção de marcar leis "importantes" que a pessoa quer acompanhar.
 
-## Mudanças
+## Comportamento
 
-### 1. `src/lib/voltar.ts` — virar resolver com label
+**FAB**
+- Posição: `fixed bottom-24 right-4` (acima da BottomNav mobile), `bottom-6 right-6` no desktop.
+- Visual: círculo dourado com ícone `SlidersHorizontal`. Mostra um pontinho indicador quando há filtro ativo.
 
-Trocar a assinatura para retornar `{ to: string; search?: Record<string,unknown>; label: string }`. Receber `pathname` + `search` + (opcional) dados de contexto leves (ex.: nome da área do livro vindo do cache do React Query — quando não houver, cai no fallback genérico).
+**Painel lateral (Sheet)**
+- Abre da **direita para a esquerda** (`side="right"` do componente `Sheet` do shadcn).
+- Largura: full no mobile, ~380px no desktop.
+- Conteúdo em duas seções:
 
-Regras (mapeadas das rotas existentes):
+### Seção 1 — Filtros rápidos (presets)
+Chips selecionáveis que filtram a lista por tema. Apenas um ativo por vez (incluindo "Todos"):
+- **Todos** (default)
+- **Códigos** → leis cujo nome contém "Código" (Penal, Civil, CDC, CTN, CTB, etc.)
+- **Constituição** → ECs + qualquer ato que altere a CF/88
+- **Estatutos** → leis cujo nome contém "Estatuto" (ECA, Idoso, OAB, etc.)
+- **Tributário** → matérias fiscais (heurística por palavras-chave na ementa)
+- **Penal** → palavras-chave penais na ementa
+- **Trabalhista** → CLT + palavras-chave trabalhistas
 
-```text
-/resumos?area=X                 -> { to:"/resumos", label:"Resumos" }
-/resumos                        -> { to:"/app",     label:"Início" }
-/resumos/:livroId               -> { to:"/resumos?area=<area>", label:"<Área>"  }  // área via query cache "resumos-publico"; fallback "Resumos"
-/resumos/capitulo/:livroId/:n   -> { to:"/resumos/:livroId", label:"<Título do livro>" } // título via cache; fallback "Resumo"
-/aulas                          -> { to:"/app", label:"Início" }
-/aulas/:materia                 -> { to:"/aulas", label:"Aulas" }
-/aulas/:materia/:livroId        -> { to:"/aulas/:materia", label:"<Matéria>" }
-/aulas/:materia/:livroId/:n     -> { to:"/aulas/:materia/:livroId", label:"<Livro>" }
-/biblioteca                     -> { to:"/app", label:"Início" }
-/biblioteca/:slug               -> { to:"/biblioteca", label:"Biblioteca" }
-/biblioteca/:slug/:bookId       -> { to:"/biblioteca/:slug", label:"<Categoria>" }
-/biblioteca/:slug/:bookId/ler   -> { to:"/biblioteca/:slug/:bookId", label:"<Livro>" }
-/vade-mecum                     -> { to:"/app", label:"Início" }
-/vade-mecum/cf, /vade-mecum/cf/:parte, /vade-mecum/estatutos, /vade-mecum/estatutos/:slug, /vade-mecum/:slug
-                                -> sobe 1 nível, label = nome humano do nível pai
-/oab/*                          -> sobe 1 nível; raiz volta para "Início"
-/simulados, /simulados/:slug/*  -> idem
-/provas, /provas/:n             -> idem
-/noticias, /noticias/:id        -> idem
-/blog, /blog/:slug              -> idem
-/flashcards, /flashcards-tema   -> Início / Flashcards
-/admin, /admin/*                -> /admin / "Admin"
-/perfil, /caderno-erros, /plano-estudo, /progresso, /reta-final, /questoes, /assistente, /audioaulas, /materias, /materias/:slug, /atualizacoes-leis
-                                -> /app / "Início"  (subrotas sobem 1 nível com label da raiz)
-```
+Substituem a faixa atual de filtros por tipo (Leis, EC, MP, Decretos, Vetos), que continua disponível dentro do painel como sub-seção "Por tipo de ato".
 
-Tabela de **nomes humanos** das raízes (para evitar slug cru no botão):
-`/app→Início`, `/resumos→Resumos`, `/aulas→Aulas`, `/biblioteca→Biblioteca`, `/vade-mecum→Vade-Mécum`, `/vade-mecum/cf→Constituição`, `/vade-mecum/estatutos→Estatutos`, `/simulados→Simulados`, `/provas→Provas`, `/noticias→Notícias`, `/blog→Blog`, `/flashcards→Flashcards`, `/flashcards-tema→Por tema`, `/oab→OAB`, `/admin→Admin`, `/perfil→Perfil`, `/caderno-erros→Caderno de erros`, `/plano-estudo→Plano`, `/progresso→Progresso`, `/reta-final→Reta final`, `/questoes→Questões`, `/assistente→Assistente`, `/audioaulas→Audioaulas`, `/materias→Matérias`, `/atualizacoes-leis→Atualizações`.
+### Seção 2 — Leis importantes para acompanhar
+Lista de checkboxes com leis-base relevantes para concurseiro/OAB:
+- Constituição Federal (Lei nº — CF/88)
+- Código Penal (DL 2.848/40)
+- Código de Processo Penal (DL 3.689/41)
+- Código Civil (Lei 10.406/02)
+- Código de Processo Civil (Lei 13.105/15)
+- CLT (DL 5.452/43)
+- CDC (Lei 8.078/90)
+- CTN (Lei 5.172/66)
+- Estatuto da OAB (Lei 8.906/94)
+- Lei Maria da Penha (Lei 11.340/06)
+- ECA (Lei 8.069/90)
+- Estatuto do Idoso (Lei 10.741/03)
 
-### 2. `src/components/layout/MobileHeader.tsx`
+Quando uma ou mais estão marcadas, a lista da página passa a mostrar **apenas atos que alteram/citam essas leis** (match pelo número da lei na ementa, ex.: "Altera a Lei nº 11.340"). Aparece um contador "X leis acompanhadas" no rodapé do painel + botão "Limpar".
 
-- Ler `pathname` **e** `search` via `useLocation()`.
-- Chamar o novo `resolverVoltar({ pathname, search })`.
-- Renderizar o botão como pill com seta + `label` dinâmico (truncado em `max-w-[55vw]`).
-- Para destinos com `search`, usar `<Link to={to} search={search}>`.
-- Botão direito "Início" mantido (some na própria home).
+### Rodapé do painel
+- Botão "Limpar filtros" (ghost).
+- Botão "Aplicar" (dourado) — fecha o sheet. As mudanças também já são aplicadas em tempo real conforme o usuário toca.
 
-### 3. Limpeza das rotas — remover headers/voltares internos duplicados
+## Persistência
 
-Em cada arquivo abaixo, **remover**: botões "← Voltar", "← Todas as áreas", barras com `<ArrowLeft/>` + "Início" que repliquem o header. Manter o conteúdo (eyebrow, título, subtítulo) — só sumir o botão.
+As "leis importantes" marcadas ficam salvas em `localStorage` (`oab:atualizacoes:leis-acompanhadas`) para a pessoa não precisar marcar de novo na próxima visita. O preset rápido é session-only.
 
-- `_app.resumos.index.tsx` (linha do "← Todas as áreas")
-- `_app.resumos.$livroId.tsx`
-- `_app.resumos.capitulo.$livroId.$ordem.tsx`
-- `_app.flashcards-tema.tsx`
-- `_app.materias.$slug.tsx`
-- `_app.biblioteca.index.tsx`, `_app.biblioteca.$slug.tsx`, `_app.biblioteca.$slug.index.tsx`, `_app.biblioteca.$slug.$bookId.index.tsx`, `_app.biblioteca.$slug.$bookId.ler.tsx`
-- `_app.vade-mecum.index.tsx`, `_app.vade-mecum.estatutos.index.tsx`, `_app.vade-mecum.estatutos.$slug.tsx`
-- `_app.oab.progresso.tsx`, `_app.oab.calendario.tsx`, `_app.oab.o-que-estudar.tsx`, `_app.oab.segunda-fase.tsx`, `_app.oab.reforco.tsx`, `_app.oab.caderno-erros.tsx`
-- `_app.caderno-erros.tsx`
-- `_app.aulas.$materia.$livroId.$ordem.tsx`
-- `_app.noticias.tsx`, `_app.noticias.$id.tsx`
-- `_app.blog.$slug.tsx`
-- `_app.simulados.$slug.index.tsx`, `_app.simulados.$slug.praticar.tsx`, `_app.simulados.$slug.resultado.$tentativaId.tsx`
-- `_app.admin.resumos.tsx`, `_app.admin.blog.tsx`, `_app.admin.flashcards.tsx`
+## Lista da página
 
-Não mexer em:
-- Rotas fora do shell `_app` (`login`, `signup`, `onboarding`, `reset-password`) — não têm `MobileHeader`.
-- Botões de "fechar" de overlays/sheets (ex.: `ArtigoFocusOverlay`) — não são voltar de página.
+Quando há filtro ativo (preset ≠ "Todos" ou alguma lei acompanhada marcada):
+- A faixa horizontal de filtros por tipo (atual) **some** — o controle agora vive no painel.
+- Aparece uma linha discreta acima da lista: `Filtrando por: Códigos · 3 leis acompanhadas  [×]`.
 
-### 4. Casos com label dinâmico via cache
+Sem filtro: comportamento atual preservado (carrossel de dias + faixa de filtros opcional).
 
-Para `/resumos/:livroId` e `/resumos/capitulo/...`, ler nome da área/livro do `queryClient` (`['resumos-publico']`) dentro do `MobileHeader`. Se ausente, fallback para o nome da raiz ("Resumos"). Mesma estratégia para `/aulas/:materia/...` usando o slug→nome de `src/data/materias.ts` (já existe).
+## Arquivos
 
-Sem chamadas extras de rede — só leitura síncrona de cache + dicionários locais.
+**Editar**
+- `src/routes/_app.atualizacoes-leis.index.tsx`
+  - Adicionar FAB + estado do painel.
+  - Mover/duplicar lógica de filtros para um novo componente `FiltrosPanel`.
+  - Aplicar filtros derivados (preset + leis acompanhadas) no `atos` antes do `useMemo` que alimenta a lista.
+  - Hook `useEffect` para hidratar/persistir `leis-acompanhadas` no `localStorage`.
 
-### 5. Desktop
+**Criar**
+- `src/lib/atualizacoes-filtros.ts` — catálogo das leis importantes (número, label, slug) + helpers `matchPreset(ato, preset)` e `matchLeisAcompanhadas(ato, slugs)`.
 
-`DesktopSidebar` já dá a navegação principal no desktop; o "voltar" só aparece em `MobileHeader` (md:hidden). Sem mudanças no desktop.
+**Usar (já existem)**
+- `src/components/ui/sheet.tsx` (shadcn) — para o painel lateral.
+- `src/components/ui/checkbox.tsx` — para a lista de leis.
+- Ícones `lucide-react`: `SlidersHorizontal`, `X`, `Check`.
 
-## Resultado esperado
+## Notas técnicas
 
-- `/resumos?area=Ética Profissional` mostra apenas **1** botão no topo: "← Resumos".
-- `/resumos/<livroId>` mostra "← Ética Profissional" (ou "← Resumos" se a área não estiver em cache).
-- `/vade-mecum/cf/titulo-i` mostra "← Constituição". Etc.
-- Nenhuma página interna do `_app` desenha um segundo voltar no corpo.
+- O match por lei usa regex no campo `ementa` do ato: `/Lei n[ºo°]?\s*11\.?340/i`. Para a CF/88 também aceita "Constituição Federal" e tipo `emenda_constitucional`.
+- Não mudamos a serverFn `listResenhaMes` — filtragem é 100% client-side sobre o array já carregado do mês.
+- Sem mudanças em design tokens; usar `bg-gold`, `border-gold/40`, `text-foreground`, etc., já definidos.
