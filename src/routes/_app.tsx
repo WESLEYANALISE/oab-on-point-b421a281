@@ -23,6 +23,7 @@ function AppLayout() {
   const { data: profile } = useProfile();
   const { data: isAdmin } = useIsAdmin();
   const isBiblioteca = pathname.startsWith("/biblioteca");
+  const isLeitor = /^\/biblioteca\/[^/]+\/[^/]+\/ler$/.test(pathname);
   const isHome = pathname === "/inicio";
   const showBottomNav = isHome;
 
@@ -45,6 +46,20 @@ function AppLayout() {
   }
 
   if (!user) return null;
+
+  if (isLeitor) {
+    // Leitor de livros ocupa toda a tela — sem sidebar, header ou wrapper com transform.
+    return (
+      <>
+        <Outlet />
+        {isAdmin ? (
+          <Suspense fallback={null}>
+            <AdminQueueOverlays />
+          </Suspense>
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">
