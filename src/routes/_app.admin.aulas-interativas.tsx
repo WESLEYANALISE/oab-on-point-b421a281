@@ -576,32 +576,99 @@ function ArquivoMaterialItem({
             <p className="mt-2 text-[11px] text-muted-foreground">Sem imagens extraídas.</p>
           );
         }
-        const max = 8;
-        const visiveis = imgs.slice(0, max);
-        const sobra = imgs.length - visiveis.length;
+        const selCount = imgsSelecionadas.size;
+        const toggle = (url: string) => {
+          setImgsSelecionadas((prev) => {
+            const next = new Set(prev);
+            if (next.has(url)) next.delete(url);
+            else next.add(url);
+            return next;
+          });
+        };
+        const selecionarTodas = () => setImgsSelecionadas(new Set(imgs));
+        const limpar = () => setImgsSelecionadas(new Set());
+        const apagar = async () => {
+          if (selCount === 0) return;
+          if (!confirm(`Apagar ${selCount} imagem(ns) selecionada(s)? A prévia atual será descartada.`)) return;
+          setAcao("apagar-imgs");
+          try {
+            const r = await apagarImagensExtracao({
+              data: { arquivoDriveId: arquivo.id, urls: Array.from(imgsSelecionadas) },
+            });
+            toast.success(`${r.removidas} imagem(ns) removida(s). Gere a prévia novamente.`);
+            setImgsSelecionadas(new Set());
+            setEstrutura(null);
+            qc.invalidateQueries({ queryKey: ["admin"] });
+            onChanged();
+          } catch (e: any) {
+            toast.error(e?.message ?? "Falha ao apagar imagens");
+          } finally {
+            setAcao(null);
+          }
+        };
         return (
           <div className="mt-2">
-            <p className="text-[11px] text-muted-foreground mb-1">
-              {imgs.length} imagem{imgs.length === 1 ? "" : "ns"} extraída{imgs.length === 1 ? "" : "s"}
-            </p>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <p className="text-[11px] text-muted-foreground">
+                {imgs.length} imagem{imgs.length === 1 ? "" : "ns"} extraída{imgs.length === 1 ? "" : "s"}
+                {selCount > 0 && <span className="text-gold"> · {selCount} selecionada(s)</span>}
+              </p>
+              <div className="flex items-center gap-2 text-[10px]">
+                {selCount < imgs.length && (
+                  <button onClick={selecionarTodas} className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
+                    Selecionar todas
+                  </button>
+                )}
+                {selCount > 0 && (
+                  <button onClick={limpar} className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
+                    Limpar
+                  </button>
+                )}
+                {selCount > 0 && (
+                  <button
+                    onClick={apagar}
+                    disabled={acao !== null}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full border border-destructive/40 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    {acao === "apagar-imgs" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                    Apagar {selCount}
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="flex flex-wrap gap-1.5">
-              {visiveis.map((url, i) => (
-                <a
-                  key={i}
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block h-14 w-14 rounded-md overflow-hidden border border-border bg-background hover:border-gold/60"
-                  title={`Imagem ${i + 1}`}
-                >
-                  <img src={url} alt={`Imagem ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
-                </a>
-              ))}
-              {sobra > 0 && (
-                <span className="h-14 w-14 rounded-md border border-border bg-background flex items-center justify-center text-[11px] text-muted-foreground">
-                  +{sobra}
-                </span>
-              )}
+              {imgs.map((url, i) => {
+                const checked = imgsSelecionadas.has(url);
+                return (
+                  <div
+                    key={i}
+                    className={`relative h-16 w-16 rounded-md overflow-hidden border ${checked ? "border-destructive ring-2 ring-destructive/40" : "border-border"} bg-background`}
+                    title={`Imagem ${i + 1}`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => toggle(url)}
+                      className="absolute inset-0 w-full h-full"
+                      aria-label={`${checked ? "Desmarcar" : "Marcar"} imagem ${i + 1}`}
+                    >
+                      <img src={url} alt={`Imagem ${i + 1}`} loading="lazy" className={`h-full w-full object-cover ${checked ? "opacity-40" : ""}`} />
+                    </button>
+                    <span className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-sm border flex items-center justify-center text-[10px] pointer-events-none ${checked ? "bg-destructive border-destructive text-white" : "bg-background/80 border-border text-transparent"}`}>
+                      ✓
+                    </span>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute bottom-0.5 right-0.5 px-1 py-0.5 rounded bg-background/80 border border-border text-[9px] text-muted-foreground hover:text-foreground"
+                      title="Abrir em nova aba"
+                    >
+                      ↗
+                    </a>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
