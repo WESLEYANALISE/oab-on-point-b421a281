@@ -512,6 +512,11 @@
   60% { transform: translateX(120%); }
   100% { transform: translateX(120%); }
 }
+@keyframes curtainSweep {
+  0%   { transform: translateX(-100%); }
+  55%  { transform: translateX(0%); }
+  100% { transform: translateX(105%); }
+}
 @keyframes neonPulseText {
   0%, 100% { filter: drop-shadow(0 0 6px rgba(212,168,75,0.45)); opacity: 0.92; }
   50% { filter: drop-shadow(0 0 18px rgba(212,168,75,0.9)); opacity: 1; }
