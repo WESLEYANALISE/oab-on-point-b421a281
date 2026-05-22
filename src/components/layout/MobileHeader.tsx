@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { Scale, ArrowLeft, Home, Search, Bell } from "lucide-react";
+import { ArrowLeft, Home, Search, Bell } from "lucide-react";
+import logoNaRisca from "@/assets/logo-oab-na-risca.webp";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { resolverVoltar } from "@/lib/voltar";
