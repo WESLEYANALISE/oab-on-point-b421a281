@@ -5,11 +5,14 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
+  FileText,
+  Library,
   Loader2,
   Play,
   Sparkles,
   Trash2,
   Upload,
+  Wand2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,7 +23,13 @@ import {
   togglePublicarCurso,
   type SlideRow,
 } from "@/lib/aulas-interativas.functions";
-type PdfChunk = { modulo: string; texto: string };
+import {
+  listarArquivosDrive,
+  atualizarStatusDrive,
+  listarAulasDoCurso,
+  vincularMapaAula,
+  type ArquivoDrive,
+} from "@/lib/aulas-interativas-drive.functions";
 import { SlidePlayer } from "@/components/aulas-interativas/SlidePlayer";
 
 export const Route = createFileRoute("/_app/admin/aulas-interativas")({
@@ -43,86 +52,165 @@ type AulaDraft = {
 type ModuloDraft = { titulo: string; descricao?: string; aulas: AulaDraft[] };
 type Estrutura = { modulos: ModuloDraft[] };
 
+type TabKey = "drive" | "upload" | "mapas";
+
 function AdminAulasInterativas() {
+  const [tab, setTab] = useState<TabKey>("drive");
+
+  return (
+    <div className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
+      <Link
+        to="/admin"
+        className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground mb-4"
+      >
+        <ArrowLeft className="h-4 w-4" /> Admin
+      </Link>
+
+      <header className="mb-6">
+        <p className="text-xs uppercase tracking-widest text-gold inline-flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5" /> Admin
+        </p>
+        <h1 className="font-display text-3xl md:text-4xl mt-1">Aulas Interativas</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Gere cursos a partir dos PDFs importados do Drive ou faça upload manual.
+        </p>
+      </header>
+
+      <div className="flex flex-wrap gap-2 mb-6 border-b border-border">
+        <TabBtn icon={<Library className="h-4 w-4" />} active={tab === "drive"} onClick={() => setTab("drive")}>
+          Importados do Drive
+        </TabBtn>
+        <TabBtn icon={<Upload className="h-4 w-4" />} active={tab === "upload"} onClick={() => setTab("upload")}>
+          Upload manual
+        </TabBtn>
+        <TabBtn icon={<FileText className="h-4 w-4" />} active={tab === "mapas"} onClick={() => setTab("mapas")}>
+          Mapas mentais
+        </TabBtn>
+      </div>
+
+      {tab === "drive" && <AbaDrive />}
+      {tab === "upload" && <AbaUpload />}
+      {tab === "mapas" && <AbaMapas />}
+
+      <CursosExistentes />
+    </div>
+  );
+}
+
+function TabBtn({
+  icon,
+  active,
+  onClick,
+  children,
+}: {
+  icon: React.ReactNode;
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 px-4 py-2 -mb-px text-sm border-b-2 transition-colors ${
+        active
+          ? "border-gold text-foreground font-display"
+          : "border-transparent text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {icon}
+      {children}
+    </button>
+  );
+}
+
+/* ============================================================
+   ABA 1 — Importados do Drive
+   ============================================================ */
+function AbaDrive() {
   const qc = useQueryClient();
-  const cursosQ = useQuery({
-    queryKey: ["admin", "aulas-interativas", "cursos"],
-    queryFn: () => listarCursosAdmin(),
+  const arquivosQ = useQuery({
+    queryKey: ["admin", "aulas-interativas", "drive"],
+    queryFn: () => listarArquivosDrive(),
   });
 
-  const [file, setFile] = useState<File | null>(null);
-  const [titulo, setTitulo] = useState("");
-  const [materia, setMateria] = useState("Direito Penal");
+  const materiais = useMemo(
+    () => (arquivosQ.data ?? []).filter((a) => a.tipo === "material"),
+    [arquivosQ.data],
+  );
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5 mb-8">
+      <h2 className="font-display text-lg mb-2">Materiais de estudo (gerar cursos)</h2>
+      <p className="text-xs text-muted-foreground mb-4">
+        {materiais.length} arquivo(s) na biblioteca. Clique em "Gerar curso" para a IA
+        transformar o PDF inteiro em módulos + aulas + slides.
+      </p>
+      {arquivosQ.isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+      <ul className="space-y-2">
+        {materiais.map((a) => (
+          <ArquivoMaterialItem key={a.id} arquivo={a} onChanged={() => qc.invalidateQueries({ queryKey: ["admin", "aulas-interativas"] })} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function ArquivoMaterialItem({
+  arquivo,
+  onChanged,
+}: {
+  arquivo: ArquivoDrive;
+  onChanged: () => void;
+}) {
+  const [gerando, setGerando] = useState(false);
   const [progresso, setProgresso] = useState("");
   const [estrutura, setEstrutura] = useState<Estrutura | null>(null);
-  const [processando, setProcessando] = useState(false);
-  const [chunks, setChunks] = useState<PdfChunk[]>([]);
-  const [erros, setErros] = useState<string[]>([]);
-  const [previewSlide, setPreviewSlide] = useState<{
-    slides: SlideRow[];
-    aulaTitulo: string;
-    inicio: number;
-  } | null>(null);
+  const [titulo, setTitulo] = useState(arquivo.nome_arquivo.replace(/\.pdf$/i, ""));
+  const [materia, setMateria] = useState(arquivo.subpasta);
+  const [previewSlide, setPreviewSlide] = useState<{ slides: SlideRow[]; aulaTitulo: string } | null>(null);
+  const qc = useQueryClient();
 
-  async function extrairEEstruturar() {
-    if (!file || !titulo.trim()) {
-      toast.error("Selecione um PDF e informe o título");
-      return;
-    }
-    setProcessando(true);
-    setEstrutura({ modulos: [] });
-    setErros([]);
+  async function gerar() {
+    setGerando(true);
+    setProgresso("Enviando PDF para a IA (Gemini)…");
+    setEstrutura(null);
     try {
-      setProgresso("Lendo PDF…");
-      const { parsePdfToChunks } = await import("@/lib/aulas-interativas-pdf.client");
-      const { chunks: c, totalPaginas } = await parsePdfToChunks(file, (p: number, t: number) => {
-        setProgresso(`Lendo PDF… ${p}/${t}`);
+      await atualizarStatusDrive({
+        data: { id: arquivo.id, status_ingestao: "processando", erro_msg: null },
       });
-      setChunks(c);
-      setProgresso(`PDF lido (${totalPaginas} págs, ${c.length} capítulos).`);
-
-      // 1 chunk por request — evita timeout do Worker
-      for (let i = 0; i < c.length; i++) {
-        const ch = c[i];
-        setProgresso(`Processando ${i + 1}/${c.length} — ${ch.modulo}`);
-        try {
-          const res = await fetch("/api/aulas-interativas-ingest", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              tituloCurso: titulo,
-              modulo: ch.modulo,
-              texto: ch.texto,
-            }),
-          });
-          if (!res.ok) {
-            const txt = await res.text().catch(() => "");
-            throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
-          }
-          const { modulo } = (await res.json()) as { modulo: ModuloDraft };
-          setEstrutura((prev) => ({
-            modulos: [...(prev?.modulos ?? []), modulo],
-          }));
-        } catch (e: any) {
-          const msg = `${ch.modulo}: ${e?.message ?? "falhou"}`;
-          setErros((prev) => [...prev, msg]);
-          toast.error(`Capítulo "${ch.modulo}" falhou`);
-        }
+      const res = await fetch("/api/aulas-interativas-pdf-to-course", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tituloCurso: titulo,
+          materia,
+          storage_bucket: arquivo.storage_bucket,
+          storage_path: arquivo.storage_path,
+        }),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
       }
-      setProgresso(`Pronto! Revise abaixo e publique.`);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erro ao processar PDF");
-      setProgresso(`Erro: ${e?.message ?? "desconhecido"}`);
+      const { estrutura: e } = (await res.json()) as { estrutura: Estrutura };
+      setEstrutura(e);
+      setProgresso(`Pronto! ${e.modulos.length} módulo(s). Revise e publique.`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Falha");
+      setProgresso(`Erro: ${err?.message ?? "desconhecido"}`);
+      await atualizarStatusDrive({
+        data: { id: arquivo.id, status_ingestao: "erro", erro_msg: String(err?.message ?? err).slice(0, 500) },
+      }).catch(() => {});
     } finally {
-      setProcessando(false);
+      setGerando(false);
     }
   }
 
   const publicar = useMutation({
-    mutationFn: (publicado: boolean) => {
-      if (!estrutura || !estrutura.modulos.length) throw new Error("Nada para publicar");
+    mutationFn: async (publicado: boolean) => {
+      if (!estrutura) throw new Error("Nada para publicar");
       const slug = slugify(titulo);
-      return publicarCurso({
+      const r = await publicarCurso({
         data: {
           titulo,
           slug,
@@ -149,25 +237,460 @@ function AdminAulasInterativas() {
             })),
         },
       });
+      await atualizarStatusDrive({
+        data: { id: arquivo.id, status_ingestao: "concluido", curso_id: r.cursoId },
+      });
+      return r;
     },
     onSuccess: () => {
-      toast.success("Curso salvo!");
+      toast.success("Curso publicado!");
       setEstrutura(null);
-      setFile(null);
-      setTitulo("");
-      setProgresso("");
-      setErros([]);
-      qc.invalidateQueries({ queryKey: ["admin", "aulas-interativas"] });
+      onChanged();
+      qc.invalidateQueries({ queryKey: ["admin"] });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Falha ao publicar"),
+    onError: (e: any) => toast.error(e?.message ?? "Falha"),
   });
 
+  const stats = useMemo(() => {
+    if (!estrutura) return null;
+    let aulas = 0, slides = 0, quizzes = 0;
+    for (const m of estrutura.modulos) for (const a of m.aulas) {
+      aulas++;
+      for (const s of a.slides ?? []) { slides++; if (s.tipo === "quiz") quizzes++; }
+    }
+    return { mod: estrutura.modulos.length, aulas, slides, quizzes };
+  }, [estrutura]);
+
+  return (
+    <li className="rounded-xl border border-border bg-background p-3">
+      <div className="flex items-start gap-3">
+        <FileText className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="font-display text-sm truncate">{arquivo.nome_arquivo}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {arquivo.subpasta} · {arquivo.bytes ? `${(arquivo.bytes / 1024 / 1024).toFixed(1)} MB` : "?"} ·{" "}
+            <span className={statusColor(arquivo.status_ingestao)}>{arquivo.status_ingestao}</span>
+            {arquivo.curso_id && " · vinculado"}
+          </p>
+        </div>
+        {arquivo.pdf_url && (
+          <a href={arquivo.pdf_url} target="_blank" rel="noreferrer" className="text-[11px] text-muted-foreground hover:text-foreground">
+            Ver PDF
+          </a>
+        )}
+        <button
+          onClick={gerar}
+          disabled={gerando}
+          className="h-9 px-3 rounded-full bg-gradient-toga text-primary-foreground text-xs inline-flex items-center gap-1 disabled:opacity-50"
+        >
+          {gerando ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+          Gerar curso
+        </button>
+      </div>
+
+      {(progresso || estrutura) && (
+        <div className="mt-3 grid md:grid-cols-2 gap-2">
+          <label className="text-xs">
+            <span className="text-muted-foreground">Título</span>
+            <input
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              className="mt-1 w-full h-9 px-3 rounded-lg border border-border bg-background text-sm"
+            />
+          </label>
+          <label className="text-xs">
+            <span className="text-muted-foreground">Matéria</span>
+            <input
+              value={materia}
+              onChange={(e) => setMateria(e.target.value)}
+              className="mt-1 w-full h-9 px-3 rounded-lg border border-border bg-background text-sm"
+            />
+          </label>
+        </div>
+      )}
+      {progresso && <p className="mt-2 text-[11px] text-muted-foreground">{progresso}</p>}
+
+      {estrutura && stats && (
+        <div className="mt-3 rounded-lg border border-border bg-card/40 p-3">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-xs text-muted-foreground">
+              {stats.mod} módulos · {stats.aulas} aulas · {stats.slides} slides · {stats.quizzes} quizzes
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => publicar.mutate(false)}
+                disabled={publicar.isPending}
+                className="h-8 px-3 rounded-full border border-border text-xs disabled:opacity-50"
+              >
+                Rascunho
+              </button>
+              <button
+                onClick={() => publicar.mutate(true)}
+                disabled={publicar.isPending}
+                className="h-8 px-3 rounded-full bg-gradient-gold text-gold-foreground text-xs disabled:opacity-50 inline-flex items-center gap-1"
+              >
+                {publicar.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+                Publicar
+              </button>
+            </div>
+          </div>
+          <div className="max-h-60 overflow-y-auto space-y-1">
+            {estrutura.modulos.map((m, mi) => (
+              <details key={mi} className="text-xs" open={mi === 0}>
+                <summary className="cursor-pointer">
+                  {mi + 1}. {m.titulo} <span className="text-muted-foreground">({m.aulas.length} aulas)</span>
+                </summary>
+                <ul className="ml-4 mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                  {m.aulas.map((a, ai) => (
+                    <li key={ai} className="flex items-center gap-2">
+                      <span className="truncate flex-1">• {a.titulo} ({(a.slides ?? []).length} slides)</span>
+                      <button
+                        onClick={() => {
+                          const slides = (a.slides ?? []).map((s, i) => ({
+                            id: `p-${mi}-${ai}-${i}`,
+                            aula_id: `p-${mi}-${ai}`,
+                            ordem: s.ordem ?? i,
+                            tipo: s.tipo as any,
+                            conteudo: s.conteudo ?? {},
+                            imagem_url: s.imagem_url ?? null,
+                            quiz_json: s.quiz_json ?? null,
+                          })) as SlideRow[];
+                          if (slides.length) setPreviewSlide({ slides, aulaTitulo: a.titulo });
+                        }}
+                        className="text-gold hover:underline inline-flex items-center gap-1"
+                      >
+                        <Play className="h-3 w-3" /> ver
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {previewSlide && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+          <button
+            onClick={() => setPreviewSlide(null)}
+            className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full border border-border bg-card inline-flex items-center justify-center hover:bg-accent"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <SlidePlayer
+            slides={previewSlide.slides}
+            tituloAula={`[Prévia] ${previewSlide.aulaTitulo}`}
+            voltarHref="/admin/aulas-interativas"
+          />
+        </div>
+      )}
+    </li>
+  );
+}
+
+/* ============================================================
+   ABA 2 — Upload manual (mantém pipeline original chunked)
+   ============================================================ */
+function AbaUpload() {
+  const qc = useQueryClient();
+  const [file, setFile] = useState<File | null>(null);
+  const [titulo, setTitulo] = useState("");
+  const [materia, setMateria] = useState("Direito Penal");
+  const [progresso, setProgresso] = useState("");
+  const [estrutura, setEstrutura] = useState<Estrutura | null>(null);
+  const [processando, setProcessando] = useState(false);
+  const [previewSlide, setPreviewSlide] = useState<{ slides: SlideRow[]; aulaTitulo: string } | null>(null);
+
+  async function gerarViaVision() {
+    if (!file || !titulo.trim()) {
+      toast.error("Selecione um PDF e informe o título");
+      return;
+    }
+    if (file.size > 18 * 1024 * 1024) {
+      toast.error("Arquivo grande (>18MB). Reduza ou use a aba Drive.");
+      return;
+    }
+    setProcessando(true);
+    setProgresso("Codificando PDF…");
+    try {
+      const buf = new Uint8Array(await file.arrayBuffer());
+      let bin = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < buf.length; i += chunk) bin += String.fromCharCode(...buf.subarray(i, i + chunk));
+      const pdfBase64 = btoa(bin);
+      setProgresso("Enviando para a IA (Gemini)…");
+      const res = await fetch("/api/aulas-interativas-pdf-to-course", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tituloCurso: titulo, materia, pdfBase64 }),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
+      }
+      const { estrutura: e } = (await res.json()) as { estrutura: Estrutura };
+      setEstrutura(e);
+      setProgresso(`Pronto! ${e.modulos.length} módulo(s).`);
+    } catch (err: any) {
+      toast.error(err?.message ?? "Falha");
+      setProgresso(`Erro: ${err?.message ?? "?"}`);
+    } finally {
+      setProcessando(false);
+    }
+  }
+
+  const publicar = useMutation({
+    mutationFn: (publicado: boolean) => {
+      if (!estrutura) throw new Error("Nada para publicar");
+      const slug = slugify(titulo);
+      return publicarCurso({
+        data: {
+          titulo, slug, descricao: "", materia, publicado,
+          modulos: estrutura.modulos.filter((m) => m.aulas.length > 0).map((m) => ({
+            titulo: m.titulo, descricao: m.descricao ?? "",
+            aulas: m.aulas.map((a) => ({
+              titulo: a.titulo, descricao: a.descricao ?? "", duracao_min: a.duracao_min ?? 10,
+              slides: (a.slides ?? []).map((s, i) => ({
+                ordem: s.ordem ?? i, tipo: s.tipo as any, conteudo: s.conteudo ?? {},
+                imagem_url: s.imagem_url ?? null, quiz_json: s.quiz_json ?? null,
+              })),
+            })),
+          })),
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Curso publicado!");
+      setEstrutura(null); setFile(null); setTitulo(""); setProgresso("");
+      qc.invalidateQueries({ queryKey: ["admin"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Falha"),
+  });
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5 mb-8">
+      <h2 className="font-display text-lg mb-2">Novo curso a partir de PDF</h2>
+      <p className="text-xs text-muted-foreground mb-4">
+        Upload direto. Para arquivos &gt;18MB, use a aba Drive.
+      </p>
+      <div className="grid md:grid-cols-2 gap-3 mb-3">
+        <input
+          value={titulo}
+          onChange={(e) => setTitulo(e.target.value)}
+          placeholder="Título do curso"
+          className="h-10 px-3 rounded-lg border border-border bg-background text-sm"
+        />
+        <input
+          value={materia}
+          onChange={(e) => setMateria(e.target.value)}
+          placeholder="Matéria"
+          className="h-10 px-3 rounded-lg border border-border bg-background text-sm"
+        />
+      </div>
+      <label className="flex items-center gap-3 rounded-xl border border-dashed border-border bg-background/50 p-4 cursor-pointer hover:bg-accent">
+        <Upload className="h-5 w-5 text-gold" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm">{file ? file.name : "Selecionar PDF (até 18MB)"}</p>
+        </div>
+        <input
+          type="file"
+          accept="application/pdf"
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          className="hidden"
+        />
+      </label>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button
+          onClick={gerarViaVision}
+          disabled={processando || !file || !titulo.trim()}
+          className="h-10 px-4 rounded-full bg-gradient-toga text-primary-foreground text-sm inline-flex items-center gap-2 disabled:opacity-50"
+        >
+          {processando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+          Gerar curso com IA (Gemini Vision)
+        </button>
+        {progresso && <span className="text-xs text-muted-foreground">{progresso}</span>}
+      </div>
+
+      {estrutura && (
+        <div className="mt-4 rounded-xl border border-border bg-background p-3 max-h-80 overflow-y-auto">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-muted-foreground">
+              {estrutura.modulos.length} módulos
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => publicar.mutate(false)} className="h-8 px-3 rounded-full border border-border text-xs">Rascunho</button>
+              <button onClick={() => publicar.mutate(true)} className="h-8 px-3 rounded-full bg-gradient-gold text-gold-foreground text-xs inline-flex items-center gap-1">
+                {publicar.isPending && <Loader2 className="h-3 w-3 animate-spin" />} Publicar
+              </button>
+            </div>
+          </div>
+          {estrutura.modulos.map((m, mi) => (
+            <details key={mi} className="text-xs mt-1" open={mi === 0}>
+              <summary className="cursor-pointer">{mi + 1}. {m.titulo} ({m.aulas.length})</summary>
+              <ul className="ml-4 text-[11px] text-muted-foreground">
+                {m.aulas.map((a, ai) => (
+                  <li key={ai} className="flex items-center gap-2">
+                    <span className="flex-1 truncate">• {a.titulo}</span>
+                    <button
+                      onClick={() => {
+                        const slides = (a.slides ?? []).map((s, i) => ({
+                          id: `p-${mi}-${ai}-${i}`, aula_id: `p-${mi}-${ai}`,
+                          ordem: s.ordem ?? i, tipo: s.tipo as any,
+                          conteudo: s.conteudo ?? {}, imagem_url: s.imagem_url ?? null,
+                          quiz_json: s.quiz_json ?? null,
+                        })) as SlideRow[];
+                        if (slides.length) setPreviewSlide({ slides, aulaTitulo: a.titulo });
+                      }}
+                      className="text-gold hover:underline"
+                    >ver</button>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ))}
+        </div>
+      )}
+
+      {previewSlide && (
+        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
+          <button onClick={() => setPreviewSlide(null)} className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full border border-border bg-card inline-flex items-center justify-center">
+            <X className="h-4 w-4" />
+          </button>
+          <SlidePlayer slides={previewSlide.slides} tituloAula={`[Prévia] ${previewSlide.aulaTitulo}`} voltarHref="/admin/aulas-interativas" />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/* ============================================================
+   ABA 3 — Mapas mentais
+   ============================================================ */
+function AbaMapas() {
+  const qc = useQueryClient();
+  const arquivosQ = useQuery({
+    queryKey: ["admin", "aulas-interativas", "drive"],
+    queryFn: () => listarArquivosDrive(),
+  });
+  const cursosQ = useQuery({
+    queryKey: ["admin", "aulas-interativas", "cursos"],
+    queryFn: () => listarCursosAdmin(),
+  });
+  const mapas = useMemo(
+    () => (arquivosQ.data ?? []).filter((a) => a.tipo === "mapa"),
+    [arquivosQ.data],
+  );
+
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5 mb-8">
+      <h2 className="font-display text-lg mb-2">Mapas mentais</h2>
+      <p className="text-xs text-muted-foreground mb-4">
+        Vincule cada mapa a uma aula. Vira um slide do tipo "Mapa mental" no final/onde
+        a ordem cair.
+      </p>
+      {arquivosQ.isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+      <ul className="space-y-2">
+        {mapas.map((m) => (
+          <MapaItem
+            key={m.id}
+            mapa={m}
+            cursos={cursosQ.data ?? []}
+            onChanged={() => qc.invalidateQueries({ queryKey: ["admin", "aulas-interativas"] })}
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function MapaItem({
+  mapa,
+  cursos,
+  onChanged,
+}: {
+  mapa: ArquivoDrive;
+  cursos: any[];
+  onChanged: () => void;
+}) {
+  const [cursoId, setCursoId] = useState<string>("");
+  const [aulaId, setAulaId] = useState<string>("");
+
+  const aulasQ = useQuery({
+    queryKey: ["admin", "aulas-do-curso", cursoId],
+    queryFn: () => listarAulasDoCurso({ data: { cursoId } }),
+    enabled: !!cursoId,
+  });
+
+  const vincular = useMutation({
+    mutationFn: () => vincularMapaAula({ data: { arquivoDriveId: mapa.id, aulaId } }),
+    onSuccess: () => {
+      toast.success("Mapa vinculado!");
+      setCursoId(""); setAulaId("");
+      onChanged();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Falha"),
+  });
+
+  return (
+    <li className="rounded-xl border border-border bg-background p-3">
+      <div className="flex items-start gap-3">
+        <FileText className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="font-display text-sm truncate">{mapa.nome_arquivo}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {mapa.subpasta} · <span className={statusColor(mapa.status_ingestao)}>{mapa.status_ingestao}</span>
+            {mapa.aula_id && " · vinculado"}
+          </p>
+        </div>
+        {mapa.pdf_url && (
+          <a href={mapa.pdf_url} target="_blank" rel="noreferrer" className="text-[11px] text-muted-foreground hover:text-foreground">Ver PDF</a>
+        )}
+      </div>
+      <div className="mt-3 grid md:grid-cols-3 gap-2">
+        <select
+          value={cursoId}
+          onChange={(e) => { setCursoId(e.target.value); setAulaId(""); }}
+          className="h-9 px-2 rounded-lg border border-border bg-background text-xs"
+        >
+          <option value="">Curso…</option>
+          {cursos.map((c) => <option key={c.id} value={c.id}>{c.titulo}</option>)}
+        </select>
+        <select
+          value={aulaId}
+          onChange={(e) => setAulaId(e.target.value)}
+          disabled={!cursoId || aulasQ.isLoading}
+          className="h-9 px-2 rounded-lg border border-border bg-background text-xs"
+        >
+          <option value="">Aula…</option>
+          {(aulasQ.data ?? []).map((a: any) => <option key={a.id} value={a.id}>{a.titulo}</option>)}
+        </select>
+        <button
+          onClick={() => vincular.mutate()}
+          disabled={!aulaId || vincular.isPending}
+          className="h-9 px-3 rounded-full bg-gradient-toga text-primary-foreground text-xs disabled:opacity-50 inline-flex items-center justify-center gap-1"
+        >
+          {vincular.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
+          Vincular
+        </button>
+      </div>
+    </li>
+  );
+}
+
+/* ============================================================
+   Lista de cursos existentes (sempre visível)
+   ============================================================ */
+function CursosExistentes() {
+  const qc = useQueryClient();
+  const cursosQ = useQuery({
+    queryKey: ["admin", "aulas-interativas", "cursos"],
+    queryFn: () => listarCursosAdmin(),
+  });
   const togglePub = useMutation({
-    mutationFn: (v: { id: string; publicado: boolean }) =>
-      togglePublicarCurso({ data: v }),
+    mutationFn: (v: { id: string; publicado: boolean }) => togglePublicarCurso({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "aulas-interativas"] }),
   });
-
   const remover = useMutation({
     mutationFn: (id: string) => excluirCurso({ data: { id } }),
     onSuccess: () => {
@@ -176,265 +699,43 @@ function AdminAulasInterativas() {
     },
   });
 
-  const stats = useMemo(() => {
-    if (!estrutura) return null;
-    let aulas = 0;
-    let slides = 0;
-    let quizzes = 0;
-    let minutos = 0;
-    for (const m of estrutura.modulos) {
-      for (const a of m.aulas) {
-        aulas++;
-        minutos += a.duracao_min ?? 10;
-        for (const s of a.slides ?? []) {
-          slides++;
-          if (s.tipo === "quiz") quizzes++;
-        }
-      }
-    }
-    return { modulos: estrutura.modulos.length, aulas, slides, quizzes, minutos };
-  }, [estrutura]);
-
   return (
-    <div className="px-4 md:px-8 py-6 max-w-5xl mx-auto">
-      <Link
-        to="/admin"
-        className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground mb-4"
-      >
-        <ArrowLeft className="h-4 w-4" /> Admin
-      </Link>
-
-      <header className="mb-6">
-        <p className="text-xs uppercase tracking-widest text-gold inline-flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5" /> Admin
-        </p>
-        <h1 className="font-display text-3xl md:text-4xl mt-1">Aulas Interativas</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Suba um PDF, deixe a IA estruturar em curso → módulos → aulas → slides e publique.
-        </p>
-      </header>
-
-      {/* Uploader */}
-      <section className="rounded-2xl border border-border bg-card p-5 mb-8">
-        <h2 className="font-display text-lg mb-4">Novo curso a partir de PDF</h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="block text-sm">
-            <span className="text-xs text-muted-foreground">Título do curso</span>
-            <input
-              type="text"
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              placeholder="Ex.: Direito Penal — Prof. Nidal Ahmad"
-              className="mt-1 w-full h-10 px-3 rounded-lg border border-border bg-background"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-xs text-muted-foreground">Matéria</span>
-            <input
-              type="text"
-              value={materia}
-              onChange={(e) => setMateria(e.target.value)}
-              className="mt-1 w-full h-10 px-3 rounded-lg border border-border bg-background"
-            />
-          </label>
-        </div>
-
-        <div className="mt-4">
-          <label className="flex items-center gap-3 rounded-xl border border-dashed border-border bg-background/50 p-4 cursor-pointer hover:bg-accent">
-            <Upload className="h-5 w-5 text-gold" />
+    <section>
+      <h2 className="font-display text-lg mb-3">Cursos existentes</h2>
+      {cursosQ.isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+      {cursosQ.data && cursosQ.data.length === 0 && <p className="text-sm text-muted-foreground">Nenhum curso ainda.</p>}
+      <ul className="space-y-2">
+        {cursosQ.data?.map((c: any) => (
+          <li key={c.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
             <div className="flex-1 min-w-0">
-              <p className="text-sm">{file ? file.name : "Selecionar PDF (até ~50MB)"}</p>
-              <p className="text-xs text-muted-foreground">
-                Será lido no navegador e enviado capítulo por capítulo à IA.
-              </p>
+              <p className="font-display text-sm truncate">{c.titulo}</p>
+              <p className="text-xs text-muted-foreground">/{c.slug} · {c.publicado ? "publicado" : "rascunho"}</p>
             </div>
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="hidden"
-            />
-          </label>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button
-            onClick={extrairEEstruturar}
-            disabled={processando || !file || !titulo.trim()}
-            className="h-11 px-5 rounded-full bg-gradient-toga text-primary-foreground font-display text-sm inline-flex items-center gap-2 disabled:opacity-50"
-          >
-            {processando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            Extrair e estruturar com IA
-          </button>
-          {progresso && <span className="text-xs text-muted-foreground">{progresso}</span>}
-        </div>
-        {erros.length > 0 && (
-          <div className="mt-3 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300 space-y-1">
-            <p className="font-display">Capítulos que falharam (você pode publicar o resto):</p>
-            {erros.map((e, i) => (
-              <p key={i}>• {e}</p>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Preview da estrutura */}
-      {estrutura && estrutura.modulos.length > 0 && stats && (
-        <section className="rounded-2xl border border-border bg-card p-5 mb-8">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-            <div>
-              <h2 className="font-display text-lg">Prévia da estrutura</h2>
-              <p className="text-xs text-muted-foreground">
-                {stats.modulos} módulos · {stats.aulas} aulas · {stats.slides} slides ·{" "}
-                {stats.quizzes} quizzes · ~{stats.minutos} min
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => publicar.mutate(false)}
-                disabled={publicar.isPending || processando}
-                className="h-10 px-4 rounded-full border border-border text-sm inline-flex items-center gap-2 disabled:opacity-50"
-              >
-                Salvar rascunho
-              </button>
-              <button
-                onClick={() => publicar.mutate(true)}
-                disabled={publicar.isPending || processando}
-                className="h-10 px-4 rounded-full bg-gradient-gold text-gold-foreground font-display text-sm inline-flex items-center gap-2 disabled:opacity-50"
-              >
-                {publicar.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                Publicar agora
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
-            {estrutura.modulos.map((m, mi) => (
-              <details key={mi} className="rounded-xl border border-border bg-background p-3" open={mi === 0}>
-                <summary className="cursor-pointer font-display text-sm">
-                  {mi + 1}. {m.titulo}{" "}
-                  <span className="text-xs text-muted-foreground">
-                    ({m.aulas.length} aulas)
-                  </span>
-                </summary>
-                <div className="mt-3 space-y-2">
-                  {m.aulas.map((a, ai) => (
-                    <details key={ai} className="rounded-lg border border-border/60 bg-card/40 p-2">
-                      <summary className="cursor-pointer text-xs flex items-center justify-between gap-2">
-                        <span>
-                          <span className="text-muted-foreground">{mi + 1}.{ai + 1}</span>{" "}
-                          {a.titulo}{" "}
-                          <span className="opacity-70">
-                            ({a.slides?.length ?? 0} slides · {a.duracao_min ?? 10}min)
-                          </span>
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            const slides = (a.slides ?? []).map((s, i) => ({
-                              id: `preview-${mi}-${ai}-${i}`,
-                              aula_id: `preview-${mi}-${ai}`,
-                              ordem: s.ordem ?? i,
-                              tipo: s.tipo as any,
-                              conteudo: s.conteudo ?? {},
-                              imagem_url: s.imagem_url ?? null,
-                              quiz_json: s.quiz_json ?? null,
-                            })) as SlideRow[];
-                            if (!slides.length) return;
-                            setPreviewSlide({ slides, aulaTitulo: a.titulo, inicio: 0 });
-                          }}
-                          className="h-7 px-3 rounded-full border border-border text-[11px] inline-flex items-center gap-1 hover:bg-accent"
-                        >
-                          <Play className="h-3 w-3" /> Pré-visualizar
-                        </button>
-                      </summary>
-                      <ol className="mt-2 pl-4 space-y-1 text-[11px] text-muted-foreground">
-                        {(a.slides ?? []).map((s, si) => (
-                          <li key={si} className="flex items-center gap-2">
-                            <span className="inline-flex h-5 px-2 rounded-full bg-muted text-foreground/80 items-center text-[10px] uppercase tracking-wider">
-                              {s.tipo}
-                            </span>
-                            <span className="truncate">
-                              {s.conteudo?.titulo ?? s.conteudo?.texto?.slice(0, 60) ?? "—"}
-                            </span>
-                          </li>
-                        ))}
-                      </ol>
-                    </details>
-                  ))}
-                </div>
-              </details>
-            ))}
-          </div>
-          {chunks.length > 0 && (
-            <p className="mt-3 text-[11px] text-muted-foreground">
-              {chunks.length} chunk(s) detectados no PDF.
-            </p>
-          )}
-        </section>
-      )}
-
-      {/* Lista de cursos */}
-      <section>
-        <h2 className="font-display text-lg mb-3">Cursos existentes</h2>
-        {cursosQ.isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
-        {cursosQ.data && cursosQ.data.length === 0 && (
-          <p className="text-sm text-muted-foreground">Nenhum curso ainda.</p>
-        )}
-        <ul className="space-y-2">
-          {cursosQ.data?.map((c: any) => (
-            <li
-              key={c.id}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card p-3"
+            <button
+              onClick={() => togglePub.mutate({ id: c.id, publicado: !c.publicado })}
+              className="h-9 px-3 rounded-full border border-border text-xs inline-flex items-center gap-1"
+              title={c.publicado ? "Despublicar" : "Publicar"}
             >
-              <div className="flex-1 min-w-0">
-                <p className="font-display text-sm truncate">{c.titulo}</p>
-                <p className="text-xs text-muted-foreground">
-                  /{c.slug} · {c.publicado ? "publicado" : "rascunho"}
-                </p>
-              </div>
-              <button
-                onClick={() => togglePub.mutate({ id: c.id, publicado: !c.publicado })}
-                className="h-9 px-3 rounded-full border border-border text-xs inline-flex items-center gap-1"
-                title={c.publicado ? "Despublicar" : "Publicar"}
-              >
-                {c.publicado ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              </button>
-              <button
-                onClick={() => {
-                  if (confirm("Excluir curso e todos os módulos/aulas/slides?")) {
-                    remover.mutate(c.id);
-                  }
-                }}
-                className="h-9 px-3 rounded-full border border-border text-xs text-red-400 inline-flex items-center gap-1"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {/* Modal preview */}
-      {previewSlide && (
-        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm">
-          <button
-            onClick={() => setPreviewSlide(null)}
-            className="absolute top-4 right-4 z-10 h-10 w-10 rounded-full border border-border bg-card inline-flex items-center justify-center hover:bg-accent"
-            aria-label="Fechar"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <SlidePlayer
-            slides={previewSlide.slides}
-            tituloAula={`[Prévia] ${previewSlide.aulaTitulo}`}
-            voltarHref="/admin/aulas-interativas"
-            slideInicial={previewSlide.inicio}
-          />
-        </div>
-      )}
-    </div>
+              {c.publicado ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+            </button>
+            <button
+              onClick={() => { if (confirm("Excluir curso?")) remover.mutate(c.id); }}
+              className="h-9 px-3 rounded-full border border-border text-xs text-red-400 inline-flex items-center gap-1"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
+}
+
+function statusColor(s: string) {
+  if (s === "concluido") return "text-emerald-400";
+  if (s === "erro") return "text-red-400";
+  if (s === "processando") return "text-amber-400";
+  return "text-muted-foreground";
 }
 
 function slugify(s: string): string {
