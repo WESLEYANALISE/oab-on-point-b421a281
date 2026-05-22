@@ -297,6 +297,15 @@
   }
   .step-next-hint { animation: step-next-hint 1.8s ease-in-out infinite; }
 
+  /* ===== Arrow bounce — seta do CTA indo pra direita ===== */
+  @keyframes arrow-bounce {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(8px); }
+  }
+  .animate-arrow-bounce {
+    animation: arrow-bounce 1.1s ease-in-out infinite;
+  }
+
   @keyframes step-progress-shimmer {
     0%   { background-position: 0% 50%; }
     100% { background-position: 200% 50%; }
