@@ -64,10 +64,8 @@ function Welcome() {
 
   const handleStart = useCallback(() => {
     setTransitioning(true);
-    window.setTimeout(() => {
-      setChoiceOpen(true);
-      window.setTimeout(() => setTransitioning(false), 250);
-    }, 650);
+    setChoiceOpen(true);
+    window.setTimeout(() => setTransitioning(false), 600);
   }, []);
   const handleChoice = useCallback((mode: "login" | "signup") => {
     setChoiceOpen(false);
