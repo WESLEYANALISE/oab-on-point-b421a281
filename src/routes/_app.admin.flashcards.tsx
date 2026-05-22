@@ -42,6 +42,10 @@ function AdminFlashcards() {
     queryKey: ["admin-fc-curados"],
     queryFn: () => listFn(),
     refetchInterval: 8_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    placeholderData: (prev) => prev,
+    refetchOnMount: false,
   });
 
   const queueState = useFCQueue();
@@ -109,13 +113,15 @@ function AdminFlashcards() {
         </p>
       </header>
 
-      {isLoading && (
-        <div className="py-12 text-center text-muted-foreground inline-flex items-center gap-2">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+      {isLoading && !data && (
+        <div className="space-y-2 mb-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-16 rounded-xl border bg-card animate-pulse" />
+          ))}
         </div>
       )}
 
-      {!isLoading && !areaSelecionada && (
+      {!areaSelecionada && (data || !isLoading) && (
         <div>
           <div className="mb-4 p-3 rounded-xl border border-gold/30 bg-gold/5 flex items-start gap-3">
             <Zap className="h-5 w-5 text-gold mt-0.5 flex-shrink-0" />
@@ -154,7 +160,7 @@ function AdminFlashcards() {
         </div>
       )}
 
-      {!isLoading && areaSelecionada && (
+      {areaSelecionada && (data || !isLoading) && (
         <div>
           <div className="flex items-center justify-between gap-2 mb-3">
             <button
