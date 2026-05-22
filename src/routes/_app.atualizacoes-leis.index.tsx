@@ -128,10 +128,19 @@ function AtualizacoesLeisPage() {
     });
   }, [ano, mes, contagemPorDia]);
 
+  const aplicaFiltros = (a: { tipo: string; numero: string; ementa: string }) =>
+    (filtro === "todos" || a.tipo === filtro) &&
+    matchPreset(a, preset) &&
+    matchLeisAcompanhadas(a, leisAcompanhadas);
+
   const atosDoDia = useMemo(() => {
     if (!diaSel) return [];
-    return atos.filter((a) => a.data_dou === diaSel && (filtro === "todos" || a.tipo === filtro));
-  }, [atos, diaSel, filtro]);
+    return atos.filter((a) => a.data_dou === diaSel && aplicaFiltros(a));
+  }, [atos, diaSel, filtro, preset, leisAcompanhadas]);
+
+  const filtroAtivo = preset !== "todos" || leisAcompanhadas.length > 0 || filtro !== "todos";
+  const presetLabel = PRESETS.find((p) => p.key === preset)?.label ?? "Todos";
+
 
   const diaSelInfo = useMemo(
     () => diasDoMes.find((d) => d.iso === diaSel) ?? null,
