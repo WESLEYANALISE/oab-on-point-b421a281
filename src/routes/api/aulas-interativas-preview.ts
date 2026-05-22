@@ -159,17 +159,6 @@ function fallbackEsqueleto(titulo: string, materia: string, paginas: PaginaFonte
   return { titulo_sugerido: titulo, materia_sugerida: materia, modulos };
 }
 
-function fallbackSlides(aula: any) {
-  const titulo = aula?.titulo ?? "Aula";
-  const escopo = aula?.escopo ?? aula?.descricao ?? "Tema central da aula.";
-  return [
-    { ordem: 0, tipo: "capa", conteudo: { titulo, objetivos: ["Entender o núcleo do tema", "Fixar os pontos cobrados na OAB"] }, imagem_url: null, quiz_json: null },
-    { ordem: 1, tipo: "conceito", conteudo: { titulo: "Ideia central", texto: escopo, destaque: "Revise o conceito e relacione com a aplicação prática." }, imagem_url: null, quiz_json: null },
-    { ordem: 2, tipo: "resumo", conteudo: { titulo: "O que vimos", bullets: ["Conceito principal", "Pontos de atenção", "Aplicação em prova"] }, imagem_url: null, quiz_json: null },
-    { ordem: 3, tipo: "quiz", conteudo: { titulo: "Teste rápido" }, imagem_url: null, quiz_json: { pergunta: `Qual é o ponto mais importante em ${titulo}?`, alternativas: [{ letra: "A", texto: "Identificar o conceito e sua consequência jurídica" }, { letra: "B", texto: "Ignorar o contexto normativo" }, { letra: "C", texto: "Aplicar regra sem analisar o caso" }, { letra: "D", texto: "Memorizar sem compreender" }], correta: "A", explicacao: "A compreensão do conceito e da consequência jurídica é a base para resolver questões." } },
-  ];
-}
-
 function splitSentences(text: string, max = 8) {
   const cleaned = text.replace(/\s+/g, " ").trim();
   const sentences = cleaned.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((s) => s.trim()).filter(Boolean) ?? [];
