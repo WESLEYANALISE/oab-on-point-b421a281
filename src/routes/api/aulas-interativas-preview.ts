@@ -42,63 +42,6 @@ SAÍDA: APENAS JSON válido, sem markdown ao redor:
   ]
 }`;
 
-const SYSTEM_SLIDES_AULA = `Você gera SLIDES INTERATIVOS para UMA aula de um curso jurídico (OAB, português do Brasil).
-
-Você receberá: módulo, título da aula, escopo e trechos relevantes do material.
-
-OBJETIVO: a aula deve ser um estudo COMPLETO e PROFUNDO, não um resumo. O aluno precisa:
-- entender o conceito (texto + exemplos + comparativos);
-- praticar no meio da aula (quiz de revisão);
-- aplicar em caso concreto (caso_pratico);
-- fixar o vocabulário (ligar_termos);
-- revisar com dicas estratégicas (dicas);
-- testar de novo no final (quiz estilo OAB).
-
-REGRAS RÍGIDAS:
-- Gere de 8 a 11 slides seguindo este roteiro (pule um item APENAS se for genuinamente inaplicável, e nunca pule mais de 2):
-  1. capa (objetivos com 3-4 itens)
-  2. conceito (texto com 2-4 parágrafos, com **negrito** nos termos-chave; destaque com 1 frase-âncora)
-  3. exemplo (caso real, jurisprudência ou questão OAB aplicada — texto com 2-3 parágrafos)
-  4. comparativo (correntes, escolas, regras opostas — opcional, mas inclua quando houver contraste relevante)
-  5. quiz (REVISÃO no meio da aula, mais simples)
-  6. conceito (segundo aprofundamento OU detalhe técnico)
-  7. caso_pratico (enunciado curto + pergunta + analise revelável)
-  8. ligar_termos (4 a 6 pares termo↔definição extraídos da aula)
-  9. esquema (passo-a-passo numerado, 4-6 itens)
-  10. dicas (3 a 5 dicas; cada dica com {"tipo": "dica"|"atencao"|"alvo"|"estrela", "texto": "..."})
-  11. resumo (5-6 bullets)
-  12. quiz (FINAL estilo OAB — mini-caso + 4 alternativas + explicação que diga por que as outras estão erradas)
-  13. conclusao (texto com fecho; destaque com frase motivadora)
-- A aula DEVE ter no mínimo 2 quizzes, 1 ligar_termos, 1 dicas, 1 caso_pratico.
-- Quizzes: enunciado realista; explicação detalha por que cada alternativa errada está errada.
-- Texto de conceito é DENSO: explique, exemplifique, contextualize. Use **negrito** markdown em termos-chave.
-- Não invente fatos: use só o material. Mas você PODE reformular, exemplificar e cruzar conteúdos do próprio material.
-
-TIPOS VÁLIDOS: "capa", "conceito", "exemplo", "esquema", "comparativo", "quiz", "resumo", "conclusao", "ligar_termos", "dicas", "caso_pratico".
-
-SCHEMA DE CONTEUDO POR TIPO:
-- capa:           { "titulo": "...", "objetivos": ["...","..."] }
-- conceito:       { "titulo": "...", "texto": "parágrafos com **negrito**", "destaque": "frase-âncora" }
-- exemplo:        { "titulo": "...", "texto": "caso/aplicação em 2-3 parágrafos", "destaque": "lição prática" }
-- comparativo:    { "titulo": "...", "colunas": [{"titulo":"Corrente A","itens":["...","..."]}, {"titulo":"Corrente B","itens":["...","..."]}] }
-- esquema:        { "titulo": "...", "bullets": ["passo 1", "passo 2", "..."] }
-- ligar_termos:   { "titulo": "...", "pares": [{"termo":"...","definicao":"..."}, ...] }
-- dicas:          { "titulo": "...", "dicas": [{"tipo":"dica","texto":"..."}, {"tipo":"atencao","texto":"..."}, {"tipo":"alvo","texto":"..."}] }
-- caso_pratico:   { "titulo": "...", "enunciado": "fatos em 1-2 parágrafos", "pergunta": "pergunta jurídica direta", "analise": "raciocínio jurídico em 2-3 parágrafos com **negrito**" }
-- resumo:         { "titulo": "...", "bullets": ["...","..."] }
-- conclusao:      { "titulo": "...", "texto": "fecho conectando ao próximo tema", "destaque": "frase motivadora" }
-- quiz: o conteúdo fica em "quiz_json" (e "conteudo" só com {"titulo":"Teste rápido"} ou similar):
-    quiz_json: { "pergunta": "...", "alternativas": [{"letra":"A","texto":"..."}, ...], "correta": "A", "explicacao": "por que A é correta E por que B, C, D estão erradas" }
-
-SAÍDA: APENAS JSON válido (sem markdown ao redor):
-{
-  "slides": [
-    { "ordem": 0, "tipo": "capa", "conteudo": {...}, "imagem_url": null, "quiz_json": null },
-    ...
-  ]
-}`;
-
-
 function sseEvent(event: string, data: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
@@ -216,14 +159,41 @@ function fallbackEsqueleto(titulo: string, materia: string, paginas: PaginaFonte
   return { titulo_sugerido: titulo, materia_sugerida: materia, modulos };
 }
 
-function fallbackSlides(aula: any) {
-  const titulo = aula?.titulo ?? "Aula";
-  const escopo = aula?.escopo ?? aula?.descricao ?? "Tema central da aula.";
+function splitSentences(text: string, max = 8) {
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  const sentences = cleaned.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((s) => s.trim()).filter(Boolean) ?? [];
+  return sentences.slice(0, max);
+}
+
+function pickSentences(text: string, start: number, count: number, fallback: string) {
+  const sentences = splitSentences(text, start + count + 2).slice(start, start + count);
+  return sentences.length ? sentences.join(" ") : fallback;
+}
+
+function buildLocalSlides(aula: any, trechos: string) {
+  const titulo = String(aula?.titulo ?? "Aula");
+  const escopo = String(aula?.escopo ?? aula?.descricao ?? "Tema central da aula.");
+  const base = compactText(trechos.replace(/PÁGINA \d+:/g, " ").replace(/---/g, " "), 9_000);
+  const conceito1 = pickSentences(base, 0, 4, escopo);
+  const conceito2 = pickSentences(base, 4, 4, escopo);
+  const exemplo = pickSentences(base, 8, 3, `Aplique ${titulo} a um caso concreto, identificando o conceito, a regra e a consequência jurídica.`);
+  const termos = extractTokens(titulo, escopo, base).slice(0, 5);
+  const pares = (termos.length ? termos : ["conceito", "regra", "aplicação", "exceção"]).map((termo) => ({
+    termo: termo.charAt(0).toUpperCase() + termo.slice(1),
+    definicao: `Ponto ligado ao estudo de ${titulo}, conforme o material extraído.`,
+  }));
+
   return [
-    { ordem: 0, tipo: "capa", conteudo: { titulo, objetivos: ["Entender o núcleo do tema", "Fixar os pontos cobrados na OAB"] }, imagem_url: null, quiz_json: null },
-    { ordem: 1, tipo: "conceito", conteudo: { titulo: "Ideia central", texto: escopo, destaque: "Revise o conceito e relacione com a aplicação prática." }, imagem_url: null, quiz_json: null },
-    { ordem: 2, tipo: "resumo", conteudo: { titulo: "O que vimos", bullets: ["Conceito principal", "Pontos de atenção", "Aplicação em prova"] }, imagem_url: null, quiz_json: null },
-    { ordem: 3, tipo: "quiz", conteudo: { titulo: "Teste rápido" }, imagem_url: null, quiz_json: { pergunta: `Qual é o ponto mais importante em ${titulo}?`, alternativas: [{ letra: "A", texto: "Identificar o conceito e sua consequência jurídica" }, { letra: "B", texto: "Ignorar o contexto normativo" }, { letra: "C", texto: "Aplicar regra sem analisar o caso" }, { letra: "D", texto: "Memorizar sem compreender" }], correta: "A", explicacao: "A compreensão do conceito e da consequência jurídica é a base para resolver questões." } },
+    { ordem: 0, tipo: "capa", conteudo: { titulo, objetivos: ["Compreender o tema no contexto da OAB", "Identificar conceitos centrais", "Aplicar o raciocínio em questões"] }, imagem_url: null, quiz_json: null },
+    { ordem: 1, tipo: "conceito", conteudo: { titulo: "Base conceitual", texto: conceito1, destaque: "Domine o conceito antes de resolver o caso." }, imagem_url: null, quiz_json: null },
+    { ordem: 2, tipo: "exemplo", conteudo: { titulo: "Aplicação prática", texto: exemplo, destaque: "Em prova, conecte fato, regra e consequência." }, imagem_url: null, quiz_json: null },
+    { ordem: 3, tipo: "quiz", conteudo: { titulo: "Teste rápido" }, imagem_url: null, quiz_json: { pergunta: `Ao estudar ${titulo}, qual postura é mais adequada?`, alternativas: [{ letra: "A", texto: "Relacionar conceito, fundamento e aplicação prática" }, { letra: "B", texto: "Memorizar palavras isoladas do material" }, { letra: "C", texto: "Ignorar exceções e detalhes do enunciado" }, { letra: "D", texto: "Responder sem identificar a regra aplicável" }], correta: "A", explicacao: "A alternativa A é correta porque organiza o raciocínio jurídico. B, C e D prejudicam a análise do caso e aumentam o risco de erro." } },
+    { ordem: 4, tipo: "conceito", conteudo: { titulo: "Aprofundamento", texto: conceito2, destaque: "Atenção às palavras que alteram o alcance da regra." }, imagem_url: null, quiz_json: null },
+    { ordem: 5, tipo: "caso_pratico", conteudo: { titulo: "Caso prático", enunciado: `Uma questão apresenta situação relacionada a ${titulo}.`, pergunta: "Qual é o primeiro passo para resolver corretamente?", analise: `Identifique o instituto central, destaque os fatos juridicamente relevantes e confronte com o conteúdo estudado. Em ${titulo}, a resposta nasce da ligação entre conceito e aplicação.` }, imagem_url: null, quiz_json: null },
+    { ordem: 6, tipo: "ligar_termos", conteudo: { titulo: "Ligue os termos", pares }, imagem_url: null, quiz_json: null },
+    { ordem: 7, tipo: "dicas", conteudo: { titulo: "Dicas de prova", dicas: [{ tipo: "dica", texto: "Leia o enunciado procurando a regra cobrada." }, { tipo: "atencao", texto: "Cuidado com alternativas absolutas quando o tema admite nuances." }, { tipo: "alvo", texto: "Revise conceitos que aparecem de forma repetida no material." }] }, imagem_url: null, quiz_json: null },
+    { ordem: 8, tipo: "resumo", conteudo: { titulo: "Resumo final", bullets: ["Conceito central", "Aplicação prática", "Pontos de atenção", "Vocabulário essencial", "Estratégia de prova"] }, imagem_url: null, quiz_json: null },
+    { ordem: 9, tipo: "quiz", conteudo: { titulo: "Questão final" }, imagem_url: null, quiz_json: { pergunta: `Em uma questão de OAB sobre ${titulo}, o melhor caminho é:`, alternativas: [{ letra: "A", texto: "Ler os fatos, identificar o instituto e aplicar a consequência jurídica" }, { letra: "B", texto: "Escolher a alternativa mais longa" }, { letra: "C", texto: "Desconsiderar o contexto do material" }, { letra: "D", texto: "Responder só por familiaridade com o tema" }], correta: "A", explicacao: "A é correta porque reproduz o método jurídico adequado. B, C e D são atalhos inseguros e não garantem aderência ao conteúdo." } },
   ];
 }
 
@@ -423,19 +393,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                     descricao: aul.descricao,
                     escopo: aul.escopo,
                   }, 14_000);
-                  const userAula =
-                    `MÓDULO: ${mod.titulo}\nDescrição do módulo: ${mod.descricao ?? ""}\n\n` +
-                    `AULA: ${aul.titulo}\nDescrição: ${aul.descricao ?? ""}\nEscopo: ${aul.escopo ?? ""}\n\n` +
-                    `TRECHOS DO MATERIAL:\n${trechos}`;
-                  let slides: any[] = [];
-                  try {
-                    const resp = await callGeminiJson(SYSTEM_SLIDES_AULA, userAula, 9_000);
-                    slides = Array.isArray(resp?.slides) ? resp.slides : [];
-                    if (slides.length === 0) slides = fallbackSlides(aul);
-                  } catch (e: any) {
-                    console.error("[preview] aula falhou; usando fallback:", aul?.titulo, e?.message);
-                    slides = fallbackSlides(aul);
-                  }
+                  const slides = buildLocalSlides(aul, trechos);
                   aulasOut.push({
                     titulo: aul.titulo,
                     descricao: aul.descricao ?? "",
