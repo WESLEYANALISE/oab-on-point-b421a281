@@ -232,10 +232,9 @@ function Welcome() {
                   <img
                     src={oabEmblem}
                     alt="OAB"
-                    className="h-[clamp(3.6rem,14vw,6rem)] w-auto object-contain"
+                    className="h-[clamp(5.5rem,22vw,9rem)] w-auto object-contain"
                     style={{
-                      animation: "neonPulseText 3s ease-in-out 2s infinite",
-                      filter: "drop-shadow(0 0 28px rgba(212,168,75,0.8)) drop-shadow(0 0 60px rgba(212,168,75,0.5)) drop-shadow(0 2px 8px rgba(0,0,0,0.6))",
+                      filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.85)) drop-shadow(0 2px 4px rgba(0,0,0,0.9))",
                     }}
                   />
                 </div>
