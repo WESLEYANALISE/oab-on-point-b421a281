@@ -465,15 +465,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                     `MÓDULO: ${mod.titulo}\nDescrição do módulo: ${mod.descricao ?? ""}\n\n` +
                     `AULA: ${aul.titulo}\nDescrição: ${aul.descricao ?? ""}\nEscopo: ${aul.escopo ?? ""}\n\n` +
                     `TRECHOS DO MATERIAL:\n${trechos}`;
-                  let slides: any[] = [];
-                  try {
-                    const resp = await callGeminiJson(SYSTEM_SLIDES_AULA, userAula, 9_000);
-                    slides = Array.isArray(resp?.slides) ? resp.slides : [];
-                    if (slides.length === 0) slides = fallbackSlides(aul);
-                  } catch (e: any) {
-                    console.error("[preview] aula falhou; usando fallback:", aul?.titulo, e?.message);
-                    slides = fallbackSlides(aul);
-                  }
+                  const slides = buildLocalSlides(aul, trechos);
                   aulasOut.push({
                     titulo: aul.titulo,
                     descricao: aul.descricao ?? "",
