@@ -565,6 +565,43 @@ function ArquivoMaterialItem({
             Apagar extração
           </button>
         )}
+
+        <button
+          onClick={async () => {
+            const msg = arquivo.curso_id
+              ? "Apagar o curso publicado E a extração deste material? Essa ação não pode ser desfeita."
+              : "Apagar extração e resetar este material? Você poderá começar do zero.";
+            if (!confirm(msg)) return;
+            setAcao("extrair");
+            setProgresso("Apagando…");
+            try {
+              if (arquivo.curso_id) {
+                await excluirCurso({ data: { id: arquivo.curso_id } });
+              }
+              if (temExtracao) {
+                await apagarExtracaoArquivo({ data: { arquivoDriveId: arquivo.id } });
+              }
+              await atualizarStatusDrive({
+                data: { id: arquivo.id, status_ingestao: "pendente", curso_id: null, erro_msg: null },
+              });
+              toast.success("Material apagado e resetado");
+              setProgresso("");
+              setEstrutura(null);
+              qc.invalidateQueries({ queryKey: ["admin"] });
+              onChanged();
+            } catch (e: any) {
+              toast.error(e?.message ?? "Falha ao apagar");
+            } finally {
+              setAcao(null);
+            }
+          }}
+          disabled={acao !== null}
+          className="h-9 px-3 rounded-full border border-destructive/60 bg-destructive/10 text-destructive text-xs inline-flex items-center gap-1.5 disabled:opacity-50 hover:bg-destructive/20"
+          title={arquivo.curso_id ? "Apagar o curso publicado e resetar o material" : "Resetar este material"}
+        >
+          <Trash2 className="h-3 w-3" />
+          {arquivo.curso_id ? "Apagar curso" : "Apagar tudo"}
+        </button>
       </div>
 
       {progresso && <p className="mt-2 text-[11px] text-muted-foreground">{progresso}</p>}
