@@ -501,3 +501,132 @@ function formatarDia(iso: string) {
   const [y, m, d] = iso.split("-").map(Number);
   return `${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y}`;
 }
+
+function FiltrosPanel({
+  aberto, onClose, preset, onPreset, filtroTipo, onFiltroTipo,
+  leisAcompanhadas, onToggleLei, onLimpar,
+}: {
+  aberto: boolean;
+  onClose: () => void;
+  preset: PresetKey;
+  onPreset: (p: PresetKey) => void;
+  filtroTipo: string;
+  onFiltroTipo: (t: string) => void;
+  leisAcompanhadas: string[];
+  onToggleLei: (slug: string) => void;
+  onLimpar: () => void;
+}) {
+  return (
+    <Sheet open={aberto} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col gap-0">
+        <SheetHeader className="px-5 pt-5 pb-3 border-b border-border">
+          <SheetTitle className="font-display text-xl">Filtros</SheetTitle>
+          <SheetDescription>
+            Escolha um tema rápido ou marque as leis que você quer acompanhar.
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+          <section>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Filtros rápidos</p>
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((p) => {
+                const ativo = preset === p.key;
+                return (
+                  <button
+                    key={p.key}
+                    onClick={() => onPreset(p.key)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
+                      ativo
+                        ? "bg-gold text-gold-foreground border-gold"
+                        : "bg-card text-muted-foreground border-border hover:text-foreground",
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Por tipo de ato</p>
+            <div className="flex flex-wrap gap-2">
+              {FILTROS.map((f) => {
+                const ativo = filtroTipo === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => onFiltroTipo(f.key)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
+                      ativo
+                        ? "bg-foreground text-background border-foreground"
+                        : "bg-card text-muted-foreground border-border hover:text-foreground",
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <div className="flex items-baseline justify-between mb-2">
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Leis importantes</p>
+              {leisAcompanhadas.length > 0 && (
+                <span className="text-[11px] text-gold font-semibold">
+                  {leisAcompanhadas.length} marcada{leisAcompanhadas.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Marque as leis que mais importam pra você. A lista vai mostrar quando elas forem alteradas.
+            </p>
+            <ul className="space-y-1.5">
+              {LEIS_IMPORTANTES.map((lei) => {
+                const marcada = leisAcompanhadas.includes(lei.slug);
+                return (
+                  <li key={lei.slug}>
+                    <label
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors",
+                        marcada
+                          ? "bg-gold/10 border-gold/40 text-foreground"
+                          : "bg-card border-border hover:border-gold/30",
+                      )}
+                    >
+                      <Checkbox
+                        checked={marcada}
+                        onCheckedChange={() => onToggleLei(lei.slug)}
+                        className="data-[state=checked]:bg-gold data-[state=checked]:border-gold"
+                      />
+                      <span className="text-sm leading-tight">{lei.label}</span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </div>
+
+        <div className="px-5 py-4 border-t border-border flex items-center justify-between gap-3">
+          <button
+            onClick={onLimpar}
+            className="text-xs text-muted-foreground hover:text-foreground font-semibold"
+          >
+            Limpar filtros
+          </button>
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-full bg-gold text-gold-foreground text-sm font-semibold hover:opacity-90"
+          >
+            Ver resultados
+          </button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
