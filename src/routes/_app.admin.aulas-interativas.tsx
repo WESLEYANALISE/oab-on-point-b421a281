@@ -181,7 +181,7 @@ function AbaDrive() {
   });
 
   const materiais = useMemo(
-    () => (arquivosQ.data ?? []).filter((a) => a.tipo === "material"),
+    () => ordenarOAB((arquivosQ.data ?? []).filter((a) => a.tipo === "material")),
     [arquivosQ.data],
   );
 
