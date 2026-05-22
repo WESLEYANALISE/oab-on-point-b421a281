@@ -117,12 +117,6 @@ function ResumosIndex() {
       <header className="mb-6">
         {area ? (
           <>
-            <button
-              onClick={() => navigate({ search: {} })}
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" /> Todas as áreas
-            </button>
             <p className="text-xs uppercase tracking-widest text-muted-foreground inline-flex items-center gap-2">
               <FolderOpen className="h-3.5 w-3.5" /> Área
             </p>
@@ -131,6 +125,7 @@ function ResumosIndex() {
               {livrosDaArea.length} {livrosDaArea.length === 1 ? "livro" : "livros"} com resumo.
             </p>
           </>
+
         ) : (
           <>
             <p className="text-xs uppercase tracking-widest text-muted-foreground inline-flex items-center gap-2">
