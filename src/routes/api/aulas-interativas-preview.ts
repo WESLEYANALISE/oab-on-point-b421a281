@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { geminiGenerateContent } from "@/lib/gemini.server";
+import { buildLongSlides } from "@/lib/aulas-interativas-long-slides";
 
 const MODEL = "gemini-2.5-flash";
 
@@ -510,7 +511,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                     descricao: aul.descricao,
                     escopo: aul.escopo,
                   }, 14_000);
-                  const slides = buildLocalSlides(aul, trechos);
+                  const slides = buildLongSlides(aul, trechos);
                   aulasOut.push({
                     titulo: aul.titulo,
                     descricao: aul.descricao ?? "",
