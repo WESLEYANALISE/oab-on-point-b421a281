@@ -52,7 +52,7 @@ type AulaDraft = {
 type ModuloDraft = { titulo: string; descricao?: string; aulas: AulaDraft[] };
 type Estrutura = { modulos: ModuloDraft[] };
 
-type TabKey = "drive" | "upload" | "mapas";
+type TabKey = "drive" | "cronogramas" | "bonus" | "upload" | "mapas";
 
 function AdminAulasInterativas() {
   const [tab, setTab] = useState<TabKey>("drive");
@@ -78,17 +78,25 @@ function AdminAulasInterativas() {
 
       <div className="flex flex-wrap gap-2 mb-6 border-b border-border">
         <TabBtn icon={<Library className="h-4 w-4" />} active={tab === "drive"} onClick={() => setTab("drive")}>
-          Importados do Drive
-        </TabBtn>
-        <TabBtn icon={<Upload className="h-4 w-4" />} active={tab === "upload"} onClick={() => setTab("upload")}>
-          Upload manual
+          Materiais de estudo
         </TabBtn>
         <TabBtn icon={<FileText className="h-4 w-4" />} active={tab === "mapas"} onClick={() => setTab("mapas")}>
           Mapas mentais
         </TabBtn>
+        <TabBtn icon={<FileText className="h-4 w-4" />} active={tab === "cronogramas"} onClick={() => setTab("cronogramas")}>
+          Cronogramas
+        </TabBtn>
+        <TabBtn icon={<Sparkles className="h-4 w-4" />} active={tab === "bonus"} onClick={() => setTab("bonus")}>
+          Bônus
+        </TabBtn>
+        <TabBtn icon={<Upload className="h-4 w-4" />} active={tab === "upload"} onClick={() => setTab("upload")}>
+          Upload manual
+        </TabBtn>
       </div>
 
       {tab === "drive" && <AbaDrive />}
+      {tab === "cronogramas" && <AbaListaSimples tipo="cronograma" titulo="Cronogramas" descricao="Cronogramas de estudo importados do Drive." />}
+      {tab === "bonus" && <AbaListaSimples tipo="bonus" titulo="Bônus" descricao="Materiais bônus, e-books e marcadores." />}
       {tab === "upload" && <AbaUpload />}
       {tab === "mapas" && <AbaMapas />}
 
@@ -120,6 +128,45 @@ function TabBtn({
       {icon}
       {children}
     </button>
+  );
+}
+
+/* ============================================================
+   ABA — Lista simples (Cronogramas, Bônus)
+   ============================================================ */
+function AbaListaSimples({ tipo, titulo, descricao }: { tipo: "cronograma" | "bonus"; titulo: string; descricao: string }) {
+  const q = useQuery({
+    queryKey: ["admin", "aulas-interativas", "drive", tipo],
+    queryFn: () => listarArquivosDrive(),
+  });
+  const itens = useMemo(() => (q.data ?? []).filter((a) => a.tipo === tipo), [q.data, tipo]);
+  return (
+    <section className="rounded-2xl border border-border bg-card p-5 mb-8">
+      <h2 className="font-display text-lg mb-2">{titulo}</h2>
+      <p className="text-xs text-muted-foreground mb-4">{itens.length} arquivo(s). {descricao}</p>
+      {q.isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+      <ul className="space-y-2">
+        {itens.map((a) => (
+          <li key={a.id} className="flex items-start gap-3 rounded-xl border border-border bg-background p-3">
+            <FileText className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-sm truncate">{a.nome_arquivo}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {a.subpasta} · {a.bytes ? `${(a.bytes / 1024 / 1024).toFixed(1)} MB` : "?"}
+              </p>
+            </div>
+            {a.pdf_url && (
+              <a href={a.pdf_url} target="_blank" rel="noreferrer" className="text-[11px] text-gold hover:underline">
+                Abrir PDF
+              </a>
+            )}
+          </li>
+        ))}
+        {!q.isLoading && itens.length === 0 && (
+          <li className="text-sm text-muted-foreground">Nenhum arquivo nesta categoria.</li>
+        )}
+      </ul>
+    </section>
   );
 }
 
