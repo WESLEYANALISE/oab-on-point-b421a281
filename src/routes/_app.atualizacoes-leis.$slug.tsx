@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { getAtoConteudo, type AtoSecao } from "@/lib/resenha-sync.functions";
 import brasao from "@/assets/brasao-republica.png";
 
-export const Route = createFileRoute("/_app/atualizacoes-leis/$atoId")({
+export const Route = createFileRoute("/_app/atualizacoes-leis/$slug")({
   head: () => ({ meta: [{ title: "Ato — Atualizações de Leis" }] }),
   component: AtoPage,
 });
@@ -57,11 +57,11 @@ function detectarLeiAlvo(ementa: string | null | undefined): LeiAlvo | null {
 }
 
 function AtoPage() {
-  const { atoId } = Route.useParams();
+  const { slug } = Route.useParams();
   const fn = useServerFn(getAtoConteudo);
   const q = useQuery({
-    queryKey: ["ato-conteudo", atoId],
-    queryFn: () => fn({ data: { id: atoId } }),
+    queryKey: ["ato-conteudo", slug],
+    queryFn: () => fn({ data: { slug } }),
     staleTime: 5 * 60_000,
   });
 

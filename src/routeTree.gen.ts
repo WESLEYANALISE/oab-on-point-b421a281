@@ -61,7 +61,7 @@ import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slu
 import { Route as AppBlogSlugRouteImport } from './routes/_app.blog.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
 import { Route as AppAulasMateriaRouteImport } from './routes/_app.aulas.$materia'
-import { Route as AppAtualizacoesLeisAtoIdRouteImport } from './routes/_app.atualizacoes-leis.$atoId'
+import { Route as AppAtualizacoesLeisSlugRouteImport } from './routes/_app.atualizacoes-leis.$slug'
 import { Route as AppAdminVadeMecumSyncRouteImport } from './routes/_app.admin.vade-mecum-sync'
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
 import { Route as AppAdminResumosRouteImport } from './routes/_app.admin.resumos'
@@ -347,12 +347,11 @@ const AppAulasMateriaRoute = AppAulasMateriaRouteImport.update({
   path: '/$materia',
   getParentRoute: () => AppAulasRoute,
 } as any)
-const AppAtualizacoesLeisAtoIdRoute =
-  AppAtualizacoesLeisAtoIdRouteImport.update({
-    id: '/atualizacoes-leis/$atoId',
-    path: '/atualizacoes-leis/$atoId',
-    getParentRoute: () => AppRoute,
-  } as any)
+const AppAtualizacoesLeisSlugRoute = AppAtualizacoesLeisSlugRouteImport.update({
+  id: '/atualizacoes-leis/$slug',
+  path: '/atualizacoes-leis/$slug',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminVadeMecumSyncRoute = AppAdminVadeMecumSyncRouteImport.update({
   id: '/vade-mecum-sync',
   path: '/vade-mecum-sync',
@@ -514,7 +513,7 @@ export interface FileRoutesByFullPath {
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
   '/admin/vade-mecum-sync': typeof AppAdminVadeMecumSyncRoute
-  '/atualizacoes-leis/$atoId': typeof AppAtualizacoesLeisAtoIdRoute
+  '/atualizacoes-leis/$slug': typeof AppAtualizacoesLeisSlugRoute
   '/aulas/$materia': typeof AppAulasMateriaRouteWithChildren
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/blog/$slug': typeof AppBlogSlugRoute
@@ -589,7 +588,7 @@ export interface FileRoutesByTo {
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
   '/admin/vade-mecum-sync': typeof AppAdminVadeMecumSyncRoute
-  '/atualizacoes-leis/$atoId': typeof AppAtualizacoesLeisAtoIdRoute
+  '/atualizacoes-leis/$slug': typeof AppAtualizacoesLeisSlugRoute
   '/blog/$slug': typeof AppBlogSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
@@ -665,7 +664,7 @@ export interface FileRoutesById {
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
   '/_app/admin/vade-mecum-sync': typeof AppAdminVadeMecumSyncRoute
-  '/_app/atualizacoes-leis/$atoId': typeof AppAtualizacoesLeisAtoIdRoute
+  '/_app/atualizacoes-leis/$slug': typeof AppAtualizacoesLeisSlugRoute
   '/_app/aulas/$materia': typeof AppAulasMateriaRouteWithChildren
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/_app/blog/$slug': typeof AppBlogSlugRoute
@@ -745,7 +744,7 @@ export interface FileRouteTypes {
     | '/admin/resumos'
     | '/admin/simulados'
     | '/admin/vade-mecum-sync'
-    | '/atualizacoes-leis/$atoId'
+    | '/atualizacoes-leis/$slug'
     | '/aulas/$materia'
     | '/biblioteca/$slug'
     | '/blog/$slug'
@@ -820,7 +819,7 @@ export interface FileRouteTypes {
     | '/admin/resumos'
     | '/admin/simulados'
     | '/admin/vade-mecum-sync'
-    | '/atualizacoes-leis/$atoId'
+    | '/atualizacoes-leis/$slug'
     | '/blog/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
@@ -895,7 +894,7 @@ export interface FileRouteTypes {
     | '/_app/admin/resumos'
     | '/_app/admin/simulados'
     | '/_app/admin/vade-mecum-sync'
-    | '/_app/atualizacoes-leis/$atoId'
+    | '/_app/atualizacoes-leis/$slug'
     | '/_app/aulas/$materia'
     | '/_app/biblioteca/$slug'
     | '/_app/blog/$slug'
@@ -1325,11 +1324,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAulasMateriaRouteImport
       parentRoute: typeof AppAulasRoute
     }
-    '/_app/atualizacoes-leis/$atoId': {
-      id: '/_app/atualizacoes-leis/$atoId'
-      path: '/atualizacoes-leis/$atoId'
-      fullPath: '/atualizacoes-leis/$atoId'
-      preLoaderRoute: typeof AppAtualizacoesLeisAtoIdRouteImport
+    '/_app/atualizacoes-leis/$slug': {
+      id: '/_app/atualizacoes-leis/$slug'
+      path: '/atualizacoes-leis/$slug'
+      fullPath: '/atualizacoes-leis/$slug'
+      preLoaderRoute: typeof AppAtualizacoesLeisSlugRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin/vade-mecum-sync': {
@@ -1667,7 +1666,7 @@ interface AppRouteChildren {
   AppProgressoRoute: typeof AppProgressoRoute
   AppQuestoesRoute: typeof AppQuestoesRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
-  AppAtualizacoesLeisAtoIdRoute: typeof AppAtualizacoesLeisAtoIdRoute
+  AppAtualizacoesLeisSlugRoute: typeof AppAtualizacoesLeisSlugRoute
   AppOabCadernoErrosRoute: typeof AppOabCadernoErrosRoute
   AppOabCalendarioRoute: typeof AppOabCalendarioRoute
   AppOabCronogramaRoute: typeof AppOabCronogramaRoute
@@ -1713,7 +1712,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProgressoRoute: AppProgressoRoute,
   AppQuestoesRoute: AppQuestoesRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
-  AppAtualizacoesLeisAtoIdRoute: AppAtualizacoesLeisAtoIdRoute,
+  AppAtualizacoesLeisSlugRoute: AppAtualizacoesLeisSlugRoute,
   AppOabCadernoErrosRoute: AppOabCadernoErrosRoute,
   AppOabCalendarioRoute: AppOabCalendarioRoute,
   AppOabCronogramaRoute: AppOabCronogramaRoute,
