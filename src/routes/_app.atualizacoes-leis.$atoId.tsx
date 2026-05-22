@@ -88,11 +88,24 @@ function AtoPage() {
           Secretaria Especial para Assuntos Jurídicos
         </p>
 
-        {titulo && (
-          <h1 className="font-display text-base md:text-lg font-bold uppercase tracking-wide text-gold mt-5 px-2 max-w-full break-words">
-            {titulo}
-          </h1>
-        )}
+        {(() => {
+          const fallback = (() => {
+            if (!ato.tipo && !ato.numero) return null;
+            const meses = ["JANEIRO","FEVEREIRO","MARÇO","ABRIL","MAIO","JUNHO","JULHO","AGOSTO","SETEMBRO","OUTUBRO","NOVEMBRO","DEZEMBRO"];
+            let data = "";
+            if (ato.data_assinatura) {
+              const [y, m, d] = ato.data_assinatura.split("-").map(Number);
+              if (y && m && d) data = `, DE ${d} DE ${meses[m - 1]} DE ${y}`;
+            }
+            return `${(ato.tipo || "").toUpperCase()}${ato.numero ? ` Nº ${ato.numero}` : ""}${data}`.trim();
+          })();
+          const display = titulo || fallback;
+          return display ? (
+            <h1 className="font-display text-base md:text-lg font-bold uppercase tracking-wide text-gold mt-5 px-2 max-w-full break-words">
+              {display}
+            </h1>
+          ) : null;
+        })()}
 
         <div className="mt-3 w-20 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
       </header>
