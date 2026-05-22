@@ -17,7 +17,7 @@ const SYSTEM_ESQUELETO = `Você é um arquiteto pedagógico que vai PLANEJAR um 
 Sua tarefa AQUI é apenas o ESQUELETO: módulos e aulas (sem slides).
 
 Regras:
-- 2 a 8 módulos. Cada módulo tem 2 a 8 aulas.
+- 2 a 6 módulos. Cada módulo tem 2 a 4 aulas. Total máximo: 18 aulas.
 - "escopo" da aula deve ser 2-4 frases descrevendo exatamente o que aquela aula vai cobrir, com termos-chave do material. Isso será usado depois para gerar os slides.
 - IGNORE conteúdo que não seja jurídico (citações ao professor, logos, propaganda, redes sociais).
 - NÃO invente: use só o que está no material.
@@ -79,6 +79,107 @@ SAÍDA: APENAS JSON válido (sem markdown ao redor):
 
 function sseEvent(event: string, data: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+type PaginaFonte = { n?: number; texto?: string; imagens?: string[] };
+
+const STOPWORDS = new Set([
+  "para", "pela", "pelo", "como", "mais", "menos", "sobre", "entre", "aula", "direito", "juridico", "jurídico",
+  "conceito", "conceitos", "aspectos", "principais", "material", "estudo", "oab", "modulo", "módulo",
+]);
+
+function compactText(text: string, maxChars: number) {
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (cleaned.length <= maxChars) return cleaned;
+  const cut = cleaned.slice(0, maxChars);
+  const lastStop = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("\n"));
+  return cut.slice(0, lastStop > maxChars * 0.75 ? lastStop + 1 : maxChars).trim();
+}
+
+function normalizeText(text: string) {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function extractTokens(...parts: Array<string | undefined | null>) {
+  const raw = normalizeText(parts.filter(Boolean).join(" "));
+  return Array.from(new Set(raw.match(/[a-z0-9]{4,}/g) ?? []))
+    .filter((w) => !STOPWORDS.has(w))
+    .slice(0, 28);
+}
+
+function buildPlanningMaterial(paginas: PaginaFonte[], markdown: string, maxChars = 70_000) {
+  if (!paginas.length) return compactText(markdown, maxChars);
+  const perPage = Math.max(140, Math.min(520, Math.floor(maxChars / Math.max(1, paginas.length)) - 24));
+  const chunks: string[] = [];
+  let used = 0;
+  for (const p of paginas) {
+    const texto = compactText(p.texto ?? "", perPage);
+    if (!texto) continue;
+    const chunk = `PÁGINA ${(p.n ?? chunks.length) + 1}: ${texto}`;
+    used += chunk.length + 2;
+    if (used > maxChars) break;
+    chunks.push(chunk);
+  }
+  return chunks.join("\n\n") || compactText(markdown, maxChars);
+}
+
+function scorePage(text: string, tokens: string[]) {
+  const n = normalizeText(text);
+  let score = 0;
+  for (const t of tokens) {
+    let idx = n.indexOf(t);
+    while (idx !== -1) {
+      score += t.length > 7 ? 3 : 1;
+      idx = n.indexOf(t, idx + t.length);
+    }
+  }
+  return score;
+}
+
+function buildLessonMaterial(
+  paginas: PaginaFonte[],
+  markdown: string,
+  ctx: { modulo?: string; aula?: string; descricao?: string; escopo?: string },
+  maxChars = 28_000,
+) {
+  if (!paginas.length) return compactText(markdown, maxChars);
+  const tokens = extractTokens(ctx.modulo, ctx.aula, ctx.descricao, ctx.escopo);
+  const ranked = paginas
+    .map((p, idx) => ({ p, idx, score: scorePage(p.texto ?? "", tokens) }))
+    .sort((a, b) => b.score - a.score || a.idx - b.idx);
+  const selected = ranked.filter((x) => x.score > 0).slice(0, 10);
+  if (selected.length < 4) selected.push(...ranked.filter((x) => !selected.includes(x)).slice(0, 4 - selected.length));
+  selected.sort((a, b) => ((a.p.n ?? a.idx) - (b.p.n ?? b.idx)));
+
+  const perPage = Math.max(1_400, Math.min(3_200, Math.floor(maxChars / Math.max(1, selected.length)) - 120));
+  return selected.map(({ p, idx }) => {
+    const imgs = Array.isArray(p.imagens) && p.imagens.length ? `\nIMAGENS: ${p.imagens.join(" | ")}` : "";
+    return `PÁGINA ${(p.n ?? idx) + 1}:\n${compactText(p.texto ?? "", perPage)}${imgs}`;
+  }).join("\n\n---\n\n");
+}
+
+function limitarTotalAulas(modulos: any[], limite = 18) {
+  let total = 0;
+  return modulos
+    .map((m) => {
+      const aulas = Array.isArray(m?.aulas) ? m.aulas : [];
+      const restantes = Math.max(0, limite - total);
+      const aulasCortadas = aulas.slice(0, restantes);
+      total += aulasCortadas.length;
+      return { ...m, aulas: aulasCortadas };
+    })
+    .filter((m) => Array.isArray(m.aulas) && m.aulas.length > 0);
+}
+
+function fallbackSlides(aula: any) {
+  const titulo = aula?.titulo ?? "Aula";
+  const escopo = aula?.escopo ?? aula?.descricao ?? "Tema central da aula.";
+  return [
+    { ordem: 0, tipo: "capa", conteudo: { titulo, objetivos: ["Entender o núcleo do tema", "Fixar os pontos cobrados na OAB"] }, imagem_url: null, quiz_json: null },
+    { ordem: 1, tipo: "conceito", conteudo: { titulo: "Ideia central", texto: escopo, destaque: "Revise o conceito e relacione com a aplicação prática." }, imagem_url: null, quiz_json: null },
+    { ordem: 2, tipo: "resumo", conteudo: { titulo: "O que vimos", bullets: ["Conceito principal", "Pontos de atenção", "Aplicação em prova"] }, imagem_url: null, quiz_json: null },
+    { ordem: 3, tipo: "quiz", conteudo: { titulo: "Teste rápido" }, imagem_url: null, quiz_json: { pergunta: `Qual é o ponto mais importante em ${titulo}?`, alternativas: [{ letra: "A", texto: "Identificar o conceito e sua consequência jurídica" }, { letra: "B", texto: "Ignorar o contexto normativo" }, { letra: "C", texto: "Aplicar regra sem analisar o caso" }, { letra: "D", texto: "Memorizar sem compreender" }], correta: "A", explicacao: "A compreensão do conceito e da consequência jurídica é a base para resolver questões." } },
+  ];
 }
 
 function tryParseJson(raw: string): any {
