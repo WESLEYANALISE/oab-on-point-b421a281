@@ -202,19 +202,19 @@ function Welcome() {
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <div className="flex justify-between w-full -mt-2 px-1">
-                    {["1ª Fase", "2ª Fase"].map((word, i) => (
-                      <span
-                        key={word}
-                        className="text-[clamp(1rem,3.2vw,1.5rem)] font-black text-white uppercase whitespace-nowrap"
-                        style={{
-                          fontFamily: "'Georgia', 'Times New Roman', serif",
-                          animation: `neonPulseText 3s ease-in-out ${i * 1}s infinite`,
-                          textShadow: "0 0 20px rgba(212,168,75,0.5), 0 2px 8px rgba(0,0,0,0.6)",
-                        }}
-                      >
-                        {word}
-                      </span>
-                    ))}
+                  {["1ª Fase", "2ª Fase"].map((word, i) => (
+                    <span
+                      key={word}
+                      className="text-[clamp(1.4rem,4.5vw,2.2rem)] font-black text-white uppercase whitespace-nowrap"
+                      style={{
+                        fontFamily: "'Georgia', 'Times New Roman', serif",
+                        animation: `neonPulseText 3s ease-in-out ${i * 1}s infinite`,
+                        textShadow: "0 0 20px rgba(212,168,75,0.5), 0 2px 8px rgba(0,0,0,0.6)",
+                      }}
+                    >
+                      {word}
+                    </span>
+                  ))}
                   </div>
 
                   <svg viewBox="0 0 400 36" className="w-[80%] h-8" preserveAspectRatio="none">
@@ -232,7 +232,7 @@ function Welcome() {
                   <img
                     src={oabEmblem}
                     alt="OAB"
-                    className="h-[clamp(2.4rem,9vw,3.6rem)] w-auto object-contain"
+                    className="h-[clamp(3.6rem,14vw,6rem)] w-auto object-contain"
                     style={{
                       animation: "neonPulseText 3s ease-in-out 2s infinite",
                       filter: "drop-shadow(0 0 18px rgba(212,168,75,0.45)) drop-shadow(0 2px 8px rgba(0,0,0,0.6))",
