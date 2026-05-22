@@ -12,7 +12,7 @@ import {
   X,
   ExternalLink,
 } from "lucide-react";
-import { listResenhaMes } from "@/lib/resenha-sync.functions";
+import { listResenhaMes, buildAtoSlug } from "@/lib/resenha-sync.functions";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
