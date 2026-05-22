@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, CheckCircle2, Clock, PlayCircle } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, PlayCircle } from "lucide-react";
 import { getCursoCompleto, getProgressoCurso } from "@/lib/aulas-interativas.functions";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -37,12 +37,6 @@ function CursoPage() {
 
   return (
     <div className="px-4 md:px-8 py-6 max-w-4xl mx-auto">
-      <Link
-        to="/aulas-interativas"
-        className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground mb-4"
-      >
-        <ArrowLeft className="h-4 w-4" /> Todos os cursos
-      </Link>
 
       <header className="mb-8">
         {curso.materia && (
