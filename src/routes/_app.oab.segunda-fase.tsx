@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ScrollText, Video, GraduationCap, ChevronRight } from "lucide-react";
+import { ScrollText, Video, GraduationCap, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_app/oab/segunda-fase")({
   head: () => ({
