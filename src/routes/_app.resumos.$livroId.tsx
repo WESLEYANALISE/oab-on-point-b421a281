@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, ChevronRight } from "lucide-react";
+import { BookOpen, ChevronRight } from "lucide-react";
 import { resumoLivroQueryOptions } from "@/lib/resumos-queries";
 import { normalizarTitulo } from "@/lib/titulo";
 import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
@@ -25,12 +25,7 @@ function ResumoTimeline() {
 
   return (
     <div className="px-4 md:px-8 py-4 md:py-6 max-w-3xl mx-auto">
-      <Link
-        to="/resumos"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" /> Todos os resumos
-      </Link>
+
 
       <header className="mb-6 flex gap-4 items-start">
         {data.livro.capa && (
