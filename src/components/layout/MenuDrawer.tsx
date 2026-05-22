@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Menu, Home, BookOpen, FileText, Layers, ClipboardList, Target, Sparkles, Newspaper, Award, Scale, Calendar, TrendingUp, Settings, Library, Headphones, User, Crown, ChevronRight, LogOut, HelpCircle, ShieldCheck } from "lucide-react";
 import { useIsAdmin } from "@/hooks/use-admin";
 import { supabase } from "@/integrations/supabase/client";
+import logoNaRisca from "@/assets/logo-oab-na-risca.webp";
 
 const baseGroups = [
   {
