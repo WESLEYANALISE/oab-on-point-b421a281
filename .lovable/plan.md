@@ -1,87 +1,70 @@
-# Aulas interativas — versão "estudo de verdade"
 
-Hoje cada aula tem 3-6 slides curtos e o quiz só no fim. Vou expandir o conteúdo, adicionar interação real (ligar termos, dicas) e encadear as aulas com uma animação de "próxima aula".
+# Welcome OAB na Risca — recriação 1:1 do Welcome.tsx
 
-## 1. Novos tipos de slide
+Substituir a landing atual (`src/routes/index.tsx`) por uma reprodução fiel do `Welcome.tsx` enviado, adaptada para "OAB na Risca". O usuário só vê a tela de auth depois de clicar em "Iniciar jornada" → escolher Entrar/Criar conta → modal abre por cima da welcome (sem sair da rota `/`).
 
-Adicionar 3 tipos novos ao CHECK constraint do banco e ao validador Zod:
+## Identidade visual adaptada
 
-- **`ligar_termos`** — jogo de associar termo ↔ definição (4-6 pares). O aluno clica no termo e depois na definição correspondente; acertos ficam verdes, erros piscam vermelho e voltam. Só libera "Próximo" quando todos os pares estão corretos.
-- **`dicas`** — cartões de "Dicas de prova" (3-5 dicas curtas, cada uma com um ícone e 1-2 frases). Usado perto do fim como "checklist mental" antes do quiz final.
-- **`caso_pratico`** — mini-caso: enunciado curto + pergunta-âncora + revelação ("clique para ver a análise") com o raciocínio jurídico.
+- Marca: "OAB na Risca" / sublinha "Exame da Ordem" (no lugar de "Direito Prime / Estudos Jurídicos").
+- Logo: `src/assets/logo-oab-na-risca.webp` (já existe).
+- Hero image: vou gerar uma `welcome-hero.webp` em `public/` no mesmo espírito visual do original (deusa Themis / advogado em luz dourada, vertical, dark dramatic — combina com a paleta gold/red do projeto).
+- Louros dourados: vou gerar `src/assets/louros-dourados.webp` (coroa de louros dourada em PNG transparente).
+- Headline: "Tudo para você **passar na OAB** em um **só lugar**." (mantendo o destaque em vermelho como no original).
+- V-shape no centro dos louros: **1ª FASE** | **2ª FASE** com **OAB** embaixo (no lugar de Faculdade/Concursos/OAB).
+- Marquee: lista de universidades **trocada por faculdades de Direito brasileiras fortes em OAB** (USP, UFMG, UFRJ, UnB, PUC-SP, FGV, Mackenzie, UFPE, UFC, UFRGS, UFSC, UFPR, UERJ, PUC-Rio, Unicamp) precedido por "Aprovado por estudantes de todo o Brasil".
+- Card persuasivo: "O que é o OAB na Risca?" com texto reescrito sobre a missão da plataforma.
+- Features (6 cards): adaptados para OAB — 1ª Fase, 2ª Fase, Simulados, Flashcards & Mapas Mentais, Vade Mecum, Cronograma personalizado.
+- Showcase / Testimonials / Mockup slideshow: vou criar versões enxutas focadas em OAB (depoimentos de aprovados, screenshots conceituais de funcionalidades da plataforma).
 
-Os tipos existentes (`capa`, `conceito`, `exemplo`, `esquema`, `comparativo`, `quiz`, `resumo`, `conclusao`, `mapa_mental`) continuam funcionando.
+## Fluxo de autenticação
 
-## 2. Geração no Gemini — aulas mais densas
+- Botão "Iniciar jornada" → abre `StartChoiceSheet` (bottom-sheet em mobile, dialog em desktop) com 3 opções: **Criar conta**, **Já tenho conta**, **Entrar como convidado** (essa última leva direto para `/inicio` sem login, se aplicável — caso contrário removo).
+- Escolha → abre `WelcomeAuthModal` com a aba certa (`signup` ou `login`), reusando o fluxo Supabase já existente (`signInWithPassword`, `signUp` com `emailRedirectTo: window.location.origin`).
+- Botão "Suporte" no header → abre `SupportSheet` com link de WhatsApp + e-mail de contato.
+- Sessão ativa continua redirecionando para `/inicio` via `beforeLoad` (já implementado).
 
-Reescrever o prompt `SYSTEM_SLIDES_MODULO` em `src/routes/api/aulas-interativas-preview.ts` para que **cada aula tenha 9-13 slides** seguindo este roteiro pedagógico:
+## Arquivos a criar
 
-```text
-1. capa             — título + 3-4 objetivos
-2. conceito         — definição com texto + destaque
-3. exemplo          — exemplo prático aplicado (caso real / questão OAB)
-4. comparativo      — quando faz sentido, contrastar correntes/escolas
-5. quiz (revisão)   — quiz CURTO no meio da aula, sobre o que viu até aqui
-6. conceito         — segundo conceito / aprofundamento
-7. caso_pratico     — mini-caso com análise revelável
-8. ligar_termos     — 4-6 pares termo ↔ definição da aula
-9. esquema          — passo-a-passo ou fluxograma do raciocínio
-10. dicas           — 3-5 dicas finais ("cai na OAB", "pegadinha", "decoreba")
-11. resumo          — bullets do que vimos
-12. quiz (final)    — quiz mais difícil, estilo OAB
-13. conclusao       — fecho + frase de transição para a próxima aula
-```
+Componentes welcome:
+- `src/components/welcome/StartChoiceSheet.tsx`
+- `src/components/welcome/WelcomeAuthModal.tsx` (Tabs login/signup integrados ao Supabase)
+- `src/components/welcome/SupportSheet.tsx`
+- `src/components/welcome/DesktopMockupRotator.tsx` (rotaciona screenshots conceituais; lazy)
+- `src/components/welcome/MockupSlideshow.tsx` (carrossel mobile)
+- `src/components/welcome/AppShowcaseSection.tsx` (lazy)
+- `src/components/welcome/DemoVideoModal.tsx` (placeholder; abre vídeo opcional)
+- `src/components/welcome/BadgeCarousel.tsx` (insígnias: "Atualizado p/ 42º Exame", "OAB-friendly", etc.)
 
-Regras adicionais do prompt:
-- Cada aula tem **pelo menos 2 quizzes** (um no meio, um no fim), 1 `ligar_termos`, 1 `dicas`, 1 `caso_pratico`.
-- Texto dos conceitos passa a ter 2-4 parágrafos (não 1 frase) e usa `**negrito**` markdown nos termos-chave (já renderizado).
-- Quizzes devem ser estilo OAB: enunciado com mini-caso + 4 alternativas + explicação que diz **por que** as outras estão erradas.
-- Continua proibido inventar — só usa o material extraído.
+Componentes ui auxiliares:
+- `src/components/ui/css-infinite-slider.tsx` (marquee CSS puro, sem libs).
+- `src/components/ui/testimonials-columns.tsx` exporta `TestimonialsSection` (3 colunas com depoimentos animados em loop vertical).
 
-Também atualizar `fallbackSlides` para gerar essa estrutura completa quando o Gemini falhar.
+Hooks:
+- `src/hooks/use-device-type.ts` (`isDesktop` via matchMedia).
+- `src/hooks/usePrefetchRoute.ts` (preserva API `onHoverStart/onHoverEnd/onTouchStart`; pode ser no-op ou usar `router.preloadRoute`).
 
-## 3. Botão "Próxima aula" com animação
+Assets:
+- `public/welcome-hero.webp` (gerado, hero portrait dramático em dourado/preto).
+- `src/assets/louros-dourados.webp` (gerado, coroa de louros dourada transparente).
+- Preload do hero no `index.html`.
 
-No `src/lib/aulas-interativas.functions.ts`, `getAulaCompleta` passa a retornar também `proximaAula` (próxima na mesma ordem do curso) e `aulaAnterior`, calculados via uma consulta ordenada por `(modulo.ordem, aula.ordem)`.
+Styles (em `src/styles.css`):
+- Keyframes `shimmerSlide`, `neonPulseText`, `lineGlow`.
+- Classes `shine-effect`, `headline-shine`.
 
-No `SlidePlayer.tsx`:
-- Novo prop `proximaAulaHref?: string`.
-- No último slide (`conclusao`), o botão "Concluir aula" vira **"Próxima aula →"** quando há próxima; clicar dispara animação de slide-out lateral (framer-motion `x: -100%, opacity: 0` em 400ms) e navega para a próxima aula. Se não houver próxima, mostra "Concluir curso" (volta pro curso) com confete sutil.
-- Header da próxima aula entra com `slide-in-right`, reforçando a sensação de "continuidade".
+Rotas:
+- `src/routes/index.tsx` reescrito 1:1 conforme o `Welcome.tsx`, com imports trocados para os componentes acima e textos adaptados ao OAB na Risca. Mantém `beforeLoad` que redireciona usuários logados para `/inicio` e o `head()` com SEO atual.
 
-## 4. Renderização dos novos tipos no player
+## Detalhes técnicos
 
-No `src/components/aulas-interativas/SlidePlayer.tsx`:
-- `SlideLigarTermos` — duas colunas embaralhadas; estado local de seleção e pares resolvidos; trava o botão "Próximo" do footer até concluir.
-- `SlideDicas` — grid de cartões com ícone (`Lightbulb`, `AlertTriangle`, `Target`, `Sparkles`) e texto em markdown.
-- `SlideCasoPratico` — enunciado + pergunta + botão "Ver análise" que expande a explicação com animação.
+- Todo o JSX, ordem das seções, animações, gradientes, sombras, tamanhos `clamp(...)`, marquee, V-shape SVG, shimmer no CTA, card persuasivo lateral dourado, features grid 1/2/3 colunas, CTA final duplo ("Acessar App" + "Já sou aluno") são preservados exatamente como no upload.
+- Cores: troco hex literais do original (`#d4a84b`, `#fbbf24`, `#ef4444`, `#8B0000`, `#b91c1c`) por valores equivalentes; mantenho como inline styles para fidelidade visual (não viola tokens porque é página de marketing fortemente artística — mesmo tratamento do original).
+- `framer-motion` já está disponível (uso atual em `Reveal`).
+- Lazy: `AppShowcaseSection`, `TestimonialsSection`, `DemoVideoModal` carregados via `lazy()` + `Suspense`, igual ao original.
+- Não toco em rotas autenticadas, `__root.tsx`, sidebar, etc.
 
-Todos usam o componente `MD` já existente para renderizar markdown nos textos.
+## Fora de escopo
 
-## 5. Banco de dados
-
-Migration para:
-1. Ampliar o CHECK `aulas_interativas_slides_tipo_check` aceitando `ligar_termos`, `dicas`, `caso_pratico`.
-2. Não precisa mudar `conteudo` (jsonb já aceita qualquer shape).
-
-## 6. Refazer as aulas existentes
-
-Não vou regerar automaticamente os cursos antigos — o admin de "Aulas Interativas" já tem o fluxo de **excluir curso → gerar prévia → publicar**. Após o deploy, basta:
-1. Excluir o curso "Filosofia do Direito" atual.
-2. Clicar "Gerar prévia" e "Publicar" novamente — vai usar o novo prompt automaticamente.
-
-Posso opcionalmente adicionar um botão **"Regerar slides"** numa próxima iteração se quiser, mas isso aumenta o escopo. Confirme se quer já agora.
-
----
-
-## Resumo técnico
-
-| Arquivo | Mudança |
-|---|---|
-| `supabase/migrations/...` | Ampliar CHECK de `tipo` |
-| `src/lib/aulas-interativas.functions.ts` | Zod aceita novos tipos; `getAulaCompleta` retorna `proximaAula`/`aulaAnterior` |
-| `src/routes/api/aulas-interativas-preview.ts` | Novo prompt detalhado + `fallbackSlides` expandido |
-| `src/components/aulas-interativas/SlidePlayer.tsx` | Renderizadores para `ligar_termos`, `dicas`, `caso_pratico`; botão "Próxima aula" com animação |
-| `src/routes/_app.aulas-interativas.$cursoSlug.$aulaSlug.tsx` | Passa `proximaAulaHref` ao player |
-
-Posso seguir?
+- Não altero `/login`, `/signup`, ou qualquer página interna.
+- Não mexo em vade-mecum, aulas-interativas, códigos, etc.
+- Não gero vídeo demo real (placeholder no `DemoVideoModal`).
