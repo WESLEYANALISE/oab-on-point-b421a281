@@ -42,6 +42,7 @@ const CATEGORIAS: Categoria[] = [
     descricao: "Civil, Penal, Processuais, CTN, CLT, CDC, ECA e mais.",
     total: 14,
     icon: BookMarked,
+    destaque: true,
     tag: "Compilações",
   },
   {
@@ -295,7 +296,7 @@ function CategoriaCardCompact({ cat }: { cat: Categoria }) {
     <button
       type="button"
       className={cn(
-        "group relative overflow-hidden text-left rounded-2xl border bg-card/60 p-4 transition-all cursor-pointer h-full",
+        "group relative overflow-hidden text-left rounded-2xl border bg-card/60 p-4 transition-all cursor-pointer h-full min-h-[170px] flex",
         "hover:bg-card hover:border-gold/40 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-12px_color-mix(in_oklab,var(--gold)_25%,transparent)]",
         cat.destaque ? "border-gold/30" : "border-border/60",
       )}
@@ -306,10 +307,10 @@ function CategoriaCardCompact({ cat }: { cat: Categoria }) {
           className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-gold/10 blur-2xl pointer-events-none"
         />
       )}
-      <div className="relative flex flex-col gap-3">
+      <div className="relative flex flex-col gap-3 w-full h-full">
         <div
           className={cn(
-            "h-10 w-10 rounded-xl grid place-items-center border",
+            "h-10 w-10 rounded-xl grid place-items-center border shrink-0",
             cat.destaque
               ? "bg-gradient-to-br from-gold/25 to-primary/20 border-gold/40 text-gold"
               : "bg-secondary/60 border-border/60 text-foreground/80",
@@ -317,7 +318,7 @@ function CategoriaCardCompact({ cat }: { cat: Categoria }) {
         >
           <Icon className="h-5 w-5" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 mt-auto">
           <p className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground/80 font-semibold truncate">
             {cat.tag}
           </p>

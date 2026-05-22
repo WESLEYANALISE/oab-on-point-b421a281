@@ -179,7 +179,7 @@ function CodigosListPage() {
               : "Nenhum resultado."}
           </div>
         ) : (
-          lista.map((lei) => <CodigoCard key={lei.slug} lei={lei} />)
+          lista.map((lei, i) => <CodigoCard key={`${aba}-${lei.slug}`} lei={lei} index={i} />)
         )}
       </section>
     </div>
@@ -204,14 +204,19 @@ function TabPill({ ativo, onClick, icone, label, count }: { ativo: boolean; onCl
   );
 }
 
-function CodigoCard({ lei }: { lei: LeiRow }) {
+function CodigoCard({ lei, index }: { lei: LeiRow; index: number }) {
   const sigla = (lei.nome_curto ?? lei.nome.split(" ")[0]).toUpperCase();
   const style = CODIGO_STYLE[lei.slug] ?? DEFAULT_STYLE;
   const { Icon, bg, barra } = style;
+  const delay = Math.min(index, 18) * 55; // cap delay to ~1s total
   return (
     <Link
       to="/vade-mecum/$slug"
       params={{ slug: lei.slug }}
+      style={{
+        animation: "codigo-cascade 520ms cubic-bezier(0.22, 1, 0.36, 1) both",
+        animationDelay: `${delay}ms`,
+      }}
       className="relative flex items-center gap-3.5 pl-4 pr-3 py-3.5 rounded-2xl bg-card/70 border border-border/60 hover:border-gold/40 hover:bg-card transition-all active:scale-[0.99] overflow-hidden cursor-pointer"
     >
       <span className={`absolute left-0 top-2 bottom-2 w-1.5 rounded-r-full ${barra}`} />
