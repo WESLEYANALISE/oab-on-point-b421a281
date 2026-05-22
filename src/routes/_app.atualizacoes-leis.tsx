@@ -1,19 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
-  Loader2,
   Calendar as CalendarIcon,
   ChevronDown,
 } from "lucide-react";
-import { listResenhaMes, runResenhaSync } from "@/lib/resenha-sync.functions";
-import { useIsAdmin } from "@/hooks/use-admin";
+import { listResenhaMes } from "@/lib/resenha-sync.functions";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/atualizacoes-leis")({
   head: () => ({
@@ -55,23 +51,12 @@ function AtualizacoesLeisPage() {
   const [filtro, setFiltro] = useState<string>("todos");
   const [calendarioAberto, setCalendarioAberto] = useState(false);
 
-  const isAdmin = useIsAdmin();
   const listMes = useServerFn(listResenhaMes);
-  const runSync = useServerFn(runResenhaSync);
 
   const q = useQuery({
     queryKey: ["resenha-mes", ano, mes],
     queryFn: () => listMes({ data: { ano, mes } }),
     staleTime: 60_000,
-  });
-
-  const syncMutation = useMutation({
-    mutationFn: () => runSync({ data: { meses: [{ ano, mes }] } }),
-    onSuccess: (r) => {
-      toast.success(`Sincronizado: ${r.novos} novos, ${r.atualizados} atualizados`);
-      q.refetch();
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha no sync"),
   });
 
   const atos = q.data?.atos ?? [];
@@ -129,24 +114,10 @@ function AtualizacoesLeisPage() {
         </button>
       </div>
 
-      {isAdmin.data && (
-        <div className="flex items-center justify-between rounded-xl border border-gold/30 bg-gold/5 p-3">
-          <div className="text-xs text-muted-foreground">
-            {ultimoSync ? (
-              <>Última sinc: <span className="text-foreground">{new Date(ultimoSync).toLocaleString("pt-BR")}</span></>
-            ) : (
-              <>Sem sincronização para este mês.</>
-            )}
-          </div>
-          <button
-            onClick={() => syncMutation.mutate()}
-            disabled={syncMutation.isPending}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold text-gold-foreground text-xs font-semibold disabled:opacity-50"
-          >
-            {syncMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            Sincronizar
-          </button>
-        </div>
+      {ultimoSync && (
+        <p className="text-[11px] text-muted-foreground">
+          Última atualização automática: <span className="text-foreground">{new Date(ultimoSync).toLocaleString("pt-BR")}</span>
+        </p>
       )}
 
       {/* Lista de dias numerados + toggle calendário */}
