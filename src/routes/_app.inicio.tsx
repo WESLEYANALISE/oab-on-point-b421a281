@@ -259,3 +259,45 @@ function FaseCard({
     </Link>
   );
 }
+
+function AssistenteFaseCard() {
+  return (
+    <Link
+      to="/assistente"
+      className="group relative overflow-hidden rounded-2xl border border-gold/25 aspect-[4/5] sm:aspect-[16/10] md:aspect-[16/9] hidden md:block shadow-lg shadow-black/40 hover:-translate-y-0.5 transition-transform"
+      style={{
+        background:
+          "linear-gradient(135deg, oklch(0.22 0.09 18) 0%, oklch(0.16 0.06 18) 50%, oklch(0.12 0.04 70) 100%)",
+      }}
+    >
+      {/* glow decorativo */}
+      <div className="absolute -top-16 -right-16 h-56 w-56 rounded-full bg-gold/25 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -left-20 h-56 w-56 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
+      <span className="countdown-shimmer" aria-hidden />
+
+      {/* badge */}
+      <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gold/90 text-gold-foreground text-[9px] font-bold tracking-wider uppercase">
+        <Sparkles className="h-3 w-3" /> IA
+      </span>
+
+      {/* ícone central grande */}
+      <div className="absolute top-1/2 right-6 -translate-y-1/2 h-20 w-20 rounded-2xl bg-gold/15 border border-gold/35 grid place-items-center backdrop-blur-sm shadow-lg shadow-black/40 group-hover:scale-105 transition-transform">
+        <MessageCircle className="h-10 w-10 text-gold" strokeWidth={1.75} />
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 p-3 md:p-4 flex items-end justify-between gap-2">
+        <div className="min-w-0">
+          <p className="font-display font-bold text-xl sm:text-2xl md:text-3xl lg:text-[34px] leading-[1.05] tracking-tight text-primary-foreground drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]">
+            Assistente IA
+          </p>
+          <p className="text-[10px] md:text-xs uppercase tracking-[0.18em] text-gold font-semibold mt-1 line-clamp-1 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
+            Tire suas dúvidas
+          </p>
+        </div>
+        <div className="h-9 w-9 md:h-10 md:w-10 rounded-full bg-gold grid place-items-center shrink-0 shadow-lg shadow-black/40 group-hover:translate-x-0.5 transition-transform">
+          <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-gold-foreground" />
+        </div>
+      </div>
+    </Link>
+  );
+}
