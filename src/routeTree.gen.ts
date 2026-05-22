@@ -15,6 +15,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiAulasInterativasIngestRouteImport } from './routes/api/aulas-interativas-ingest'
 import { Route as ApiAssistenteChatRouteImport } from './routes/api/assistente-chat'
 import { Route as ApiArtigoChatRouteImport } from './routes/api/artigo-chat'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
@@ -117,6 +118,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAulasInterativasIngestRoute =
+  ApiAulasInterativasIngestRouteImport.update({
+    id: '/api/aulas-interativas-ingest',
+    path: '/api/aulas-interativas-ingest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAssistenteChatRoute = ApiAssistenteChatRouteImport.update({
   id: '/api/assistente-chat',
   path: '/api/assistente-chat',
@@ -514,6 +521,7 @@ export interface FileRoutesByFullPath {
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
+  '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -590,6 +598,7 @@ export interface FileRoutesByTo {
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
+  '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -667,6 +676,7 @@ export interface FileRoutesById {
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
+  '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
   '/_app/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/_app/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -748,6 +758,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/api/artigo-chat'
     | '/api/assistente-chat'
+    | '/api/aulas-interativas-ingest'
     | '/admin/blog'
     | '/admin/flashcards'
     | '/admin/narracoes'
@@ -824,6 +835,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/api/artigo-chat'
     | '/api/assistente-chat'
+    | '/api/aulas-interativas-ingest'
     | '/admin/blog'
     | '/admin/flashcards'
     | '/admin/narracoes'
@@ -900,6 +912,7 @@ export interface FileRouteTypes {
     | '/_app/reta-final'
     | '/api/artigo-chat'
     | '/api/assistente-chat'
+    | '/api/aulas-interativas-ingest'
     | '/_app/admin/blog'
     | '/_app/admin/flashcards'
     | '/_app/admin/narracoes'
@@ -964,6 +977,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApiArtigoChatRoute: typeof ApiArtigoChatRoute
   ApiAssistenteChatRoute: typeof ApiAssistenteChatRoute
+  ApiAulasInterativasIngestRoute: typeof ApiAulasInterativasIngestRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicSeedProvasRoute: typeof ApiPublicSeedProvasRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
@@ -1013,6 +1027,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/aulas-interativas-ingest': {
+      id: '/api/aulas-interativas-ingest'
+      path: '/api/aulas-interativas-ingest'
+      fullPath: '/api/aulas-interativas-ingest'
+      preLoaderRoute: typeof ApiAulasInterativasIngestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/assistente-chat': {
@@ -1772,6 +1793,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ApiArtigoChatRoute: ApiArtigoChatRoute,
   ApiAssistenteChatRoute: ApiAssistenteChatRoute,
+  ApiAulasInterativasIngestRoute: ApiAulasInterativasIngestRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicSeedProvasRoute: ApiPublicSeedProvasRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,
