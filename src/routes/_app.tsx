@@ -49,7 +49,7 @@ function AppLayout() {
 
   if (!user) return null;
 
-  if (isLeitor) {
+  if (isFullscreen) {
     // Leitor de livros ocupa toda a tela — sem sidebar, header ou wrapper com transform.
     return (
       <>
