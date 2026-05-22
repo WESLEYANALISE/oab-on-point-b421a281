@@ -59,6 +59,7 @@ import { Route as AppMateriasSlugRouteImport } from './routes/_app.materias.$slu
 import { Route as AppBlogSlugRouteImport } from './routes/_app.blog.$slug'
 import { Route as AppBibliotecaSlugRouteImport } from './routes/_app.biblioteca.$slug'
 import { Route as AppAulasMateriaRouteImport } from './routes/_app.aulas.$materia'
+import { Route as AppAtualizacoesLeisAtoIdRouteImport } from './routes/_app.atualizacoes-leis.$atoId'
 import { Route as AppAdminVadeMecumSyncRouteImport } from './routes/_app.admin.vade-mecum-sync'
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
 import { Route as AppAdminResumosRouteImport } from './routes/_app.admin.resumos'
@@ -333,6 +334,12 @@ const AppAulasMateriaRoute = AppAulasMateriaRouteImport.update({
   path: '/$materia',
   getParentRoute: () => AppAulasRoute,
 } as any)
+const AppAtualizacoesLeisAtoIdRoute =
+  AppAtualizacoesLeisAtoIdRouteImport.update({
+    id: '/$atoId',
+    path: '/$atoId',
+    getParentRoute: () => AppAtualizacoesLeisRoute,
+  } as any)
 const AppAdminVadeMecumSyncRoute = AppAdminVadeMecumSyncRouteImport.update({
   id: '/vade-mecum-sync',
   path: '/vade-mecum-sync',
@@ -473,7 +480,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRouteWithChildren
   '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
-  '/atualizacoes-leis': typeof AppAtualizacoesLeisRoute
+  '/atualizacoes-leis': typeof AppAtualizacoesLeisRouteWithChildren
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRouteWithChildren
   '/biblioteca': typeof AppBibliotecaRouteWithChildren
@@ -495,6 +502,7 @@ export interface FileRoutesByFullPath {
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
   '/admin/vade-mecum-sync': typeof AppAdminVadeMecumSyncRoute
+  '/atualizacoes-leis/$atoId': typeof AppAtualizacoesLeisAtoIdRoute
   '/aulas/$materia': typeof AppAulasMateriaRouteWithChildren
   '/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/blog/$slug': typeof AppBlogSlugRoute
@@ -547,7 +555,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
-  '/atualizacoes-leis': typeof AppAtualizacoesLeisRoute
+  '/atualizacoes-leis': typeof AppAtualizacoesLeisRouteWithChildren
   '/audioaulas': typeof AppAudioaulasRoute
   '/blog': typeof AppBlogRouteWithChildren
   '/caderno-erros': typeof AppCadernoErrosRoute
@@ -567,6 +575,7 @@ export interface FileRoutesByTo {
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
   '/admin/vade-mecum-sync': typeof AppAdminVadeMecumSyncRoute
+  '/atualizacoes-leis/$atoId': typeof AppAtualizacoesLeisAtoIdRoute
   '/blog/$slug': typeof AppBlogSlugRoute
   '/materias/$slug': typeof AppMateriasSlugRoute
   '/noticias/$id': typeof AppNoticiasIdRoute
@@ -618,7 +627,7 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/app': typeof AppAppRoute
   '/_app/assistente': typeof AppAssistenteRoute
-  '/_app/atualizacoes-leis': typeof AppAtualizacoesLeisRoute
+  '/_app/atualizacoes-leis': typeof AppAtualizacoesLeisRouteWithChildren
   '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRouteWithChildren
   '/_app/biblioteca': typeof AppBibliotecaRouteWithChildren
@@ -640,6 +649,7 @@ export interface FileRoutesById {
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
   '/_app/admin/vade-mecum-sync': typeof AppAdminVadeMecumSyncRoute
+  '/_app/atualizacoes-leis/$atoId': typeof AppAtualizacoesLeisAtoIdRoute
   '/_app/aulas/$materia': typeof AppAulasMateriaRouteWithChildren
   '/_app/biblioteca/$slug': typeof AppBibliotecaSlugRouteWithChildren
   '/_app/blog/$slug': typeof AppBlogSlugRoute
@@ -717,6 +727,7 @@ export interface FileRouteTypes {
     | '/admin/resumos'
     | '/admin/simulados'
     | '/admin/vade-mecum-sync'
+    | '/atualizacoes-leis/$atoId'
     | '/aulas/$materia'
     | '/biblioteca/$slug'
     | '/blog/$slug'
@@ -789,6 +800,7 @@ export interface FileRouteTypes {
     | '/admin/resumos'
     | '/admin/simulados'
     | '/admin/vade-mecum-sync'
+    | '/atualizacoes-leis/$atoId'
     | '/blog/$slug'
     | '/materias/$slug'
     | '/noticias/$id'
@@ -861,6 +873,7 @@ export interface FileRouteTypes {
     | '/_app/admin/resumos'
     | '/_app/admin/simulados'
     | '/_app/admin/vade-mecum-sync'
+    | '/_app/atualizacoes-leis/$atoId'
     | '/_app/aulas/$materia'
     | '/_app/biblioteca/$slug'
     | '/_app/blog/$slug'
@@ -1271,6 +1284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAulasMateriaRouteImport
       parentRoute: typeof AppAulasRoute
     }
+    '/_app/atualizacoes-leis/$atoId': {
+      id: '/_app/atualizacoes-leis/$atoId'
+      path: '/$atoId'
+      fullPath: '/atualizacoes-leis/$atoId'
+      preLoaderRoute: typeof AppAtualizacoesLeisAtoIdRouteImport
+      parentRoute: typeof AppAtualizacoesLeisRoute
+    }
     '/_app/admin/vade-mecum-sync': {
       id: '/_app/admin/vade-mecum-sync'
       path: '/vade-mecum-sync'
@@ -1466,6 +1486,17 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
   AppAdminRouteChildren,
 )
 
+interface AppAtualizacoesLeisRouteChildren {
+  AppAtualizacoesLeisAtoIdRoute: typeof AppAtualizacoesLeisAtoIdRoute
+}
+
+const AppAtualizacoesLeisRouteChildren: AppAtualizacoesLeisRouteChildren = {
+  AppAtualizacoesLeisAtoIdRoute: AppAtualizacoesLeisAtoIdRoute,
+}
+
+const AppAtualizacoesLeisRouteWithChildren =
+  AppAtualizacoesLeisRoute._addFileChildren(AppAtualizacoesLeisRouteChildren)
+
 interface AppAulasMateriaLivroIdRouteChildren {
   AppAulasMateriaLivroIdOrdemRoute: typeof AppAulasMateriaLivroIdOrdemRoute
   AppAulasMateriaLivroIdIndexRoute: typeof AppAulasMateriaLivroIdIndexRoute
@@ -1592,7 +1623,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAppRoute: typeof AppAppRoute
   AppAssistenteRoute: typeof AppAssistenteRoute
-  AppAtualizacoesLeisRoute: typeof AppAtualizacoesLeisRoute
+  AppAtualizacoesLeisRoute: typeof AppAtualizacoesLeisRouteWithChildren
   AppAudioaulasRoute: typeof AppAudioaulasRoute
   AppAulasRoute: typeof AppAulasRouteWithChildren
   AppBibliotecaRoute: typeof AppBibliotecaRouteWithChildren
@@ -1637,7 +1668,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppAppRoute: AppAppRoute,
   AppAssistenteRoute: AppAssistenteRoute,
-  AppAtualizacoesLeisRoute: AppAtualizacoesLeisRoute,
+  AppAtualizacoesLeisRoute: AppAtualizacoesLeisRouteWithChildren,
   AppAudioaulasRoute: AppAudioaulasRoute,
   AppAulasRoute: AppAulasRouteWithChildren,
   AppBibliotecaRoute: AppBibliotecaRouteWithChildren,
