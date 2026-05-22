@@ -1,70 +1,57 @@
+# Aulas longas (15–20 slides) com todos os formatos interativos
 
-# Welcome OAB na Risca — recriação 1:1 do Welcome.tsx
+## Diagnóstico
+A aula "Sociedade de Advogados e Mandato" mostra apenas 4 slides porque foi gerada por uma versão antiga do gerador (antes do refactor recente). Hoje o `buildLocalSlides` produz 10 slides, mas você pediu 15–20 com mais variedade (quiz, ligar termos, comparativo, esquema, mapa mental, caso prático, dicas, etc.).
 
-Substituir a landing atual (`src/routes/index.tsx`) por uma reprodução fiel do `Welcome.tsx` enviado, adaptada para "OAB na Risca". O usuário só vê a tela de auth depois de clicar em "Iniciar jornada" → escolher Entrar/Criar conta → modal abre por cima da welcome (sem sair da rota `/`).
+Além disso, os tipos `comparativo`, `esquema` e `mapa_mental` (já suportados pelo `SlidePlayer`) não estão sendo gerados — por isso "sumiu" a opção de ligar termos e tudo mais que você pediu.
 
-## Identidade visual adaptada
+## O que vou alterar
 
-- Marca: "OAB na Risca" / sublinha "Exame da Ordem" (no lugar de "Direito Prime / Estudos Jurídicos").
-- Logo: `src/assets/logo-oab-na-risca.webp` (já existe).
-- Hero image: vou gerar uma `welcome-hero.webp` em `public/` no mesmo espírito visual do original (deusa Themis / advogado em luz dourada, vertical, dark dramatic — combina com a paleta gold/red do projeto).
-- Louros dourados: vou gerar `src/assets/louros-dourados.webp` (coroa de louros dourada em PNG transparente).
-- Headline: "Tudo para você **passar na OAB** em um **só lugar**." (mantendo o destaque em vermelho como no original).
-- V-shape no centro dos louros: **1ª FASE** | **2ª FASE** com **OAB** embaixo (no lugar de Faculdade/Concursos/OAB).
-- Marquee: lista de universidades **trocada por faculdades de Direito brasileiras fortes em OAB** (USP, UFMG, UFRJ, UnB, PUC-SP, FGV, Mackenzie, UFPE, UFC, UFRGS, UFSC, UFPR, UERJ, PUC-Rio, Unicamp) precedido por "Aprovado por estudantes de todo o Brasil".
-- Card persuasivo: "O que é o OAB na Risca?" com texto reescrito sobre a missão da plataforma.
-- Features (6 cards): adaptados para OAB — 1ª Fase, 2ª Fase, Simulados, Flashcards & Mapas Mentais, Vade Mecum, Cronograma personalizado.
-- Showcase / Testimonials / Mockup slideshow: vou criar versões enxutas focadas em OAB (depoimentos de aprovados, screenshots conceituais de funcionalidades da plataforma).
+### 1) `src/routes/api/aulas-interativas-preview.ts` — reescrever `buildLocalSlides`
+Gerar de 16 a 19 slides por aula, sempre na seguinte ordem (intercalando teoria → prática → checagem):
 
-## Fluxo de autenticação
+```
+01 capa
+02 conceito (base teórica)
+03 esquema (bullets-chave do tema)
+04 exemplo (aplicação 1)
+05 quiz 1 (cobre o conceito base)
+06 conceito (aprofundamento / regra detalhada)
+07 comparativo (2 colunas: regra x exceção / faz x não faz)
+08 ligar_termos (5 pares termo↔definição extraídos do material)
+09 caso_pratico (enunciado curto + pergunta + análise)
+10 quiz 2 (cobre a aplicação prática)
+11 mapa_mental (nó central + 4 ramos)
+12 dicas (3–4 dicas com tipos dica/atencao/alvo/estrela)
+13 exemplo (aplicação 2, outro ângulo)
+14 quiz 3 (pegadinha clássica de OAB)
+15 resumo (5–7 bullets do que viu)
+16 quiz 4 final (questão integradora estilo OAB)
+17 conclusao (fechamento + chamada pra próxima aula)
+```
 
-- Botão "Iniciar jornada" → abre `StartChoiceSheet` (bottom-sheet em mobile, dialog em desktop) com 3 opções: **Criar conta**, **Já tenho conta**, **Entrar como convidado** (essa última leva direto para `/inicio` sem login, se aplicável — caso contrário removo).
-- Escolha → abre `WelcomeAuthModal` com a aba certa (`signup` ou `login`), reusando o fluxo Supabase já existente (`signInWithPassword`, `signUp` com `emailRedirectTo: window.location.origin`).
-- Botão "Suporte" no header → abre `SupportSheet` com link de WhatsApp + e-mail de contato.
-- Sessão ativa continua redirecionando para `/inicio` via `beforeLoad` (já implementado).
+Regras de conteúdo:
+- Frases extraídas do material via `pickSentences` (já existe), com fallback no `escopo` da aula.
+- Quizzes diferentes entre si, sempre 4 alternativas (A–D), com `explicacao` justificando a correta e por que B/C/D estão erradas.
+- `ligar_termos`: pegar 5 tokens relevantes via `extractTokens` e parear com definições derivadas de sentenças do material.
+- `comparativo`: 2 colunas com 3 bullets cada (ex.: "Permitido" x "Vedado", ou "Regra geral" x "Exceções").
+- `mapa_mental`: nó central = título da aula; 4 ramos = principais subtemas (derivados do escopo + tokens).
+- `esquema`: 4–6 bullets curtos.
+- `dicas`: 4 itens variando `tipo` entre `dica`, `atencao`, `alvo`, `estrela`.
+- `conclusao`: 2 frases + 1 bullet "próximo passo".
 
-## Arquivos a criar
+### 2) Sem mudança de schema
+Todos os tipos já estão no enum aceito pelo `SlideInput` em `src/lib/aulas-interativas.functions.ts` e renderizados em `src/components/aulas-interativas/SlidePlayer.tsx`. Nada a mudar lá.
 
-Componentes welcome:
-- `src/components/welcome/StartChoiceSheet.tsx`
-- `src/components/welcome/WelcomeAuthModal.tsx` (Tabs login/signup integrados ao Supabase)
-- `src/components/welcome/SupportSheet.tsx`
-- `src/components/welcome/DesktopMockupRotator.tsx` (rotaciona screenshots conceituais; lazy)
-- `src/components/welcome/MockupSlideshow.tsx` (carrossel mobile)
-- `src/components/welcome/AppShowcaseSection.tsx` (lazy)
-- `src/components/welcome/DemoVideoModal.tsx` (placeholder; abre vídeo opcional)
-- `src/components/welcome/BadgeCarousel.tsx` (insígnias: "Atualizado p/ 42º Exame", "OAB-friendly", etc.)
+### 3) Importante para você
+A aula que você está vendo agora (`Sociedade de Advogados e Mandato`) foi salva no banco com 4 slides pela versão antiga. Para ela ganhar os 15–20 slides novos, você precisa:
+1. Voltar em **Admin → Aulas Interativas**.
+2. Clicar em **Gerar prévia** novamente no arquivo do curso (Ética Profissional).
+3. **Publicar** de novo — isso apaga e recria os slides no banco.
 
-Componentes ui auxiliares:
-- `src/components/ui/css-infinite-slider.tsx` (marquee CSS puro, sem libs).
-- `src/components/ui/testimonials-columns.tsx` exporta `TestimonialsSection` (3 colunas com depoimentos animados em loop vertical).
+Aulas geradas depois dessa alteração já virão com o formato completo automaticamente.
 
-Hooks:
-- `src/hooks/use-device-type.ts` (`isDesktop` via matchMedia).
-- `src/hooks/usePrefetchRoute.ts` (preserva API `onHoverStart/onHoverEnd/onTouchStart`; pode ser no-op ou usar `router.preloadRoute`).
-
-Assets:
-- `public/welcome-hero.webp` (gerado, hero portrait dramático em dourado/preto).
-- `src/assets/louros-dourados.webp` (gerado, coroa de louros dourada transparente).
-- Preload do hero no `index.html`.
-
-Styles (em `src/styles.css`):
-- Keyframes `shimmerSlide`, `neonPulseText`, `lineGlow`.
-- Classes `shine-effect`, `headline-shine`.
-
-Rotas:
-- `src/routes/index.tsx` reescrito 1:1 conforme o `Welcome.tsx`, com imports trocados para os componentes acima e textos adaptados ao OAB na Risca. Mantém `beforeLoad` que redireciona usuários logados para `/inicio` e o `head()` com SEO atual.
-
-## Detalhes técnicos
-
-- Todo o JSX, ordem das seções, animações, gradientes, sombras, tamanhos `clamp(...)`, marquee, V-shape SVG, shimmer no CTA, card persuasivo lateral dourado, features grid 1/2/3 colunas, CTA final duplo ("Acessar App" + "Já sou aluno") são preservados exatamente como no upload.
-- Cores: troco hex literais do original (`#d4a84b`, `#fbbf24`, `#ef4444`, `#8B0000`, `#b91c1c`) por valores equivalentes; mantenho como inline styles para fidelidade visual (não viola tokens porque é página de marketing fortemente artística — mesmo tratamento do original).
-- `framer-motion` já está disponível (uso atual em `Reveal`).
-- Lazy: `AppShowcaseSection`, `TestimonialsSection`, `DemoVideoModal` carregados via `lazy()` + `Suspense`, igual ao original.
-- Não toco em rotas autenticadas, `__root.tsx`, sidebar, etc.
-
-## Fora de escopo
-
-- Não altero `/login`, `/signup`, ou qualquer página interna.
-- Não mexo em vade-mecum, aulas-interativas, códigos, etc.
-- Não gero vídeo demo real (placeholder no `DemoVideoModal`).
+## Detalhe técnico
+- Mantém geração 100% local (sem chamadas extras ao Gemini), então não há risco de timeout como nos erros anteriores.
+- Cada slide continua tendo `{ ordem, tipo, conteudo, imagem_url: null, quiz_json }` — compatível com o insert atual em `aulas_interativas_slides`.
+- `extractTokens` e `pickSentences` já existem; vou só adicionar dois helpers internos: `buildPares()` e `buildRamosMapa()` dentro do mesmo arquivo.
