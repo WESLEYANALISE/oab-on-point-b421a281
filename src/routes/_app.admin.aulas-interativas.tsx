@@ -20,7 +20,7 @@ import {
   togglePublicarCurso,
   type SlideRow,
 } from "@/lib/aulas-interativas.functions";
-import { parsePdfToChunks, type PdfChunk } from "@/lib/aulas-interativas-pdf.client";
+type PdfChunk = { modulo: string; texto: string };
 import { SlidePlayer } from "@/components/aulas-interativas/SlidePlayer";
 
 export const Route = createFileRoute("/_app/admin/aulas-interativas")({
