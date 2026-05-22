@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ExternalLink, Loader2, AlertCircle } from "lucide-react";
-import { getAtoConteudo } from "@/lib/resenha-sync.functions";
+import { ExternalLink, Loader2, AlertCircle, ChevronRight, X } from "lucide-react";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { getAtoConteudo, type AtoSecao } from "@/lib/resenha-sync.functions";
+import brasao from "@/assets/brasao-republica.png";
 
 export const Route = createFileRoute("/_app/atualizacoes-leis/$atoId")({
-  head: () => ({
-    meta: [{ title: "Ato — Atualizações de Leis" }],
-  }),
+  head: () => ({ meta: [{ title: "Ato — Atualizações de Leis" }] }),
   component: AtoPage,
 });
 
@@ -19,6 +20,8 @@ function AtoPage() {
     queryFn: () => fn({ data: { id: atoId } }),
     staleTime: 5 * 60_000,
   });
+
+  const [openArtigo, setOpenArtigo] = useState<Extract<AtoSecao, { kind: "artigo" }> | null>(null);
 
   if (q.isLoading) {
     return (
@@ -39,11 +42,11 @@ function AtoPage() {
     );
   }
 
-  const { ato, conteudoHtml, erroConteudo } = q.data;
+  const { ato, estruturado, erroConteudo } = q.data;
 
-  return (
-    <article className="px-4 md:px-8 py-5 max-w-3xl mx-auto pb-16">
-      {erroConteudo ? (
+  if (erroConteudo || !estruturado) {
+    return (
+      <div className="px-4 py-10 max-w-2xl mx-auto">
         <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 space-y-3">
           <div className="flex items-start gap-2 text-sm text-yellow-200">
             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -58,24 +61,164 @@ function AtoPage() {
             Abrir no Planalto <ExternalLink className="h-3 w-3" />
           </a>
         </div>
-      ) : (
-        <>
-          <div
-            className="planalto-doc"
-            dangerouslySetInnerHTML={{ __html: conteudoHtml }}
-          />
-          <div className="mt-8 pt-5 border-t border-border">
-            <a
-              href={ato.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gold"
-            >
-              Ver fonte original no Planalto <ExternalLink className="h-3 w-3" />
-            </a>
-          </div>
-        </>
+      </div>
+    );
+  }
+
+  const { titulo, ementa, secoes, assinaturas } = estruturado;
+  const artigos = secoes.filter((s): s is Extract<AtoSecao, { kind: "artigo" }> => s.kind === "artigo");
+  const preambulo = secoes.find((s): s is Extract<AtoSecao, { kind: "preambulo" }> => s.kind === "preambulo");
+
+  return (
+    <article className="px-4 md:px-8 py-5 max-w-3xl mx-auto pb-24">
+      {/* Cabeçalho oficial */}
+      <header className="flex flex-col items-center text-center pb-6 border-b border-border/60">
+        <img
+          src={brasao}
+          alt="Brasão da República"
+          width={88}
+          height={88}
+          className="h-20 w-20 object-contain drop-shadow-[0_0_22px_color-mix(in_oklab,var(--gold)_30%,transparent)]"
+        />
+        <h2 className="font-display font-semibold text-lg md:text-xl mt-3 leading-tight">
+          Presidência da República
+        </h2>
+        <p className="text-sm text-foreground/90 leading-snug">Casa Civil</p>
+        <p className="text-xs text-muted-foreground leading-snug">
+          Secretaria Especial para Assuntos Jurídicos
+        </p>
+
+        {titulo && (
+          <h1 className="font-display text-base md:text-lg font-bold uppercase tracking-wide text-gold mt-5 px-2 max-w-full break-words">
+            {titulo}
+          </h1>
+        )}
+
+        <div className="mt-3 w-20 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
+      </header>
+
+      {/* Ementa em vermelho */}
+      {ementa && (
+        <p className="text-sm md:text-base leading-relaxed text-red-400 italic mt-6 text-justify">
+          {ementa}
+        </p>
       )}
+
+      {/* Preâmbulo */}
+      {preambulo && (
+        <p className="text-sm md:text-base leading-relaxed mt-5 text-justify">
+          {preambulo.text}
+        </p>
+      )}
+
+      {/* Lista de artigos — estilo Vade Mecum */}
+      {artigos.length > 0 && (
+        <section className="mt-7">
+          <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-3">
+            Artigos
+          </p>
+          <ul className="space-y-2">
+            {artigos.map((art, i) => {
+              const previa = (art.titulo || art.itens[0]?.text || "").replace(/^Art\.?\s*\d+[ºoOª°.\-A-Z]*\s*[.\-–—:]?\s*/i, "");
+              return (
+                <li key={i}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenArtigo(art)}
+                    className="w-full flex items-center gap-3 text-left p-3 rounded-xl border border-border/60 bg-card/50 hover:bg-card/80 hover:border-gold/40 transition-colors"
+                  >
+                    <span className="font-display font-semibold text-gold shrink-0 min-w-[3.5rem]">
+                      {art.numero}
+                    </span>
+                    <span className="text-sm text-foreground/90 line-clamp-2 flex-1">
+                      {previa || "—"}
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
+      {/* Assinaturas centralizadas */}
+      {assinaturas.length > 0 && (
+        <footer className="mt-10 pt-6 border-t border-border/60 flex flex-col items-center text-center gap-1.5">
+          {assinaturas.map((s, i) => (
+            <p
+              key={i}
+              className={`text-sm leading-snug ${s.italic ? "italic text-muted-foreground" : "text-foreground/90"}`}
+            >
+              {s.text}
+            </p>
+          ))}
+        </footer>
+      )}
+
+      {/* Link fonte */}
+      <div className="mt-8 pt-5 border-t border-border/60 text-center">
+        <a
+          href={ato.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gold"
+        >
+          Ver fonte original no Planalto <ExternalLink className="h-3 w-3" />
+        </a>
+      </div>
+
+      {/* Sheet/overlay do artigo — sobe de baixo */}
+      <AnimatePresence>
+        {openArtigo && (
+          <>
+            <motion.div
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setOpenArtigo(null)}
+            />
+            <motion.div
+              className="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] bg-background rounded-t-3xl border-t border-border shadow-2xl flex flex-col"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", stiffness: 320, damping: 34 }}
+            >
+              <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/60">
+                <div>
+                  <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
+                    Artigo
+                  </p>
+                  <h2 className="font-display text-xl text-gold">{openArtigo.numero}</h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOpenArtigo(null)}
+                  className="h-9 w-9 rounded-full inline-flex items-center justify-center hover:bg-accent"
+                  aria-label="Fechar"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="overflow-y-auto px-5 py-5 space-y-3.5">
+                {openArtigo.itens.map((it, i) => (
+                  <p
+                    key={i}
+                    className={`text-[15px] leading-relaxed text-justify ${
+                      it.italic ? "italic text-muted-foreground" : "text-foreground/95"
+                    }`}
+                  >
+                    {it.text}
+                  </p>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </article>
   );
 }
