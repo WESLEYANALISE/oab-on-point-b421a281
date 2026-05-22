@@ -64,6 +64,29 @@ function AtualizacoesLeisPage() {
   const [diaSel, setDiaSel] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<string>("todos");
   const [calendarioAberto, setCalendarioAberto] = useState(false);
+  const [painelAberto, setPainelAberto] = useState(false);
+  const [preset, setPreset] = useState<PresetKey>("todos");
+  const [leisAcompanhadas, setLeisAcompanhadas] = useState<string[]>([]);
+
+  // hidrata leis acompanhadas do localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_LEIS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setLeisAcompanhadas(parsed.filter((s) => typeof s === "string"));
+      }
+    } catch {}
+  }, []);
+
+  // persiste
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_LEIS, JSON.stringify(leisAcompanhadas));
+    } catch {}
+  }, [leisAcompanhadas]);
+
+
 
   const listMes = useServerFn(listResenhaMes);
 
