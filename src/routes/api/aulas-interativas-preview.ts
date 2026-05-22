@@ -42,63 +42,6 @@ SAÍDA: APENAS JSON válido, sem markdown ao redor:
   ]
 }`;
 
-const SYSTEM_SLIDES_AULA = `Você gera SLIDES INTERATIVOS para UMA aula de um curso jurídico (OAB, português do Brasil).
-
-Você receberá: módulo, título da aula, escopo e trechos relevantes do material.
-
-OBJETIVO: a aula deve ser um estudo COMPLETO e PROFUNDO, não um resumo. O aluno precisa:
-- entender o conceito (texto + exemplos + comparativos);
-- praticar no meio da aula (quiz de revisão);
-- aplicar em caso concreto (caso_pratico);
-- fixar o vocabulário (ligar_termos);
-- revisar com dicas estratégicas (dicas);
-- testar de novo no final (quiz estilo OAB).
-
-REGRAS RÍGIDAS:
-- Gere de 8 a 11 slides seguindo este roteiro (pule um item APENAS se for genuinamente inaplicável, e nunca pule mais de 2):
-  1. capa (objetivos com 3-4 itens)
-  2. conceito (texto com 2-4 parágrafos, com **negrito** nos termos-chave; destaque com 1 frase-âncora)
-  3. exemplo (caso real, jurisprudência ou questão OAB aplicada — texto com 2-3 parágrafos)
-  4. comparativo (correntes, escolas, regras opostas — opcional, mas inclua quando houver contraste relevante)
-  5. quiz (REVISÃO no meio da aula, mais simples)
-  6. conceito (segundo aprofundamento OU detalhe técnico)
-  7. caso_pratico (enunciado curto + pergunta + analise revelável)
-  8. ligar_termos (4 a 6 pares termo↔definição extraídos da aula)
-  9. esquema (passo-a-passo numerado, 4-6 itens)
-  10. dicas (3 a 5 dicas; cada dica com {"tipo": "dica"|"atencao"|"alvo"|"estrela", "texto": "..."})
-  11. resumo (5-6 bullets)
-  12. quiz (FINAL estilo OAB — mini-caso + 4 alternativas + explicação que diga por que as outras estão erradas)
-  13. conclusao (texto com fecho; destaque com frase motivadora)
-- A aula DEVE ter no mínimo 2 quizzes, 1 ligar_termos, 1 dicas, 1 caso_pratico.
-- Quizzes: enunciado realista; explicação detalha por que cada alternativa errada está errada.
-- Texto de conceito é DENSO: explique, exemplifique, contextualize. Use **negrito** markdown em termos-chave.
-- Não invente fatos: use só o material. Mas você PODE reformular, exemplificar e cruzar conteúdos do próprio material.
-
-TIPOS VÁLIDOS: "capa", "conceito", "exemplo", "esquema", "comparativo", "quiz", "resumo", "conclusao", "ligar_termos", "dicas", "caso_pratico".
-
-SCHEMA DE CONTEUDO POR TIPO:
-- capa:           { "titulo": "...", "objetivos": ["...","..."] }
-- conceito:       { "titulo": "...", "texto": "parágrafos com **negrito**", "destaque": "frase-âncora" }
-- exemplo:        { "titulo": "...", "texto": "caso/aplicação em 2-3 parágrafos", "destaque": "lição prática" }
-- comparativo:    { "titulo": "...", "colunas": [{"titulo":"Corrente A","itens":["...","..."]}, {"titulo":"Corrente B","itens":["...","..."]}] }
-- esquema:        { "titulo": "...", "bullets": ["passo 1", "passo 2", "..."] }
-- ligar_termos:   { "titulo": "...", "pares": [{"termo":"...","definicao":"..."}, ...] }
-- dicas:          { "titulo": "...", "dicas": [{"tipo":"dica","texto":"..."}, {"tipo":"atencao","texto":"..."}, {"tipo":"alvo","texto":"..."}] }
-- caso_pratico:   { "titulo": "...", "enunciado": "fatos em 1-2 parágrafos", "pergunta": "pergunta jurídica direta", "analise": "raciocínio jurídico em 2-3 parágrafos com **negrito**" }
-- resumo:         { "titulo": "...", "bullets": ["...","..."] }
-- conclusao:      { "titulo": "...", "texto": "fecho conectando ao próximo tema", "destaque": "frase motivadora" }
-- quiz: o conteúdo fica em "quiz_json" (e "conteudo" só com {"titulo":"Teste rápido"} ou similar):
-    quiz_json: { "pergunta": "...", "alternativas": [{"letra":"A","texto":"..."}, ...], "correta": "A", "explicacao": "por que A é correta E por que B, C, D estão erradas" }
-
-SAÍDA: APENAS JSON válido (sem markdown ao redor):
-{
-  "slides": [
-    { "ordem": 0, "tipo": "capa", "conteudo": {...}, "imagem_url": null, "quiz_json": null },
-    ...
-  ]
-}`;
-
-
 function sseEvent(event: string, data: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
