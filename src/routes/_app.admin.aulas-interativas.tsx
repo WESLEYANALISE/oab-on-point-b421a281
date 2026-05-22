@@ -218,12 +218,13 @@ function ArquivoMaterialItem({
   onChanged: () => void;
 }) {
   const qc = useQueryClient();
-  const [acao, setAcao] = useState<null | "extrair" | "previa" | "publicar">(null);
+  const [acao, setAcao] = useState<null | "extrair" | "previa" | "publicar" | "apagar-imgs">(null);
   const [progresso, setProgresso] = useState("");
   const [titulo, setTitulo] = useState(arquivo.nome_arquivo.replace(/\.pdf$/i, ""));
   const [materia, setMateria] = useState(arquivo.subpasta);
   const [estrutura, setEstrutura] = useState<Estrutura | null>(null);
   const [previewSlide, setPreviewSlide] = useState<{ slides: SlideRow[]; aulaTitulo: string } | null>(null);
+  const [imgsSelecionadas, setImgsSelecionadas] = useState<Set<string>>(new Set());
 
   // Carrega prévia salva (se houver) quando o status é 'previa_pronta'
   const previaQ = useQuery({
