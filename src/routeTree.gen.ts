@@ -15,6 +15,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiAulasInterativasIngestRouteImport } from './routes/api/aulas-interativas-ingest'
 import { Route as ApiAssistenteChatRouteImport } from './routes/api/assistente-chat'
 import { Route as ApiArtigoChatRouteImport } from './routes/api/artigo-chat'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
@@ -40,6 +41,7 @@ import { Route as AppResumosIndexRouteImport } from './routes/_app.resumos.index
 import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
 import { Route as AppAulasIndexRouteImport } from './routes/_app.aulas.index'
+import { Route as AppAulasInterativasIndexRouteImport } from './routes/_app.aulas-interativas.index'
 import { Route as AppAtualizacoesLeisIndexRouteImport } from './routes/_app.atualizacoes-leis.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
 import { Route as ApiPublicSitemapDotxmlRouteImport } from './routes/api/public/sitemap[.]xml'
@@ -117,6 +119,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAulasInterativasIngestRoute =
+  ApiAulasInterativasIngestRouteImport.update({
+    id: '/api/aulas-interativas-ingest',
+    path: '/api/aulas-interativas-ingest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAssistenteChatRoute = ApiAssistenteChatRouteImport.update({
   id: '/api/assistente-chat',
   path: '/api/assistente-chat',
@@ -242,6 +250,12 @@ const AppAulasIndexRoute = AppAulasIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppAulasRoute,
 } as any)
+const AppAulasInterativasIndexRoute =
+  AppAulasInterativasIndexRouteImport.update({
+    id: '/aulas-interativas/',
+    path: '/aulas-interativas/',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAtualizacoesLeisIndexRoute =
   AppAtualizacoesLeisIndexRouteImport.update({
     id: '/atualizacoes-leis/',
@@ -514,6 +528,7 @@ export interface FileRoutesByFullPath {
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
+  '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -543,6 +558,7 @@ export interface FileRoutesByFullPath {
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/admin/': typeof AppAdminIndexRoute
   '/atualizacoes-leis/': typeof AppAtualizacoesLeisIndexRoute
+  '/aulas-interativas/': typeof AppAulasInterativasIndexRoute
   '/aulas/': typeof AppAulasIndexRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/provas/': typeof AppProvasIndexRoute
@@ -590,6 +606,7 @@ export interface FileRoutesByTo {
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
+  '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -617,6 +634,7 @@ export interface FileRoutesByTo {
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/admin': typeof AppAdminIndexRoute
   '/atualizacoes-leis': typeof AppAtualizacoesLeisIndexRoute
+  '/aulas-interativas': typeof AppAulasInterativasIndexRoute
   '/aulas': typeof AppAulasIndexRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
   '/provas': typeof AppProvasIndexRoute
@@ -667,6 +685,7 @@ export interface FileRoutesById {
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
+  '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
   '/_app/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/_app/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -696,6 +715,7 @@ export interface FileRoutesById {
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/atualizacoes-leis/': typeof AppAtualizacoesLeisIndexRoute
+  '/_app/aulas-interativas/': typeof AppAulasInterativasIndexRoute
   '/_app/aulas/': typeof AppAulasIndexRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/provas/': typeof AppProvasIndexRoute
@@ -748,6 +768,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/api/artigo-chat'
     | '/api/assistente-chat'
+    | '/api/aulas-interativas-ingest'
     | '/admin/blog'
     | '/admin/flashcards'
     | '/admin/narracoes'
@@ -777,6 +798,7 @@ export interface FileRouteTypes {
     | '/api/public/sitemap.xml'
     | '/admin/'
     | '/atualizacoes-leis/'
+    | '/aulas-interativas/'
     | '/aulas/'
     | '/biblioteca/'
     | '/provas/'
@@ -824,6 +846,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/api/artigo-chat'
     | '/api/assistente-chat'
+    | '/api/aulas-interativas-ingest'
     | '/admin/blog'
     | '/admin/flashcards'
     | '/admin/narracoes'
@@ -851,6 +874,7 @@ export interface FileRouteTypes {
     | '/api/public/sitemap.xml'
     | '/admin'
     | '/atualizacoes-leis'
+    | '/aulas-interativas'
     | '/aulas'
     | '/biblioteca'
     | '/provas'
@@ -900,6 +924,7 @@ export interface FileRouteTypes {
     | '/_app/reta-final'
     | '/api/artigo-chat'
     | '/api/assistente-chat'
+    | '/api/aulas-interativas-ingest'
     | '/_app/admin/blog'
     | '/_app/admin/flashcards'
     | '/_app/admin/narracoes'
@@ -929,6 +954,7 @@ export interface FileRouteTypes {
     | '/api/public/sitemap.xml'
     | '/_app/admin/'
     | '/_app/atualizacoes-leis/'
+    | '/_app/aulas-interativas/'
     | '/_app/aulas/'
     | '/_app/biblioteca/'
     | '/_app/provas/'
@@ -964,6 +990,7 @@ export interface RootRouteChildren {
   SignupRoute: typeof SignupRoute
   ApiArtigoChatRoute: typeof ApiArtigoChatRoute
   ApiAssistenteChatRoute: typeof ApiAssistenteChatRoute
+  ApiAulasInterativasIngestRoute: typeof ApiAulasInterativasIngestRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicSeedProvasRoute: typeof ApiPublicSeedProvasRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
@@ -1013,6 +1040,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/aulas-interativas-ingest': {
+      id: '/api/aulas-interativas-ingest'
+      path: '/api/aulas-interativas-ingest'
+      fullPath: '/api/aulas-interativas-ingest'
+      preLoaderRoute: typeof ApiAulasInterativasIngestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/assistente-chat': {
@@ -1189,6 +1223,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/aulas/'
       preLoaderRoute: typeof AppAulasIndexRouteImport
       parentRoute: typeof AppAulasRoute
+    }
+    '/_app/aulas-interativas/': {
+      id: '/_app/aulas-interativas/'
+      path: '/aulas-interativas'
+      fullPath: '/aulas-interativas/'
+      preLoaderRoute: typeof AppAulasInterativasIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/atualizacoes-leis/': {
       id: '/_app/atualizacoes-leis/'
@@ -1700,6 +1741,7 @@ interface AppRouteChildren {
   AppResumosLivroIdRoute: typeof AppResumosLivroIdRoute
   AppVadeMecumSlugRoute: typeof AppVadeMecumSlugRoute
   AppAtualizacoesLeisIndexRoute: typeof AppAtualizacoesLeisIndexRoute
+  AppAulasInterativasIndexRoute: typeof AppAulasInterativasIndexRoute
   AppProvasIndexRoute: typeof AppProvasIndexRoute
   AppResumosIndexRoute: typeof AppResumosIndexRoute
   AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
@@ -1746,6 +1788,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppResumosLivroIdRoute: AppResumosLivroIdRoute,
   AppVadeMecumSlugRoute: AppVadeMecumSlugRoute,
   AppAtualizacoesLeisIndexRoute: AppAtualizacoesLeisIndexRoute,
+  AppAulasInterativasIndexRoute: AppAulasInterativasIndexRoute,
   AppProvasIndexRoute: AppProvasIndexRoute,
   AppResumosIndexRoute: AppResumosIndexRoute,
   AppSimuladosIndexRoute: AppSimuladosIndexRoute,
@@ -1772,6 +1815,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupRoute: SignupRoute,
   ApiArtigoChatRoute: ApiArtigoChatRoute,
   ApiAssistenteChatRoute: ApiAssistenteChatRoute,
+  ApiAulasInterativasIngestRoute: ApiAulasInterativasIngestRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicSeedProvasRoute: ApiPublicSeedProvasRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,

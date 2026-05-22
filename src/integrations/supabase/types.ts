@@ -217,6 +217,220 @@ export type Database = {
         }
         Relationships: []
       }
+      aulas_interativas_aulas: {
+        Row: {
+          created_at: string
+          curso_id: string
+          descricao: string
+          duracao_min: number
+          id: string
+          modulo_id: string
+          ordem: number
+          slug: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          curso_id: string
+          descricao?: string
+          duracao_min?: number
+          id?: string
+          modulo_id: string
+          ordem?: number
+          slug: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          curso_id?: string
+          descricao?: string
+          duracao_min?: number
+          id?: string
+          modulo_id?: string
+          ordem?: number
+          slug?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aulas_interativas_aulas_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "aulas_interativas_cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aulas_interativas_aulas_modulo_id_fkey"
+            columns: ["modulo_id"]
+            isOneToOne: false
+            referencedRelation: "aulas_interativas_modulos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aulas_interativas_cursos: {
+        Row: {
+          capa_url: string | null
+          created_at: string
+          descricao: string
+          id: string
+          materia: string | null
+          ordem: number
+          pdf_origem_url: string | null
+          publicado: boolean
+          slug: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          capa_url?: string | null
+          created_at?: string
+          descricao?: string
+          id?: string
+          materia?: string | null
+          ordem?: number
+          pdf_origem_url?: string | null
+          publicado?: boolean
+          slug: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          capa_url?: string | null
+          created_at?: string
+          descricao?: string
+          id?: string
+          materia?: string | null
+          ordem?: number
+          pdf_origem_url?: string | null
+          publicado?: boolean
+          slug?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      aulas_interativas_modulos: {
+        Row: {
+          created_at: string
+          curso_id: string
+          descricao: string
+          id: string
+          ordem: number
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          curso_id: string
+          descricao?: string
+          id?: string
+          ordem?: number
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          curso_id?: string
+          descricao?: string
+          id?: string
+          ordem?: number
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aulas_interativas_modulos_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "aulas_interativas_cursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aulas_interativas_progresso: {
+        Row: {
+          atualizado_em: string
+          aula_id: string
+          concluida: boolean
+          curso_id: string
+          id: string
+          slide_atual: number
+          user_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          aula_id: string
+          concluida?: boolean
+          curso_id: string
+          id?: string
+          slide_atual?: number
+          user_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          aula_id?: string
+          concluida?: boolean
+          curso_id?: string
+          id?: string
+          slide_atual?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aulas_interativas_progresso_aula_id_fkey"
+            columns: ["aula_id"]
+            isOneToOne: false
+            referencedRelation: "aulas_interativas_aulas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aulas_interativas_progresso_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "aulas_interativas_cursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aulas_interativas_slides: {
+        Row: {
+          aula_id: string
+          conteudo: Json
+          created_at: string
+          id: string
+          imagem_url: string | null
+          ordem: number
+          quiz_json: Json | null
+          tipo: string
+        }
+        Insert: {
+          aula_id: string
+          conteudo?: Json
+          created_at?: string
+          id?: string
+          imagem_url?: string | null
+          ordem: number
+          quiz_json?: Json | null
+          tipo: string
+        }
+        Update: {
+          aula_id?: string
+          conteudo?: Json
+          created_at?: string
+          id?: string
+          imagem_url?: string | null
+          ordem?: number
+          quiz_json?: Json | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aulas_interativas_slides_aula_id_fkey"
+            columns: ["aula_id"]
+            isOneToOne: false
+            referencedRelation: "aulas_interativas_aulas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aulas_progresso: {
         Row: {
           created_at: string
