@@ -119,11 +119,11 @@ function Welcome() {
 
             <button
               onClick={() => setSupportOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold text-black hover:bg-white transition-all active:scale-[0.96]"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold text-black backdrop-blur-sm hover:bg-white/80 transition-all active:scale-[0.96]"
               style={{
-                background: "#ffffff",
-                border: "1px solid rgba(212,168,75,0.5)",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.25), 0 0 16px rgba(212,168,75,0.18)",
+                background: "rgba(255,255,255,0.65)",
+                border: "1px solid rgba(212,168,75,0.4)",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.15), 0 0 16px rgba(212,168,75,0.12)",
               }}
             >
               <Headphones className="w-4 h-4" style={{ color: "#8B0000" }} />
