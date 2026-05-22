@@ -1,49 +1,106 @@
-## Diagnóstico — por que o sync está quebrando
+## Visão geral
 
-O erro vindo do servidor é:
+Criar um sistema de **flashcards públicos curados pelo admin**, gerados via IA a partir dos resumos (capítulo a capítulo) que já existem no app. Hoje a tabela `flashcards` é pessoal (1 por usuário). Vamos adicionar uma camada nova de cards globais, navegáveis por **Área → Livro → Capítulo**, com card flip, explicação didática e exemplo prático.
 
-```
-Browserless falhou após retries :: 400 Bad Request :: POST Body validation failed: "waitFor" is not allowed
-```
+---
 
-Isso vem de `src/lib/browserless.server.ts`, função `fetchRendered()`. Hoje o corpo enviado para o `/content` é:
+## 1. Banco (migração nova)
 
-```json
-{ "url": "...", "gotoOptions": { "waitUntil": "...", "timeout": 45000 }, "waitFor": 4000 }
-```
+Tabela `flashcards_curados`:
+- `id`, `resumo_livro_id`, `resumo_capitulo_id`, `ordem`
+- `frente` (pergunta curta)
+- `verso` (resposta direta)
+- `explicacao` (parágrafo didático, tom acolhedor)
+- `exemplo` (caso prático / "imagine que…")
+- `dica` (mnemônico opcional)
+- `area`, `materia`, `livro_titulo` (desnormalizado p/ listagem rápida)
+- `created_at`, `updated_at`
 
-A documentação atual do Browserless (REST `/content`, v2) confirma:
+Tabela `flashcards_curados_jobs` (controle de geração, igual padrão de `simulado_jobs`):
+- `id`, `resumo_livro_id`, `status` (pendente/gerando/concluido/erro), `total_capitulos`, `capitulos_gerados`, `erro_msg`, `gerado_por`, timestamps
 
-- O campo **`waitFor` não existe mais** no schema do `/content`. Por isso o serviço responde **400 Bad Request — "waitFor" is not allowed**, antes mesmo de abrir o Chrome. Como o erro é 4xx, nosso loop de retries aborta corretamente — mas todas as 3 estratégias mandam `waitFor`, então todas falham.
-- O substituto oficial é **`waitForTimeout: <ms>`** (number, top-level), documentado em "Request Configuration → waitForTimeout".
-- Outras opções de espera modernas: `waitForSelector`, `waitForFunction`, `waitForEvent` — todas top-level, não dentro de `gotoOptions`.
-- O endpoint atual recomendado é **`https://production-sfo.browserless.io/content`** (o domínio antigo `chrome.browserless.io` ainda costuma responder, mas a doc nova usa `production-sfo`).
-- `gotoOptions.waitUntil` continua válido (`domcontentloaded`, `load`, `networkidle0`, `networkidle2`) e `gotoOptions.timeout` também.
-- Para casos onde o Planalto ainda detecta automação, existe o endpoint **`/unblock`** (com `content: true`) feito para passar por proteções tipo Datadome/challenges JS — é o caminho oficial quando o `/content` volta vazio/bloqueado.
+RLS:
+- `flashcards_curados`: leitura pública, escrita só admin
+- `flashcards_curados_jobs`: tudo só admin
 
-Conclusão: o sync não é um problema de rede nem de bot detection desta vez — é incompatibilidade de schema. Trocar `waitFor` por `waitForTimeout` desbloqueia as 3 tentativas.
+Índices em `(area)`, `(resumo_livro_id, ordem)` e `(resumo_capitulo_id)`.
 
-## Plano de correção
+---
 
-Escopo: somente `src/lib/browserless.server.ts`. Nada de UI, nada de banco.
+## 2. Geração via Gemini (server functions)
 
-1. **Atualizar endpoint** para `https://production-sfo.browserless.io/content?token=...` (alinhado à doc v2).
-2. **Reescrever `fetchRendered()`** com o schema correto:
-   - Tentativa 1 (leve): `{ gotoOptions: { waitUntil: "domcontentloaded", timeout: 45000 }, waitForTimeout: 4000 }`
-   - Tentativa 2 (robusta): `{ gotoOptions: { waitUntil: "load", timeout: 60000 }, waitForTimeout: 6000 }`
-   - Tentativa 3 (resiliente a frame detach): `{ gotoOptions: { waitUntil: "networkidle2", timeout: 60000 }, waitForTimeout: 3000 }`
-   - Manter o break em 4xx (não adianta retentar) e capturar `lastErr` com status + corpo truncado.
-3. **Fallback opcional para `/unblock`**: se as 3 tentativas do `/content` retornarem HTML que `isBotChallenge()` ainda considera bloqueado, fazer uma última tentativa em `https://production-sfo.browserless.io/unblock?token=...` com `{ url, browserWSEndpoint: false, cookies: false, content: true, ttl: 0 }`. Esse endpoint é o caminho oficial recomendado pela Browserless quando o `/content` é barrado por proteção JS — útil para o Planalto, que justamente roda challenge `bobcmn`/`TSPD`.
-4. **Não mexer** em `fetchDirect()`, na lógica de `isBotChallenge()`, nem nos handlers de sync — eles continuam corretos; só dependem de `fetchRendered()` voltar a funcionar.
+Arquivo novo `src/lib/flashcards-curados.functions.ts`:
 
-## Validação
+- `gerarFlashcardsCapitulo({ resumo_capitulo_id })` — lê o markdown do capítulo, calcula tamanho, chama Gemini (`gemini-2.5-flash`, JSON mode) pedindo entre **5 e 35 cards** proporcional ao texto (regra: ~1 card a cada 250 palavras, mín 5, máx 35). Apaga cards antigos do capítulo e insere os novos.
+- `gerarFlashcardsLivro({ resumo_livro_id })` — itera por todos os capítulos com `status='ok'` e dispara um por vez, atualizando o job.
+- `listarLivrosParaFlashcards()` — admin: livros com resumo concluído + status do job de flashcards.
+- `apagarFlashcardsLivro({ resumo_livro_id })`.
 
-- Abrir `/atualizacoes-leis` como admin, clicar **Sincronizar** para Maio/2026.
-- Esperado: o toast deixa de mostrar `"waitFor" is not allowed` e passa a mostrar `Sincronizado: X novos, Y atualizados`, mesmo que `X = 0` em dias sem publicação.
-- Em caso de novo erro, ele virá com mensagem diferente (timeout, 5xx, challenge persistente), o que já será informativo para o próximo passo.
+Prompt da IA (system):
+> Você é uma professora querida que cria flashcards para a OAB. Para cada card retorne `frente` (pergunta direta), `verso` (resposta curta), `explicacao` (2–4 frases acolhedoras explicando o porquê), `exemplo` (situação prática "imagine que…") e `dica` (mnemônico opcional). Cards atômicos, sem repetição. JSON: `[{frente,verso,explicacao,exemplo,dica}]`.
 
-## Detalhes técnicos (referência)
+Para listagem pública (sem auth):
+- `listarAreasFlashcards()` — agrega `area` + contagem
+- `listarLivrosArea({ area })`
+- `listarCapitulosLivro({ resumo_livro_id })`
+- `listarCardsCapitulo({ resumo_capitulo_id })`
 
-- Doc oficial: `https://docs.browserless.io/rest-apis/content` e `…/request-configuration` confirmam que `waitForTimeout` (number, top-level, ms) é a forma suportada. `waitFor` é legado e rejeitado pela validação Joi do servidor.
-- `gotoOptions` aceita `{ waitUntil, timeout, referer }`. Não aceita `waitFor` aninhado.
-- Endpoint `/unblock` aceita `{ url, content: true, ... }` e responde JSON com o HTML em `content` (não `text/html` cru) — então, se for usado, o parser precisa ler `await res.json()` e extrair `.content`.
+---
+
+## 3. UI Admin
+
+Nova rota `src/routes/_app.admin.flashcards.tsx` no padrão visual de `_app.admin.resumos.tsx`:
+- Lista por área → livro
+- Para cada livro: status do job, botão **"Gerar flashcards"**, **"Regerar"**, **"Excluir"**
+- Botão "Gerar todos da área" e "Gerar tudo" (igual fila de resumos, reusando o mesmo padrão de `resumo-queue`, em arquivo novo `flashcards-queue.ts`)
+- Driver/Indicador em `src/components/admin/FlashcardsQueueDriver.tsx` + `FlashcardsQueueIndicator.tsx`, montados no `AdminQueueOverlays`
+
+Novo card no menu `src/routes/_app.admin.index.tsx`:
+- Ícone `Layers` / `Brain` → `/admin/flashcards` — "Gerar flashcards dos resumos"
+
+---
+
+## 4. UI Pública (PP Live)
+
+Nova rota `src/routes/_app.flashcards-tema.tsx` (lista de áreas + livros + capítulos) usando o mesmo dataset. Renomeio mínimo: a rota atual `/flashcards` (FSRS pessoal) continua funcionando — vamos adicionar uma **aba** ou um seletor no topo da página `/flashcards`:
+- **"Por tema"** (novo, default) — explora os cards curados por área/livro/capítulo, com card flip animado mostrando verso + explicação + exemplo + dica
+- **"Minha revisão"** (existente, FSRS) — fluxo atual de revisão pessoal
+
+Componente `FlashcardCurado.tsx`:
+- Frente: pergunta grande, hint "tocar para virar"
+- Verso (flip 3D): resposta em destaque + **Explicação** (parágrafo) + **Exemplo** (box destacado) + **Dica** (se houver)
+- Botões: "Salvar na minha revisão" (cria cópia em `flashcards` pessoais c/ `fonte_tipo='resumo'`, `fonte_id=<capitulo_id>`), "Próximo", "Anterior"
+
+Hub na home `src/routes/_app.app.tsx`:
+- Nova seção **"Flashcards por tema"** abaixo de Atalhos (antes do Blog), carrossel horizontal das áreas com contagem de cards — link direto para `/flashcards?tema=<area>`
+
+---
+
+## 5. Detalhes técnicos
+
+- IA: Gemini direto via `geminiGenerateContent` (regra do projeto — proibido Lovable AI Gateway)
+- Modelo: `gemini-2.5-flash` (melhor qualidade para didática) com `responseMimeType: application/json`
+- Streaming não necessário — geração em lote por capítulo
+- Idempotência: regerar apaga e recria o conjunto do capítulo
+- Animação flip: CSS 3D `transform: rotateY(180deg)` + `backface-visibility: hidden`
+- Limite de tokens: capítulos grandes truncados em 12k chars no prompt
+
+---
+
+## Arquivos a criar/editar
+
+**Novos:**
+- migração (tabelas + RLS + índices)
+- `src/lib/flashcards-curados.functions.ts`
+- `src/lib/flashcards-queue.ts`
+- `src/routes/_app.admin.flashcards.tsx`
+- `src/components/admin/FlashcardsQueueDriver.tsx`
+- `src/components/admin/FlashcardsQueueIndicator.tsx`
+- `src/components/flashcards/FlashcardCurado.tsx`
+- `src/components/flashcards/TemaExplorer.tsx`
+
+**Editar:**
+- `src/routes/_app.admin.index.tsx` — novo card "Flashcards"
+- `src/routes/_app.flashcards.tsx` — adicionar abas Por tema / Minha revisão
+- `src/routes/_app.app.tsx` — seção "Flashcards por tema" na home
+- `src/components/admin/AdminQueueOverlays.tsx` — montar driver/indicator
