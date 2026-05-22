@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, CheckCircle2, Clock, PlayCircle } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, PlayCircle } from "lucide-react";
 import { getCursoCompleto, getProgressoCurso } from "@/lib/aulas-interativas.functions";
 import { useAuth } from "@/hooks/use-auth";
 
