@@ -277,17 +277,18 @@ function ArquivoMaterialItem({
         const proc = j.proximaPagina as number;
         const extraidas = j.processadas as number;
         const pct = total ? Math.min(100, Math.round((proc / total) * 100)) : null;
+        const imgs = j.imagens as number | undefined;
         setProgresso(
           total
-            ? `Extraindo… prova real ${proc}/${total} páginas (${pct}%) · ${extraidas} salvas`
-            : `Extraindo… ${extraidas} páginas salvas`,
+            ? `Extraindo… prova real ${proc}/${total} páginas (${pct}%) · ${extraidas} págs salvas · ${imgs ?? 0} imagens`
+            : `Extraindo… ${extraidas} páginas salvas · ${imgs ?? 0} imagens`,
         );
         done = j.done;
         pageStart = j.proximaPagina;
       }
       toast.success(`Extraído: ${last?.processadas ?? "?"}/${last?.total ?? "?"} páginas, ${last?.imagens ?? 0} imagens`);
       setProgresso(
-        `Extração pronta: prova real ${last?.processadas ?? "?"}/${last?.total ?? "?"} páginas · ${last?.chars ?? 0} chars.`,
+        `Extração pronta: ${last?.processadas ?? "?"}/${last?.total ?? "?"} páginas · ${last?.chars ?? 0} caracteres · ${last?.imagens ?? 0} imagens.`,
       );
       onChanged();
     } catch (err: any) {
