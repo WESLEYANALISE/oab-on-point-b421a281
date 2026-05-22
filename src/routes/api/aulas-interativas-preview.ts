@@ -260,7 +260,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
 
         const { data: extr } = await sb
           .from("aulas_interativas_extracoes")
-          .select("markdown")
+          .select("markdown, paginas")
           .eq("arquivo_drive_id", arq.id)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -282,7 +282,9 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
 
         const tituloIn = parsed.tituloCurso ?? arq.nome_arquivo.replace(/\.pdf$/i, "");
         const materiaIn = parsed.materia ?? arq.subpasta;
-        const markdown = extr.markdown.slice(0, 180_000);
+        const markdownCompleto = String(extr.markdown ?? "");
+        const paginasFonte = Array.isArray(extr.paginas) ? (extr.paginas as PaginaFonte[]) : [];
+        const markdownPlanejamento = buildPlanningMaterial(paginasFonte, markdownCompleto);
 
         const encoder = new TextEncoder();
         const stream = new ReadableStream<Uint8Array>({
@@ -322,7 +324,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
 
               // ---- PASS 1: esqueleto ----
               send("progress", { fase: "esqueleto", aula: 0, total: 0 });
-              const userEsq = `Curso sugerido: ${tituloIn}\nMatéria: ${materiaIn}\n\nMATERIAL EM MARKDOWN:\n${markdown}`;
+              const userEsq = `Curso sugerido: ${tituloIn}\nMatéria: ${materiaIn}\n\nAMOSTRA REPRESENTATIVA DO MATERIAL EM MARKDOWN:\n${markdownPlanejamento}`;
               let esqueleto: any;
               try {
                 esqueleto = await callGeminiJson(SYSTEM_ESQUELETO, userEsq, 16_000);
@@ -332,7 +334,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
 
               const titulo_sugerido = esqueleto?.titulo_sugerido ?? tituloIn;
               const materia_sugerida = esqueleto?.materia_sugerida ?? materiaIn;
-              const modulosBase: any[] = Array.isArray(esqueleto?.modulos) ? esqueleto.modulos : [];
+              const modulosBase: any[] = limitarTotalAulas(Array.isArray(esqueleto?.modulos) ? esqueleto.modulos : []);
               if (modulosBase.length === 0) throw new Error("Esqueleto vazio (sem módulos)");
 
               // Conta total de aulas
@@ -353,13 +355,18 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                     `MÓDULO: ${mod.titulo}\nDescrição do módulo: ${mod.descricao ?? ""}\n\n` +
                     `AULA: ${aul.titulo}\nDescrição: ${aul.descricao ?? ""}\nEscopo: ${aul.escopo ?? ""}\n\n` +
                     `Gere os slides apenas desta aula, conforme o escopo.\n\n` +
-                    `MATERIAL EM MARKDOWN:\n${markdown}`;
+                    `TRECHOS MAIS RELEVANTES DO MATERIAL EM MARKDOWN:\n${buildLessonMaterial(paginasFonte, markdownCompleto, {
+                      modulo: mod.titulo,
+                      aula: aul.titulo,
+                      descricao: aul.descricao,
+                      escopo: aul.escopo,
+                    })}`;
                   let slidesJson: any;
                   try {
                     slidesJson = await callGeminiJson(SYSTEM_SLIDES, userSlides, 8_000);
                   } catch (e: any) {
-                    // não derruba tudo — usa slides vazios e segue
-                    slidesJson = { slides: [] };
+                    // não derruba tudo — gera uma aula mínima revisável e segue
+                    slidesJson = { slides: fallbackSlides(aul) };
                     console.error("[preview] aula falhou:", aul?.titulo, e?.message);
                   }
                   const slides = Array.isArray(slidesJson?.slides) ? slidesJson.slides : [];
