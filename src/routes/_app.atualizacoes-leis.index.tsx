@@ -7,9 +7,23 @@ import {
   ChevronRight,
   Calendar as CalendarIcon,
   ChevronDown,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { listResenhaMes } from "@/lib/resenha-sync.functions";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  PRESETS,
+  LEIS_IMPORTANTES,
+  matchPreset,
+  matchLeisAcompanhadas,
+  type PresetKey,
+} from "@/lib/atualizacoes-filtros";
+
+const STORAGE_LEIS = "oab:atualizacoes:leis-acompanhadas";
+
 
 export const Route = createFileRoute("/_app/atualizacoes-leis/")({
   head: () => ({
