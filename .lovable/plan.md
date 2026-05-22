@@ -1,141 +1,87 @@
+## Diagnóstico
 
-# Plano de implementação — Blocos 1, 2, 8, 9, 10, 11, 12, 14, 15
+A URL muda na hora, mas o conteúdo demora porque **duas coisas estão quebradas ao mesmo tempo**:
 
-Escopo grande. Vou organizar em **fases entregáveis** (cada fase é um PR/commit independente que já deixa o app melhor). Posso fazer tudo de uma vez, mas o ideal é confirmar fase por fase pra você revisar.
+### 1. Preload do TanStack Router está crashando (causa raiz)
 
----
+No console do preview aparece, toda vez que o usuário aponta/toca em um link:
 
-## FASE A — Segurança (Bloco 1)
+```
+TypeError: Cannot read properties of undefined (reading '_nonReactive')
+  at loadRouteMatch (@tanstack/router-core)
+  at RouterCore.preloadRoute
+```
 
-### A1. Migration Supabase
-- Revogar `EXECUTE` de `anon` e `authenticated` nas funções `SECURITY DEFINER` que não devem ser públicas. Vou listar uma a uma (`has_role`, `get_biblioteca_areas_counts`, `rls_auto_enable`, `handle_new_user`, `touch_updated_at`) e decidir caso a caso — internas ficam `REVOKE ALL`; as que o frontend chama via RPC mantêm `EXECUTE TO authenticated` apenas.
-- Adicionar `SET search_path = public, pg_temp` onde faltar.
+Isso é um **mismatch de versão** dentro do TanStack:
 
-### A2. Painel Supabase (instruções pro usuário)
-- Ativar **Leaked Password Protection** (Auth → Policies). Não dá pra fazer por código — vou deixar o link clicável.
-- Revisar rate limits de Auth.
+| Pacote | Versão |
+|---|---|
+| `@tanstack/react-router` | **1.168.25** |
+| `@tanstack/react-start` | 1.167.50 |
+| `@tanstack/router-plugin` | 1.167.28 |
 
-### A3. Headers de segurança
-- Adicionar middleware em `src/start.ts` setando: `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, `Content-Security-Policy` (modo report-only inicialmente pra não quebrar nada).
-- `X-Frame-Options: DENY` exceto rotas que precisam de embed.
+O `react-router` 1.168 fala com um `router-core` novo que expõe `_nonReactive` em cada match; o resto do ecossistema ainda está em 1.167 e carrega um core antigo que não tem esse campo. Resultado: **toda chamada `preloadRoute` joga uma exception silenciosa**.
 
-### A4. Server functions
-- Varrer todas as `*.functions.ts` que mexem com dados de usuário e garantir uso de `requireSupabaseAuth` (não confiar em `userId` vindo do client).
-- Adicionar validação Zod em todos os `inputValidator`.
+Como o router está configurado com `defaultPreload: "intent"` + `defaultPreloadDelay: 0` justamente para deixar a navegação "instantânea" no mobile, quando o preload morre **nenhum chunk é baixado antes do clique**. No clique:
 
----
+1. URL muda (client-side routing é síncrono).
+2. O chunk JS da rota destino ainda nem começou a baixar.
+3. A página antiga fica na tela até o chunk chegar + loader/queries rodarem.
 
-## FASE B — Observabilidade (Bloco 2)
+Por isso a sensação é "rota troca, conteúdo demora".
 
-- **Sentry nas server functions**: criar middleware global em `src/start.ts` que envolve cada serverFn em `Sentry.startSpan` e captura exceções com `Sentry.captureException`.
-- **Upload de sourcemaps** no build (`@sentry/vite-plugin`).
-- **Health check**: `src/routes/api/public/health.ts` retornando `{ db, gemini, time }` (checa DB com `select 1`, ping rápido no Gemini).
-- **Logger estruturado** (`src/lib/logger.ts`) usando `pino` (compatível com Worker) com `job_id`/`request_id` correlacionável. Substituir `console.log` dos jobs (sync DOU, narrações, simulados).
+### 2. Não existe `defaultPendingComponent`
 
----
+Mesmo se um dia o preload falhar (rede ruim, primeira visita), o router não tem componente de "pending" global. Enquanto o chunk/loader não chegam, o TanStack mantém a tela antiga renderizada — sem skeleton, sem spinner, sem nada. Isso amplifica a percepção de travamento.
 
-## FASE C — SEO & share (Bloco 8)
-
-- **Sitemap dinâmico**: `src/routes/api/public/sitemap[.]xml.ts` lendo blog/biblioteca/vade-mecum/atualizacoes-leis.
-- **robots.txt** explícito em `public/robots.txt` apontando pro sitemap.
-- **JSON-LD**: helpers em `src/lib/jsonld.ts` (`Article`, `Course`, `BreadcrumbList`, `Organization`) usados nas rotas relevantes.
-- **OG images dinâmicas**: rota `src/routes/api/public/og/$slug.ts` usando `satori` + `@resvg/resvg-wasm` (edge-friendly). Cache HTTP de 1 dia.
-- **Canonical**: helper `canonical()` injetado em `head()` de cada rota crawlável.
-- Auditar metadados de cada rota top-level (`title`, `description`, `og:*`) — várias rotas estão herdando só o root.
+`defaultPendingMs: 80` + `defaultPendingMinMs: 200` já estão configurados em `src/router.tsx`, mas só funcionam se houver um `defaultPendingComponent`.
 
 ---
 
-## FASE D — Performance (Bloco 9)
+## Plano de correção
 
-- **Preload de rotas**: `defaultPreload: "intent"` no router (verificar e ativar).
-- **Bundle analyzer**: `rollup-plugin-visualizer` no build com saída em `dist/stats.html`.
-- **Lighthouse CI**: workflow GitHub Actions (`treosh/lighthouse-ci-action`) rodando em PR contra preview Lovable, com budgets básicos.
-- **Image transforms**: helper `supabaseImg(url, {w,h,q})` usando `/render/image/public/...` e substituir usos diretos onde aplica.
-- **Lazy-load** componentes pesados (`recharts`, `embla`, `framer-motion` em telas específicas) via `React.lazy`/`@tanstack/react-router` lazy splitting onde já não tem.
-- Auditar e remover dependências não usadas (`depcheck`).
+### Passo 1 — Alinhar versões do TanStack
 
----
+Subir todos os pacotes do TanStack Router/Start para a mesma minor (1.168.x) para o `router-core` voltar a ter a forma esperada:
 
-## FASE E — DevOps & qualidade (Bloco 10)
+- `@tanstack/react-router` → manter 1.168.x
+- `@tanstack/react-start` → bump para 1.168.x
+- `@tanstack/router-plugin` → bump para 1.168.x
+- `@tanstack/zod-adapter` → bump para 1.168.x
 
-- **GitHub Actions**:
-  - `.github/workflows/ci.yml` — lint + typecheck + build em PR e push.
-  - `.github/workflows/lighthouse.yml` — Lighthouse CI.
-  - `.github/workflows/codeql.yml` — análise de segurança estática.
-- **Renovate**: `.github/renovate.json` com agrupamento por ecossistema (radix, tanstack, supabase, react).
-- **Husky + lint-staged**: pre-commit roda `prettier --write` e `eslint --fix` nos arquivos alterados; pre-push roda `tsc --noEmit`.
-- **Vitest setup**: `vitest.config.ts`, `src/test/setup.ts`. Testes iniciais (mínimo 1 por util):
-  - `srs.test.ts`, `cf-parser.test.ts`, `resenha-parser.test.ts`, `atualizacoes-filtros.test.ts`, `whatsapp-markdown.test.ts`, `titulo.test.ts`.
-- **Playwright smoke**: `e2e/smoke.spec.ts` — abre `/`, faz login com usuário de teste (variável), navega `/inicio`, `/atualizacoes-leis`, `/vade-mecum`.
-- **Commitlint + conventional-changelog** (opcional, marco se topar).
+Comando: `bun add @tanstack/react-router@latest @tanstack/react-start@latest @tanstack/router-plugin@latest @tanstack/zod-adapter@latest`
 
----
+Validação: abrir Início, passar o mouse/dedo nos atalhos, verificar que o erro `_nonReactive` sumiu do console e que requisições de chunks `_app.*.tsx` aparecem na aba Network **antes** do clique.
 
-## FASE F — Acessibilidade (Bloco 11)
+### Passo 2 — Adicionar `defaultPendingComponent` no router
 
-- Skip-link em `__root.tsx` ("Pular para conteúdo").
-- `<main id="main">` em todas as layouts.
-- Auditoria com `@axe-core/playwright` no smoke E2E.
-- Revisar contraste do tema dourado/marrom (`src/styles.css`) com `oklch` — ajustar tokens se falhar AA.
-- Respeitar `prefers-reduced-motion` em todas as animações framer-motion (helper `useReducedMotion()` aplicado nos componentes do hero/transições).
-- `aria-label` em ícones sem texto (FAB de filtro, botões de share, etc.).
-- Verificar foco visível em todos os botões (ring custom já existe — confirmar consistência).
+Em `src/router.tsx`, registrar um skeleton leve (reaproveitando `src/components/shared/SkeletonCard.tsx` ou um placeholder simples com a paleta gold/primary). Assim, mesmo em cenário pessimista (chunk frio, conexão lenta), o usuário vê feedback visual em ~80ms em vez da página antiga "congelada".
 
----
+```text
+defaultPendingComponent: () => (
+  <div className="px-4 py-6 space-y-3">
+    <div className="h-7 w-40 rounded-md bg-muted animate-pulse" />
+    <div className="h-32 w-full rounded-2xl bg-muted animate-pulse" />
+    <div className="grid grid-cols-2 gap-3">
+      <div className="h-24 rounded-2xl bg-muted animate-pulse" />
+      <div className="h-24 rounded-2xl bg-muted animate-pulse" />
+    </div>
+  </div>
+)
+```
 
-## FASE G — i18n base (Bloco 12)
+### Passo 3 — Garantir preload agressivo nos atalhos da Home (opcional, mas recomendado)
 
-- Instalar `@lingui/core` + `@lingui/react` + `@lingui/macro` + `@lingui/vite-plugin` (mais leve que react-intl, bom suporte SSR).
-- Locale default `pt-BR`, estrutura pronta pra `en` e `es` mesmo vazias.
-- Wrapper `<I18nProvider>` no `__root.tsx`.
-- Helper `t\`...\`` adotado primeiro nas strings novas; varredura completa fica como tech-debt rastreado por TODO.
-- Detectar locale via `Accept-Language` na primeira request (cookie `locale`).
+Os 8 `<Link>` de atalhos em `_app.inicio.tsx` herdam `preload: "intent"` do router. Após o passo 1, isso volta a funcionar. Se ainda quisermos blindar, dá para forçar `preload="viewport"` nesse grid específico — assim que aparecem na tela, os chunks já começam a baixar, e o clique vira navegação instantânea.
 
 ---
 
-## FASE H — Padrões de código (Bloco 14)
+## Resumo técnico
 
-- **`src/schemas/`**: centralizar Zod schemas reutilizados (atualizações, simulados, perfil, vade-mecum).
-- **Tipagem estrita**: rodar `tsc --noEmit --strict` em modo "no implicit any" e corrigir `any` em payloads de `*.functions.ts` (a varrer: `gemini.server.ts`, `resenha-sync.functions.ts`, jobs).
-- **`react-error-boundary`** + Sentry: substituir error boundaries ad-hoc por um único `<AppErrorBoundary>` reutilizável; aplicar nas seções críticas (chat, leitor, simulado).
-- **ESLint reforçado**: regras adicionais `@typescript-eslint/no-floating-promises`, `no-misused-promises`, `consistent-type-imports`, `import/order`, `react-hooks/exhaustive-deps` (já tem, garantir error não warn).
+| O que | Por quê |
+|---|---|
+| Subir `react-start`, `router-plugin`, `zod-adapter` para 1.168.x | Acabar com o crash `_nonReactive` no `preloadRoute` |
+| Adicionar `defaultPendingComponent` | Feedback visual imediato quando o chunk não está pré-carregado |
+| (Opcional) `preload="viewport"` nos atalhos da Home | Pré-carregar as 8 rotas mais clicadas assim que a Home renderizar |
 
----
-
-## FASE I — Padrões de repositório (Bloco 15)
-
-Criar/atualizar:
-- `README.md` — overview, stack, screenshots (placeholders), scripts, link da Lovable.
-- `LICENSE` — proprietário (All rights reserved) ou MIT? **(quero confirmar com você)**.
-- `SECURITY.md` — canal de report (email/URL).
-- `CONTRIBUTING.md` — fluxo de PR, commit style.
-- `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1.
-- `.github/ISSUE_TEMPLATE/bug_report.yml`, `feature_request.yml`.
-- `.github/PULL_REQUEST_TEMPLATE.md`.
-- `.env.example` — listar todas as VITE_* e nomes das secrets server-side (só nomes, sem valores).
-- `.editorconfig`.
-
----
-
-## Detalhes técnicos importantes
-
-- **Tudo no stack atual**: TanStack Start + Cloudflare Worker + Supabase. Sem Node-only packages no server (já validei sharp/pino — pino tem build edge).
-- **Gemini direto**: mantém regra da memória (sem Lovable AI Gateway).
-- **Sem mudar funcionalidades de usuário**: nenhuma feature nova é adicionada; só infra, qualidade e SEO.
-
-## Riscos / pontos de atenção
-
-1. **CSP** pode quebrar embeds (YouTube nas aulas, iframes do Planalto). Começar report-only e ir apertando.
-2. **`REVOKE EXECUTE`** em função usada por RPC do client quebra a tela. Vou auditar usos antes de revogar.
-3. **Lingui** adiciona ~15 KB e exige `babel-plugin-macros` ou plugin Vite — vou usar plugin Vite (sem ejetar babel).
-4. **GitHub Actions** rodar `build` precisa das `VITE_SUPABASE_*` como secrets do repo. Vou documentar no README.
-5. **Playwright** em CI precisa de runner com browsers — `microsoft/playwright-github-action` resolve.
-
-## Perguntas pra você antes de começar
-
-1. **LICENSE**: proprietário ("All rights reserved") ou aberto (MIT)?
-2. **SECURITY.md**: qual e-mail/canal pra report de vulnerabilidade?
-3. Quer que eu rode **tudo de uma vez** (vai dar muitos arquivos num único commit) ou **fase por fase** com sua aprovação no meio?
-4. **i18n (Fase G)** — só estrutura agora, mantendo PT-BR como única língua ativa, certo? Não vou traduzir nada de UI existente.
-
-Me responde essas 4 e eu começo pela Fase A.
+Sem o Passo 1, o Passo 2 só esconde o sintoma. Sem o Passo 2, qualquer falha futura de preload volta a parecer travamento. Os dois juntos resolvem a queixa.
