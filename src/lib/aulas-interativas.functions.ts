@@ -280,21 +280,38 @@ export const publicarCurso = createServerFn({ method: "POST" })
       .rpc("has_role" as never, { _user_id: context.userId, _role: "admin" } as never);
     // Fallback: usa policy padrão (se falhar a chamada acima, ainda obedece RLS)
 
-    // Cria curso
-    const { data: curso, error: ec } = await supabase
-      .from("aulas_interativas_cursos")
-      .insert({
-        titulo: data.titulo,
-        slug: data.slug,
-        descricao: data.descricao,
-        capa_url: data.capa_url ?? null,
-        materia: data.materia ?? null,
-        pdf_origem_url: data.pdf_origem_url ?? null,
-        publicado: data.publicado,
-        ordem: 0,
-      })
-      .select("id")
-      .single();
+    // Cria curso (garante slug único)
+    const slugBase = data.slug;
+    let slugFinal = slugBase;
+    let curso: { id: string } | null = null;
+    let ec: { message: string } | null = null;
+    for (let tent = 0; tent < 5; tent++) {
+      const res = await supabase
+        .from("aulas_interativas_cursos")
+        .insert({
+          titulo: data.titulo,
+          slug: slugFinal,
+          descricao: data.descricao,
+          capa_url: data.capa_url ?? null,
+          materia: data.materia ?? null,
+          pdf_origem_url: data.pdf_origem_url ?? null,
+          publicado: data.publicado,
+          ordem: 0,
+        })
+        .select("id")
+        .single();
+      if (!res.error && res.data) {
+        curso = res.data;
+        ec = null;
+        break;
+      }
+      ec = res.error;
+      if (res.error?.code === "23505") {
+        slugFinal = `${slugBase}-${Math.random().toString(36).slice(2, 7)}`;
+        continue;
+      }
+      break;
+    }
     if (ec || !curso) throw new Error(ec?.message ?? "Falha ao criar curso");
 
     const cursoId = curso.id;
