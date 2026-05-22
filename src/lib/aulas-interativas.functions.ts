@@ -332,11 +332,13 @@ export const publicarCurso = createServerFn({ method: "POST" })
           aula_id: aula.id,
           ordem: s.ordem,
           tipo: s.tipo,
-          conteudo: s.conteudo as Record<string, unknown>,
+          conteudo: (s.conteudo ?? {}) as never,
           imagem_url: s.imagem_url ?? null,
-          quiz_json: s.quiz_json ?? null,
+          quiz_json: (s.quiz_json ?? null) as never,
         }));
-        const { error: es } = await supabase.from("aulas_interativas_slides").insert(slidesRows);
+        const { error: es } = await supabase
+          .from("aulas_interativas_slides")
+          .insert(slidesRows as never);
         if (es) throw new Error(es.message);
       }
     }
