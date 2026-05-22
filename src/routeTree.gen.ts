@@ -23,6 +23,7 @@ import { Route as AppPlanoEstudoRouteImport } from './routes/_app.plano-estudo'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
+import { Route as AppFlashcardsTemaRouteImport } from './routes/_app.flashcards-tema'
 import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
 import { Route as AppCadernoErrosRouteImport } from './routes/_app.caderno-erros'
 import { Route as AppBlogRouteImport } from './routes/_app.blog'
@@ -62,6 +63,7 @@ import { Route as AppAdminVadeMecumSyncRouteImport } from './routes/_app.admin.v
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
 import { Route as AppAdminResumosRouteImport } from './routes/_app.admin.resumos'
 import { Route as AppAdminNarracoesRouteImport } from './routes/_app.admin.narracoes'
+import { Route as AppAdminFlashcardsRouteImport } from './routes/_app.admin.flashcards'
 import { Route as AppAdminBlogRouteImport } from './routes/_app.admin.blog'
 import { Route as AppVadeMecumEstatutosIndexRouteImport } from './routes/_app.vade-mecum.estatutos.index'
 import { Route as AppVadeMecumCfIndexRouteImport } from './routes/_app.vade-mecum.cf.index'
@@ -149,6 +151,11 @@ const AppNoticiasRoute = AppNoticiasRouteImport.update({
 const AppMateriasRoute = AppMateriasRouteImport.update({
   id: '/materias',
   path: '/materias',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFlashcardsTemaRoute = AppFlashcardsTemaRouteImport.update({
+  id: '/flashcards-tema',
+  path: '/flashcards-tema',
   getParentRoute: () => AppRoute,
 } as any)
 const AppFlashcardsRoute = AppFlashcardsRouteImport.update({
@@ -346,6 +353,11 @@ const AppAdminNarracoesRoute = AppAdminNarracoesRouteImport.update({
   path: '/narracoes',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminFlashcardsRoute = AppAdminFlashcardsRouteImport.update({
+  id: '/flashcards',
+  path: '/flashcards',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminBlogRoute = AppAdminBlogRouteImport.update({
   id: '/blog',
   path: '/blog',
@@ -468,6 +480,7 @@ export interface FileRoutesByFullPath {
   '/blog': typeof AppBlogRouteWithChildren
   '/caderno-erros': typeof AppCadernoErrosRoute
   '/flashcards': typeof AppFlashcardsRoute
+  '/flashcards-tema': typeof AppFlashcardsTemaRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
   '/perfil': typeof AppPerfilRoute
@@ -477,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/admin/blog': typeof AppAdminBlogRoute
+  '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -538,6 +552,7 @@ export interface FileRoutesByTo {
   '/blog': typeof AppBlogRouteWithChildren
   '/caderno-erros': typeof AppCadernoErrosRoute
   '/flashcards': typeof AppFlashcardsRoute
+  '/flashcards-tema': typeof AppFlashcardsTemaRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
   '/perfil': typeof AppPerfilRoute
@@ -547,6 +562,7 @@ export interface FileRoutesByTo {
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/admin/blog': typeof AppAdminBlogRoute
+  '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -609,6 +625,7 @@ export interface FileRoutesById {
   '/_app/blog': typeof AppBlogRouteWithChildren
   '/_app/caderno-erros': typeof AppCadernoErrosRoute
   '/_app/flashcards': typeof AppFlashcardsRoute
+  '/_app/flashcards-tema': typeof AppFlashcardsTemaRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/noticias': typeof AppNoticiasRouteWithChildren
   '/_app/perfil': typeof AppPerfilRoute
@@ -618,6 +635,7 @@ export interface FileRoutesById {
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
+  '/_app/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/_app/admin/narracoes': typeof AppAdminNarracoesRoute
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
@@ -684,6 +702,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/caderno-erros'
     | '/flashcards'
+    | '/flashcards-tema'
     | '/materias'
     | '/noticias'
     | '/perfil'
@@ -693,6 +712,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/api/artigo-chat'
     | '/admin/blog'
+    | '/admin/flashcards'
     | '/admin/narracoes'
     | '/admin/resumos'
     | '/admin/simulados'
@@ -754,6 +774,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/caderno-erros'
     | '/flashcards'
+    | '/flashcards-tema'
     | '/materias'
     | '/noticias'
     | '/perfil'
@@ -763,6 +784,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/api/artigo-chat'
     | '/admin/blog'
+    | '/admin/flashcards'
     | '/admin/narracoes'
     | '/admin/resumos'
     | '/admin/simulados'
@@ -824,6 +846,7 @@ export interface FileRouteTypes {
     | '/_app/blog'
     | '/_app/caderno-erros'
     | '/_app/flashcards'
+    | '/_app/flashcards-tema'
     | '/_app/materias'
     | '/_app/noticias'
     | '/_app/perfil'
@@ -833,6 +856,7 @@ export interface FileRouteTypes {
     | '/_app/reta-final'
     | '/api/artigo-chat'
     | '/_app/admin/blog'
+    | '/_app/admin/flashcards'
     | '/_app/admin/narracoes'
     | '/_app/admin/resumos'
     | '/_app/admin/simulados'
@@ -993,6 +1017,13 @@ declare module '@tanstack/react-router' {
       path: '/materias'
       fullPath: '/materias'
       preLoaderRoute: typeof AppMateriasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/flashcards-tema': {
+      id: '/_app/flashcards-tema'
+      path: '/flashcards-tema'
+      fullPath: '/flashcards-tema'
+      preLoaderRoute: typeof AppFlashcardsTemaRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/flashcards': {
@@ -1268,6 +1299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminNarracoesRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/flashcards': {
+      id: '/_app/admin/flashcards'
+      path: '/flashcards'
+      fullPath: '/admin/flashcards'
+      preLoaderRoute: typeof AppAdminFlashcardsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/admin/blog': {
       id: '/_app/admin/blog'
       path: '/blog'
@@ -1406,6 +1444,7 @@ declare module '@tanstack/react-router' {
 
 interface AppAdminRouteChildren {
   AppAdminBlogRoute: typeof AppAdminBlogRoute
+  AppAdminFlashcardsRoute: typeof AppAdminFlashcardsRoute
   AppAdminNarracoesRoute: typeof AppAdminNarracoesRoute
   AppAdminResumosRoute: typeof AppAdminResumosRoute
   AppAdminSimuladosRoute: typeof AppAdminSimuladosRoute
@@ -1415,6 +1454,7 @@ interface AppAdminRouteChildren {
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminBlogRoute: AppAdminBlogRoute,
+  AppAdminFlashcardsRoute: AppAdminFlashcardsRoute,
   AppAdminNarracoesRoute: AppAdminNarracoesRoute,
   AppAdminResumosRoute: AppAdminResumosRoute,
   AppAdminSimuladosRoute: AppAdminSimuladosRoute,
@@ -1559,6 +1599,7 @@ interface AppRouteChildren {
   AppBlogRoute: typeof AppBlogRouteWithChildren
   AppCadernoErrosRoute: typeof AppCadernoErrosRoute
   AppFlashcardsRoute: typeof AppFlashcardsRoute
+  AppFlashcardsTemaRoute: typeof AppFlashcardsTemaRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
   AppPerfilRoute: typeof AppPerfilRoute
@@ -1603,6 +1644,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBlogRoute: AppBlogRouteWithChildren,
   AppCadernoErrosRoute: AppCadernoErrosRoute,
   AppFlashcardsRoute: AppFlashcardsRoute,
+  AppFlashcardsTemaRoute: AppFlashcardsTemaRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
   AppNoticiasRoute: AppNoticiasRouteWithChildren,
   AppPerfilRoute: AppPerfilRoute,
@@ -1654,13 +1696,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

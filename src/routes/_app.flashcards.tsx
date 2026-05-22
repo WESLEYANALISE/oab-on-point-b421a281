@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -124,6 +124,20 @@ function FlashcardsPage() {
           }} />
         </div>
       </header>
+
+      <Link
+        to="/flashcards-tema"
+        className="flex items-center gap-3 p-3 rounded-xl border border-gold/30 bg-gradient-to-r from-gold/10 to-transparent hover:from-gold/15 transition-colors"
+      >
+        <div className="h-10 w-10 rounded-lg bg-gradient-gold grid place-items-center text-gold-foreground shrink-0">
+          <Sparkles className="h-5 w-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">Flashcards por tema</p>
+          <p className="text-xs text-muted-foreground">Explore cards prontos por área e capítulo, com explicação e exemplos</p>
+        </div>
+        <span className="text-xs text-gold font-semibold">Abrir →</span>
+      </Link>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="Novos" value={contadores.novos} color="text-blue-400" />

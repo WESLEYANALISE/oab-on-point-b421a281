@@ -44,6 +44,7 @@ const ATALHOS = [
   { label: "Atualizações de Leis", sub: "Novidades do D.O.U.", icon: BellRing, to: "/atualizacoes-leis" as const },
   { label: "Biblioteca", sub: "Livros e PDFs",     icon: Library,  to: "/biblioteca" as const },
   { label: "Resumos",    sub: "Por matéria",       icon: FileText, to: "/resumos" as const },
+  { label: "Flashcards", sub: "Por tema (IA)",     icon: Sparkles, to: "/flashcards-tema" as const },
   { label: "Simulados",  sub: "Treine no tempo",   icon: Trophy,   to: "/simulados" as const },
   { label: "Provas",     sub: "Exames anteriores", icon: FileText, to: "/provas" as const },
   { label: "Videoaulas", sub: "Aulas em vídeo",    icon: Video,    to: "/aulas" as const },
