@@ -787,6 +787,99 @@ export type Database = {
         }
         Relationships: []
       }
+      flashcards_curados: {
+        Row: {
+          area: string | null
+          capitulo_titulo: string | null
+          created_at: string
+          dica: string | null
+          exemplo: string | null
+          explicacao: string | null
+          frente: string
+          id: string
+          livro_titulo: string | null
+          materia: string | null
+          ordem: number
+          resumo_capitulo_id: string
+          resumo_livro_id: string
+          updated_at: string
+          verso: string
+        }
+        Insert: {
+          area?: string | null
+          capitulo_titulo?: string | null
+          created_at?: string
+          dica?: string | null
+          exemplo?: string | null
+          explicacao?: string | null
+          frente: string
+          id?: string
+          livro_titulo?: string | null
+          materia?: string | null
+          ordem?: number
+          resumo_capitulo_id: string
+          resumo_livro_id: string
+          updated_at?: string
+          verso: string
+        }
+        Update: {
+          area?: string | null
+          capitulo_titulo?: string | null
+          created_at?: string
+          dica?: string | null
+          exemplo?: string | null
+          explicacao?: string | null
+          frente?: string
+          id?: string
+          livro_titulo?: string | null
+          materia?: string | null
+          ordem?: number
+          resumo_capitulo_id?: string
+          resumo_livro_id?: string
+          updated_at?: string
+          verso?: string
+        }
+        Relationships: []
+      }
+      flashcards_curados_jobs: {
+        Row: {
+          capitulos_gerados: number
+          created_at: string
+          erro_msg: string | null
+          gerado_por: string | null
+          id: string
+          resumo_livro_id: string
+          status: string
+          total_capitulos: number
+          total_cards: number
+          updated_at: string
+        }
+        Insert: {
+          capitulos_gerados?: number
+          created_at?: string
+          erro_msg?: string | null
+          gerado_por?: string | null
+          id?: string
+          resumo_livro_id: string
+          status?: string
+          total_capitulos?: number
+          total_cards?: number
+          updated_at?: string
+        }
+        Update: {
+          capitulos_gerados?: number
+          created_at?: string
+          erro_msg?: string | null
+          gerado_por?: string | null
+          id?: string
+          resumo_livro_id?: string
+          status?: string
+          total_capitulos?: number
+          total_cards?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       legis_atos: {
         Row: {
           created_at: string
