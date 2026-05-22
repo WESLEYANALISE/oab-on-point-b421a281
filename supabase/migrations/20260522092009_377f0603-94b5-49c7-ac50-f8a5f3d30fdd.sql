@@ -1,0 +1,1 @@
+DELETE FROM aulas_interativas_cursos WHERE id IN ('16e1f5ef-b035-4440-8c76-1e9d1e9556fc','c8be8e7c-c685-48ef-a65a-237f1c4f4cf3');
