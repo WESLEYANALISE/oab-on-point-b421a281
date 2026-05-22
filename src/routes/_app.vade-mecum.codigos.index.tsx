@@ -206,15 +206,17 @@ function TabPill({ ativo, onClick, icone, label, count }: { ativo: boolean; onCl
 
 function CodigoCard({ lei }: { lei: LeiRow }) {
   const sigla = (lei.nome_curto ?? lei.nome.split(" ")[0]).toUpperCase();
+  const style = CODIGO_STYLE[lei.slug] ?? DEFAULT_STYLE;
+  const { Icon, bg, barra } = style;
   return (
     <Link
       to="/vade-mecum/$slug"
       params={{ slug: lei.slug }}
       className="relative flex items-center gap-3.5 pl-4 pr-3 py-3.5 rounded-2xl bg-card/70 border border-border/60 hover:border-gold/40 hover:bg-card transition-all active:scale-[0.99] overflow-hidden cursor-pointer"
     >
-      <span className="absolute left-0 top-2 bottom-2 w-1.5 rounded-r-full bg-primary" />
-      <span className="h-12 w-12 shrink-0 grid place-items-center rounded-2xl text-primary-foreground shadow-md bg-gradient-to-br from-primary to-primary/70">
-        <span className="font-bold text-[12px]">{sigla.slice(0, 4)}</span>
+      <span className={`absolute left-0 top-2 bottom-2 w-1.5 rounded-r-full ${barra}`} />
+      <span className={`h-12 w-12 shrink-0 grid place-items-center rounded-2xl text-white shadow-md ${bg}`}>
+        <Icon className="h-6 w-6" strokeWidth={2.2} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-bold text-foreground text-[15px] leading-tight truncate">{sigla}</span>
