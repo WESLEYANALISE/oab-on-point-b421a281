@@ -1,6 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { motion } from "framer-motion";
 import {
   ArrowRight, Sparkles, Headphones, Star, BookOpen, Target, FileText, Layers,
   Trophy, Newspaper, ScrollText, CalendarDays, ClipboardList, Library,
