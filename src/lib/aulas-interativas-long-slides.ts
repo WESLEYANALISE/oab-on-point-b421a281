@@ -139,5 +139,5 @@ export function ensureLongCourseStructure<T extends { modulos?: any[] }>(estrutu
       ...m,
       aulas: (m.aulas ?? []).map((a: AulaDraft) => ({ ...a, slides: ensureLongSlides(a) })),
     })),
-  };
+  } as T;
 }
