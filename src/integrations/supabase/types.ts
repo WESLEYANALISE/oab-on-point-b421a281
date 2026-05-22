@@ -364,6 +364,47 @@ export type Database = {
         }
         Relationships: []
       }
+      aulas_interativas_extracoes: {
+        Row: {
+          arquivo_drive_id: string
+          created_at: string
+          id: string
+          imagens: Json
+          markdown: string
+          modelo: string | null
+          paginas: Json
+          paginas_total: number | null
+        }
+        Insert: {
+          arquivo_drive_id: string
+          created_at?: string
+          id?: string
+          imagens?: Json
+          markdown?: string
+          modelo?: string | null
+          paginas?: Json
+          paginas_total?: number | null
+        }
+        Update: {
+          arquivo_drive_id?: string
+          created_at?: string
+          id?: string
+          imagens?: Json
+          markdown?: string
+          modelo?: string | null
+          paginas?: Json
+          paginas_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aulas_interativas_extracoes_arquivo_drive_id_fkey"
+            columns: ["arquivo_drive_id"]
+            isOneToOne: false
+            referencedRelation: "aulas_interativas_arquivos_drive"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       aulas_interativas_modulos: {
         Row: {
           created_at: string
@@ -395,6 +436,41 @@ export type Database = {
             columns: ["curso_id"]
             isOneToOne: false
             referencedRelation: "aulas_interativas_cursos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aulas_interativas_previas: {
+        Row: {
+          arquivo_drive_id: string
+          created_at: string
+          estrutura: Json
+          id: string
+          materia_sugerida: string | null
+          titulo_sugerido: string | null
+        }
+        Insert: {
+          arquivo_drive_id: string
+          created_at?: string
+          estrutura?: Json
+          id?: string
+          materia_sugerida?: string | null
+          titulo_sugerido?: string | null
+        }
+        Update: {
+          arquivo_drive_id?: string
+          created_at?: string
+          estrutura?: Json
+          id?: string
+          materia_sugerida?: string | null
+          titulo_sugerido?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aulas_interativas_previas_arquivo_drive_id_fkey"
+            columns: ["arquivo_drive_id"]
+            isOneToOne: false
+            referencedRelation: "aulas_interativas_arquivos_drive"
             referencedColumns: ["id"]
           },
         ]
