@@ -217,29 +217,42 @@ function tryParseJson(raw: string): any {
 }
 
 async function callGeminiJson(system: string, user: string, maxTokens: number): Promise<any> {
-  const res = await geminiGenerateContent(MODEL, {
-    system_instruction: { parts: [{ text: system }] },
-    contents: [{ role: "user", parts: [{ text: user }] }],
-    generationConfig: {
-      temperature: 0.4,
-      responseMimeType: "application/json",
-      maxOutputTokens: maxTokens,
-    },
-  });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`Gemini ${res.status}: ${txt.slice(0, 300)}`);
+  const ac = new AbortController();
+  const timeout = setTimeout(() => ac.abort(), 110_000);
+  try {
+    const res = await geminiGenerateContent(MODEL, {
+      system_instruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig: {
+        temperature: 0.4,
+        responseMimeType: "application/json",
+        maxOutputTokens: maxTokens,
+      },
+    }, {
+      maxAttemptsPerKey: 2,
+      backoffMs: 1200,
+      signal: ac.signal,
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`Gemini ${res.status}: ${txt.slice(0, 300)}`);
+    }
+    const j = await res.json();
+    const finishReason = j?.candidates?.[0]?.finishReason;
+    const text = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join("") ?? "";
+    if (!text && finishReason) {
+      throw new Error(`Gemini terminou sem texto (motivo: ${finishReason})`);
+    }
+    if (finishReason === "MAX_TOKENS") {
+      throw new Error(`Resposta do Gemini truncada por limite de tokens (len=${text.length})`);
+    }
+    return tryParseJson(text);
+  } catch (e: any) {
+    if (e?.name === "AbortError") throw new Error("Gemini demorou demais nesta etapa; o material foi reduzido e pode ser tentado de novo.");
+    throw e;
+  } finally {
+    clearTimeout(timeout);
   }
-  const j = await res.json();
-  const finishReason = j?.candidates?.[0]?.finishReason;
-  const text = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join("") ?? "";
-  if (!text && finishReason) {
-    throw new Error(`Gemini terminou sem texto (motivo: ${finishReason})`);
-  }
-  if (finishReason === "MAX_TOKENS") {
-    throw new Error(`Resposta do Gemini truncada por limite de tokens (len=${text.length})`);
-  }
-  return tryParseJson(text);
 }
 
 export const Route = createFileRoute("/api/aulas-interativas-preview")({
