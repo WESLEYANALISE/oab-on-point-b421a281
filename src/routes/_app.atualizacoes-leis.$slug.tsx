@@ -22,6 +22,11 @@ function AtoPage() {
     staleTime: 5 * 60_000,
   });
 
+  // Sobe a tela ao abrir um novo ato
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [slug]);
+
   const [openArtigo, setOpenArtigo] = useState<Extract<AtoSecao, { kind: "artigo" }> | null>(null);
 
   if (q.isLoading) {
