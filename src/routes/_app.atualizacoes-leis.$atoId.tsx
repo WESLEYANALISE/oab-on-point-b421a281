@@ -122,6 +122,23 @@ function AtoPage() {
         </a>
       </div>
 
+      {/* Legenda: qual lei é alterada */}
+      {(() => {
+        const alvo = detectarLeiAlvo(ementa);
+        if (!alvo) return null;
+        return (
+          <div className="mt-5 flex justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-gold">
+              <span className="opacity-70">Altera:</span>
+              <span>{alvo.nome}</span>
+              <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] text-gold">
+                {alvo.sigla}
+              </span>
+            </span>
+          </div>
+        );
+      })()}
+
       {/* Ementa em vermelho */}
       {ementa && (
         <p className="text-sm md:text-base leading-relaxed text-red-400 italic mt-6 text-justify">
