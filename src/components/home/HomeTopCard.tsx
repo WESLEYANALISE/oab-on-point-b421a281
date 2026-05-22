@@ -27,10 +27,16 @@ export function HomeTopCard() {
 
   const [greet, setGreet] = useState<string | null>(null);
   const [t, setT] = useState(() => diff());
+  const [themisLoaded, setThemisLoaded] = useState(false);
+  const themisRef = useRef<HTMLImageElement>(null);
   useEffect(() => {
     setGreet(greetingFor());
     setT(diff());
     const id = setInterval(() => setT(diff()), 30000);
+    // Caso a imagem já esteja no cache do navegador, o onLoad pode não disparar
+    if (themisRef.current?.complete && themisRef.current.naturalWidth > 0) {
+      setThemisLoaded(true);
+    }
     return () => clearInterval(id);
   }, []);
 
