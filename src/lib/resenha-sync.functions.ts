@@ -336,7 +336,47 @@ function parseAtoEstruturado(html: string, baseUrl: string): AtoEstruturado {
     }
   }
 
-  return { titulo, ementa, secoes, assinaturas, fonteUrl: baseUrl };
+  // 6. Extrai anexos (blocos após "ANEXO I/II/...") com suas tabelas
+  const anexos: AtoAnexo[] = [];
+  const blockRe = /<(p|table)\b[^>]*>[\s\S]*?<\/\1>/gi;
+  const blocks: Array<{ type: "p" | "table"; html: string; text: string }> = [];
+  let bm: RegExpExecArray | null;
+  while ((bm = blockRe.exec(body)) !== null) {
+    const type = bm[1].toLowerCase() as "p" | "table";
+    blocks.push({ type, html: bm[0], text: collapse(stripTags(bm[0])) });
+  }
+  const ANEXO_RE = /^ANEXO\s+[IVXLCDM\d]+/i;
+  let currentAnexo: AtoAnexo | null = null;
+  for (const b of blocks) {
+    if (b.type === "p" && ANEXO_RE.test(b.text)) {
+      currentAnexo = { titulo: b.text, tabelas: [] };
+      anexos.push(currentAnexo);
+      continue;
+    }
+    if (!currentAnexo) continue;
+    if (b.type === "p") {
+      if (!currentAnexo.subtitulo && currentAnexo.tabelas.length === 0 && b.text) {
+        currentAnexo.subtitulo = b.text;
+      }
+      continue;
+    }
+    // table
+    const rows: string[][] = [];
+    const trRe = /<tr\b[^>]*>([\s\S]*?)<\/tr>/gi;
+    let trm: RegExpExecArray | null;
+    while ((trm = trRe.exec(b.html)) !== null) {
+      const cells: string[] = [];
+      const tdRe = /<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi;
+      let tdm: RegExpExecArray | null;
+      while ((tdm = tdRe.exec(trm[1])) !== null) {
+        cells.push(collapse(stripTags(tdm[1])));
+      }
+      if (cells.length) rows.push(cells);
+    }
+    if (rows.length) currentAnexo.tabelas.push({ rows });
+  }
+
+  return { titulo, ementa, secoes, assinaturas, anexos, fonteUrl: baseUrl };
 }
 
 export const getAtoConteudo = createServerFn({ method: "POST" })
