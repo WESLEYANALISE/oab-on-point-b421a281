@@ -97,6 +97,18 @@ function AtoPage() {
         <div className="mt-3 w-20 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent" />
       </header>
 
+      {/* Link fonte — acima da ementa */}
+      <div className="mt-6 flex justify-center">
+        <a
+          href={ato.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gold rounded-full px-3.5 py-2 bg-yellow-400/10 border border-yellow-400/30 hover:bg-yellow-400/15 transition-colors"
+        >
+          Ver no Planalto <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      </div>
+
       {/* Ementa em vermelho */}
       {ementa && (
         <p className="text-sm md:text-base leading-relaxed text-red-400 italic mt-6 text-justify">
@@ -168,17 +180,6 @@ function AtoPage() {
         </footer>
       )}
 
-      {/* Link fonte */}
-      <div className="mt-8 pt-5 border-t border-border/60 flex justify-center">
-        <a
-          href={ato.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gold rounded-full px-3.5 py-2 bg-yellow-400/10 border border-yellow-400/30 hover:bg-yellow-400/15 transition-colors"
-        >
-          Ver fonte original no Planalto <ExternalLink className="h-3.5 w-3.5" />
-        </a>
-      </div>
 
       {/* Sheet/overlay do artigo — sobe de baixo */}
       <AnimatePresence>
