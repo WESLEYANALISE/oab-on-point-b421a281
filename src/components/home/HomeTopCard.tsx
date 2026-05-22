@@ -51,7 +51,6 @@ export function HomeTopCard() {
         src={themisHalf}
         alt=""
         aria-hidden
-        loading="lazy"
         decoding="async"
         onLoad={() => setThemisLoaded(true)}
         style={{
