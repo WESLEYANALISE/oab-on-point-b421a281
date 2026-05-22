@@ -82,7 +82,7 @@ function Welcome() {
       <motion.div className="relative min-h-[100dvh] flex flex-col">
         {/* Background image */}
         <div className="absolute inset-0 overflow-hidden bg-black">
-          <div className="relative w-full">
+          <div className="relative w-full pt-20 sm:pt-24">
             <img
               src={welcomeHero}
               alt=""
@@ -99,6 +99,7 @@ function Welcome() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 via-40% to-black" />
         </div>
+
 
         {/* Navbar */}
         <nav className="relative z-20 px-4 lg:px-8 pt-6 pb-2">
