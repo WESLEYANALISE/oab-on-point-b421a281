@@ -136,6 +136,26 @@ export function SlidePlayer({
   );
 }
 
+function MD({ children, className }: { children: string; className?: string }) {
+  return (
+    <span className={className}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          p: ({ children }) => <>{children}</>,
+          strong: ({ children }) => <strong className="text-gold font-semibold">{children}</strong>,
+          em: ({ children }) => <em className="italic">{children}</em>,
+          code: ({ children }) => (
+            <code className="px-1 py-0.5 rounded bg-muted text-xs">{children}</code>
+          ),
+        }}
+      >
+        {children}
+      </ReactMarkdown>
+    </span>
+  );
+}
+
 function SlideRenderer({
   slide,
   onResponderQuiz,
