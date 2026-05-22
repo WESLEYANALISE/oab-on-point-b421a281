@@ -213,7 +213,7 @@ function AtoPage() {
                 return (
                   <div
                     key={ti}
-                    className="rounded-xl border border-border/60 bg-card/40 overflow-x-auto overscroll-x-contain"
+                    className="rounded-xl border border-border/60 bg-card/40 overflow-x-auto overscroll-x-contain scrollbar-gold"
                     style={{ WebkitOverflowScrolling: "touch" }}
                   >
                     <table className="w-full min-w-[420px] text-xs md:text-sm border-collapse">
