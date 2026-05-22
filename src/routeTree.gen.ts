@@ -41,6 +41,7 @@ import { Route as AppResumosIndexRouteImport } from './routes/_app.resumos.index
 import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
 import { Route as AppAulasIndexRouteImport } from './routes/_app.aulas.index'
+import { Route as AppAulasInterativasIndexRouteImport } from './routes/_app.aulas-interativas.index'
 import { Route as AppAtualizacoesLeisIndexRouteImport } from './routes/_app.atualizacoes-leis.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
 import { Route as ApiPublicSitemapDotxmlRouteImport } from './routes/api/public/sitemap[.]xml'
@@ -249,6 +250,12 @@ const AppAulasIndexRoute = AppAulasIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppAulasRoute,
 } as any)
+const AppAulasInterativasIndexRoute =
+  AppAulasInterativasIndexRouteImport.update({
+    id: '/aulas-interativas/',
+    path: '/aulas-interativas/',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAtualizacoesLeisIndexRoute =
   AppAtualizacoesLeisIndexRouteImport.update({
     id: '/atualizacoes-leis/',
@@ -551,6 +558,7 @@ export interface FileRoutesByFullPath {
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/admin/': typeof AppAdminIndexRoute
   '/atualizacoes-leis/': typeof AppAtualizacoesLeisIndexRoute
+  '/aulas-interativas/': typeof AppAulasInterativasIndexRoute
   '/aulas/': typeof AppAulasIndexRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/provas/': typeof AppProvasIndexRoute
@@ -626,6 +634,7 @@ export interface FileRoutesByTo {
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/admin': typeof AppAdminIndexRoute
   '/atualizacoes-leis': typeof AppAtualizacoesLeisIndexRoute
+  '/aulas-interativas': typeof AppAulasInterativasIndexRoute
   '/aulas': typeof AppAulasIndexRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
   '/provas': typeof AppProvasIndexRoute
@@ -706,6 +715,7 @@ export interface FileRoutesById {
   '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/atualizacoes-leis/': typeof AppAtualizacoesLeisIndexRoute
+  '/_app/aulas-interativas/': typeof AppAulasInterativasIndexRoute
   '/_app/aulas/': typeof AppAulasIndexRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/provas/': typeof AppProvasIndexRoute
@@ -788,6 +798,7 @@ export interface FileRouteTypes {
     | '/api/public/sitemap.xml'
     | '/admin/'
     | '/atualizacoes-leis/'
+    | '/aulas-interativas/'
     | '/aulas/'
     | '/biblioteca/'
     | '/provas/'
@@ -863,6 +874,7 @@ export interface FileRouteTypes {
     | '/api/public/sitemap.xml'
     | '/admin'
     | '/atualizacoes-leis'
+    | '/aulas-interativas'
     | '/aulas'
     | '/biblioteca'
     | '/provas'
@@ -942,6 +954,7 @@ export interface FileRouteTypes {
     | '/api/public/sitemap.xml'
     | '/_app/admin/'
     | '/_app/atualizacoes-leis/'
+    | '/_app/aulas-interativas/'
     | '/_app/aulas/'
     | '/_app/biblioteca/'
     | '/_app/provas/'
@@ -1210,6 +1223,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/aulas/'
       preLoaderRoute: typeof AppAulasIndexRouteImport
       parentRoute: typeof AppAulasRoute
+    }
+    '/_app/aulas-interativas/': {
+      id: '/_app/aulas-interativas/'
+      path: '/aulas-interativas'
+      fullPath: '/aulas-interativas/'
+      preLoaderRoute: typeof AppAulasInterativasIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/atualizacoes-leis/': {
       id: '/_app/atualizacoes-leis/'
@@ -1721,6 +1741,7 @@ interface AppRouteChildren {
   AppResumosLivroIdRoute: typeof AppResumosLivroIdRoute
   AppVadeMecumSlugRoute: typeof AppVadeMecumSlugRoute
   AppAtualizacoesLeisIndexRoute: typeof AppAtualizacoesLeisIndexRoute
+  AppAulasInterativasIndexRoute: typeof AppAulasInterativasIndexRoute
   AppProvasIndexRoute: typeof AppProvasIndexRoute
   AppResumosIndexRoute: typeof AppResumosIndexRoute
   AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
@@ -1767,6 +1788,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppResumosLivroIdRoute: AppResumosLivroIdRoute,
   AppVadeMecumSlugRoute: AppVadeMecumSlugRoute,
   AppAtualizacoesLeisIndexRoute: AppAtualizacoesLeisIndexRoute,
+  AppAulasInterativasIndexRoute: AppAulasInterativasIndexRoute,
   AppProvasIndexRoute: AppProvasIndexRoute,
   AppResumosIndexRoute: AppResumosIndexRoute,
   AppSimuladosIndexRoute: AppSimuladosIndexRoute,
