@@ -8,6 +8,7 @@ import { useDeviceType } from "@/hooks/use-device-type";
 
 import logoNaRisca from "@/assets/logo-oab-na-risca.webp";
 import lourosDourados from "@/assets/louros-dourados.webp";
+import oabEmblem from "@/assets/oab-emblem.png";
 const welcomeHero = "/welcome-hero.webp";
 
 import { CSSInfiniteSlider } from "@/components/ui/css-infinite-slider";
@@ -228,16 +229,15 @@ function Welcome() {
                     </defs>
                   </svg>
 
-                  <span
-                    className="text-[clamp(1.8rem,7vw,2.6rem)] font-black text-white uppercase"
+                  <img
+                    src={oabEmblem}
+                    alt="OAB"
+                    className="h-[clamp(2.4rem,9vw,3.6rem)] w-auto object-contain"
                     style={{
-                      fontFamily: "'Georgia', 'Times New Roman', serif",
                       animation: "neonPulseText 3s ease-in-out 2s infinite",
-                      textShadow: "0 0 25px rgba(212,168,75,0.6), 0 0 50px rgba(212,168,75,0.2), 0 2px 8px rgba(0,0,0,0.6)",
+                      filter: "drop-shadow(0 0 18px rgba(212,168,75,0.45)) drop-shadow(0 2px 8px rgba(0,0,0,0.6))",
                     }}
-                  >
-                    OAB
-                  </span>
+                  />
                 </div>
               </motion.div>
             </div>
