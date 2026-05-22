@@ -301,23 +301,66 @@ function ArquivoMaterialItem({
 
   async function rodarPrevia() {
     setAcao("previa");
-    setProgresso("Gemini estruturando módulos e aulas…");
+    setProgresso("Conectando ao Gemini…");
     setEstrutura(null);
     try {
       const res = await fetch("/api/aulas-interativas-preview", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
         body: JSON.stringify({ arquivoDriveId: arquivo.id, tituloCurso: titulo, materia }),
       });
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         const txt = await res.text().catch(() => "");
         throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
       }
-      const j = await res.json();
-      setEstrutura(j.estrutura);
-      if (j.titulo_sugerido) setTitulo(j.titulo_sugerido);
-      if (j.materia_sugerida) setMateria(j.materia_sugerida);
-      setProgresso(`Prévia: ${j.estrutura.modulos.length} módulo(s). Revise abaixo.`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let finalPayload: any = null;
+      let serverError: string | null = null;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let idx: number;
+        while ((idx = buf.indexOf("\n\n")) !== -1) {
+          const raw = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          let evt = "message";
+          let dataLine = "";
+          for (const line of raw.split("\n")) {
+            if (line.startsWith("event:")) evt = line.slice(6).trim();
+            else if (line.startsWith("data:")) dataLine += line.slice(5).trim();
+          }
+          if (!dataLine) continue;
+          let payload: any;
+          try {
+            payload = JSON.parse(dataLine);
+          } catch {
+            continue;
+          }
+          if (evt === "progress") {
+            const chars = payload?.chars ?? 0;
+            setProgresso(`Gemini gerando… ${chars.toLocaleString("pt-BR")} caracteres`);
+          } else if (evt === "done") {
+            finalPayload = payload;
+          } else if (evt === "error") {
+            serverError = payload?.error ?? "erro desconhecido";
+          } else if (evt === "start") {
+            setProgresso("Gemini começou a gerar a estrutura…");
+          }
+        }
+      }
+
+      if (serverError) throw new Error(serverError);
+      if (!finalPayload) throw new Error("Stream encerrou sem resposta final");
+
+      setEstrutura(finalPayload.estrutura);
+      if (finalPayload.titulo_sugerido) setTitulo(finalPayload.titulo_sugerido);
+      if (finalPayload.materia_sugerida) setMateria(finalPayload.materia_sugerida);
+      setProgresso(`Prévia: ${finalPayload.estrutura.modulos.length} módulo(s). Revise abaixo.`);
       onChanged();
     } catch (err: any) {
       toast.error(err?.message ?? "Falha");
