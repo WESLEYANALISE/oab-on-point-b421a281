@@ -52,7 +52,7 @@ type AulaDraft = {
 type ModuloDraft = { titulo: string; descricao?: string; aulas: AulaDraft[] };
 type Estrutura = { modulos: ModuloDraft[] };
 
-type TabKey = "drive" | "upload" | "mapas";
+type TabKey = "drive" | "cronogramas" | "bonus" | "upload" | "mapas";
 
 function AdminAulasInterativas() {
   const [tab, setTab] = useState<TabKey>("drive");
