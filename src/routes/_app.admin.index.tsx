@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Target, ChevronRight, FileText, Newspaper, AudioLines, BookOpenCheck, BellRing, Brain } from "lucide-react";
+import { Target, ChevronRight, FileText, Newspaper, AudioLines, BookOpenCheck, BellRing, Brain, PlayCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_app/admin/")({
   component: AdminHome,
@@ -15,6 +15,21 @@ function AdminHome() {
       </header>
 
       <ul className="grid gap-3 md:grid-cols-2">
+        <li>
+          <Link
+            to="/admin/aulas-interativas"
+            className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:bg-accent transition-colors"
+          >
+            <div className="h-12 w-12 rounded-lg bg-gradient-gold grid place-items-center text-gold-foreground">
+              <PlayCircle className="h-6 w-6" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-display text-lg">Aulas Interativas</p>
+              <p className="text-xs text-muted-foreground">Gerar curso em slides a partir de PDF (IA)</p>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </Link>
+        </li>
         <li>
           <Link
             to="/admin/simulados"
