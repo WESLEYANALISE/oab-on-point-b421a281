@@ -190,7 +190,7 @@ function Welcome() {
                   />
                   <span className="relative z-10 flex items-center gap-2">
                     Iniciar jornada
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    <ArrowRight className="w-4 h-4 animate-arrow-bounce" />
                   </span>
                 </button>
                 <p className="text-white text-xs mt-2.5 tracking-wide font-medium">
