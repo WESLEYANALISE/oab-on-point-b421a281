@@ -24,6 +24,8 @@ function AppLayout() {
   const { data: isAdmin } = useIsAdmin();
   const isBiblioteca = pathname.startsWith("/biblioteca");
   const isLeitor = /^\/biblioteca\/[^/]+\/[^/]+\/ler$/.test(pathname);
+  const isAssistente = pathname === "/assistente";
+  const isFullscreen = isLeitor || isAssistente;
   const isHome = pathname === "/inicio";
   const showBottomNav = isHome;
 
@@ -47,7 +49,7 @@ function AppLayout() {
 
   if (!user) return null;
 
-  if (isLeitor) {
+  if (isFullscreen) {
     // Leitor de livros ocupa toda a tela — sem sidebar, header ou wrapper com transform.
     return (
       <>
