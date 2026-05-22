@@ -57,11 +57,11 @@ function detectarLeiAlvo(ementa: string | null | undefined): LeiAlvo | null {
 }
 
 function AtoPage() {
-  const { atoId } = Route.useParams();
+  const { slug } = Route.useParams();
   const fn = useServerFn(getAtoConteudo);
   const q = useQuery({
-    queryKey: ["ato-conteudo", atoId],
-    queryFn: () => fn({ data: { id: atoId } }),
+    queryKey: ["ato-conteudo", slug],
+    queryFn: () => fn({ data: { slug } }),
     staleTime: 5 * 60_000,
   });
 
