@@ -207,11 +207,18 @@ export type AtoSecao =
   | { kind: "estrutura"; rotulo: string; texto: string }
   | { kind: "artigo"; numero: string; titulo: string; itens: { text: string; italic?: boolean }[] };
 
+export type AtoAnexo = {
+  titulo: string;
+  subtitulo?: string;
+  tabelas: { rows: string[][] }[];
+};
+
 export type AtoEstruturado = {
   titulo: string | null;
   ementa: string | null;
   secoes: AtoSecao[];
   assinaturas: { text: string; italic?: boolean }[];
+  anexos: AtoAnexo[];
   fonteUrl: string;
 };
 
