@@ -125,6 +125,9 @@ export function resolverVoltar(
   if (/^\/noticias\/[^/]+$/.test(p)) return { to: "/noticias", label: "Notícias" };
   if (/^\/blog\/[^/]+$/.test(p)) return { to: "/blog", label: "Blog" };
 
+  // ===== Atualizações de Leis =====
+  if (/^\/atualizacoes-leis\/[^/]+$/.test(p)) return { to: "/atualizacoes-leis", label: "Atualizações" };
+
   // ===== Matérias =====
   if (/^\/materias\/[^/]+$/.test(p)) return { to: "/materias", label: "Matérias" };
 
