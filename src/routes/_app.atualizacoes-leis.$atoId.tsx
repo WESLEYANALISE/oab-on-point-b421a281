@@ -193,6 +193,77 @@ function AtoPage() {
         </footer>
       )}
 
+      {/* Anexos — tabelas com scroll horizontal */}
+      {estruturado.anexos && estruturado.anexos.length > 0 && (
+        <section className="mt-10 space-y-8">
+          {estruturado.anexos.map((anexo, i) => (
+            <div key={i} className="space-y-3">
+              <div className="text-center">
+                <h3 className="font-display text-base font-bold uppercase tracking-wide text-gold">
+                  {anexo.titulo}
+                </h3>
+                {anexo.subtitulo && (
+                  <p className="text-xs md:text-sm text-foreground/80 mt-1 leading-snug">
+                    {anexo.subtitulo}
+                  </p>
+                )}
+              </div>
+              {anexo.tabelas.map((tab, ti) => {
+                const [head, ...body] = tab.rows;
+                return (
+                  <div
+                    key={ti}
+                    className="rounded-xl border border-border/60 bg-card/40 overflow-x-auto overscroll-x-contain"
+                    style={{ WebkitOverflowScrolling: "touch" }}
+                  >
+                    <table className="w-full min-w-[420px] text-xs md:text-sm border-collapse">
+                      {head && (
+                        <thead>
+                          <tr className="bg-gold/10">
+                            {head.map((c, ci) => (
+                              <th
+                                key={ci}
+                                className="text-left font-semibold text-gold uppercase tracking-wide px-3 py-2 border-b border-gold/30 whitespace-nowrap"
+                              >
+                                {c}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                      )}
+                      <tbody>
+                        {body.map((row, ri) => {
+                          const isTotal = /^total/i.test((row[0] ?? "").trim());
+                          return (
+                            <tr
+                              key={ri}
+                              className={`border-b border-border/40 last:border-b-0 ${
+                                isTotal ? "bg-muted/40 font-semibold text-foreground" : "text-foreground/90"
+                              }`}
+                            >
+                              {row.map((c, ci) => (
+                                <td
+                                  key={ci}
+                                  className="px-3 py-2 align-top leading-snug"
+                                >
+                                  {c}
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </section>
+      )}
+
+
+
 
       {/* Sheet/overlay do artigo — sobe de baixo */}
       <AnimatePresence>
