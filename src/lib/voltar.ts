@@ -42,8 +42,7 @@ const NOME_RAIZ: Record<string, string> = {
 };
 
 function nomeMateria(slug: string): string {
-  const m = MATERIAS_OAB_46.find((x: Materia) => x.slug === slug);
-  return m?.nome ?? "Matéria";
+  return getMateria(slug)?.nome ?? "Matéria";
 }
 
 function rotuloRaiz(to: string): string {
