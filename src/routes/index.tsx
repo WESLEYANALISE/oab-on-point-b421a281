@@ -133,7 +133,7 @@ function Welcome() {
         </nav>
 
         {/* Hero content */}
-        <div className="relative z-10 flex-1 flex flex-col lg:flex-row lg:items-center lg:justify-between px-6 lg:px-12 xl:px-20 pb-6 pt-16 sm:pt-20 max-w-[1400px] mx-auto w-full lg:py-16">
+        <div className="relative z-10 flex-1 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 lg:gap-12 px-6 lg:px-12 xl:px-20 pb-6 pt-16 sm:pt-20 lg:pt-10 max-w-[1400px] mx-auto w-full lg:py-12">
 
           <motion.div className="lg:flex-1 lg:max-w-2xl" initial={false}>
             <div className="mb-6 text-center lg:text-left" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "-0.02em" }}>
