@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ExternalLink, Calendar, CheckCircle2, Clock, CircleDashed, FileText } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { ExternalLink, Calendar, CheckCircle2, Clock, CircleDashed, FileText } from "lucide-react";
 import { EXAMES_OAB, FONTE_OFICIAL, FONTE_EDITAIS, type EventoCalendario } from "@/data/oab-calendario";
 
 export const Route = createFileRoute("/_app/oab/calendario")({
