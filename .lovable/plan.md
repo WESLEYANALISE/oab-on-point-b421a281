@@ -1,58 +1,87 @@
-## 1. Erro do Ética Profissional — JSON truncado (`Expected ',' or '}' at position 85718`)
+# Aulas interativas — versão "estudo de verdade"
 
-**O que está acontecendo:** o Gemini está sendo obrigado a devolver TODA a estrutura do curso (módulos + aulas + slides + quizzes) em uma única resposta JSON. Para o Ética (texto longo) a saída ultrapassa o teto de `maxOutputTokens: 32000` e o JSON é cortado no meio de uma string → `JSON.parse` falha exatamente no caractere onde a resposta acabou.
+Hoje cada aula tem 3-6 slides curtos e o quiz só no fim. Vou expandir o conteúdo, adicionar interação real (ligar termos, dicas) e encadear as aulas com uma animação de "próxima aula".
 
-**Correção (em `src/routes/api/aulas-interativas-preview.ts`):** trocar a chamada única do Gemini por **geração em 2 passes**, mantendo o mesmo endpoint SSE:
+## 1. Novos tipos de slide
 
-1. **Pass 1 — "esqueleto":** pede ao Gemini só `titulo_sugerido`, `materia_sugerida` e a lista de módulos com `{titulo, descricao, aulas:[{titulo, descricao, duracao_min}]}` (sem slides). Resposta pequena, cabe folgada nos 32k tokens.
-2. **Pass 2 — "slides por aula":** para cada aula do esqueleto, faz uma chamada separada pedindo só os slides daquela aula (3-10 slides + 1 quiz). Cada resposta fica em algumas centenas de tokens, eliminando o risco de truncamento.
-3. O servidor monta a estrutura final juntando esqueleto + slides e salva normalmente em `aulas_interativas_previas`.
+Adicionar 3 tipos novos ao CHECK constraint do banco e ao validador Zod:
 
-**Eventos SSE atualizados:**
-- `start` — começou
-- `progress` — agora envia `{fase: "esqueleto"|"slides", aula: N, total: M, chars}` para a UI mostrar `Gemini gerando aulas… 7/15`
-- `done` — estrutura final
-- `error` — mensagem
+- **`ligar_termos`** — jogo de associar termo ↔ definição (4-6 pares). O aluno clica no termo e depois na definição correspondente; acertos ficam verdes, erros piscam vermelho e voltam. Só libera "Próximo" quando todos os pares estão corretos.
+- **`dicas`** — cartões de "Dicas de prova" (3-5 dicas curtas, cada uma com um ícone e 1-2 frases). Usado perto do fim como "checklist mental" antes do quiz final.
+- **`caso_pratico`** — mini-caso: enunciado curto + pergunta-âncora + revelação ("clique para ver a análise") com o raciocínio jurídico.
 
-**Fallback de robustez:** se mesmo assim algum parse falhar, tenta reparar o JSON cortando até a última chave `}` válida antes de descartar.
+Os tipos existentes (`capa`, `conceito`, `exemplo`, `esquema`, `comparativo`, `quiz`, `resumo`, `conclusao`, `mapa_mental`) continuam funcionando.
 
-## 2. Erro do Filosofia do Direito — "Stream encerrou sem resposta final"
+## 2. Geração no Gemini — aulas mais densas
 
-**O que está acontecendo:** o servidor emitiu `error` (provavelmente o mesmo `JSON.parse` falhando), mas o Cloudflare cortou o stream antes do evento chegar ao navegador. O cliente vê o stream terminar sem `done` nem `error` e mostra a mensagem genérica.
+Reescrever o prompt `SYSTEM_SLIDES_MODULO` em `src/routes/api/aulas-interativas-preview.ts` para que **cada aula tenha 9-13 slides** seguindo este roteiro pedagógico:
 
-**Correção:**
-- Como o pass 2 acima faz cada chamada ficar curta, o problema deixa de acontecer na prática.
-- Além disso, sempre que o handler entra em `catch`, **gravar `erro_msg` no banco antes de tentar enviar o evento** (já existe esse update, vou garantir que vem ANTES do `send("error", …)` e do `controller.close()`).
-- No cliente (`rodarPrevia` em `src/routes/_app.admin.aulas-interativas.tsx`): quando o stream encerra sem `done`/`error`, fazer **um GET na extração/arquivo** (`obterPreviaArquivo` + status do arquivo) para ler o `erro_msg` real e mostrar para o usuário em vez de "Stream encerrou sem resposta final".
+```text
+1. capa             — título + 3-4 objetivos
+2. conceito         — definição com texto + destaque
+3. exemplo          — exemplo prático aplicado (caso real / questão OAB)
+4. comparativo      — quando faz sentido, contrastar correntes/escolas
+5. quiz (revisão)   — quiz CURTO no meio da aula, sobre o que viu até aqui
+6. conceito         — segundo conceito / aprofundamento
+7. caso_pratico     — mini-caso com análise revelável
+8. ligar_termos     — 4-6 pares termo ↔ definição da aula
+9. esquema          — passo-a-passo ou fluxograma do raciocínio
+10. dicas           — 3-5 dicas finais ("cai na OAB", "pegadinha", "decoreba")
+11. resumo          — bullets do que vimos
+12. quiz (final)    — quiz mais difícil, estilo OAB
+13. conclusao       — fecho + frase de transição para a próxima aula
+```
 
-## 3. Selecionar/apagar imagens individuais da prévia
+Regras adicionais do prompt:
+- Cada aula tem **pelo menos 2 quizzes** (um no meio, um no fim), 1 `ligar_termos`, 1 `dicas`, 1 `caso_pratico`.
+- Texto dos conceitos passa a ter 2-4 parágrafos (não 1 frase) e usa `**negrito**` markdown nos termos-chave (já renderizado).
+- Quizzes devem ser estilo OAB: enunciado com mini-caso + 4 alternativas + explicação que diz **por que** as outras estão erradas.
+- Continua proibido inventar — só usa o material extraído.
 
-Hoje a tira de miniaturas é só visualização. Vou transformar cada miniatura em **selecionável** (clique marca/desmarca), e adicionar um botão **"Apagar selecionadas"** que só aparece quando há algo marcado.
+Também atualizar `fallbackSlides` para gerar essa estrutura completa quando o Gemini falhar.
 
-**Front (`src/routes/_app.admin.aulas-interativas.tsx`, bloco `{temExtracao && …}` por volta da linha 539):**
-- Cada thumbnail vira um `<button>` com um checkbox sobreposto. Estado local `selecionadas: Set<string>` por arquivo.
-- Mostra todas as imagens (não só 8), com scroll horizontal se passarem da largura.
-- Botão "Abrir" continua disponível com um ícone pequeno por cima da miniatura (link target=_blank).
-- Quando há ≥1 selecionada: aparece `Apagar N selecionada(s)` ao lado do botão "Apagar extração", e um `Selecionar todas` / `Limpar seleção`.
+## 3. Botão "Próxima aula" com animação
 
-**Back (novo server fn em `src/lib/aulas-interativas-drive.functions.ts`):**
-- `apagarImagensExtracao({ arquivoDriveId, urls: string[] })`:
-  1. Lê o registro mais recente em `aulas_interativas_extracoes` (`id`, `imagens`, `paginas`, `markdown`).
-  2. Remove as URLs marcadas do array `imagens`.
-  3. Para cada URL apagada, remove a referência `![…](URL)` do `markdown` (substitui pela string vazia ou por `[imagem removida]`).
-  4. Para cada página em `paginas`, se houver `imagens: string[]`, filtra as URLs apagadas.
-  5. Faz `update` na linha de extração com `imagens`, `markdown` e `paginas` atualizados.
-  6. Tenta apagar os arquivos do bucket de storage (`storage.from(bucket).remove(paths)`) — extrai o `path` da URL pública. Se a remoção física falhar, ignora silenciosamente (a URL já não está mais referenciada).
-  7. **Invalida a prévia existente** (`delete from aulas_interativas_previas where arquivo_drive_id = …`) e volta o `status_ingestao` para `extraido`, porque a estrutura anterior pode citar imagens que não existem mais.
+No `src/lib/aulas-interativas.functions.ts`, `getAulaCompleta` passa a retornar também `proximaAula` (próxima na mesma ordem do curso) e `aulaAnterior`, calculados via uma consulta ordenada por `(modulo.ordem, aula.ordem)`.
 
-**UI após apagar:** toast "N imagens removidas. Gere a prévia novamente.", `invalidateQueries` em extração + prévia + lista.
+No `SlidePlayer.tsx`:
+- Novo prop `proximaAulaHref?: string`.
+- No último slide (`conclusao`), o botão "Concluir aula" vira **"Próxima aula →"** quando há próxima; clicar dispara animação de slide-out lateral (framer-motion `x: -100%, opacity: 0` em 400ms) e navega para a próxima aula. Se não houver próxima, mostra "Concluir curso" (volta pro curso) com confete sutil.
+- Header da próxima aula entra com `slide-in-right`, reforçando a sensação de "continuidade".
 
-## Resumo do que muda
+## 4. Renderização dos novos tipos no player
+
+No `src/components/aulas-interativas/SlidePlayer.tsx`:
+- `SlideLigarTermos` — duas colunas embaralhadas; estado local de seleção e pares resolvidos; trava o botão "Próximo" do footer até concluir.
+- `SlideDicas` — grid de cartões com ícone (`Lightbulb`, `AlertTriangle`, `Target`, `Sparkles`) e texto em markdown.
+- `SlideCasoPratico` — enunciado + pergunta + botão "Ver análise" que expande a explicação com animação.
+
+Todos usam o componente `MD` já existente para renderizar markdown nos textos.
+
+## 5. Banco de dados
+
+Migration para:
+1. Ampliar o CHECK `aulas_interativas_slides_tipo_check` aceitando `ligar_termos`, `dicas`, `caso_pratico`.
+2. Não precisa mudar `conteudo` (jsonb já aceita qualquer shape).
+
+## 6. Refazer as aulas existentes
+
+Não vou regerar automaticamente os cursos antigos — o admin de "Aulas Interativas" já tem o fluxo de **excluir curso → gerar prévia → publicar**. Após o deploy, basta:
+1. Excluir o curso "Filosofia do Direito" atual.
+2. Clicar "Gerar prévia" e "Publicar" novamente — vai usar o novo prompt automaticamente.
+
+Posso opcionalmente adicionar um botão **"Regerar slides"** numa próxima iteração se quiser, mas isso aumenta o escopo. Confirme se quer já agora.
+
+---
+
+## Resumo técnico
 
 | Arquivo | Mudança |
 |---|---|
-| `src/routes/api/aulas-interativas-preview.ts` | Reescrita para geração em 2 passes (esqueleto + slides por aula), eventos `progress` com fase, gravar `erro_msg` antes do `send("error")` |
-| `src/lib/aulas-interativas-drive.functions.ts` | Novo `apagarImagensExtracao` |
-| `src/routes/_app.admin.aulas-interativas.tsx` | Miniaturas selecionáveis + botão "Apagar selecionadas"; progresso da prévia mostra `fase/aula`; fallback que lê `erro_msg` quando o stream cai |
+| `supabase/migrations/...` | Ampliar CHECK de `tipo` |
+| `src/lib/aulas-interativas.functions.ts` | Zod aceita novos tipos; `getAulaCompleta` retorna `proximaAula`/`aulaAnterior` |
+| `src/routes/api/aulas-interativas-preview.ts` | Novo prompt detalhado + `fallbackSlides` expandido |
+| `src/components/aulas-interativas/SlidePlayer.tsx` | Renderizadores para `ligar_termos`, `dicas`, `caso_pratico`; botão "Próxima aula" com animação |
+| `src/routes/_app.aulas-interativas.$cursoSlug.$aulaSlug.tsx` | Passa `proximaAulaHref` ao player |
 
-Sem alterações de schema do banco — `imagens`, `paginas` e `markdown` já existem em `aulas_interativas_extracoes`.
+Posso seguir?
