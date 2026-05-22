@@ -226,6 +226,15 @@ function MD({ children, className }: { children: string; className?: string }) {
   );
 }
 
+function RamoMapa({ ramo }: { ramo: { titulo?: string; descricao?: string } }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <h3 className="font-display text-base text-gold mb-1">{ramo.titulo}</h3>
+      {ramo.descricao && <p className="text-sm text-muted-foreground leading-relaxed">{ramo.descricao}</p>}
+    </div>
+  );
+}
+
 function SlideRenderer({
   slide,
   onResponderQuiz,
