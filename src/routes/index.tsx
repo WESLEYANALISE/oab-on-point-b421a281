@@ -243,9 +243,10 @@ function Welcome() {
                   <img
                     src={oabEmblem}
                     alt="OAB"
-                    className="h-[clamp(5.5rem,22vw,9rem)] w-auto object-contain"
+                    className="h-[clamp(7rem,28vw,11rem)] w-auto object-contain -mt-3"
                     style={{
-                      filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.85)) drop-shadow(0 2px 4px rgba(0,0,0,0.9))",
+                      opacity: 1,
+                      filter: "drop-shadow(0 0 18px rgba(212,168,75,0.85)) drop-shadow(0 0 38px rgba(212,168,75,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.8))",
                     }}
                   />
                 </div>
