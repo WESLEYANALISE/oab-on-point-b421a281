@@ -2,7 +2,7 @@
 // Retorna também o label (nome humano do destino) para o cabeçalho mostrar
 // "Voltar para X" sem precisar do history.back().
 
-import { MATERIAS_OAB } from "@/data/oab-materias-46";
+import { MATERIAS_OAB_46, type Materia } from "@/data/oab-materias-46";
 
 export type DestinoVoltar = {
   to: string;
