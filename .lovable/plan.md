@@ -1,83 +1,141 @@
 
-## Objetivo
+# Plano de implementação — Blocos 1, 2, 8, 9, 10, 11, 12, 14, 15
 
-Adicionar um botão flutuante (FAB) no canto inferior direito da página `/atualizacoes-leis`. Ao tocar, abre um painel lateral deslizando da direita para a esquerda com filtros temáticos (códigos, Constituição, estatutos) e opção de marcar leis "importantes" que a pessoa quer acompanhar.
+Escopo grande. Vou organizar em **fases entregáveis** (cada fase é um PR/commit independente que já deixa o app melhor). Posso fazer tudo de uma vez, mas o ideal é confirmar fase por fase pra você revisar.
 
-## Comportamento
+---
 
-**FAB**
-- Posição: `fixed bottom-24 right-4` (acima da BottomNav mobile), `bottom-6 right-6` no desktop.
-- Visual: círculo dourado com ícone `SlidersHorizontal`. Mostra um pontinho indicador quando há filtro ativo.
+## FASE A — Segurança (Bloco 1)
 
-**Painel lateral (Sheet)**
-- Abre da **direita para a esquerda** (`side="right"` do componente `Sheet` do shadcn).
-- Largura: full no mobile, ~380px no desktop.
-- Conteúdo em duas seções:
+### A1. Migration Supabase
+- Revogar `EXECUTE` de `anon` e `authenticated` nas funções `SECURITY DEFINER` que não devem ser públicas. Vou listar uma a uma (`has_role`, `get_biblioteca_areas_counts`, `rls_auto_enable`, `handle_new_user`, `touch_updated_at`) e decidir caso a caso — internas ficam `REVOKE ALL`; as que o frontend chama via RPC mantêm `EXECUTE TO authenticated` apenas.
+- Adicionar `SET search_path = public, pg_temp` onde faltar.
 
-### Seção 1 — Filtros rápidos (presets)
-Chips selecionáveis que filtram a lista por tema. Apenas um ativo por vez (incluindo "Todos"):
-- **Todos** (default)
-- **Códigos** → leis cujo nome contém "Código" (Penal, Civil, CDC, CTN, CTB, etc.)
-- **Constituição** → ECs + qualquer ato que altere a CF/88
-- **Estatutos** → leis cujo nome contém "Estatuto" (ECA, Idoso, OAB, etc.)
-- **Tributário** → matérias fiscais (heurística por palavras-chave na ementa)
-- **Penal** → palavras-chave penais na ementa
-- **Trabalhista** → CLT + palavras-chave trabalhistas
+### A2. Painel Supabase (instruções pro usuário)
+- Ativar **Leaked Password Protection** (Auth → Policies). Não dá pra fazer por código — vou deixar o link clicável.
+- Revisar rate limits de Auth.
 
-Substituem a faixa atual de filtros por tipo (Leis, EC, MP, Decretos, Vetos), que continua disponível dentro do painel como sub-seção "Por tipo de ato".
+### A3. Headers de segurança
+- Adicionar middleware em `src/start.ts` setando: `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`, `Content-Security-Policy` (modo report-only inicialmente pra não quebrar nada).
+- `X-Frame-Options: DENY` exceto rotas que precisam de embed.
 
-### Seção 2 — Leis importantes para acompanhar
-Lista de checkboxes com leis-base relevantes para concurseiro/OAB:
-- Constituição Federal (Lei nº — CF/88)
-- Código Penal (DL 2.848/40)
-- Código de Processo Penal (DL 3.689/41)
-- Código Civil (Lei 10.406/02)
-- Código de Processo Civil (Lei 13.105/15)
-- CLT (DL 5.452/43)
-- CDC (Lei 8.078/90)
-- CTN (Lei 5.172/66)
-- Estatuto da OAB (Lei 8.906/94)
-- Lei Maria da Penha (Lei 11.340/06)
-- ECA (Lei 8.069/90)
-- Estatuto do Idoso (Lei 10.741/03)
+### A4. Server functions
+- Varrer todas as `*.functions.ts` que mexem com dados de usuário e garantir uso de `requireSupabaseAuth` (não confiar em `userId` vindo do client).
+- Adicionar validação Zod em todos os `inputValidator`.
 
-Quando uma ou mais estão marcadas, a lista da página passa a mostrar **apenas atos que alteram/citam essas leis** (match pelo número da lei na ementa, ex.: "Altera a Lei nº 11.340"). Aparece um contador "X leis acompanhadas" no rodapé do painel + botão "Limpar".
+---
 
-### Rodapé do painel
-- Botão "Limpar filtros" (ghost).
-- Botão "Aplicar" (dourado) — fecha o sheet. As mudanças também já são aplicadas em tempo real conforme o usuário toca.
+## FASE B — Observabilidade (Bloco 2)
 
-## Persistência
+- **Sentry nas server functions**: criar middleware global em `src/start.ts` que envolve cada serverFn em `Sentry.startSpan` e captura exceções com `Sentry.captureException`.
+- **Upload de sourcemaps** no build (`@sentry/vite-plugin`).
+- **Health check**: `src/routes/api/public/health.ts` retornando `{ db, gemini, time }` (checa DB com `select 1`, ping rápido no Gemini).
+- **Logger estruturado** (`src/lib/logger.ts`) usando `pino` (compatível com Worker) com `job_id`/`request_id` correlacionável. Substituir `console.log` dos jobs (sync DOU, narrações, simulados).
 
-As "leis importantes" marcadas ficam salvas em `localStorage` (`oab:atualizacoes:leis-acompanhadas`) para a pessoa não precisar marcar de novo na próxima visita. O preset rápido é session-only.
+---
 
-## Lista da página
+## FASE C — SEO & share (Bloco 8)
 
-Quando há filtro ativo (preset ≠ "Todos" ou alguma lei acompanhada marcada):
-- A faixa horizontal de filtros por tipo (atual) **some** — o controle agora vive no painel.
-- Aparece uma linha discreta acima da lista: `Filtrando por: Códigos · 3 leis acompanhadas  [×]`.
+- **Sitemap dinâmico**: `src/routes/api/public/sitemap[.]xml.ts` lendo blog/biblioteca/vade-mecum/atualizacoes-leis.
+- **robots.txt** explícito em `public/robots.txt` apontando pro sitemap.
+- **JSON-LD**: helpers em `src/lib/jsonld.ts` (`Article`, `Course`, `BreadcrumbList`, `Organization`) usados nas rotas relevantes.
+- **OG images dinâmicas**: rota `src/routes/api/public/og/$slug.ts` usando `satori` + `@resvg/resvg-wasm` (edge-friendly). Cache HTTP de 1 dia.
+- **Canonical**: helper `canonical()` injetado em `head()` de cada rota crawlável.
+- Auditar metadados de cada rota top-level (`title`, `description`, `og:*`) — várias rotas estão herdando só o root.
 
-Sem filtro: comportamento atual preservado (carrossel de dias + faixa de filtros opcional).
+---
 
-## Arquivos
+## FASE D — Performance (Bloco 9)
 
-**Editar**
-- `src/routes/_app.atualizacoes-leis.index.tsx`
-  - Adicionar FAB + estado do painel.
-  - Mover/duplicar lógica de filtros para um novo componente `FiltrosPanel`.
-  - Aplicar filtros derivados (preset + leis acompanhadas) no `atos` antes do `useMemo` que alimenta a lista.
-  - Hook `useEffect` para hidratar/persistir `leis-acompanhadas` no `localStorage`.
+- **Preload de rotas**: `defaultPreload: "intent"` no router (verificar e ativar).
+- **Bundle analyzer**: `rollup-plugin-visualizer` no build com saída em `dist/stats.html`.
+- **Lighthouse CI**: workflow GitHub Actions (`treosh/lighthouse-ci-action`) rodando em PR contra preview Lovable, com budgets básicos.
+- **Image transforms**: helper `supabaseImg(url, {w,h,q})` usando `/render/image/public/...` e substituir usos diretos onde aplica.
+- **Lazy-load** componentes pesados (`recharts`, `embla`, `framer-motion` em telas específicas) via `React.lazy`/`@tanstack/react-router` lazy splitting onde já não tem.
+- Auditar e remover dependências não usadas (`depcheck`).
 
-**Criar**
-- `src/lib/atualizacoes-filtros.ts` — catálogo das leis importantes (número, label, slug) + helpers `matchPreset(ato, preset)` e `matchLeisAcompanhadas(ato, slugs)`.
+---
 
-**Usar (já existem)**
-- `src/components/ui/sheet.tsx` (shadcn) — para o painel lateral.
-- `src/components/ui/checkbox.tsx` — para a lista de leis.
-- Ícones `lucide-react`: `SlidersHorizontal`, `X`, `Check`.
+## FASE E — DevOps & qualidade (Bloco 10)
 
-## Notas técnicas
+- **GitHub Actions**:
+  - `.github/workflows/ci.yml` — lint + typecheck + build em PR e push.
+  - `.github/workflows/lighthouse.yml` — Lighthouse CI.
+  - `.github/workflows/codeql.yml` — análise de segurança estática.
+- **Renovate**: `.github/renovate.json` com agrupamento por ecossistema (radix, tanstack, supabase, react).
+- **Husky + lint-staged**: pre-commit roda `prettier --write` e `eslint --fix` nos arquivos alterados; pre-push roda `tsc --noEmit`.
+- **Vitest setup**: `vitest.config.ts`, `src/test/setup.ts`. Testes iniciais (mínimo 1 por util):
+  - `srs.test.ts`, `cf-parser.test.ts`, `resenha-parser.test.ts`, `atualizacoes-filtros.test.ts`, `whatsapp-markdown.test.ts`, `titulo.test.ts`.
+- **Playwright smoke**: `e2e/smoke.spec.ts` — abre `/`, faz login com usuário de teste (variável), navega `/inicio`, `/atualizacoes-leis`, `/vade-mecum`.
+- **Commitlint + conventional-changelog** (opcional, marco se topar).
 
-- O match por lei usa regex no campo `ementa` do ato: `/Lei n[ºo°]?\s*11\.?340/i`. Para a CF/88 também aceita "Constituição Federal" e tipo `emenda_constitucional`.
-- Não mudamos a serverFn `listResenhaMes` — filtragem é 100% client-side sobre o array já carregado do mês.
-- Sem mudanças em design tokens; usar `bg-gold`, `border-gold/40`, `text-foreground`, etc., já definidos.
+---
+
+## FASE F — Acessibilidade (Bloco 11)
+
+- Skip-link em `__root.tsx` ("Pular para conteúdo").
+- `<main id="main">` em todas as layouts.
+- Auditoria com `@axe-core/playwright` no smoke E2E.
+- Revisar contraste do tema dourado/marrom (`src/styles.css`) com `oklch` — ajustar tokens se falhar AA.
+- Respeitar `prefers-reduced-motion` em todas as animações framer-motion (helper `useReducedMotion()` aplicado nos componentes do hero/transições).
+- `aria-label` em ícones sem texto (FAB de filtro, botões de share, etc.).
+- Verificar foco visível em todos os botões (ring custom já existe — confirmar consistência).
+
+---
+
+## FASE G — i18n base (Bloco 12)
+
+- Instalar `@lingui/core` + `@lingui/react` + `@lingui/macro` + `@lingui/vite-plugin` (mais leve que react-intl, bom suporte SSR).
+- Locale default `pt-BR`, estrutura pronta pra `en` e `es` mesmo vazias.
+- Wrapper `<I18nProvider>` no `__root.tsx`.
+- Helper `t\`...\`` adotado primeiro nas strings novas; varredura completa fica como tech-debt rastreado por TODO.
+- Detectar locale via `Accept-Language` na primeira request (cookie `locale`).
+
+---
+
+## FASE H — Padrões de código (Bloco 14)
+
+- **`src/schemas/`**: centralizar Zod schemas reutilizados (atualizações, simulados, perfil, vade-mecum).
+- **Tipagem estrita**: rodar `tsc --noEmit --strict` em modo "no implicit any" e corrigir `any` em payloads de `*.functions.ts` (a varrer: `gemini.server.ts`, `resenha-sync.functions.ts`, jobs).
+- **`react-error-boundary`** + Sentry: substituir error boundaries ad-hoc por um único `<AppErrorBoundary>` reutilizável; aplicar nas seções críticas (chat, leitor, simulado).
+- **ESLint reforçado**: regras adicionais `@typescript-eslint/no-floating-promises`, `no-misused-promises`, `consistent-type-imports`, `import/order`, `react-hooks/exhaustive-deps` (já tem, garantir error não warn).
+
+---
+
+## FASE I — Padrões de repositório (Bloco 15)
+
+Criar/atualizar:
+- `README.md` — overview, stack, screenshots (placeholders), scripts, link da Lovable.
+- `LICENSE` — proprietário (All rights reserved) ou MIT? **(quero confirmar com você)**.
+- `SECURITY.md` — canal de report (email/URL).
+- `CONTRIBUTING.md` — fluxo de PR, commit style.
+- `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1.
+- `.github/ISSUE_TEMPLATE/bug_report.yml`, `feature_request.yml`.
+- `.github/PULL_REQUEST_TEMPLATE.md`.
+- `.env.example` — listar todas as VITE_* e nomes das secrets server-side (só nomes, sem valores).
+- `.editorconfig`.
+
+---
+
+## Detalhes técnicos importantes
+
+- **Tudo no stack atual**: TanStack Start + Cloudflare Worker + Supabase. Sem Node-only packages no server (já validei sharp/pino — pino tem build edge).
+- **Gemini direto**: mantém regra da memória (sem Lovable AI Gateway).
+- **Sem mudar funcionalidades de usuário**: nenhuma feature nova é adicionada; só infra, qualidade e SEO.
+
+## Riscos / pontos de atenção
+
+1. **CSP** pode quebrar embeds (YouTube nas aulas, iframes do Planalto). Começar report-only e ir apertando.
+2. **`REVOKE EXECUTE`** em função usada por RPC do client quebra a tela. Vou auditar usos antes de revogar.
+3. **Lingui** adiciona ~15 KB e exige `babel-plugin-macros` ou plugin Vite — vou usar plugin Vite (sem ejetar babel).
+4. **GitHub Actions** rodar `build` precisa das `VITE_SUPABASE_*` como secrets do repo. Vou documentar no README.
+5. **Playwright** em CI precisa de runner com browsers — `microsoft/playwright-github-action` resolve.
+
+## Perguntas pra você antes de começar
+
+1. **LICENSE**: proprietário ("All rights reserved") ou aberto (MIT)?
+2. **SECURITY.md**: qual e-mail/canal pra report de vulnerabilidade?
+3. Quer que eu rode **tudo de uma vez** (vai dar muitos arquivos num único commit) ou **fase por fase** com sua aprovação no meio?
+4. **i18n (Fase G)** — só estrutura agora, mantendo PT-BR como única língua ativa, certo? Não vou traduzir nada de UI existente.
+
+Me responde essas 4 e eu começo pela Fase A.
