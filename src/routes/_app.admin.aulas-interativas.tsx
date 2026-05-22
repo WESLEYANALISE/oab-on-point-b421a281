@@ -78,17 +78,25 @@ function AdminAulasInterativas() {
 
       <div className="flex flex-wrap gap-2 mb-6 border-b border-border">
         <TabBtn icon={<Library className="h-4 w-4" />} active={tab === "drive"} onClick={() => setTab("drive")}>
-          Importados do Drive
-        </TabBtn>
-        <TabBtn icon={<Upload className="h-4 w-4" />} active={tab === "upload"} onClick={() => setTab("upload")}>
-          Upload manual
+          Materiais de estudo
         </TabBtn>
         <TabBtn icon={<FileText className="h-4 w-4" />} active={tab === "mapas"} onClick={() => setTab("mapas")}>
           Mapas mentais
         </TabBtn>
+        <TabBtn icon={<FileText className="h-4 w-4" />} active={tab === "cronogramas"} onClick={() => setTab("cronogramas")}>
+          Cronogramas
+        </TabBtn>
+        <TabBtn icon={<Sparkles className="h-4 w-4" />} active={tab === "bonus"} onClick={() => setTab("bonus")}>
+          Bônus
+        </TabBtn>
+        <TabBtn icon={<Upload className="h-4 w-4" />} active={tab === "upload"} onClick={() => setTab("upload")}>
+          Upload manual
+        </TabBtn>
       </div>
 
       {tab === "drive" && <AbaDrive />}
+      {tab === "cronogramas" && <AbaListaSimples tipo="cronograma" titulo="Cronogramas" descricao="Cronogramas de estudo importados do Drive." />}
+      {tab === "bonus" && <AbaListaSimples tipo="bonus" titulo="Bônus" descricao="Materiais bônus, e-books e marcadores." />}
       {tab === "upload" && <AbaUpload />}
       {tab === "mapas" && <AbaMapas />}
 
