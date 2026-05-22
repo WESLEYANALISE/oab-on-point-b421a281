@@ -137,16 +137,27 @@ function Welcome() {
 
           <motion.div className="lg:flex-1 lg:max-w-2xl" initial={false}>
             <div className="mb-6 text-center lg:text-left" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "-0.02em" }}>
+              <motion.span
+                initial={false}
+                className="inline-block text-[clamp(0.7rem,2.2vw,0.85rem)] font-bold tracking-[0.22em] uppercase mb-3 px-3 py-1 rounded-full"
+                style={{
+                  color: "#fca5a5",
+                  background: "rgba(185,28,28,0.12)",
+                  border: "1px solid rgba(239,68,68,0.35)",
+                  textShadow: "0 0 12px rgba(239,68,68,0.4)",
+                }}
+              >
+                Preparação definitiva para a OAB
+              </motion.span>
               <div className="headline-shine">
                 <motion.h1
                   initial={false}
                   className="text-[clamp(1.8rem,5.5vw,3rem)] font-black text-white leading-[1.1] mb-4"
                   style={{ textShadow: "0 2px 12px rgba(0,0,0,0.5)" }}
                 >
-                  Tudo para você{" "}
-                  <span className="inline" style={{ color: "#ef4444", textShadow: "0 0 20px rgba(239,68,68,0.4)" }}>passar na OAB</span>{" "}
-                  em um{" "}
-                  <span className="inline" style={{ color: "#ef4444", textShadow: "0 0 20px rgba(239,68,68,0.4)" }}>só lugar</span>.
+                  Sua{" "}
+                  <span className="inline" style={{ color: "#ef4444", textShadow: "0 0 20px rgba(239,68,68,0.4)" }}>aprovação</span>{" "}
+                  começa aqui.
                 </motion.h1>
               </div>
               <motion.p
@@ -154,7 +165,7 @@ function Welcome() {
                 className="text-white/85 text-center lg:text-left text-[clamp(0.95rem,3vw,1.15rem)] leading-relaxed mb-2"
                 style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "0.01em", textShadow: "0 1px 6px rgba(0,0,0,0.4)" }}
               >
-                Aulas, resumos, flashcards, simulados, vade mecum, peças da 2ª fase e muito mais — tudo para você{" "}
+                Aulas, resumos, flashcards, simulados, vade mecum e peças da 2ª fase. Tudo o que você precisa para{" "}
                 <span className="font-bold" style={{ color: "#ef4444" }}>dominar o Exame da Ordem</span>.
               </motion.p>
 
