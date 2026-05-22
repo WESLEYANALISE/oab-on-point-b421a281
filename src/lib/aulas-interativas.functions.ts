@@ -230,10 +230,42 @@ export const getAulaCompleta = createServerFn({ method: "POST" })
       .eq("aula_id", aula.id)
       .order("ordem", { ascending: true });
 
+    // Próxima e anterior aula (ordenadas por módulo.ordem, aula.ordem)
+    const { data: modulosAll } = await sb
+      .from("aulas_interativas_modulos")
+      .select("id, ordem")
+      .eq("curso_id", curso.id)
+      .order("ordem", { ascending: true });
+    const { data: aulasAll } = await sb
+      .from("aulas_interativas_aulas")
+      .select("id, slug, titulo, modulo_id, ordem")
+      .eq("curso_id", curso.id);
+
+    const moduloOrdemPorId = new Map<string, number>(
+      (modulosAll ?? []).map((m) => [m.id, m.ordem ?? 0]),
+    );
+    const todasOrdenadas = [...(aulasAll ?? [])].sort((a, b) => {
+      const ma = moduloOrdemPorId.get(a.modulo_id) ?? 0;
+      const mb = moduloOrdemPorId.get(b.modulo_id) ?? 0;
+      if (ma !== mb) return ma - mb;
+      return (a.ordem ?? 0) - (b.ordem ?? 0);
+    });
+    const idxAtual = todasOrdenadas.findIndex((x) => x.id === aula.id);
+    const proximaAula =
+      idxAtual >= 0 && idxAtual < todasOrdenadas.length - 1
+        ? { slug: todasOrdenadas[idxAtual + 1].slug, titulo: todasOrdenadas[idxAtual + 1].titulo }
+        : null;
+    const aulaAnterior =
+      idxAtual > 0
+        ? { slug: todasOrdenadas[idxAtual - 1].slug, titulo: todasOrdenadas[idxAtual - 1].titulo }
+        : null;
+
     return {
       curso: curso as Pick<CursoRow, "id" | "titulo" | "slug">,
       aula: aula as AulaRow,
       slides: (slides ?? []) as unknown as SlideRow[],
+      proximaAula,
+      aulaAnterior,
     };
   });
 
