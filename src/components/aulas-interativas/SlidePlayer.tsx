@@ -216,7 +216,7 @@ function SlideRenderer({
                 {bullets.map((b, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm md:text-base">
                     <Check className="h-4 w-4 text-gold mt-1 shrink-0" />
-                    <span>{b}</span>
+                    <MD>{b}</MD>
                   </li>
                 ))}
               </ul>
@@ -239,7 +239,7 @@ function SlideRenderer({
                 {col.itens.map((it, j) => (
                   <li key={j} className="text-sm flex items-start gap-2">
                     <span className="text-gold">•</span>
-                    <span>{it}</span>
+                    <MD>{it}</MD>
                   </li>
                 ))}
               </ul>
@@ -261,7 +261,7 @@ function SlideRenderer({
               <span className="h-7 w-7 rounded-full bg-gradient-gold text-gold-foreground grid place-items-center text-sm font-display shrink-0">
                 {i + 1}
               </span>
-              <span className="text-sm md:text-base">{b}</span>
+              <MD className="text-sm md:text-base">{b}</MD>
             </li>
           ))}
         </ol>
@@ -302,7 +302,7 @@ function SlideRenderer({
           {c.bullets.map((b, i) => (
             <li key={i} className="flex items-start gap-2 text-sm md:text-base">
               <span className="text-gold mt-1">•</span>
-              <span>{b}</span>
+              <MD>{b}</MD>
             </li>
           ))}
         </ul>
