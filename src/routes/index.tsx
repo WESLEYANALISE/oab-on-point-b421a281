@@ -59,12 +59,21 @@ function Welcome() {
   const [choiceOpen, setChoiceOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
 
-  const handleStart = useCallback(() => setChoiceOpen(true), []);
+  const [transitioning, setTransitioning] = useState(false);
+
+  const handleStart = useCallback(() => {
+    setTransitioning(true);
+    window.setTimeout(() => {
+      setChoiceOpen(true);
+      window.setTimeout(() => setTransitioning(false), 250);
+    }, 650);
+  }, []);
   const handleChoice = useCallback((mode: "login" | "signup") => {
     setChoiceOpen(false);
     setAuthTab(mode);
     setAuthOpen(true);
   }, []);
+
 
   return (
     <div className="min-h-[100dvh] w-full bg-black overflow-x-hidden relative">
@@ -73,7 +82,7 @@ function Welcome() {
       <motion.div className="relative min-h-[100dvh] flex flex-col">
         {/* Background image */}
         <div className="absolute inset-0 overflow-hidden bg-black">
-          <div className="relative w-full">
+          <div className="relative w-full pt-20 sm:pt-24">
             <img
               src={welcomeHero}
               alt=""
@@ -90,6 +99,7 @@ function Welcome() {
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 via-40% to-black" />
         </div>
+
 
         {/* Navbar */}
         <nav className="relative z-20 px-4 lg:px-8 pt-6 pb-2">
@@ -375,6 +385,21 @@ function Welcome() {
       <WelcomeAuthModal open={authOpen} onClose={() => setAuthOpen(false)} initialTab={authTab} sidePanel={isDesktop} />
       <StartChoiceSheet open={choiceOpen} onClose={() => setChoiceOpen(false)} onChoose={handleChoice} />
       <SupportSheet open={supportOpen} onClose={() => setSupportOpen(false)} />
+
+      {/* Page-open curtain (left → right) */}
+      {transitioning && (
+        <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
+          <div
+            className="absolute inset-y-0 left-0 w-full"
+            style={{
+              background: "linear-gradient(110deg, #7f1d1d 0%, #b91c1c 45%, #dc2626 70%, #000 100%)",
+              boxShadow: "0 0 80px rgba(220,38,38,0.6)",
+              animation: "curtainSweep 900ms cubic-bezier(0.77, 0, 0.175, 1) forwards",
+            }}
+          />
+        </div>
+      )}
+
     </div>
   );
 }
