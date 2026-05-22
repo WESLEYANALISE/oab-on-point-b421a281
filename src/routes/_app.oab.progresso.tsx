@@ -50,9 +50,6 @@ function ProgressoPage() {
     <div className="pb-16">
       <header className="relative overflow-hidden px-4 pt-5 pb-6 md:px-8 bg-gradient-toga text-primary-foreground">
         <div className="absolute -top-20 -right-12 h-56 w-56 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
-        <Link to="/oab/primeira-fase" className="relative inline-flex items-center gap-1.5 text-[12px] text-primary-foreground/80 hover:text-primary-foreground mb-3">
-          <ArrowLeft className="h-3.5 w-3.5" /> 1ª Fase
-        </Link>
         <div className="relative flex items-center gap-2.5">
           <div className="h-9 w-9 rounded-xl bg-gold/20 border border-gold/40 grid place-items-center shrink-0">
             <Sparkles className="h-4 w-4 text-gold" />
