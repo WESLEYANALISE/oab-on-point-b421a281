@@ -77,6 +77,32 @@ SAÍDA: APENAS JSON válido (sem markdown ao redor):
   ]
 }`;
 
+const SYSTEM_SLIDES_MODULO = `Você gera SLIDES para TODAS as aulas de UM módulo de curso jurídico interativo (OAB, português do Brasil).
+
+Você receberá: dados do módulo, lista de aulas com escopo e trechos relevantes do material para cada aula.
+
+Para CADA aula, gere de 3 a 6 slides, incluindo pelo menos 1 quiz. Seja direto e não repita a mesma explicação em aulas diferentes.
+
+Tipos válidos: "capa", "conceito", "exemplo", "esquema", "comparativo", "quiz", "resumo", "conclusao".
+
+SAÍDA: APENAS JSON válido (sem markdown ao redor):
+{
+  "aulas": [
+    {
+      "titulo": "mesmo título da aula recebida",
+      "slides": [
+        {
+          "ordem": number,
+          "tipo": "capa"|"conceito"|"exemplo"|"esquema"|"comparativo"|"quiz"|"resumo"|"conclusao",
+          "conteudo": {"titulo":"...","texto":"...","destaque":"...","bullets":[...],"colunas":[{"titulo":"...","itens":[...]}],"objetivos":[...]},
+          "imagem_url": null,
+          "quiz_json": null
+        }
+      ]
+    }
+  ]
+}`;
+
 function sseEvent(event: string, data: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
