@@ -198,10 +198,10 @@ function Welcome() {
                 </p>
               </motion.div>
 
-              {/* Louros + V-shape overlay */}
+              {/* Louros + V-shape overlay (mobile only — desktop usa DesktopMockupRotator) */}
               <motion.div
                 initial={false}
-                className="relative w-full max-w-[280px] md:max-w-[400px] lg:max-w-[320px] mx-auto my-2"
+                className="relative w-full max-w-[280px] md:max-w-[400px] mx-auto my-2 lg:hidden"
               >
                 <img
                   src={lourosDourados}
