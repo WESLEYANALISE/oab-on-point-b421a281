@@ -275,9 +275,14 @@ function parseAtoEstruturado(html: string, baseUrl: string): AtoEstruturado {
       /text-align\s*:\s*center/i.test(inner)
         ? "center"
         : "left";
-    const italic = /<i\b|<em\b|font-style\s*:\s*italic/i.test(inner);
-    const text = collapse(stripTags(inner));
-    if (text) paras.push({ text, align, italic });
+    // Quebra por <br> para separar nomes/linhas dentro do mesmo <p>
+    // (importante nas assinaturas: presidente fica numa linha, ministro em outra)
+    const fragments = inner.split(/<br\s*\/?>/i);
+    for (const frag of fragments) {
+      const italic = /<i\b|<em\b|font-style\s*:\s*italic/i.test(frag);
+      const text = collapse(stripTags(frag));
+      if (text) paras.push({ text, align, italic });
+    }
   }
 
   // 5. Agrupa em seções
