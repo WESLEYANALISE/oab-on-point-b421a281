@@ -157,19 +157,15 @@ function VadeMecumPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          {CATEGORIAS.filter((c) => c.id === "constituicao" || c.id === "codigos").map((cat) =>
-            cat.id === "constituicao" ? (
-              <Link
-                key={cat.id}
-                to="/vade-mecum/cf"
-                className="block h-full"
-              >
-                <CategoriaCardCompact cat={cat} />
-              </Link>
-            ) : (
-              <CategoriaCardCompact key={cat.id} cat={cat} />
-            ),
-          )}
+          {CATEGORIAS.filter((c) => c.id === "constituicao" || c.id === "codigos").map((cat) => (
+            <Link
+              key={cat.id}
+              to={cat.id === "constituicao" ? "/vade-mecum/cf" : "/vade-mecum/codigos"}
+              className="block h-full"
+            >
+              <CategoriaCardCompact cat={cat} />
+            </Link>
+          ))}
         </div>
       </section>
 
