@@ -10,6 +10,7 @@ import {
   ChevronDown,
   SlidersHorizontal,
   X,
+  ExternalLink,
 } from "lucide-react";
 import { listResenhaMes } from "@/lib/resenha-sync.functions";
 import { cn } from "@/lib/utils";
@@ -161,12 +162,21 @@ function AtualizacoesLeisPage() {
 
   return (
     <div className="px-4 md:px-8 py-5 max-w-5xl mx-auto pb-12 space-y-5">
-      <header className="space-y-1">
+      <header className="space-y-2">
         <p className="text-[11px] uppercase tracking-widest text-gold">Diário Oficial · Planalto</p>
         <h1 className="font-display text-2xl md:text-3xl leading-tight">Atualizações de Leis</h1>
         <p className="text-sm text-muted-foreground">
-          Novas leis, EC, MPs, decretos e vetos publicados no D.O.U. — sincronizado 3x ao dia.
+          Novas leis, EC, MPs, decretos e vetos publicados no D.O.U., sincronizado 3x ao dia.
         </p>
+        <a
+          href="https://www.planalto.gov.br/ccivil_03/Portaria/quadro_DOU.htm"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 mt-1 rounded-full border border-gold/40 bg-gold/10 px-3 py-1.5 text-xs font-semibold text-gold hover:bg-gold/20 transition-colors"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          Acessar fonte no Planalto
+        </a>
       </header>
 
       {/* Navegador de mês */}
