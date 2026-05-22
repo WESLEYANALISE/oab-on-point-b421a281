@@ -3,12 +3,14 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  CheckCircle2,
   Eye,
   EyeOff,
   FileText,
   Library,
   Loader2,
   Play,
+  ScanText,
   Sparkles,
   Trash2,
   Upload,
@@ -28,6 +30,8 @@ import {
   atualizarStatusDrive,
   listarAulasDoCurso,
   vincularMapaAula,
+  obterPreviaArquivo,
+  obterExtracaoArquivo,
   type ArquivoDrive,
 } from "@/lib/aulas-interativas-drive.functions";
 import { SlidePlayer } from "@/components/aulas-interativas/SlidePlayer";
@@ -808,14 +812,21 @@ function CursosExistentes() {
 function statusColor(s: string) {
   if (s === "concluido") return "text-emerald-400";
   if (s === "erro") return "text-red-400";
-  if (s === "processando") return "text-amber-400";
+  if (s === "extraindo" || s === "gerando_previa" || s === "publicando" || s === "processando") return "text-amber-400";
+  if (s === "extraido") return "text-sky-400";
+  if (s === "previa_pronta") return "text-indigo-400";
   return "text-muted-foreground";
 }
 
 function statusLabel(s: string) {
-  if (s === "concluido") return "Concluído";
+  if (s === "concluido") return "Curso publicado";
   if (s === "erro") return "Erro";
-  if (s === "processando") return "Processando";
+  if (s === "extraindo") return "Extraindo PDF…";
+  if (s === "extraido") return "Texto extraído";
+  if (s === "gerando_previa") return "Gerando prévia…";
+  if (s === "previa_pronta") return "Prévia pronta";
+  if (s === "publicando") return "Publicando…";
+  if (s === "processando") return "Processando…";
   return "Pendente";
 }
 
