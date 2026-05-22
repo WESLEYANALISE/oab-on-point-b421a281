@@ -182,3 +182,62 @@ export const listResenhaRuns = createServerFn({ method: "GET" })
     if (error) throw error;
     return { runs: data ?? [] };
   });
+
+// ====== Conteúdo do ato (leitor interno tipo artigo) ======
+
+function extrairConteudoPlanalto(html: string): { titulo: string | null; html: string } {
+  let h = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<link[^>]*>/gi, "")
+    .replace(/<meta[^>]*>/gi, "")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, "")
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
+    .replace(/<img[^>]*>/gi, "")
+    .replace(/ on\w+="[^"]*"/gi, "")
+    .replace(/ on\w+='[^']*'/gi, "");
+
+  const tituloMatch = h.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const titulo = tituloMatch ? tituloMatch[1].replace(/\s+/g, " ").trim() : null;
+
+  const bodyMatch = h.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  let conteudo = bodyMatch ? bodyMatch[1] : h;
+
+  conteudo = conteudo
+    .replace(/<header[\s\S]*?<\/header>/gi, "")
+    .replace(/<nav[\s\S]*?<\/nav>/gi, "")
+    .replace(/<footer[\s\S]*?<\/footer>/gi, "")
+    .replace(/<form[\s\S]*?<\/form>/gi, "")
+    .replace(/ style="[^"]*"/gi, "")
+    .replace(/ class="[^"]*"/gi, "")
+    .replace(/ bgcolor="[^"]*"/gi, "")
+    .replace(/ color="[^"]*"/gi, "");
+
+  return { titulo, html: conteudo.trim() };
+}
+
+export const getAtoConteudo = createServerFn({ method: "POST" })
+  .inputValidator((input: { id: string }) => input)
+  .handler(async ({ data }) => {
+    const { data: ato, error } = await supabaseAdmin
+      .from("legis_atos")
+      .select("id, data_dou, edicao_extra, tipo, numero, data_assinatura, ementa, url, created_at")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!ato) throw new Error("Ato não encontrado");
+
+    let conteudoHtml = "";
+    let tituloFonte: string | null = null;
+    let erroConteudo: string | null = null;
+    try {
+      const html = await fetchDirect(ato.url);
+      const parsed = extrairConteudoPlanalto(html);
+      conteudoHtml = parsed.html;
+      tituloFonte = parsed.titulo;
+    } catch (e) {
+      erroConteudo = e instanceof Error ? e.message : String(e);
+    }
+
+    return { ato, conteudoHtml, tituloFonte, erroConteudo };
+  });
