@@ -23,7 +23,7 @@ function AppLayout() {
   const { data: profile } = useProfile();
   const { data: isAdmin } = useIsAdmin();
   const isBiblioteca = pathname.startsWith("/biblioteca");
-  const isHome = pathname === "/app";
+  const isHome = pathname === "/inicio";
   const showBottomNav = isHome;
 
   useEffect(() => {

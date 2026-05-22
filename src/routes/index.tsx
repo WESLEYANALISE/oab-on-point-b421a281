@@ -36,7 +36,7 @@ function LandingPage() {
   const [heroLoaded, setHeroLoaded] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/app" });
+    if (!loading && user) navigate({ to: "/inicio" });
   }, [user, loading, navigate]);
 
   return (
