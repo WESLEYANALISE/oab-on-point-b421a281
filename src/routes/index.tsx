@@ -167,7 +167,7 @@ function Welcome() {
                     textShadow: "0 0 12px rgba(239,68,68,0.4)",
                   }}
                 >
-                  Preparação definitiva para a OAB
+                  Preparação definitiva
                 </motion.span>
               </div>
 
