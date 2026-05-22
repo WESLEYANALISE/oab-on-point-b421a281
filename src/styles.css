@@ -517,5 +517,4 @@
 .planalto-doc p { margin: 0 0 0.85em; }
 .planalto-doc strong, .planalto-doc b { font-weight: 700; }
 .planalto-doc center { text-align: center; }
-.planalto-doc font[color] { color: inherit; } /* deixa o atributo color do <font> agir */
 .planalto-doc hr { border: 0; border-top: 1px solid #ccc; margin: 1.2em 0; }
