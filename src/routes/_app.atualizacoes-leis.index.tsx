@@ -465,8 +465,8 @@ function AtoItem({ ato }: { ato: { id: string; tipo: string; numero: string; dat
   return (
     <li>
       <Link
-        to="/atualizacoes-leis/$atoId"
-        params={{ atoId: ato.id }}
+        to="/atualizacoes-leis/$slug"
+        params={{ slug: buildAtoSlug(ato) }}
         className="flex h-[7.5rem] rounded-xl border border-border bg-card p-3.5 hover:border-gold/40 transition-colors"
       >
         <div className="flex items-start gap-3 w-full">
