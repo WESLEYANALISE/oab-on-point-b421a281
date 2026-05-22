@@ -226,6 +226,15 @@ function MD({ children, className }: { children: string; className?: string }) {
   );
 }
 
+function RamoMapa({ ramo }: { ramo: { titulo?: string; descricao?: string } }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <h3 className="font-display text-base text-gold mb-1">{ramo.titulo}</h3>
+      {ramo.descricao && <p className="text-sm text-muted-foreground leading-relaxed">{ramo.descricao}</p>}
+    </div>
+  );
+}
+
 function SlideRenderer({
   slide,
   onResponderQuiz,
@@ -275,6 +284,8 @@ function SlideRenderer({
 
   if (slide.tipo === "mapa_mental") {
     const pdfUrl = (c as any).pdf_url as string | undefined;
+    const central = ((c as any).central ?? titulo) as string;
+    const ramos = Array.isArray((c as any).ramos) ? ((c as any).ramos as { titulo?: string; descricao?: string }[]) : [];
     return (
       <div className="min-h-full px-4 md:px-8 py-6 flex flex-col">
         <p className="text-xs uppercase tracking-widest text-gold mb-2">Mapa mental</p>
@@ -284,6 +295,20 @@ function SlideRenderer({
             <object data={pdfUrl} type="application/pdf" className="w-full h-full min-h-[60vh]">
               <iframe src={pdfUrl} title={titulo} className="w-full h-full min-h-[60vh]" />
             </object>
+          </div>
+        ) : ramos.length > 0 ? (
+          <div className="max-w-4xl mx-auto w-full flex-1 grid place-items-center py-4">
+            <div className="grid md:grid-cols-[1fr_auto_1fr] gap-4 md:gap-6 items-center w-full">
+              <div className="space-y-3">
+                {ramos.slice(0, 2).map((ramo, i) => <RamoMapa key={i} ramo={ramo} />)}
+              </div>
+              <div className="rounded-2xl border border-gold/40 bg-gold/10 px-6 py-5 text-center shadow-glow">
+                <p className="font-display text-xl text-gold">{central}</p>
+              </div>
+              <div className="space-y-3">
+                {ramos.slice(2, 4).map((ramo, i) => <RamoMapa key={i + 2} ramo={ramo} />)}
+              </div>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">Mapa não disponível.</p>

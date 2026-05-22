@@ -36,6 +36,7 @@ import {
   apagarImagensExtracao,
   type ArquivoDrive,
 } from "@/lib/aulas-interativas-drive.functions";
+import { ensureLongCourseStructure } from "@/lib/aulas-interativas-long-slides";
 import { SlidePlayer } from "@/components/aulas-interativas/SlidePlayer";
 
 export const Route = createFileRoute("/_app/admin/aulas-interativas")({
@@ -240,7 +241,7 @@ function ArquivoMaterialItem({
 
   useMemo(() => {
     if (previaQ.data?.estrutura) {
-      setEstrutura(previaQ.data.estrutura as Estrutura);
+      setEstrutura(ensureLongCourseStructure(previaQ.data.estrutura as Estrutura));
       if (previaQ.data.titulo_sugerido) setTitulo(previaQ.data.titulo_sugerido);
       if (previaQ.data.materia_sugerida) setMateria(previaQ.data.materia_sugerida);
     }
@@ -392,7 +393,7 @@ function ArquivoMaterialItem({
         }
       }
 
-      setEstrutura(finalPayload.estrutura);
+      setEstrutura(ensureLongCourseStructure(finalPayload.estrutura as Estrutura));
       if (finalPayload.titulo_sugerido) setTitulo(finalPayload.titulo_sugerido);
       if (finalPayload.materia_sugerida) setMateria(finalPayload.materia_sugerida);
       setProgresso(`Prévia: ${finalPayload.estrutura.modulos.length} módulo(s). Revise abaixo.`);
@@ -416,6 +417,7 @@ function ArquivoMaterialItem({
           descricao: "",
           materia,
           publicado,
+          replaceCursoId: arquivo.curso_id,
           modulos: estrutura.modulos
             .filter((m) => m.aulas.length > 0)
             .map((m) => ({
@@ -529,12 +531,12 @@ function ArquivoMaterialItem({
 
         <button
           onClick={() => publicar.mutate(true)}
-          disabled={!estrutura || publicar.isPending || status === "concluido"}
+          disabled={!estrutura || publicar.isPending}
           className="h-9 px-3 rounded-full bg-gradient-gold text-gold-foreground text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
-          title="3. Publicar o curso no Supabase"
+          title={status === "concluido" ? "Substituir o curso publicado por esta prévia" : "3. Publicar o curso no Supabase"}
         >
           {publicar.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-          {status === "concluido" ? "3. Publicado" : "3. Publicar curso"}
+          {status === "concluido" ? "3. Republicar curso" : "3. Publicar curso"}
           {status === "concluido" && <CheckCircle2 className="h-3 w-3" />}
         </button>
 
@@ -845,8 +847,9 @@ function AbaUpload() {
         throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
       }
       const { estrutura: e } = (await res.json()) as { estrutura: Estrutura };
-      setEstrutura(e);
-      setProgresso(`Pronto! ${e.modulos.length} módulo(s).`);
+      const longa = ensureLongCourseStructure(e);
+      setEstrutura(longa);
+      setProgresso(`Pronto! ${longa.modulos.length} módulo(s).`);
     } catch (err: any) {
       toast.error(err?.message ?? "Falha");
       setProgresso(`Erro: ${err?.message ?? "?"}`);
