@@ -217,6 +217,60 @@ export type Database = {
         }
         Relationships: []
       }
+      aulas_interativas_arquivos_drive: {
+        Row: {
+          aula_id: string | null
+          aula_sugerida_slug: string | null
+          bytes: number
+          created_at: string
+          curso_id: string | null
+          erro_msg: string | null
+          id: string
+          nome_arquivo: string
+          pdf_url: string
+          status_ingestao: string
+          storage_bucket: string
+          storage_path: string
+          subpasta: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          aula_id?: string | null
+          aula_sugerida_slug?: string | null
+          bytes?: number
+          created_at?: string
+          curso_id?: string | null
+          erro_msg?: string | null
+          id?: string
+          nome_arquivo: string
+          pdf_url: string
+          status_ingestao?: string
+          storage_bucket: string
+          storage_path: string
+          subpasta?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          aula_id?: string | null
+          aula_sugerida_slug?: string | null
+          bytes?: number
+          created_at?: string
+          curso_id?: string | null
+          erro_msg?: string | null
+          id?: string
+          nome_arquivo?: string
+          pdf_url?: string
+          status_ingestao?: string
+          storage_bucket?: string
+          storage_path?: string
+          subpasta?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       aulas_interativas_aulas: {
         Row: {
           created_at: string
