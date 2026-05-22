@@ -1,6 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useState } from "react";
-import { motion } from "framer-motion";
 import {
   ArrowRight, Sparkles, Headphones, Star, BookOpen, Target, FileText, Layers,
   Trophy, Newspaper, ScrollText, CalendarDays, ClipboardList, Library,
@@ -38,9 +37,6 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
-  const [heroLoaded, setHeroLoaded] = useState(false);
-
-
   return (
     <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
       {/* ============ HERO ============ */}
@@ -49,7 +45,7 @@ function LandingPage() {
         <div className="absolute inset-0">
           <div
             aria-hidden
-            className={`absolute inset-0 bg-gradient-toga transition-opacity duration-700 ${heroLoaded ? "opacity-0" : "opacity-100"}`}
+            className="absolute inset-0 bg-gradient-toga"
           />
           <picture>
             <source type="image/avif" srcSet={heroAvif} sizes="100vw" />
@@ -62,8 +58,7 @@ function LandingPage() {
               loading="eager"
               fetchPriority="high"
               decoding="async"
-              onLoad={() => setHeroLoaded(true)}
-              className={`absolute inset-0 h-full w-full object-cover transition-all duration-1000 ${heroLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}`}
+              className="absolute inset-0 h-full w-full object-cover"
             />
           </picture>
           <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/60 to-black/95" />
@@ -100,39 +95,19 @@ function LandingPage() {
         <div className="relative z-10 flex-1 flex items-center px-5 md:px-10 py-10 md:py-16">
           <div className="max-w-6xl mx-auto w-full">
             <div className="max-w-3xl mx-auto md:mx-0 text-center md:text-left">
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/15 border border-gold/40 text-gold text-[10px] uppercase tracking-[0.22em] font-semibold backdrop-blur-md mb-5 md:mb-6"
-              >
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/15 border border-gold/40 text-gold text-[10px] uppercase tracking-[0.22em] font-semibold backdrop-blur-md mb-5 md:mb-6">
                 <Sparkles className="h-3 w-3" /> 42º Exame de Ordem
-              </motion.div>
+              </div>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.85, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                className="font-display font-extrabold text-[34px] leading-[1.05] md:text-6xl lg:text-7xl text-primary-foreground tracking-tight text-balance drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
-              >
+              <h1 className="font-display font-extrabold text-[34px] leading-[1.05] md:text-6xl lg:text-7xl text-primary-foreground tracking-tight text-balance drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]">
                 Tudo para você <span className="text-gold">passar na OAB</span> em um <span className="text-gold">só lugar</span>.
-              </motion.h1>
+              </h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.25 }}
-                className="mt-5 md:mt-7 text-[15px] md:text-lg text-primary-foreground/85 leading-relaxed max-w-2xl mx-auto md:mx-0 text-balance"
-              >
+              <p className="mt-5 md:mt-7 text-[15px] md:text-lg text-primary-foreground/85 leading-relaxed max-w-2xl mx-auto md:mx-0 text-balance">
                 Aulas, resumos, flashcards, simulados, vade mecum, peças da 2ª fase e muito mais — tudo para você <span className="text-gold font-semibold">dominar o Exame da Ordem</span> com método.
-              </motion.p>
+              </p>
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-                className="mt-7 md:mt-9 flex flex-col items-center md:items-start gap-4"
-              >
+              <div className="mt-7 md:mt-9 flex flex-col items-center md:items-start gap-4">
                 <Link
                   to="/login"
                   className="group relative inline-flex items-center justify-center gap-2 px-7 md:px-9 py-4 md:py-[18px] rounded-full bg-gradient-to-r from-gold via-[oklch(0.82_0.14_82)] to-gold text-gold-foreground font-bold text-base md:text-lg shadow-[0_18px_50px_-12px_oklch(0.78_0.13_80/0.7)] hover:scale-[1.03] hover:shadow-[0_22px_60px_-10px_oklch(0.78_0.13_80/0.9)] active:scale-95 transition-all overflow-hidden"
@@ -146,31 +121,21 @@ function LandingPage() {
                   <Star className="h-4 w-4 fill-gold text-gold" />
                   <span><span className="font-bold text-gold">+10.000</span> estudantes já estudam com a gente</span>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* OAB laurel */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.7 }}
-          className="relative z-10 pb-10 md:pb-14 px-5"
-        >
+        <div className="relative z-10 pb-10 md:pb-14 px-5">
           <OabLaurel />
-        </motion.div>
+        </div>
 
         {/* scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.4, duration: 0.8 }}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 text-primary-foreground/60 text-[10px] uppercase tracking-[0.3em] font-semibold flex flex-col items-center gap-1.5 pointer-events-none"
-        >
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-primary-foreground/60 text-[10px] uppercase tracking-[0.3em] font-semibold flex flex-col items-center gap-1.5 pointer-events-none">
           <span>Role para descobrir</span>
           <span className="h-6 w-[1px] bg-gradient-to-b from-gold/80 to-transparent animate-pulse" />
-        </motion.div>
+        </div>
       </section>
 
       {/* ============ POR QUE ============ */}
