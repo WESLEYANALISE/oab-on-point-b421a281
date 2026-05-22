@@ -494,3 +494,28 @@
 .markdown-body th { background: color-mix(in oklab, var(--muted) 60%, transparent); font-weight: 600; }
 .markdown-body img { border-radius: 0.5rem; margin: 1.2em auto; max-width: 100%; height: auto; }
 
+
+/* ===== Documento oficial do Planalto (leis, decretos, etc.) =====
+   Renderiza com fundo claro pra preservar a identidade visual original:
+   brasão, cabeçalho oliva, número em azul, ementa em vermelho. */
+.planalto-doc {
+  background: #ffffff;
+  color: #000000;
+  border-radius: 0.75rem;
+  padding: 1.5rem 1rem;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  overflow-x: auto;
+}
+.planalto-doc * { max-width: 100%; }
+.planalto-doc img { display: inline-block; height: auto; }
+.planalto-doc a { color: #0000ee; text-decoration: underline; }
+.planalto-doc a:visited { color: #551a8b; }
+.planalto-doc table { border-collapse: collapse; margin: 0 auto; }
+.planalto-doc td, .planalto-doc th { padding: 0.25rem 0.5rem; vertical-align: top; }
+.planalto-doc p { margin: 0 0 0.85em; }
+.planalto-doc strong, .planalto-doc b { font-weight: 700; }
+.planalto-doc center { text-align: center; }
+.planalto-doc font[color] { color: inherit; } /* deixa o atributo color do <font> agir */
+.planalto-doc hr { border: 0; border-top: 1px solid #ccc; margin: 1.2em 0; }
