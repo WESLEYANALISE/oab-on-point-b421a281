@@ -64,7 +64,7 @@ function AdminAulasInterativas() {
   const [tab, setTab] = useState<TabKey>("drive");
 
   return (
-    <div className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
+    <div className="px-2 sm:px-4 md:px-8 py-6 max-w-6xl mx-auto">
       <Link
         to="/admin"
         className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground mb-4"
