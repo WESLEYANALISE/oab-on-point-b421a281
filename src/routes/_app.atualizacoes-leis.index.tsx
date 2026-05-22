@@ -21,6 +21,7 @@ import {
   LEIS_IMPORTANTES,
   matchPreset,
   matchLeisAcompanhadas,
+  detectarLeiAlvo,
   type PresetKey,
 } from "@/lib/atualizacoes-filtros";
 
@@ -462,12 +463,13 @@ function Calendario({
 function AtoItem({ ato }: { ato: { id: string; tipo: string; numero: string; data_dou: string; data_assinatura: string | null; ementa: string; url: string; created_at: string; edicao_extra: boolean } }) {
   const t = TIPO_LABEL[ato.tipo] ?? TIPO_LABEL.outro;
   const novo = Date.now() - new Date(ato.created_at).getTime() < 24 * 3600 * 1000;
+  const alvo = detectarLeiAlvo(ato.ementa);
   return (
     <li>
       <Link
         to="/atualizacoes-leis/$slug"
         params={{ slug: buildAtoSlug(ato) }}
-        className="flex h-[7.5rem] rounded-xl border border-border bg-card p-3.5 hover:border-gold/40 transition-colors"
+        className="flex rounded-xl border border-border bg-card p-3.5 hover:border-gold/40 transition-colors"
       >
         <div className="flex items-start gap-3 w-full">
           <span className={cn("shrink-0 inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold tracking-wider", t.cor)}>
@@ -480,7 +482,13 @@ function AtoItem({ ato }: { ato: { id: string; tipo: string; numero: string; dat
               {novo && <span className="ml-2 text-[9px] uppercase tracking-widest text-gold font-bold">novo</span>}
               {ato.edicao_extra && <span className="ml-2 text-[9px] uppercase tracking-widest text-red-300 font-bold">edição extra</span>}
             </p>
-            {ato.ementa && <p className="text-xs text-muted-foreground mt-1 line-clamp-3">{ato.ementa}</p>}
+            {alvo && (
+              <span className="mt-1.5 self-start inline-flex items-center gap-1.5 rounded-full border border-gold/30 bg-gold/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold">
+                <span className="opacity-70">Altera</span>
+                <span>{alvo.sigla}</span>
+              </span>
+            )}
+            {ato.ementa && <p className="text-xs text-muted-foreground mt-1.5 line-clamp-3">{ato.ementa}</p>}
           </div>
         </div>
       </Link>

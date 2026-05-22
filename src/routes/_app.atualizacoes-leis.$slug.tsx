@@ -2,59 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink, Loader2, AlertCircle, ChevronRight, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { getAtoConteudo, type AtoSecao } from "@/lib/resenha-sync.functions";
+import { detectarLeiAlvo } from "@/lib/atualizacoes-filtros";
 import brasao from "@/assets/brasao-republica.png";
 
 export const Route = createFileRoute("/_app/atualizacoes-leis/$slug")({
   head: () => ({ meta: [{ title: "Ato — Atualizações de Leis" }] }),
   component: AtoPage,
 });
-
-type LeiAlvo = { nome: string; sigla: string };
-
-function detectarLeiAlvo(ementa: string | null | undefined): LeiAlvo | null {
-  if (!ementa) return null;
-  const t = ementa.toLowerCase();
-
-  // Códigos e diplomas conhecidos
-  const presets: Array<{ re: RegExp; nome: string; sigla: string }> = [
-    { re: /constitui[çc][ãa]o\s+federal|constitui[çc][ãa]o\s+da\s+rep[úu]blica/i, nome: "Constituição Federal", sigla: "CF/88" },
-    { re: /c[óo]digo\s+penal\b/i, nome: "Código Penal", sigla: "CP" },
-    { re: /c[óo]digo\s+de\s+processo\s+penal\b/i, nome: "Código de Processo Penal", sigla: "CPP" },
-    { re: /c[óo]digo\s+civil\b/i, nome: "Código Civil", sigla: "CC" },
-    { re: /c[óo]digo\s+de\s+processo\s+civil\b/i, nome: "Código de Processo Civil", sigla: "CPC" },
-    { re: /c[óo]digo\s+de\s+defesa\s+do\s+consumidor|c[óo]digo\s+do\s+consumidor/i, nome: "Código de Defesa do Consumidor", sigla: "CDC" },
-    { re: /c[óo]digo\s+tribut[áa]rio\s+nacional/i, nome: "Código Tributário Nacional", sigla: "CTN" },
-    { re: /consolida[çc][ãa]o\s+das\s+leis\s+do\s+trabalho/i, nome: "Consolidação das Leis do Trabalho", sigla: "CLT" },
-    { re: /estatuto\s+da\s+crian[çc]a\s+e\s+do\s+adolescente/i, nome: "Estatuto da Criança e do Adolescente", sigla: "ECA" },
-    { re: /estatuto\s+do\s+idoso/i, nome: "Estatuto do Idoso", sigla: "Idoso" },
-    { re: /estatuto\s+da\s+pessoa\s+com\s+defici[êe]ncia/i, nome: "Estatuto da Pessoa com Deficiência", sigla: "PCD" },
-    { re: /estatuto\s+da\s+oab|estatuto\s+da\s+advocacia/i, nome: "Estatuto da Advocacia e da OAB", sigla: "OAB" },
-  ];
-  for (const p of presets) {
-    if (p.re.test(ementa)) return { nome: p.nome, sigla: p.sigla };
-  }
-
-  // Lei nº X.XXX, de ... / Lei Complementar / Decreto
-  const m = ementa.match(/\b(Lei\s+Complementar|Lei|Decreto-Lei|Decreto)\s+n[ºo°\.]?\s*([\d\.]+)(?:[^\d]{0,40}?(\d{4}))?/i);
-  if (m) {
-    const tipo = m[1].replace(/\s+/g, " ");
-    const num = m[2];
-    const ano = m[3];
-    const sigla = tipo.toLowerCase().startsWith("lei complementar")
-      ? `LC ${num}${ano ? `/${ano.slice(-2)}` : ""}`
-      : tipo.toLowerCase().startsWith("decreto")
-      ? `${tipo} ${num}${ano ? `/${ano.slice(-2)}` : ""}`
-      : `Lei ${num}${ano ? `/${ano.slice(-2)}` : ""}`;
-    return { nome: `${tipo} nº ${num}${ano ? `/${ano}` : ""}`, sigla };
-  }
-
-  // Sinaliza "altera a ..." sem padrão conhecido
-  if (/\b(altera|modifica|revoga)\b/i.test(t)) return null;
-  return null;
-}
 
 function AtoPage() {
   const { slug } = Route.useParams();
@@ -64,6 +21,11 @@ function AtoPage() {
     queryFn: () => fn({ data: { slug } }),
     staleTime: 5 * 60_000,
   });
+
+  // Sobe a tela ao abrir um novo ato
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [slug]);
 
   const [openArtigo, setOpenArtigo] = useState<Extract<AtoSecao, { kind: "artigo" }> | null>(null);
 
