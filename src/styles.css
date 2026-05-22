@@ -493,3 +493,15 @@
 .markdown-body th, .markdown-body td { border: 1px solid var(--border); padding: 0.5em 0.75em; text-align: left; }
 .markdown-body th { background: color-mix(in oklab, var(--muted) 60%, transparent); font-weight: 600; }
 .markdown-body img { border-radius: 0.5rem; margin: 1.2em auto; max-width: 100%; height: auto; }
+
+/* Scrollbar dourada (combina com a paleta gold do app) */
+.scrollbar-gold { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--gold) 55%, transparent) transparent; }
+.scrollbar-gold::-webkit-scrollbar { height: 6px; width: 6px; }
+.scrollbar-gold::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-gold::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--gold) 55%, transparent);
+  border-radius: 9999px;
+}
+.scrollbar-gold::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--gold) 75%, transparent);
+}

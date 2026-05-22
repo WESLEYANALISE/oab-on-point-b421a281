@@ -292,7 +292,10 @@ function parseAtoEstruturado(html: string, baseUrl: string): AtoEstruturado {
   let preambuloAdicionado = false;
   let inSignatures = false;
 
+  const ANEXO_HEAD_RE = /^ANEXO\s+[IVXLCDM\d]+/i;
   for (const p of paras) {
+    // Quando bate em ANEXO, paramos de coletar (vai pro bloco de anexos)
+    if (ANEXO_HEAD_RE.test(p.text)) break;
     if (inSignatures) {
       assinaturas.push({ text: p.text, italic: p.italic });
       continue;
