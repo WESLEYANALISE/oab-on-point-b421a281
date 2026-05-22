@@ -233,23 +233,33 @@ function AtualizacoesLeisPage() {
         )}
       </div>
 
-      {/* Filtros */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
-        {FILTROS.map((f) => (
+      {/* Indicador de filtros ativos */}
+      {filtroAtivo && (
+        <div className="flex items-center gap-2 flex-wrap text-xs">
+          <span className="text-muted-foreground">Filtrando por:</span>
+          {preset !== "todos" && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-semibold">
+              {presetLabel}
+            </span>
+          )}
+          {filtro !== "todos" && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-card border border-border text-foreground font-semibold">
+              {FILTROS.find((f) => f.key === filtro)?.label}
+            </span>
+          )}
+          {leisAcompanhadas.length > 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-card border border-border text-foreground font-semibold">
+              {leisAcompanhadas.length} {leisAcompanhadas.length === 1 ? "lei acompanhada" : "leis acompanhadas"}
+            </span>
+          )}
           <button
-            key={f.key}
-            onClick={() => setFiltro(f.key)}
-            className={cn(
-              "shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
-              filtro === f.key
-                ? "bg-foreground text-background border-foreground"
-                : "bg-card text-muted-foreground border-border hover:text-foreground",
-            )}
+            onClick={() => { setPreset("todos"); setFiltro("todos"); setLeisAcompanhadas([]); }}
+            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
           >
-            {f.label}
+            <X className="h-3 w-3" /> limpar
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* Lista */}
       {q.isLoading ? (
@@ -268,7 +278,7 @@ function AtualizacoesLeisPage() {
             text={
               diaSelInfo?.status === "sem-atos"
                 ? `Não houve publicação de atos no D.O.U. em ${formatarDia(diaSel)}.`
-                : `Nenhum ato ${filtro !== "todos" ? "deste tipo " : ""}em ${formatarDia(diaSel)}.`
+                : `Nenhum ato corresponde aos filtros em ${formatarDia(diaSel)}.`
             }
           />
         ) : (
@@ -277,11 +287,43 @@ function AtualizacoesLeisPage() {
           </ul>
         )
       ) : (
-        <UltimosAtos atos={atos.filter((a) => filtro === "todos" || a.tipo === filtro).slice(0, 20)} />
+        <UltimosAtos atos={atos.filter(aplicaFiltros).slice(0, 20)} />
       )}
+
+      {/* FAB de filtros */}
+      <button
+        onClick={() => setPainelAberto(true)}
+        aria-label="Abrir filtros"
+        className={cn(
+          "fixed z-40 bottom-24 right-4 md:bottom-6 md:right-6",
+          "h-14 w-14 rounded-full bg-gold text-gold-foreground shadow-lg",
+          "grid place-items-center hover:scale-105 active:scale-95 transition-transform",
+          "shadow-[0_10px_30px_-8px_color-mix(in_oklab,var(--gold)_50%,transparent)]",
+        )}
+      >
+        <SlidersHorizontal className="h-5 w-5" />
+        {filtroAtivo && (
+          <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-400 ring-2 ring-background" />
+        )}
+      </button>
+
+      <FiltrosPanel
+        aberto={painelAberto}
+        onClose={() => setPainelAberto(false)}
+        preset={preset}
+        onPreset={setPreset}
+        filtroTipo={filtro}
+        onFiltroTipo={setFiltro}
+        leisAcompanhadas={leisAcompanhadas}
+        onToggleLei={(slug) =>
+          setLeisAcompanhadas((prev) => (prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]))
+        }
+        onLimpar={() => { setPreset("todos"); setFiltro("todos"); setLeisAcompanhadas([]); }}
+      />
     </div>
   );
 }
+
 
 type DiaInfo = { iso: string; dia: number; count: number; status: "ultimo" | "com-atos" | "sem-atos" | "futuro" };
 
