@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Menu, Home, BookOpen, FileText, Layers, ClipboardList, Target, Sparkles, Newspaper, Award, Scale, Calendar, TrendingUp, Settings, Library, Headphones, User, Crown, ChevronRight, LogOut, HelpCircle, ShieldCheck } from "lucide-react";
 import { useIsAdmin } from "@/hooks/use-admin";
 import { supabase } from "@/integrations/supabase/client";
+import logoNaRisca from "@/assets/logo-oab-na-risca.webp";
 
 const baseGroups = [
   {
@@ -79,9 +80,7 @@ export function MenuDrawer({ trigger }: { trigger: React.ReactNode }) {
         <SheetHeader className="px-5 py-5 border-b border-sidebar-border">
           <SheetTitle asChild>
             <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded-md bg-gradient-gold grid place-items-center">
-                <Scale className="h-5 w-5 text-gold-foreground" />
-              </div>
+              <img src={logoNaRisca} alt="OAB na Risca" width={36} height={36} className="h-9 w-9 rounded-md object-cover" />
               <div className="text-left">
                 <p className="font-display text-xl leading-none">OAB na Risca</p>
                 <p className="text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/60 mt-1">Menu</p>
