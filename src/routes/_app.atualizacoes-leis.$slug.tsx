@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { getAtoConteudo, type AtoSecao } from "@/lib/resenha-sync.functions";
 import brasao from "@/assets/brasao-republica.png";
 
-export const Route = createFileRoute("/_app/atualizacoes-leis/$atoId")({
+export const Route = createFileRoute("/_app/atualizacoes-leis/$slug")({
   head: () => ({ meta: [{ title: "Ato — Atualizações de Leis" }] }),
   component: AtoPage,
 });
