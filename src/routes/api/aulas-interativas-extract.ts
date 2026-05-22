@@ -167,7 +167,15 @@ export const Route = createFileRoute("/api/aulas-interativas-extract")({
               n: pg.index,
               texto: limparMarkdown(mdPagina),
               imagens: urls,
+              status: limparMarkdown(mdPagina) ? "ok" : "sem_texto_detectado",
             });
+          }
+
+          const recebidas = new Set(paginasBatch.map((p) => p.n));
+          for (const n of pagesArr) {
+            if (!recebidas.has(n)) {
+              paginasBatch.push({ n, texto: "", imagens: [], status: "sem_texto_detectado" });
+            }
           }
 
           // Lê acumulado e mescla
@@ -200,11 +208,9 @@ export const Route = createFileRoute("/api/aulas-interativas-extract")({
             })
             .eq("arquivo_drive_id", arq.id);
 
-          // Decide se acabou
+          // Decide se acabou. A prova real é o total do PDF, não a quantidade retornada pelo OCR.
           const proximaPagina = pageStart + pagesArr.length;
-          const done =
-            ocr.pages.length < pagesArr.length ||
-            (totalPaginas != null && proximaPagina >= totalPaginas);
+          const done = totalPaginas != null && proximaPagina >= totalPaginas;
 
           if (done) {
             await finalizar(sb, arq.id);
