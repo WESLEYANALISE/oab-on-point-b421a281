@@ -27,9 +27,15 @@ export function MobileHeader() {
       <div className="flex items-center justify-between px-4 h-16 gap-2">
         {isHome ? (
           <Link to="/inicio" className="flex items-center gap-2 tap-feedback min-w-0">
-            <div className="h-8 w-8 shrink-0 rounded-md bg-gradient-toga grid place-items-center">
-              <Scale className="h-4 w-4 text-primary-foreground" />
-            </div>
+            <img
+              src={logoNaRisca}
+              alt="OAB na Risca"
+              width={32}
+              height={32}
+              className="h-8 w-8 shrink-0 rounded-md object-cover"
+              loading="eager"
+              decoding="async"
+            />
             <div className="leading-tight min-w-0">
               <p className="font-display text-lg leading-none truncate">OAB na Risca</p>
               <p className="text-[10px] text-muted-foreground leading-none mt-1 truncate">
