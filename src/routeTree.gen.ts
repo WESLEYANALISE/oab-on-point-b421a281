@@ -15,6 +15,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiAssistenteChatRouteImport } from './routes/api/assistente-chat'
 import { Route as ApiArtigoChatRouteImport } from './routes/api/artigo-chat'
 import { Route as AppRetaFinalRouteImport } from './routes/_app.reta-final'
 import { Route as AppQuestoesRouteImport } from './routes/_app.questoes'
@@ -114,6 +115,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAssistenteChatRoute = ApiAssistenteChatRouteImport.update({
+  id: '/api/assistente-chat',
+  path: '/api/assistente-chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiArtigoChatRoute = ApiArtigoChatRouteImport.update({
@@ -507,6 +513,7 @@ export interface FileRoutesByFullPath {
   '/questoes': typeof AppQuestoesRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
+  '/api/assistente-chat': typeof ApiAssistenteChatRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -582,6 +589,7 @@ export interface FileRoutesByTo {
   '/questoes': typeof AppQuestoesRoute
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
+  '/api/assistente-chat': typeof ApiAssistenteChatRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -658,6 +666,7 @@ export interface FileRoutesById {
   '/_app/questoes': typeof AppQuestoesRoute
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
+  '/api/assistente-chat': typeof ApiAssistenteChatRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
   '/_app/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/_app/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -738,6 +747,7 @@ export interface FileRouteTypes {
     | '/questoes'
     | '/reta-final'
     | '/api/artigo-chat'
+    | '/api/assistente-chat'
     | '/admin/blog'
     | '/admin/flashcards'
     | '/admin/narracoes'
@@ -813,6 +823,7 @@ export interface FileRouteTypes {
     | '/questoes'
     | '/reta-final'
     | '/api/artigo-chat'
+    | '/api/assistente-chat'
     | '/admin/blog'
     | '/admin/flashcards'
     | '/admin/narracoes'
@@ -888,6 +899,7 @@ export interface FileRouteTypes {
     | '/_app/questoes'
     | '/_app/reta-final'
     | '/api/artigo-chat'
+    | '/api/assistente-chat'
     | '/_app/admin/blog'
     | '/_app/admin/flashcards'
     | '/_app/admin/narracoes'
@@ -951,6 +963,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   ApiArtigoChatRoute: typeof ApiArtigoChatRoute
+  ApiAssistenteChatRoute: typeof ApiAssistenteChatRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicSeedProvasRoute: typeof ApiPublicSeedProvasRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
@@ -1000,6 +1013,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/assistente-chat': {
+      id: '/api/assistente-chat'
+      path: '/api/assistente-chat'
+      fullPath: '/api/assistente-chat'
+      preLoaderRoute: typeof ApiAssistenteChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/artigo-chat': {
@@ -1751,6 +1771,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   ApiArtigoChatRoute: ApiArtigoChatRoute,
+  ApiAssistenteChatRoute: ApiAssistenteChatRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicSeedProvasRoute: ApiPublicSeedProvasRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,

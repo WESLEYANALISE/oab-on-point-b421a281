@@ -112,8 +112,9 @@ export const salvarMensagem = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
 
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (data.novoTitulo) patch.titulo = data.novoTitulo;
+    const patch = data.novoTitulo
+      ? { updated_at: new Date().toISOString(), titulo: data.novoTitulo }
+      : { updated_at: new Date().toISOString() };
     await supabase
       .from("assistente_conversas")
       .update(patch)
