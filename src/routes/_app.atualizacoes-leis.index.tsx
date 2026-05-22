@@ -62,21 +62,45 @@ function AtualizacoesLeisPage() {
   const atos = q.data?.atos ?? [];
   const dias = q.data?.dias ?? [];
 
-  // Lista ordenada de dias (numerados) que têm atos no mês
-  const diasNumerados = useMemo(() => {
-    const set = new Map<string, number>(); // iso -> count
-    for (const a of atos) set.set(a.data_dou, (set.get(a.data_dou) ?? 0) + 1);
-    return Array.from(set.entries())
-      .map(([iso, count]) => ({ iso, dia: Number(iso.split("-")[2]), count }))
-      .sort((a, b) => b.dia - a.dia);
+  // Mapa de contagens por dia ISO
+  const contagemPorDia = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of atos) m.set(a.data_dou, (m.get(a.data_dou) ?? 0) + 1);
+    return m;
   }, [atos]);
 
-  const diasComAtos = useMemo(() => new Set(diasNumerados.map((d) => d.iso)), [diasNumerados]);
+  const diasComAtos = useMemo(() => new Set(contagemPorDia.keys()), [contagemPorDia]);
+
+  // Todos os dias do mês, em ordem crescente, com status
+  const diasDoMes = useMemo(() => {
+    const total = new Date(ano, mes, 0).getDate();
+    const hojeStr = new Date().toISOString().slice(0, 10);
+    // último dia com atos publicados
+    let ultimoComAtos: string | null = null;
+    for (const iso of contagemPorDia.keys()) {
+      if (!ultimoComAtos || iso > ultimoComAtos) ultimoComAtos = iso;
+    }
+    return Array.from({ length: total }, (_, i) => {
+      const dia = i + 1;
+      const iso = `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+      const count = contagemPorDia.get(iso) ?? 0;
+      const futuro = iso > hojeStr;
+      const status: "ultimo" | "com-atos" | "sem-atos" | "futuro" =
+        futuro ? "futuro" : iso === ultimoComAtos ? "ultimo" : count > 0 ? "com-atos" : "sem-atos";
+      return { iso, dia, count, status };
+    });
+  }, [ano, mes, contagemPorDia]);
 
   const atosDoDia = useMemo(() => {
     if (!diaSel) return [];
     return atos.filter((a) => a.data_dou === diaSel && (filtro === "todos" || a.tipo === filtro));
   }, [atos, diaSel, filtro]);
+
+  const diaSelInfo = useMemo(
+    () => diasDoMes.find((d) => d.iso === diaSel) ?? null,
+    [diasDoMes, diaSel],
+  );
+
 
   const ultimoSync = dias[0]?.extraido_em ?? null;
 
