@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BookOpen, Download } from "lucide-react";
+import { BookOpen, Download } from "lucide-react";
 import { BIB_MAP, livroQueryOptions } from "@/lib/biblioteca";
 import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
 
