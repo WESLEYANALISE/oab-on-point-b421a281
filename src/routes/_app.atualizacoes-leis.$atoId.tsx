@@ -11,23 +11,6 @@ export const Route = createFileRoute("/_app/atualizacoes-leis/$atoId")({
   component: AtoPage,
 });
 
-const TIPO_LABEL: Record<string, string> = {
-  lei: "Lei",
-  lei_complementar: "Lei Complementar",
-  emenda_constitucional: "Emenda Constitucional",
-  medida_provisoria: "Medida Provisória",
-  decreto: "Decreto",
-  decreto_lei: "Decreto-Lei",
-  mensagem_veto: "Mensagem de Veto",
-  outro: "Ato",
-};
-
-function formatarDia(iso: string | null) {
-  if (!iso) return null;
-  const [y, m, d] = iso.split("-").map(Number);
-  return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
-}
-
 function AtoPage() {
   const { atoId } = Route.useParams();
   const fn = useServerFn(getAtoConteudo);
@@ -57,28 +40,9 @@ function AtoPage() {
   }
 
   const { ato, conteudoHtml, erroConteudo } = q.data;
-  const tipo = TIPO_LABEL[ato.tipo] ?? "Ato";
 
   return (
     <article className="px-4 md:px-8 py-5 max-w-3xl mx-auto pb-16">
-      <header className="space-y-2 border-b border-border pb-5 mb-5">
-        <p className="text-[11px] uppercase tracking-widest text-gold font-semibold">
-          {tipo}{ato.edicao_extra ? " · Edição extra" : ""}
-        </p>
-        <h1 className="font-display text-2xl md:text-3xl leading-tight">
-          {tipo} nº {ato.numero}
-        </h1>
-        <p className="text-xs text-muted-foreground">
-          {ato.data_assinatura && <>Assinatura: {formatarDia(ato.data_assinatura)} · </>}
-          Publicado no D.O.U. em {formatarDia(ato.data_dou)}
-        </p>
-        {ato.ementa && (
-          <p className="text-sm text-foreground/90 leading-relaxed pt-2 italic border-l-2 border-gold/40 pl-3">
-            {ato.ementa}
-          </p>
-        )}
-      </header>
-
       {erroConteudo ? (
         <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 space-y-3">
           <div className="flex items-start gap-2 text-sm text-yellow-200">
@@ -97,7 +61,7 @@ function AtoPage() {
       ) : (
         <>
           <div
-            className="prose prose-invert prose-sm md:prose-base max-w-none prose-p:my-3 prose-headings:font-display prose-a:text-gold prose-table:text-xs"
+            className="planalto-doc"
             dangerouslySetInnerHTML={{ __html: conteudoHtml }}
           />
           <div className="mt-8 pt-5 border-t border-border">
