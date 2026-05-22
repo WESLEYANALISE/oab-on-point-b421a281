@@ -170,7 +170,6 @@ function Welcome() {
                   Preparação definitiva para a OAB
                 </motion.span>
               </div>
-            </div>
 
               {/* CTA Iniciar jornada */}
               <motion.div initial={false} className="flex flex-col items-center lg:items-start mt-5 mb-6">
