@@ -1,112 +1,112 @@
-## O que vai mudar
+## Objetivo
 
-Hoje o pipeline quebra em dois lugares:
-1. **Extração**: `pdfjs-dist` no browser só lê texto nativo. Se o PDF for escaneado (caso comum em material da OAB), volta vazio e o Gemini recebe lixo.
-2. **Origem**: o admin só aceita 1 PDF de cada vez via upload manual. Você quer importar uma pasta inteira do Drive de uma vez, separando material de estudo dos mapas mentais.
+Trocar o fluxo atual de 1 botão ("Gerar curso") por um pipeline de 3 etapas explícitas na aba **Materiais de estudo**, cada card mostrando seu estado:
 
-A solução tem 4 partes.
+```text
+[ Pendente ] → Extrair  →  [ Extraído ] → Gerar prévia → [ Prévia pronta ] → Gerar curso → [ Concluído ]
+```
 
 ---
 
-## 1. Importador da pasta do Drive (one-shot, server-side aqui no sandbox)
+## Etapa 1 — Extrair (Mistral OCR)
 
-A pasta `1bXuakoB1g3wjRLPzg66gS9Zh609xdDEZ` é compartilhada publicamente. Vou rodar aqui no sandbox:
+**Botão "Extrair"** no card do material.
 
-- `pip install gdown` → baixa recursivamente a pasta inteira preservando a estrutura de subpastas (`gdown --folder <url>`).
-- Script Python percorre o diretório local e, para cada PDF:
-  - Lê o nome da subpasta. Se contiver `mapa`, `mental`, `esquema`, `mindmap` (case-insensitive, sem acento) → classifica como `mapa_mental`. Senão → `material_estudo`.
-  - Faz upload para o Supabase Storage:
-    - Material → `aulas-interativas-pdfs/drive-import/<subpasta>/<arquivo>.pdf`
-    - Mapa → `aulas-interativas-mapas/<subpasta>/<arquivo>.pdf`
-  - Insere uma linha em uma nova tabela `aulas_interativas_arquivos_drive` com: `nome_arquivo`, `subpasta`, `tipo` (`material`|`mapa`), `storage_path`, `bytes`, `pdf_url` público, `aula_sugerida` (slug derivado da subpasta), `status_ingestao` (`pendente`).
+- Nova server route `POST /api/aulas-interativas-extract` (admin-only):
+  1. Baixa o PDF do Storage (`storage_bucket` + `storage_path`).
+  2. Sobe pro Mistral via `https://api.mistral.ai/v1/ocr` (`mistral-ocr-latest`) usando `MISTRAL_API_KEY` (já existe nos secrets) — extrai texto + imagens página a página, preservando formato (markdown).
+  3. Faz upload das imagens extraídas pro bucket `aulas-interativas-imagens` em `extracoes/<arquivoId>/pag-N-img-K.png`.
+  4. **Limpeza**: remove blocos que pareçam logo/marca d'água, citação ao professor, nome de cursinho, capa de divulgação (heurística por regex + prompt curto pro Gemini sobre os primeiros/últimos N parágrafos marcando "remover/manter").
+  5. Salva resultado em nova tabela `aulas_interativas_extracoes`:
+     - `arquivo_drive_id` (FK), `markdown` (texto limpo), `paginas` (jsonb com `{n, texto, imagens:[url]}`), `imagens` (jsonb array de URLs), `tokens_estimados`, `created_at`.
+  6. Atualiza `status_ingestao = 'extraido'` no arquivo.
 
-Esse passo é **manual/disparado** — não é uma rota da aplicação. A vantagem: a pasta inteira fica versionada no Storage e indexada no banco, e você nunca mais depende do Drive.
+UI: card mostra "Extraindo… página X/Y" via polling do status; ao terminar, libera o botão "Gerar prévia".
 
-```text
-/sandbox/drive-dump/
-├── 1. Constitucional/
-│   ├── Nidal Ahmad - Direito Constitucional.pdf  → material
-│   └── mapa-mental-controle-constitucionalidade.pdf → mapa
-├── 2. Penal/
-│   └── ...
-└── Mapas Mentais Gerais/  → tudo aqui vira mapa
-```
+## Etapa 2 — Gerar prévia (Gemini, sem salvar curso)
 
-## 2. Nova tabela e bucket
+**Botão "Gerar prévia"** aparece quando `status = 'extraido'`.
 
-**Tabela `aulas_interativas_arquivos_drive`** (admin-only):
-- `id`, `nome_arquivo`, `subpasta`, `tipo` (`material`/`mapa`), `storage_bucket`, `storage_path`, `pdf_url`, `bytes`, `aula_sugerida_slug`, `curso_id` (FK opcional após ingestão), `status_ingestao` (`pendente`/`em_andamento`/`concluida`/`erro`), `erro_msg`, `created_at`.
+- Nova server route `POST /api/aulas-interativas-preview`:
+  1. Lê `aulas_interativas_extracoes` do arquivo.
+  2. Chama Gemini (`gemini-2.5-flash`, via `gemini.server.ts` que já tem fallback de chave) passando o markdown + imagens como contexto, com o mesmo prompt de estruturação que hoje vive em `aulas-interativas-pdf-to-course.ts`.
+  3. **NÃO grava em `aulas_interativas_cursos`** — grava em nova tabela `aulas_interativas_previas`:
+     - `arquivo_drive_id`, `estrutura` (jsonb: módulos → aulas → slides), `created_at`.
+  4. Atualiza `status_ingestao = 'previa_pronta'`.
 
-**Bucket novo `aulas-interativas-mapas`** (público, para PDFs/imagens de mapas mentais).
+UI: ao concluir, abre modal de prévia (já existe componente similar) mostrando:
+- Lista de módulos → aulas → contagem de slides + tipos.
+- Botão "Visualizar aula" usando `SlidePlayer` em modo preview.
+- Botão "Regenerar prévia" (refaz etapa 2 com a mesma extração).
+- Botão "Gerar curso" (avança pra etapa 3).
 
-RLS: leitura pública dos mapas (igual aulas), escrita só admin.
+## Etapa 3 — Gerar curso (salvar no Supabase)
 
-## 3. Extração robusta de PDFs (corrige o erro atual)
+**Botão "Gerar curso"** dentro do modal de prévia.
 
-Refatorar `src/lib/aulas-interativas-pdf.client.ts`:
-
-1. Tenta extração nativa via `pdfjs-dist` (já existe).
-2. **Checa qualidade**: se o texto < 500 chars OU < 100 letras → marca como `ocr-needed`.
-3. Quando OCR é necessário, NÃO faz no browser. Envia o PDF (base64) para uma nova server route `/api/aulas-interativas-ocr` que chama `gemini-2.5-flash` com `inline_data: { mime_type: "application/pdf", data: base64 }` e prompt "Extract all text preserving page structure". Gemini Flash aceita PDF nativo até ~20MB.
-4. Devolve o texto OCR ao client, que segue o fluxo normal de chunking por capítulo.
-
-Isso resolve o "erro na hora de extrair" que você está vendo. Atende à memória do projeto (Gemini direto, sem gateway).
-
-## 4. Admin reformulado + mapas mentais nas aulas
-
-`src/routes/_app.admin.aulas-interativas.tsx` ganha 3 abas:
-
-- **Aba "Importados do Drive"**: lista os PDFs da nova tabela. Cada material tem botão "Gerar curso" (dispara o pipeline existente de chunks → módulos → publicar, agora com OCR automático quando preciso). Mostra status por linha.
-- **Aba "Upload manual"**: o fluxo atual (drag-and-drop de um PDF), preservado.
-- **Aba "Mapas mentais"**: lista os PDFs classificados como mapa, com input pra vincular a uma `aula_id` existente. Ao salvar, insere um slide do tipo `mapa_mental` (novo tipo) no fim daquela aula, com `imagem_url` apontando pro PDF/render.
-
-`SlidePlayer.tsx` ganha o tipo `mapa_mental`: renderiza em tela cheia com `<embed>` para PDF (ou `<img>` se for convertido pra PNG) + botão "Abrir em nova aba". Aluno vê o mapa como último slide antes do quiz final.
-
-## 5. Pré-visualização (atende ao pedido anterior)
-
-A aba "Importados do Drive" já mostra antes de publicar:
-- Estrutura proposta (módulos, aulas, contagem de slides).
-- Botão "Pré-visualizar aula" abre modal com `SlidePlayer` real.
-- Só depois de revisar você clica em "Publicar".
+- Server route `POST /api/aulas-interativas-publish`:
+  1. Lê a prévia mais recente do arquivo.
+  2. Faz insert em `aulas_interativas_cursos`, `_modulos`, `_aulas`, `_slides` (transação por etapas, igual fluxo atual).
+  3. Vincula `curso_id` no arquivo, status → `concluido`.
+  4. Opcional: se houver mapa mental da mesma `subpasta`, sugere vincular automaticamente (mantém botão manual também).
 
 ---
 
-## Detalhes técnicos
+## Schema novo
 
-```text
-sandbox script (one-shot)
-└─→ gdown --folder <url> ./drive-dump/
-    └─→ python upload.py
-        ├─→ Supabase Storage (aulas-interativas-pdfs / aulas-interativas-mapas)
-        └─→ INSERT INTO aulas_interativas_arquivos_drive
+Migração:
 
-app (TanStack Start)
-├─ src/routes/api/aulas-interativas-ocr.ts (NOVO)
-│   └─ POST { pdfBase64 } → Gemini Vision → { texto }
-├─ src/lib/aulas-interativas-pdf.client.ts (REFATORADO)
-│   └─ nativa → checa qualidade → fallback OCR via /api/aulas-interativas-ocr
-├─ src/lib/aulas-interativas.functions.ts (+ funções)
-│   ├─ listarArquivosDrive() / vincularMapaAAula()
-│   └─ tipo slide 'mapa_mental' adicionado ao schema
-├─ src/components/aulas-interativas/SlidePlayer.tsx (+ case mapa_mental)
-└─ src/routes/_app.admin.aulas-interativas.tsx (REORG em 3 abas)
+```sql
+create table aulas_interativas_extracoes (
+  id uuid primary key default gen_random_uuid(),
+  arquivo_drive_id uuid not null references aulas_interativas_arquivos_drive(id) on delete cascade,
+  markdown text not null,
+  paginas jsonb not null default '[]',
+  imagens jsonb not null default '[]',
+  tokens_estimados int,
+  created_at timestamptz not null default now()
+);
+
+create table aulas_interativas_previas (
+  id uuid primary key default gen_random_uuid(),
+  arquivo_drive_id uuid not null references aulas_interativas_arquivos_drive(id) on delete cascade,
+  estrutura jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+-- novos status válidos
+-- 'pendente' | 'extraindo' | 'extraido' | 'gerando_previa' | 'previa_pronta' | 'publicando' | 'concluido' | 'erro'
 ```
 
-**Migração SQL**: cria `aulas_interativas_arquivos_drive` + bucket `aulas-interativas-mapas` + adiciona `'mapa_mental'` aos tipos válidos de slide (hoje é texto livre, então é só atualizar a validação Zod no servidor).
-
-**Limites**: Gemini Flash aceita PDF até ~20MB inline. Se algum PDF do Drive for maior, o script divide em chunks de páginas antes do OCR (pdfjs-dist server-side via `pdf-lib`).
+RLS: admin-only (via `has_role(auth.uid(),'admin')`).
 
 ---
 
 ## Arquivos tocados
 
-- **Novo**: `src/routes/api/aulas-interativas-ocr.ts`, migração SQL.
-- **Editado**: `src/lib/aulas-interativas-pdf.client.ts`, `src/lib/aulas-interativas.functions.ts`, `src/components/aulas-interativas/SlidePlayer.tsx`, `src/routes/_app.admin.aulas-interativas.tsx`.
-- **Script one-shot** (rodado aqui, não vai pro repo): baixa Drive + popula Storage + tabela.
+**Novos:**
+- `src/routes/api/aulas-interativas-extract.ts` (Mistral OCR + limpeza + upload imagens).
+- `src/routes/api/aulas-interativas-preview.ts` (Gemini estrutura → tabela prévias).
+- `src/routes/api/aulas-interativas-publish.ts` (prévia → curso oficial).
+- `src/lib/mistral-ocr.server.ts` (helper de chamada Mistral com retry).
+- Migração SQL (2 tabelas + status novos).
 
-## Resultado
+**Editados:**
+- `src/lib/aulas-interativas-drive.functions.ts` — adicionar `getExtracao`, `getPrevia`, e expor novo enum de status.
+- `src/routes/_app.admin.aulas-interativas.tsx` — card do material vira pipeline visual (3 botões condicionais por status) + modal de prévia.
+- Deprecar `aulas-interativas-pdf-to-course.ts` (lógica migra pra preview + publish).
 
-- O erro de extração some (OCR cobre PDFs escaneados).
-- A pasta inteira do Drive entra de uma vez, organizada e classificada.
-- Você gera cursos com 1 clique a partir dos materiais importados, com prévia antes de publicar.
-- Mapas mentais aparecem dentro das aulas correspondentes, exatamente como pediu.
+---
+
+## Pontos de atenção
+
+- **Cota Mistral OCR**: PDFs grandes (>50 páginas) podem demorar; rota deve responder rápido com job em background. Plano: rodar síncrono até 60s (Worker limit). Se passar, dividir em batches por intervalo de páginas e gravar parcial em `paginas`.
+- **Imagens**: bucket `aulas-interativas-imagens` já existe (público).
+- **Limpeza de "professor/cursinho"**: regex + lista negra editável (`logo`, `prof\.?`, `instagram`, `@`, `whatsapp`, etc.) + passe leve do Gemini só nos N primeiros/últimos parágrafos pra não gastar token à toa.
+- **Idempotência**: cada etapa apaga o registro anterior do mesmo arquivo antes de inserir (re-extrair / re-gerar prévia funcionam).
+
+---
+
+## Resultado final
+
+Cada card de material mostra claramente em que etapa está e qual o próximo botão. Você revisa a prévia antes de qualquer escrita em `aulas_interativas_cursos`, e só publica quando tiver tudo certo.

@@ -126,3 +126,45 @@ export const vincularMapaAula = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+export const obterPreviaArquivo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ arquivoDriveId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("aulas_interativas_previas")
+      .select("id, estrutura, titulo_sugerido, materia_sugerida, created_at")
+      .eq("arquivo_drive_id", data.arquivoDriveId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row as
+      | {
+          id: string;
+          estrutura: { modulos: any[] };
+          titulo_sugerido: string | null;
+          materia_sugerida: string | null;
+          created_at: string;
+        }
+      | null;
+  });
+
+export const obterExtracaoArquivo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ arquivoDriveId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("aulas_interativas_extracoes")
+      .select("id, paginas_total, modelo, created_at, imagens")
+      .eq("arquivo_drive_id", data.arquivoDriveId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return row;
+  });

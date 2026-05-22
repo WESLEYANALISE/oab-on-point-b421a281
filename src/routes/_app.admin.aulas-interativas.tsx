@@ -3,12 +3,14 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
+  CheckCircle2,
   Eye,
   EyeOff,
   FileText,
   Library,
   Loader2,
   Play,
+  ScanText,
   Sparkles,
   Trash2,
   Upload,
@@ -28,6 +30,8 @@ import {
   atualizarStatusDrive,
   listarAulasDoCurso,
   vincularMapaAula,
+  obterPreviaArquivo,
+  obterExtracaoArquivo,
   type ArquivoDrive,
 } from "@/lib/aulas-interativas-drive.functions";
 import { SlidePlayer } from "@/components/aulas-interativas/SlidePlayer";
@@ -192,8 +196,7 @@ function AbaDrive() {
     <section className="rounded-2xl border border-border bg-card p-5 mb-8">
       <h2 className="font-display text-lg mb-2">Materiais de estudo (gerar cursos)</h2>
       <p className="text-xs text-muted-foreground mb-4">
-        {materiais.length} arquivo(s) na biblioteca. Clique em "Gerar curso" para a IA
-        transformar o PDF inteiro em módulos + aulas + slides.
+        {materiais.length} arquivo(s). Pipeline: <strong>1. Extrair</strong> (Mistral OCR) → <strong>2. Gerar prévia</strong> (Gemini) → <strong>3. Publicar curso</strong>.
       </p>
       {arquivosQ.isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
       <ul className="space-y-2">
@@ -212,47 +215,88 @@ function ArquivoMaterialItem({
   arquivo: ArquivoDrive;
   onChanged: () => void;
 }) {
-  const [gerando, setGerando] = useState(false);
+  const qc = useQueryClient();
+  const [acao, setAcao] = useState<null | "extrair" | "previa" | "publicar">(null);
   const [progresso, setProgresso] = useState("");
-  const [estrutura, setEstrutura] = useState<Estrutura | null>(null);
   const [titulo, setTitulo] = useState(arquivo.nome_arquivo.replace(/\.pdf$/i, ""));
   const [materia, setMateria] = useState(arquivo.subpasta);
+  const [estrutura, setEstrutura] = useState<Estrutura | null>(null);
   const [previewSlide, setPreviewSlide] = useState<{ slides: SlideRow[]; aulaTitulo: string } | null>(null);
-  const qc = useQueryClient();
 
-  async function gerar() {
-    setGerando(true);
-    setProgresso("Enviando PDF para a IA (Gemini)…");
-    setEstrutura(null);
+  // Carrega prévia salva (se houver) quando o status é 'previa_pronta'
+  const previaQ = useQuery({
+    queryKey: ["admin", "ai-previa", arquivo.id, arquivo.status_ingestao],
+    queryFn: () => obterPreviaArquivo({ data: { arquivoDriveId: arquivo.id } }),
+    enabled: arquivo.status_ingestao === "previa_pronta" || arquivo.status_ingestao === "concluido",
+  });
+  const extracaoQ = useQuery({
+    queryKey: ["admin", "ai-extracao", arquivo.id, arquivo.status_ingestao],
+    queryFn: () => obterExtracaoArquivo({ data: { arquivoDriveId: arquivo.id } }),
+    enabled: ["extraido", "gerando_previa", "previa_pronta", "concluido"].includes(arquivo.status_ingestao),
+  });
+
+  useMemo(() => {
+    if (previaQ.data?.estrutura) {
+      setEstrutura(previaQ.data.estrutura as Estrutura);
+      if (previaQ.data.titulo_sugerido) setTitulo(previaQ.data.titulo_sugerido);
+      if (previaQ.data.materia_sugerida) setMateria(previaQ.data.materia_sugerida);
+    }
+    return null;
+  }, [previaQ.data]);
+
+  async function rodarExtrair() {
+    setAcao("extrair");
+    setProgresso("Mistral OCR lendo o PDF (pode levar 1–3 min)…");
     try {
       await atualizarStatusDrive({
-        data: { id: arquivo.id, status_ingestao: "processando", erro_msg: null },
+        data: { id: arquivo.id, status_ingestao: "extraindo", erro_msg: null },
       });
-      const res = await fetch("/api/aulas-interativas-pdf-to-course", {
+      const res = await fetch("/api/aulas-interativas-extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tituloCurso: titulo,
-          materia,
-          storage_bucket: arquivo.storage_bucket,
-          storage_path: arquivo.storage_path,
-        }),
+        body: JSON.stringify({ arquivoDriveId: arquivo.id }),
       });
       if (!res.ok) {
         const txt = await res.text().catch(() => "");
         throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
       }
-      const { estrutura: e } = (await res.json()) as { estrutura: Estrutura };
-      setEstrutura(e);
-      setProgresso(`Pronto! ${e.modulos.length} módulo(s). Revise e publique.`);
+      const j = await res.json();
+      toast.success(`Extraído: ${j.paginas} páginas, ${j.imagens} imagens`);
+      setProgresso(`Extração pronta: ${j.paginas} páginas · ${j.chars} chars.`);
+      onChanged();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Falha na extração");
+      setProgresso(`Erro: ${err?.message ?? "?"}`);
+    } finally {
+      setAcao(null);
+    }
+  }
+
+  async function rodarPrevia() {
+    setAcao("previa");
+    setProgresso("Gemini estruturando módulos e aulas…");
+    setEstrutura(null);
+    try {
+      const res = await fetch("/api/aulas-interativas-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ arquivoDriveId: arquivo.id, tituloCurso: titulo, materia }),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
+      }
+      const j = await res.json();
+      setEstrutura(j.estrutura);
+      if (j.titulo_sugerido) setTitulo(j.titulo_sugerido);
+      if (j.materia_sugerida) setMateria(j.materia_sugerida);
+      setProgresso(`Prévia: ${j.estrutura.modulos.length} módulo(s). Revise abaixo.`);
+      onChanged();
     } catch (err: any) {
       toast.error(err?.message ?? "Falha");
-      setProgresso(`Erro: ${err?.message ?? "desconhecido"}`);
-      await atualizarStatusDrive({
-        data: { id: arquivo.id, status_ingestao: "erro", erro_msg: String(err?.message ?? err).slice(0, 500) },
-      }).catch(() => {});
+      setProgresso(`Erro: ${err?.message ?? "?"}`);
     } finally {
-      setGerando(false);
+      setAcao(null);
     }
   }
 
@@ -294,7 +338,6 @@ function ArquivoMaterialItem({
     },
     onSuccess: () => {
       toast.success("Curso publicado!");
-      setEstrutura(null);
       onChanged();
       qc.invalidateQueries({ queryKey: ["admin"] });
     },
@@ -314,6 +357,11 @@ function ArquivoMaterialItem({
   const ordem = ordemOAB(arquivo.subpasta);
   const ordemTxt = ordem === 999 ? "—" : String(ordem + 1).padStart(2, "0");
 
+  const status = arquivo.status_ingestao;
+  const podeExtrair = status === "pendente" || status === "erro" || status === "extraido" || status === "previa_pronta" || status === "concluido";
+  const podePrevia = (status === "extraido" || status === "previa_pronta" || status === "gerando_previa" || status === "concluido") && acao !== "previa";
+  const temExtracao = !!extracaoQ.data;
+
   return (
     <li className="rounded-xl border border-border bg-background p-3">
       <div className="flex items-start gap-3">
@@ -328,9 +376,12 @@ function ArquivoMaterialItem({
           </p>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-[10px]">
             <span className="text-muted-foreground">{arquivo.bytes ? `${(arquivo.bytes / 1024 / 1024).toFixed(1)} MB` : "?"}</span>
-            <span className={`px-1.5 py-0.5 rounded-full border border-border ${statusColor(arquivo.status_ingestao)}`}>
-              {statusLabel(arquivo.status_ingestao)}
+            <span className={`px-1.5 py-0.5 rounded-full border border-border ${statusColor(status)}`}>
+              {statusLabel(status)}
             </span>
+            {temExtracao && extracaoQ.data?.paginas_total && (
+              <span className="text-sky-400/80">• {extracaoQ.data.paginas_total} pág.</span>
+            )}
             {arquivo.curso_id && <span className="text-emerald-400">• vinculado</span>}
             {arquivo.pdf_url && (
               <a href={arquivo.pdf_url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
@@ -339,20 +390,56 @@ function ArquivoMaterialItem({
             )}
           </div>
         </div>
+      </div>
+
+      {/* Pipeline 3 etapas */}
+      <div className="mt-3 flex flex-wrap gap-2">
         <button
-          onClick={gerar}
-          disabled={gerando}
-          className="h-9 px-3 rounded-full bg-gradient-toga text-primary-foreground text-xs inline-flex items-center gap-1 disabled:opacity-50 shrink-0"
+          onClick={rodarExtrair}
+          disabled={!podeExtrair || acao !== null}
+          className="h-9 px-3 rounded-full border border-border bg-background text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
+          title="1. Extrair texto e imagens com Mistral OCR"
         >
-          {gerando ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
-          Gerar
+          {acao === "extrair" ? <Loader2 className="h-3 w-3 animate-spin" /> : <ScanText className="h-3 w-3" />}
+          1. Extrair
+          {(status === "extraido" || status === "previa_pronta" || status === "concluido") && (
+            <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+          )}
+        </button>
+
+        <button
+          onClick={rodarPrevia}
+          disabled={!podePrevia || acao !== null}
+          className="h-9 px-3 rounded-full border border-border bg-background text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
+          title="2. Gerar prévia (Gemini estrutura em módulos/aulas/slides)"
+        >
+          {acao === "previa" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+          2. Gerar prévia
+          {(status === "previa_pronta" || status === "concluido") && (
+            <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+          )}
+        </button>
+
+        <button
+          onClick={() => publicar.mutate(true)}
+          disabled={!estrutura || publicar.isPending}
+          className="h-9 px-3 rounded-full bg-gradient-gold text-gold-foreground text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
+          title="3. Publicar o curso no Supabase"
+        >
+          {publicar.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+          3. Publicar curso
         </button>
       </div>
 
-      {(progresso || estrutura) && (
+      {progresso && <p className="mt-2 text-[11px] text-muted-foreground">{progresso}</p>}
+      {arquivo.erro_msg && status === "erro" && (
+        <p className="mt-2 text-[11px] text-red-400 break-words">⚠ {arquivo.erro_msg}</p>
+      )}
+
+      {estrutura && (
         <div className="mt-3 grid md:grid-cols-2 gap-2">
           <label className="text-xs">
-            <span className="text-muted-foreground">Título</span>
+            <span className="text-muted-foreground">Título do curso</span>
             <input
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
@@ -369,31 +456,20 @@ function ArquivoMaterialItem({
           </label>
         </div>
       )}
-      {progresso && <p className="mt-2 text-[11px] text-muted-foreground">{progresso}</p>}
 
       {estrutura && stats && (
         <div className="mt-3 rounded-lg border border-border bg-card/40 p-3">
           <div className="flex items-center justify-between gap-2 mb-2">
             <p className="text-xs text-muted-foreground">
-              {stats.mod} módulos · {stats.aulas} aulas · {stats.slides} slides · {stats.quizzes} quizzes
+              Prévia: {stats.mod} módulos · {stats.aulas} aulas · {stats.slides} slides · {stats.quizzes} quizzes
             </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => publicar.mutate(false)}
-                disabled={publicar.isPending}
-                className="h-8 px-3 rounded-full border border-border text-xs disabled:opacity-50"
-              >
-                Rascunho
-              </button>
-              <button
-                onClick={() => publicar.mutate(true)}
-                disabled={publicar.isPending}
-                className="h-8 px-3 rounded-full bg-gradient-gold text-gold-foreground text-xs disabled:opacity-50 inline-flex items-center gap-1"
-              >
-                {publicar.isPending && <Loader2 className="h-3 w-3 animate-spin" />}
-                Publicar
-              </button>
-            </div>
+            <button
+              onClick={() => publicar.mutate(false)}
+              disabled={publicar.isPending}
+              className="h-8 px-3 rounded-full border border-border text-xs disabled:opacity-50"
+            >
+              Salvar rascunho
+            </button>
           </div>
           <div className="max-h-60 overflow-y-auto space-y-1">
             {estrutura.modulos.map((m, mi) => (
@@ -808,14 +884,21 @@ function CursosExistentes() {
 function statusColor(s: string) {
   if (s === "concluido") return "text-emerald-400";
   if (s === "erro") return "text-red-400";
-  if (s === "processando") return "text-amber-400";
+  if (s === "extraindo" || s === "gerando_previa" || s === "publicando" || s === "processando") return "text-amber-400";
+  if (s === "extraido") return "text-sky-400";
+  if (s === "previa_pronta") return "text-indigo-400";
   return "text-muted-foreground";
 }
 
 function statusLabel(s: string) {
-  if (s === "concluido") return "Concluído";
+  if (s === "concluido") return "Curso publicado";
   if (s === "erro") return "Erro";
-  if (s === "processando") return "Processando";
+  if (s === "extraindo") return "Extraindo PDF…";
+  if (s === "extraido") return "Texto extraído";
+  if (s === "gerando_previa") return "Gerando prévia…";
+  if (s === "previa_pronta") return "Prévia pronta";
+  if (s === "publicando") return "Publicando…";
+  if (s === "processando") return "Processando…";
   return "Pendente";
 }
 
