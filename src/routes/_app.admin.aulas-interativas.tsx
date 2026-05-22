@@ -246,23 +246,47 @@ function ArquivoMaterialItem({
 
   async function rodarExtrair() {
     setAcao("extrair");
-    setProgresso("Mistral OCR lendo o PDF (pode levar 1–3 min)…");
+    setProgresso("Iniciando extração com Mistral OCR…");
     try {
       await atualizarStatusDrive({
         data: { id: arquivo.id, status_ingestao: "extraindo", erro_msg: null },
       });
-      const res = await fetch("/api/aulas-interativas-extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ arquivoDriveId: arquivo.id }),
-      });
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
+
+      const BATCH = 25;
+      let pageStart = 0;
+      let done = false;
+      let last: any = null;
+      while (!done) {
+        const res = await fetch("/api/aulas-interativas-extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            arquivoDriveId: arquivo.id,
+            pageStart,
+            batchSize: BATCH,
+          }),
+        });
+        if (!res.ok) {
+          const txt = await res.text().catch(() => "");
+          throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
+        }
+        const j = await res.json();
+        last = j;
+        const total = j.total as number | null;
+        const proc = j.processadas as number;
+        const pct = total ? Math.min(100, Math.round((proc / total) * 100)) : null;
+        setProgresso(
+          total
+            ? `Extraindo… ${proc}/${total} páginas (${pct}%)`
+            : `Extraindo… ${proc} páginas processadas`,
+        );
+        done = j.done;
+        pageStart = j.proximaPagina;
       }
-      const j = await res.json();
-      toast.success(`Extraído: ${j.paginas} páginas, ${j.imagens} imagens`);
-      setProgresso(`Extração pronta: ${j.paginas} páginas · ${j.chars} chars.`);
+      toast.success(`Extraído: ${last?.processadas ?? "?"} páginas, ${last?.imagens ?? 0} imagens`);
+      setProgresso(
+        `Extração pronta: ${last?.processadas ?? "?"} páginas · ${last?.chars ?? 0} chars.`,
+      );
       onChanged();
     } catch (err: any) {
       toast.error(err?.message ?? "Falha na extração");
