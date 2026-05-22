@@ -24,6 +24,8 @@ function AppLayout() {
   const { data: isAdmin } = useIsAdmin();
   const isBiblioteca = pathname.startsWith("/biblioteca");
   const isLeitor = /^\/biblioteca\/[^/]+\/[^/]+\/ler$/.test(pathname);
+  const isAssistente = pathname === "/assistente";
+  const isFullscreen = isLeitor || isAssistente;
   const isHome = pathname === "/inicio";
   const showBottomNav = isHome;
 
