@@ -417,6 +417,7 @@ function ArquivoMaterialItem({
           descricao: "",
           materia,
           publicado,
+          replaceCursoId: arquivo.curso_id,
           modulos: estrutura.modulos
             .filter((m) => m.aulas.length > 0)
             .map((m) => ({
@@ -535,7 +536,7 @@ function ArquivoMaterialItem({
           title="3. Publicar o curso no Supabase"
         >
           {publicar.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-          {status === "concluido" ? "3. Publicado" : "3. Publicar curso"}
+          {status === "concluido" ? "3. Republicar curso" : "3. Publicar curso"}
           {status === "concluido" && <CheckCircle2 className="h-3 w-3" />}
         </button>
 
