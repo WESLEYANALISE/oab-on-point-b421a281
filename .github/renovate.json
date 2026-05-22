@@ -1,0 +1,18 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard", ":semanticCommits"],
+  "timezone": "America/Sao_Paulo",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "packageRules": [
+    { "matchPackagePatterns": ["^@radix-ui/"], "groupName": "radix-ui" },
+    { "matchPackagePatterns": ["^@tanstack/"], "groupName": "tanstack" },
+    { "matchPackagePatterns": ["^@supabase/"], "groupName": "supabase" },
+    { "matchPackagePatterns": ["^@sentry/"], "groupName": "sentry" },
+    { "matchPackagePatterns": ["^react", "^react-dom"], "groupName": "react" },
+    { "matchDepTypes": ["devDependencies"], "automerge": true, "minimumReleaseAge": "3 days" },
+    { "matchUpdateTypes": ["patch"], "automerge": true, "minimumReleaseAge": "3 days" }
+  ],
+  "vulnerabilityAlerts": { "enabled": true, "labels": ["security"] }
+}

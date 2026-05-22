@@ -41,7 +41,9 @@ import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca
 import { Route as AppAulasIndexRouteImport } from './routes/_app.aulas.index'
 import { Route as AppAtualizacoesLeisIndexRouteImport } from './routes/_app.atualizacoes-leis.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
+import { Route as ApiPublicSitemapDotxmlRouteImport } from './routes/api/public/sitemap[.]xml'
 import { Route as ApiPublicSeedProvasRouteImport } from './routes/api.public.seed-provas'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as AppVadeMecumSlugRouteImport } from './routes/_app.vade-mecum.$slug'
 import { Route as AppResumosLivroIdRouteImport } from './routes/_app.resumos.$livroId'
 import { Route as AppProvasNumeroRouteImport } from './routes/_app.provas.$numero'
@@ -245,9 +247,19 @@ const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const ApiPublicSitemapDotxmlRoute = ApiPublicSitemapDotxmlRouteImport.update({
+  id: '/api/public/sitemap.xml',
+  path: '/api/public/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSeedProvasRoute = ApiPublicSeedProvasRouteImport.update({
   id: '/api/public/seed-provas',
   path: '/api/public/seed-provas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppVadeMecumSlugRoute = AppVadeMecumSlugRouteImport.update({
@@ -520,7 +532,9 @@ export interface FileRoutesByFullPath {
   '/provas/$numero': typeof AppProvasNumeroRoute
   '/resumos/$livroId': typeof AppResumosLivroIdRoute
   '/vade-mecum/$slug': typeof AppVadeMecumSlugRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
+  '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/admin/': typeof AppAdminIndexRoute
   '/atualizacoes-leis/': typeof AppAtualizacoesLeisIndexRoute
   '/aulas/': typeof AppAulasIndexRoute
@@ -591,7 +605,9 @@ export interface FileRoutesByTo {
   '/provas/$numero': typeof AppProvasNumeroRoute
   '/resumos/$livroId': typeof AppResumosLivroIdRoute
   '/vade-mecum/$slug': typeof AppVadeMecumSlugRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
+  '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/admin': typeof AppAdminIndexRoute
   '/atualizacoes-leis': typeof AppAtualizacoesLeisIndexRoute
   '/aulas': typeof AppAulasIndexRoute
@@ -667,7 +683,9 @@ export interface FileRoutesById {
   '/_app/provas/$numero': typeof AppProvasNumeroRoute
   '/_app/resumos/$livroId': typeof AppResumosLivroIdRoute
   '/_app/vade-mecum/$slug': typeof AppVadeMecumSlugRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
+  '/api/public/sitemap.xml': typeof ApiPublicSitemapDotxmlRoute
   '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/atualizacoes-leis/': typeof AppAtualizacoesLeisIndexRoute
   '/_app/aulas/': typeof AppAulasIndexRoute
@@ -745,7 +763,9 @@ export interface FileRouteTypes {
     | '/provas/$numero'
     | '/resumos/$livroId'
     | '/vade-mecum/$slug'
+    | '/api/public/health'
     | '/api/public/seed-provas'
+    | '/api/public/sitemap.xml'
     | '/admin/'
     | '/atualizacoes-leis/'
     | '/aulas/'
@@ -816,7 +836,9 @@ export interface FileRouteTypes {
     | '/provas/$numero'
     | '/resumos/$livroId'
     | '/vade-mecum/$slug'
+    | '/api/public/health'
     | '/api/public/seed-provas'
+    | '/api/public/sitemap.xml'
     | '/admin'
     | '/atualizacoes-leis'
     | '/aulas'
@@ -891,7 +913,9 @@ export interface FileRouteTypes {
     | '/_app/provas/$numero'
     | '/_app/resumos/$livroId'
     | '/_app/vade-mecum/$slug'
+    | '/api/public/health'
     | '/api/public/seed-provas'
+    | '/api/public/sitemap.xml'
     | '/_app/admin/'
     | '/_app/atualizacoes-leis/'
     | '/_app/aulas/'
@@ -928,7 +952,9 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   ApiArtigoChatRoute: typeof ApiArtigoChatRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicSeedProvasRoute: typeof ApiPublicSeedProvasRoute
+  ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
   ApiPublicHooksCfSyncRoute: typeof ApiPublicHooksCfSyncRoute
   ApiPublicHooksResenhaSyncRoute: typeof ApiPublicHooksResenhaSyncRoute
 }
@@ -1159,11 +1185,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/api/public/sitemap.xml': {
+      id: '/api/public/sitemap.xml'
+      path: '/api/public/sitemap.xml'
+      fullPath: '/api/public/sitemap.xml'
+      preLoaderRoute: typeof ApiPublicSitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/seed-provas': {
       id: '/api/public/seed-provas'
       path: '/api/public/seed-provas'
       fullPath: '/api/public/seed-provas'
       preLoaderRoute: typeof ApiPublicSeedProvasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/vade-mecum/$slug': {
@@ -1712,10 +1752,22 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   ApiArtigoChatRoute: ApiArtigoChatRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicSeedProvasRoute: ApiPublicSeedProvasRoute,
+  ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,
   ApiPublicHooksCfSyncRoute: ApiPublicHooksCfSyncRoute,
   ApiPublicHooksResenhaSyncRoute: ApiPublicHooksResenhaSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
