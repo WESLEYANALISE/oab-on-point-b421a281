@@ -711,7 +711,7 @@ function ArquivoMaterialItem({
               Salvar rascunho
             </button>
           </div>
-          <div className="max-h-60 overflow-y-auto space-y-1">
+          <div className="max-h-60 overflow-y-auto space-y-1 scrollbar-gold pr-1">
             {estrutura.modulos.map((m, mi) => (
               <details key={mi} className="text-xs" open={mi === 0}>
                 <summary className="cursor-pointer">
