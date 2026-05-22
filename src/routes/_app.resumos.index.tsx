@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, queryOptions } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { z } from "zod";
-import { FileText, BookOpen, ChevronRight, ArrowLeft, FolderOpen } from "lucide-react";
+import { FileText, BookOpen, ChevronRight, FolderOpen } from "lucide-react";
 import { listarLivrosComResumo } from "@/lib/resumos.functions";
 import { cn } from "@/lib/utils";
 import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
