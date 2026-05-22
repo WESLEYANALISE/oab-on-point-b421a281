@@ -1,9 +1,42 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Search, Star, Clock, List, BookMarked } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import {
+  Search, Star, Clock, List, BookMarked,
+  Scale, Gavel, FileText, Briefcase, HardHat, ShoppingBag,
+  Receipt, Car, Vote, Store, Shield, ShieldAlert,
+  Plane, Radio, Pickaxe, Lightbulb, Users, Droplet,
+  Trees, Target, Fish,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getRecentes } from "@/lib/vade-mecum-recentes";
+
+type CodigoStyle = { Icon: LucideIcon; bg: string; barra: string };
+const CODIGO_STYLE: Record<string, CodigoStyle> = {
+  cc:     { Icon: Scale,       bg: "bg-gradient-to-br from-amber-500 to-orange-600",   barra: "bg-amber-500" },
+  cp:     { Icon: Gavel,       bg: "bg-gradient-to-br from-red-500 to-rose-700",       barra: "bg-red-500" },
+  cpc:    { Icon: FileText,    bg: "bg-gradient-to-br from-sky-500 to-blue-700",       barra: "bg-sky-500" },
+  cpp:    { Icon: Briefcase,   bg: "bg-gradient-to-br from-rose-500 to-red-700",       barra: "bg-rose-500" },
+  clt:    { Icon: HardHat,     bg: "bg-gradient-to-br from-yellow-500 to-amber-700",   barra: "bg-yellow-500" },
+  cdc:    { Icon: ShoppingBag, bg: "bg-gradient-to-br from-emerald-500 to-green-700",  barra: "bg-emerald-500" },
+  ctn:    { Icon: Receipt,     bg: "bg-gradient-to-br from-violet-500 to-purple-700",  barra: "bg-violet-500" },
+  ctb:    { Icon: Car,         bg: "bg-gradient-to-br from-cyan-500 to-teal-700",      barra: "bg-cyan-500" },
+  ce:     { Icon: Vote,        bg: "bg-gradient-to-br from-indigo-500 to-blue-800",    barra: "bg-indigo-500" },
+  ccom:   { Icon: Store,       bg: "bg-gradient-to-br from-orange-500 to-amber-700",   barra: "bg-orange-500" },
+  cpm:    { Icon: Shield,      bg: "bg-gradient-to-br from-zinc-500 to-slate-800",     barra: "bg-zinc-500" },
+  cppm:   { Icon: ShieldAlert, bg: "bg-gradient-to-br from-slate-500 to-zinc-800",     barra: "bg-slate-500" },
+  cba:    { Icon: Plane,       bg: "bg-gradient-to-br from-sky-500 to-indigo-700",     barra: "bg-sky-500" },
+  cbt:    { Icon: Radio,       bg: "bg-gradient-to-br from-fuchsia-500 to-pink-700",   barra: "bg-fuchsia-500" },
+  cdm:    { Icon: Pickaxe,     bg: "bg-gradient-to-br from-stone-500 to-stone-800",    barra: "bg-stone-500" },
+  cpi:    { Icon: Lightbulb,   bg: "bg-gradient-to-br from-yellow-400 to-amber-600",   barra: "bg-yellow-400" },
+  cdus:   { Icon: Users,       bg: "bg-gradient-to-br from-teal-500 to-emerald-700",   barra: "bg-teal-500" },
+  ca:     { Icon: Droplet,     bg: "bg-gradient-to-br from-blue-500 to-cyan-700",      barra: "bg-blue-500" },
+  cflo:   { Icon: Trees,       bg: "bg-gradient-to-br from-green-500 to-emerald-800",  barra: "bg-green-500" },
+  ccaca:  { Icon: Target,      bg: "bg-gradient-to-br from-lime-500 to-green-700",     barra: "bg-lime-500" },
+  cpesca: { Icon: Fish,        bg: "bg-gradient-to-br from-cyan-500 to-blue-700",      barra: "bg-cyan-500" },
+};
+const DEFAULT_STYLE: CodigoStyle = { Icon: BookMarked, bg: "bg-gradient-to-br from-primary to-primary/70", barra: "bg-primary" };
 
 export const Route = createFileRoute("/_app/vade-mecum/codigos/")({
   head: () => ({
@@ -173,15 +206,17 @@ function TabPill({ ativo, onClick, icone, label, count }: { ativo: boolean; onCl
 
 function CodigoCard({ lei }: { lei: LeiRow }) {
   const sigla = (lei.nome_curto ?? lei.nome.split(" ")[0]).toUpperCase();
+  const style = CODIGO_STYLE[lei.slug] ?? DEFAULT_STYLE;
+  const { Icon, bg, barra } = style;
   return (
     <Link
       to="/vade-mecum/$slug"
       params={{ slug: lei.slug }}
       className="relative flex items-center gap-3.5 pl-4 pr-3 py-3.5 rounded-2xl bg-card/70 border border-border/60 hover:border-gold/40 hover:bg-card transition-all active:scale-[0.99] overflow-hidden cursor-pointer"
     >
-      <span className="absolute left-0 top-2 bottom-2 w-1.5 rounded-r-full bg-primary" />
-      <span className="h-12 w-12 shrink-0 grid place-items-center rounded-2xl text-primary-foreground shadow-md bg-gradient-to-br from-primary to-primary/70">
-        <span className="font-bold text-[12px]">{sigla.slice(0, 4)}</span>
+      <span className={`absolute left-0 top-2 bottom-2 w-1.5 rounded-r-full ${barra}`} />
+      <span className={`h-12 w-12 shrink-0 grid place-items-center rounded-2xl text-white shadow-md ${bg}`}>
+        <Icon className="h-6 w-6" strokeWidth={2.2} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-bold text-foreground text-[15px] leading-tight truncate">{sigla}</span>
