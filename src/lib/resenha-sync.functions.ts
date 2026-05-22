@@ -185,7 +185,33 @@ export const listResenhaRuns = createServerFn({ method: "GET" })
 
 // ====== Conteúdo do ato (leitor interno tipo artigo) ======
 
-function extrairConteudoPlanalto(html: string): { titulo: string | null; html: string } {
+function resolverUrlsRelativas(html: string, baseUrl: string): string {
+  let base: URL;
+  try {
+    base = new URL(baseUrl);
+  } catch {
+    return html;
+  }
+  const resolve = (val: string) => {
+    if (!val) return val;
+    if (/^(https?:|mailto:|tel:|data:|#)/i.test(val)) return val;
+    try {
+      return new URL(val, base).toString();
+    } catch {
+      return val;
+    }
+  };
+  return html
+    .replace(/(<a\b[^>]*?\shref=")([^"]+)(")/gi, (_, p, u, s) => p + resolve(u) + s)
+    .replace(/(<a\b[^>]*?\shref=')([^']+)(')/gi, (_, p, u, s) => p + resolve(u) + s)
+    .replace(/(<img\b[^>]*?\ssrc=")([^"]+)(")/gi, (_, p, u, s) => p + resolve(u) + s)
+    .replace(/(<img\b[^>]*?\ssrc=')([^']+)(')/gi, (_, p, u, s) => p + resolve(u) + s);
+}
+
+function extrairConteudoPlanalto(
+  html: string,
+  baseUrl: string,
+): { titulo: string | null; html: string } {
   let h = html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
@@ -193,7 +219,10 @@ function extrairConteudoPlanalto(html: string): { titulo: string | null; html: s
     .replace(/<meta[^>]*>/gi, "")
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, "")
     .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
-    .replace(/<img[^>]*>/gi, "")
+    .replace(/<form[\s\S]*?<\/form>/gi, "")
+    .replace(/<header[\s\S]*?<\/header>/gi, "")
+    .replace(/<nav[\s\S]*?<\/nav>/gi, "")
+    .replace(/<footer[\s\S]*?<\/footer>/gi, "")
     .replace(/ on\w+="[^"]*"/gi, "")
     .replace(/ on\w+='[^']*'/gi, "");
 
@@ -203,15 +232,12 @@ function extrairConteudoPlanalto(html: string): { titulo: string | null; html: s
   const bodyMatch = h.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
   let conteudo = bodyMatch ? bodyMatch[1] : h;
 
-  conteudo = conteudo
-    .replace(/<header[\s\S]*?<\/header>/gi, "")
-    .replace(/<nav[\s\S]*?<\/nav>/gi, "")
-    .replace(/<footer[\s\S]*?<\/footer>/gi, "")
-    .replace(/<form[\s\S]*?<\/form>/gi, "")
-    .replace(/ style="[^"]*"/gi, "")
-    .replace(/ class="[^"]*"/gi, "")
-    .replace(/ bgcolor="[^"]*"/gi, "")
-    .replace(/ color="[^"]*"/gi, "");
+  // Força links a abrirem em nova aba e resolve URLs relativas (img/a).
+  conteudo = conteudo.replace(/<a\b([^>]*)>/gi, (m, attrs) => {
+    if (/\btarget=/i.test(attrs)) return m;
+    return `<a${attrs} target="_blank" rel="noopener noreferrer">`;
+  });
+  conteudo = resolverUrlsRelativas(conteudo, baseUrl);
 
   return { titulo, html: conteudo.trim() };
 }
