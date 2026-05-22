@@ -20,7 +20,7 @@ import {
   togglePublicarCurso,
   type SlideRow,
 } from "@/lib/aulas-interativas.functions";
-import { parsePdfToChunks, type PdfChunk } from "@/lib/aulas-interativas-pdf.client";
+type PdfChunk = { modulo: string; texto: string };
 import { SlidePlayer } from "@/components/aulas-interativas/SlidePlayer";
 
 export const Route = createFileRoute("/_app/admin/aulas-interativas")({
@@ -74,7 +74,8 @@ function AdminAulasInterativas() {
     setErros([]);
     try {
       setProgresso("Lendo PDF…");
-      const { chunks: c, totalPaginas } = await parsePdfToChunks(file, (p, t) => {
+      const { parsePdfToChunks } = await import("@/lib/aulas-interativas-pdf.client");
+      const { chunks: c, totalPaginas } = await parsePdfToChunks(file, (p: number, t: number) => {
         setProgresso(`Lendo PDF… ${p}/${t}`);
       });
       setChunks(c);
