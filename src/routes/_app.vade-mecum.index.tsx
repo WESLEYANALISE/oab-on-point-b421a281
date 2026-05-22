@@ -156,7 +156,7 @@ function VadeMecumPage() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 auto-rows-fr items-stretch">
           {CATEGORIAS.filter((c) => c.id === "constituicao" || c.id === "codigos").map((cat) => (
             <Link
               key={cat.id}
