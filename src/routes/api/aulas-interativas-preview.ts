@@ -404,10 +404,6 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                     descricao: aul.descricao,
                     escopo: aul.escopo,
                   }, 14_000);
-                  const userAula =
-                    `MÓDULO: ${mod.titulo}\nDescrição do módulo: ${mod.descricao ?? ""}\n\n` +
-                    `AULA: ${aul.titulo}\nDescrição: ${aul.descricao ?? ""}\nEscopo: ${aul.escopo ?? ""}\n\n` +
-                    `TRECHOS DO MATERIAL:\n${trechos}`;
                   const slides = buildLocalSlides(aul, trechos);
                   aulasOut.push({
                     titulo: aul.titulo,
