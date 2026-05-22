@@ -10,7 +10,7 @@
  * Versão no nome do cache → trocar CACHE_VERSION força reset em todos
  * os clients no próximo activate.
  */
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const HTML_CACHE = `oab-html-${CACHE_VERSION}`;
 const ASSET_CACHE = `oab-assets-${CACHE_VERSION}`;
 const FONTS_CACHE = `oab-fonts-${CACHE_VERSION}`;
