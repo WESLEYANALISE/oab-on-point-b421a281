@@ -1,12 +1,12 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight, Sparkles, Headphones, Star, BookOpen, Target, FileText, Layers,
   Trophy, Newspaper, ScrollText, CalendarDays, ClipboardList, Library,
   CheckCircle2, ShieldCheck, GraduationCap, Brain, Clock,
 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
 import { Reveal } from "@/components/landing/Reveal";
 import { CountdownExame } from "@/components/shared/CountdownExame";
 import {
@@ -17,6 +17,13 @@ import heroAvif from "@/assets/oab-landing-hero.jpg?format=avif&w=640;960;1280&a
 import heroWebp from "@/assets/oab-landing-hero.jpg?format=webp&w=640;960;1280&as=srcset";
 
 export const Route = createFileRoute("/")({
+  beforeLoad: async () => {
+    if (typeof window === "undefined") return;
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user) {
+      throw redirect({ to: "/inicio" });
+    }
+  },
   head: () => ({
     meta: [
       { title: "OAB na Risca — Tudo para você passar na OAB em um só lugar" },
@@ -31,13 +38,8 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
-  const navigate = useNavigate();
-  const { user, loading } = useAuth();
   const [heroLoaded, setHeroLoaded] = useState(false);
 
-  useEffect(() => {
-    if (!loading && user) navigate({ to: "/inicio" });
-  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
