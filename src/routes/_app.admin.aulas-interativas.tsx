@@ -405,7 +405,9 @@ function ArquivoMaterialItem({
               {statusLabel(status)}
             </span>
             {temExtracao && extracaoQ.data?.paginas_total && (
-              <span className="text-sky-400/80">• {extracaoQ.data.paginas_total} pág.</span>
+              <span className="text-sky-400/80">
+                • {extracaoQ.data.paginas_processadas ?? "?"}/{extracaoQ.data.paginas_total} pág.
+              </span>
             )}
             {arquivo.curso_id && <span className="text-emerald-400">• vinculado</span>}
             {arquivo.pdf_url && (
