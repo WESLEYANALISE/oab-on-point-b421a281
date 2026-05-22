@@ -258,7 +258,7 @@ export const getAtoConteudo = createServerFn({ method: "POST" })
     let erroConteudo: string | null = null;
     try {
       const html = await fetchDirect(ato.url);
-      const parsed = extrairConteudoPlanalto(html);
+      const parsed = extrairConteudoPlanalto(html, ato.url);
       conteudoHtml = parsed.html;
       tituloFonte = parsed.titulo;
     } catch (e) {
