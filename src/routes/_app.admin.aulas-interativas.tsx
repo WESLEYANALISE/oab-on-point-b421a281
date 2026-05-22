@@ -536,6 +536,44 @@ function ArquivoMaterialItem({
         <p className="mt-2 text-[11px] text-red-400 break-words">⚠ {arquivo.erro_msg}</p>
       )}
 
+      {temExtracao && (() => {
+        const imgs = (extracaoQ.data?.imagens as string[] | null) ?? [];
+        if (imgs.length === 0) {
+          return (
+            <p className="mt-2 text-[11px] text-muted-foreground">Sem imagens extraídas.</p>
+          );
+        }
+        const max = 8;
+        const visiveis = imgs.slice(0, max);
+        const sobra = imgs.length - visiveis.length;
+        return (
+          <div className="mt-2">
+            <p className="text-[11px] text-muted-foreground mb-1">
+              {imgs.length} imagem{imgs.length === 1 ? "" : "ns"} extraída{imgs.length === 1 ? "" : "s"}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {visiveis.map((url, i) => (
+                <a
+                  key={i}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block h-14 w-14 rounded-md overflow-hidden border border-border bg-background hover:border-gold/60"
+                  title={`Imagem ${i + 1}`}
+                >
+                  <img src={url} alt={`Imagem ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+                </a>
+              ))}
+              {sobra > 0 && (
+                <span className="h-14 w-14 rounded-md border border-border bg-background flex items-center justify-center text-[11px] text-muted-foreground">
+                  +{sobra}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {estrutura && (
         <div className="mt-3 grid md:grid-cols-2 gap-2">
           <label className="text-xs">
