@@ -182,3 +182,32 @@ export const obterExtracaoArquivo = createServerFn({ method: "POST" })
       paginas_processadas: Array.isArray(row.paginas) ? row.paginas.length : 0,
     };
   });
+
+export const apagarExtracaoArquivo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ arquivoDriveId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { error: e1 } = await supabase
+      .from("aulas_interativas_extracoes")
+      .delete()
+      .eq("arquivo_drive_id", data.arquivoDriveId);
+    if (e1) throw new Error(e1.message);
+    const { error: e2 } = await supabase
+      .from("aulas_interativas_previas")
+      .delete()
+      .eq("arquivo_drive_id", data.arquivoDriveId);
+    if (e2) throw new Error(e2.message);
+    const { error: e3 } = await supabase
+      .from("aulas_interativas_arquivos_drive")
+      .update({
+        status_ingestao: "pendente",
+        erro_msg: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.arquivoDriveId);
+    if (e3) throw new Error(e3.message);
+    return { ok: true };
+  });
