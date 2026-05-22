@@ -387,14 +387,62 @@ function parseAtoEstruturado(html: string, baseUrl: string): AtoEstruturado {
   return { titulo, ementa, secoes, assinaturas, anexos, fonteUrl: baseUrl };
 }
 
+// Slug curto e amigável: ex. "lei-15401-2026", "ec-132-2023", "mp-1234-2026"
+const TIPO_SHORT: Record<string, string> = {
+  lei: "lei",
+  lei_complementar: "lc",
+  emenda_constitucional: "ec",
+  medida_provisoria: "mp",
+  decreto: "decreto",
+  decreto_lei: "dl",
+  mensagem_veto: "veto",
+  outro: "ato",
+};
+const SHORT_TO_TIPO: Record<string, string> = Object.fromEntries(
+  Object.entries(TIPO_SHORT).map(([k, v]) => [v, k]),
+);
+
+export function buildAtoSlug(a: { tipo: string; numero: string; data_assinatura: string | null; data_dou: string }): string {
+  const short = TIPO_SHORT[a.tipo] ?? "ato";
+  const num = (a.numero || "").replace(/[^\d]/g, "") || "s-n";
+  const ano = (a.data_assinatura || a.data_dou || "").slice(0, 4);
+  return ano ? `${short}-${num}-${ano}` : `${short}-${num}`;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const getAtoConteudo = createServerFn({ method: "POST" })
-  .inputValidator((input: { id: string }) => input)
+  .inputValidator((input: { slug: string }) => input)
   .handler(async ({ data }) => {
-    const { data: ato, error } = await supabaseAdmin
-      .from("legis_atos")
-      .select("id, data_dou, edicao_extra, tipo, numero, data_assinatura, ementa, url, created_at")
-      .eq("id", data.id)
-      .maybeSingle();
+    const slug = (data.slug || "").trim().toLowerCase();
+
+    let ato: any = null;
+    let error: any = null;
+
+    if (UUID_RE.test(slug)) {
+      // compat: ainda aceita UUID
+      ({ data: ato, error } = await supabaseAdmin
+        .from("legis_atos")
+        .select("id, data_dou, edicao_extra, tipo, numero, data_assinatura, ementa, url, created_at")
+        .eq("id", slug)
+        .maybeSingle());
+    } else {
+      const m = slug.match(/^([a-z]+)-(\d+)(?:-(\d{4}))?$/);
+      if (!m) throw new Error("Slug inválido");
+      const tipo = SHORT_TO_TIPO[m[1]] ?? m[1];
+      const numDigits = m[2];
+      const ano = m[3];
+
+      let q = supabaseAdmin
+        .from("legis_atos")
+        .select("id, data_dou, edicao_extra, tipo, numero, data_assinatura, ementa, url, created_at")
+        .eq("tipo", tipo);
+      if (ano) q = q.gte("data_assinatura", `${ano}-01-01`).lte("data_assinatura", `${ano}-12-31`);
+      const res = await q.order("data_assinatura", { ascending: false }).limit(50);
+      if (res.error) throw res.error;
+      ato = (res.data ?? []).find((r) => (r.numero || "").replace(/[^\d]/g, "") === numDigits) ?? null;
+    }
+
     if (error) throw error;
     if (!ato) throw new Error("Ato não encontrado");
 
@@ -409,3 +457,4 @@ export const getAtoConteudo = createServerFn({ method: "POST" })
 
     return { ato, estruturado, erroConteudo };
   });
+
