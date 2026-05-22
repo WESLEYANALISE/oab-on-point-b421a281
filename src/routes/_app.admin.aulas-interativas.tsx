@@ -625,7 +625,7 @@ function AbaMapas() {
     queryFn: () => listarCursosAdmin(),
   });
   const mapas = useMemo(
-    () => (arquivosQ.data ?? []).filter((a) => a.tipo === "mapa"),
+    () => ordenarOAB((arquivosQ.data ?? []).filter((a) => a.tipo === "mapa")),
     [arquivosQ.data],
   );
 
