@@ -103,7 +103,7 @@ const AulaInput = z.object({
   titulo: z.string().min(1).max(200),
   descricao: z.string().max(500).default(""),
   duracao_min: z.number().int().min(1).max(180).default(10),
-  slides: z.array(SlideInput).min(1).max(80),
+  slides: z.array(SlideInput).max(80),
 });
 
 const ModuloInput = z.object({
