@@ -196,8 +196,7 @@ function AbaDrive() {
     <section className="rounded-2xl border border-border bg-card p-5 mb-8">
       <h2 className="font-display text-lg mb-2">Materiais de estudo (gerar cursos)</h2>
       <p className="text-xs text-muted-foreground mb-4">
-        {materiais.length} arquivo(s) na biblioteca. Clique em "Gerar curso" para a IA
-        transformar o PDF inteiro em módulos + aulas + slides.
+        {materiais.length} arquivo(s). Pipeline: <strong>1. Extrair</strong> (Mistral OCR) → <strong>2. Gerar prévia</strong> (Gemini) → <strong>3. Publicar curso</strong>.
       </p>
       {arquivosQ.isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
       <ul className="space-y-2">
