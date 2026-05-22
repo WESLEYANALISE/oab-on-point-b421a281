@@ -74,7 +74,8 @@ function AdminAulasInterativas() {
     setErros([]);
     try {
       setProgresso("Lendo PDF…");
-      const { chunks: c, totalPaginas } = await parsePdfToChunks(file, (p, t) => {
+      const { parsePdfToChunks } = await import("@/lib/aulas-interativas-pdf.client");
+      const { chunks: c, totalPaginas } = await parsePdfToChunks(file, (p: number, t: number) => {
         setProgresso(`Lendo PDF… ${p}/${t}`);
       });
       setChunks(c);
