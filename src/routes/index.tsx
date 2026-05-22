@@ -246,7 +246,7 @@ function Welcome() {
                     className="h-[clamp(7rem,28vw,11rem)] w-auto object-contain -mt-12"
                     style={{
                       opacity: 1,
-                      filter: "drop-shadow(0 0 18px rgba(212,168,75,0.85)) drop-shadow(0 0 38px rgba(212,168,75,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.8))",
+                      filter: "saturate(1.4) contrast(1.15) brightness(1.1) drop-shadow(0 0 22px rgba(212,168,75,1)) drop-shadow(0 0 45px rgba(212,168,75,0.7)) drop-shadow(0 4px 12px rgba(0,0,0,0.9))",
                     }}
                   />
                 </div>
