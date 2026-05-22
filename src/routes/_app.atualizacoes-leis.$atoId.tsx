@@ -145,26 +145,38 @@ function AtoPage() {
       {/* Assinaturas centralizadas */}
       {assinaturas.length > 0 && (
         <footer className="mt-10 pt-6 border-t border-border/60 flex flex-col items-center text-center gap-1.5">
-          {assinaturas.map((s, i) => (
-            <p
-              key={i}
-              className={`text-sm leading-snug ${s.italic ? "italic text-muted-foreground" : "text-foreground/90"}`}
-            >
-              {s.text}
-            </p>
-          ))}
+          {assinaturas.map((s, i) => {
+            // Corrige ordinais: "205o" / "138O" -> "205º"
+            const texto = s.text.replace(/(\d+)[oO°](?=\b|\s|\.|,|;)/g, "$1º");
+            // Presidente: linha em CAIXA ALTA e não-itálica vira vermelha
+            const isPresidente = !s.italic && texto === texto.toUpperCase() && /[A-ZÁÉÍÓÚÂÊÔÃÕÇ]{3,}/.test(texto);
+            return (
+              <p
+                key={i}
+                className={`text-sm leading-snug ${
+                  isPresidente
+                    ? "text-red-400 font-semibold tracking-wide"
+                    : s.italic
+                    ? "italic text-muted-foreground"
+                    : "text-foreground/90"
+                }`}
+              >
+                {texto}
+              </p>
+            );
+          })}
         </footer>
       )}
 
       {/* Link fonte */}
-      <div className="mt-8 pt-5 border-t border-border/60 text-center">
+      <div className="mt-8 pt-5 border-t border-border/60 flex justify-center">
         <a
           href={ato.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gold"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-gold rounded-full px-3.5 py-2 bg-yellow-400/10 border border-yellow-400/30 hover:bg-yellow-400/15 transition-colors"
         >
-          Ver fonte original no Planalto <ExternalLink className="h-3 w-3" />
+          Ver fonte original no Planalto <ExternalLink className="h-3.5 w-3.5" />
         </a>
       </div>
 
