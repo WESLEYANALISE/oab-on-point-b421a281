@@ -15,7 +15,21 @@ const Input = z.object({
   batchSize: z.number().int().min(1).max(100).optional(),
 });
 
-type PaginaOut = { n: number; texto: string; imagens: string[] };
+type PaginaOut = { n: number; texto: string; imagens: string[]; status?: "ok" | "sem_texto_detectado" };
+
+async function contarPaginasPdf(docUrl: string): Promise<number> {
+  const pdfRes = await fetch(docUrl);
+  if (!pdfRes.ok) {
+    throw new Error(`Prova real falhou: não consegui baixar o PDF (${pdfRes.status})`);
+  }
+  const buf = new Uint8Array(await pdfRes.arrayBuffer());
+  const pdf = await PDFDocument.load(buf, { ignoreEncryption: true });
+  const total = pdf.getPageCount();
+  if (!Number.isFinite(total) || total <= 0) {
+    throw new Error("Prova real falhou: não consegui contar as páginas do PDF");
+  }
+  return total;
+}
 
 export const Route = createFileRoute("/api/aulas-interativas-extract")({
   server: {
@@ -56,7 +70,7 @@ export const Route = createFileRoute("/api/aulas-interativas-extract")({
           }
           if (!docUrl) throw new Error("Sem URL pública para o PDF");
 
-          // Primeira chamada: marca status, descobre total de páginas, limpa extracao anterior
+          // Primeira chamada: marca status, faz a prova real do PDF e limpa extracao anterior
           let totalPaginas: number | null = null;
           if (pageStart === 0) {
             await sb
@@ -68,15 +82,7 @@ export const Route = createFileRoute("/api/aulas-interativas-extract")({
               })
               .eq("id", arq.id);
 
-            // Conta páginas do PDF
-            try {
-              const pdfRes = await fetch(docUrl);
-              const buf = new Uint8Array(await pdfRes.arrayBuffer());
-              const pdf = await PDFDocument.load(buf, { ignoreEncryption: true });
-              totalPaginas = pdf.getPageCount();
-            } catch {
-              totalPaginas = null;
-            }
+            totalPaginas = await contarPaginasPdf(docUrl);
 
             // Reseta extracao
             await sb
@@ -98,7 +104,7 @@ export const Route = createFileRoute("/api/aulas-interativas-extract")({
               .select("paginas_total")
               .eq("arquivo_drive_id", arq.id)
               .maybeSingle();
-            totalPaginas = (ex?.paginas_total as number | null) ?? null;
+            totalPaginas = (ex?.paginas_total as number | null) ?? await contarPaginasPdf(docUrl);
           }
 
           // Calcula intervalo desta batch
@@ -161,7 +167,15 @@ export const Route = createFileRoute("/api/aulas-interativas-extract")({
               n: pg.index,
               texto: limparMarkdown(mdPagina),
               imagens: urls,
+              status: limparMarkdown(mdPagina) ? "ok" : "sem_texto_detectado",
             });
+          }
+
+          const recebidas = new Set(paginasBatch.map((p) => p.n));
+          for (const n of pagesArr) {
+            if (!recebidas.has(n)) {
+              paginasBatch.push({ n, texto: "", imagens: [], status: "sem_texto_detectado" });
+            }
           }
 
           // Lê acumulado e mescla
@@ -194,11 +208,9 @@ export const Route = createFileRoute("/api/aulas-interativas-extract")({
             })
             .eq("arquivo_drive_id", arq.id);
 
-          // Decide se acabou
+          // Decide se acabou. A prova real é o total do PDF, não a quantidade retornada pelo OCR.
           const proximaPagina = pageStart + pagesArr.length;
-          const done =
-            ocr.pages.length < pagesArr.length ||
-            (totalPaginas != null && proximaPagina >= totalPaginas);
+          const done = totalPaginas != null && proximaPagina >= totalPaginas;
 
           if (done) {
             await finalizar(sb, arq.id);

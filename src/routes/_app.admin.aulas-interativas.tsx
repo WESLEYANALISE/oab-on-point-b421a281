@@ -273,19 +273,20 @@ function ArquivoMaterialItem({
         const j = await res.json();
         last = j;
         const total = j.total as number | null;
-        const proc = j.processadas as number;
+        const proc = j.proximaPagina as number;
+        const extraidas = j.processadas as number;
         const pct = total ? Math.min(100, Math.round((proc / total) * 100)) : null;
         setProgresso(
           total
-            ? `Extraindo… ${proc}/${total} páginas (${pct}%)`
-            : `Extraindo… ${proc} páginas processadas`,
+            ? `Extraindo… prova real ${proc}/${total} páginas (${pct}%) · ${extraidas} salvas`
+            : `Extraindo… ${extraidas} páginas salvas`,
         );
         done = j.done;
         pageStart = j.proximaPagina;
       }
-      toast.success(`Extraído: ${last?.processadas ?? "?"} páginas, ${last?.imagens ?? 0} imagens`);
+      toast.success(`Extraído: ${last?.processadas ?? "?"}/${last?.total ?? "?"} páginas, ${last?.imagens ?? 0} imagens`);
       setProgresso(
-        `Extração pronta: ${last?.processadas ?? "?"} páginas · ${last?.chars ?? 0} chars.`,
+        `Extração pronta: prova real ${last?.processadas ?? "?"}/${last?.total ?? "?"} páginas · ${last?.chars ?? 0} chars.`,
       );
       onChanged();
     } catch (err: any) {
@@ -404,7 +405,9 @@ function ArquivoMaterialItem({
               {statusLabel(status)}
             </span>
             {temExtracao && extracaoQ.data?.paginas_total && (
-              <span className="text-sky-400/80">• {extracaoQ.data.paginas_total} pág.</span>
+              <span className="text-sky-400/80">
+                • {extracaoQ.data.paginas_processadas ?? "?"}/{extracaoQ.data.paginas_total} pág.
+              </span>
             )}
             {arquivo.curso_id && <span className="text-emerald-400">• vinculado</span>}
             {arquivo.pdf_url && (
