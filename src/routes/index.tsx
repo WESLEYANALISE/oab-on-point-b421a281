@@ -91,11 +91,11 @@ function Welcome() {
               decoding="async"
               className="w-full h-auto max-w-none object-cover object-top"
               style={{
-                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 70%, rgba(0,0,0,0.6) 88%, transparent 100%)",
-                maskImage: "linear-gradient(to bottom, black 0%, black 70%, rgba(0,0,0,0.6) 88%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
+                maskImage: "linear-gradient(to bottom, black 0%, black 92%, transparent 100%)",
               }}
             />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-black" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-black" />
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 via-40% to-black" />
         </div>
