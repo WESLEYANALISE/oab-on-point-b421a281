@@ -38,9 +38,6 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
-  const [heroLoaded, setHeroLoaded] = useState(false);
-
-
   return (
     <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
       {/* ============ HERO ============ */}
@@ -49,7 +46,7 @@ function LandingPage() {
         <div className="absolute inset-0">
           <div
             aria-hidden
-            className={`absolute inset-0 bg-gradient-toga transition-opacity duration-700 ${heroLoaded ? "opacity-0" : "opacity-100"}`}
+            className="absolute inset-0 bg-gradient-toga"
           />
           <picture>
             <source type="image/avif" srcSet={heroAvif} sizes="100vw" />
@@ -62,8 +59,7 @@ function LandingPage() {
               loading="eager"
               fetchPriority="high"
               decoding="async"
-              onLoad={() => setHeroLoaded(true)}
-              className={`absolute inset-0 h-full w-full object-cover transition-all duration-1000 ${heroLoaded ? "opacity-100 scale-100" : "opacity-0 scale-105"}`}
+              className="absolute inset-0 h-full w-full object-cover"
             />
           </picture>
           <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/60 to-black/95" />
