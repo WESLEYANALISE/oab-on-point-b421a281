@@ -42,11 +42,11 @@ SAÍDA: APENAS JSON válido, sem markdown ao redor:
   ]
 }`;
 
-const SYSTEM_SLIDES_MODULO = `Você gera SLIDES INTERATIVOS para TODAS as aulas de UM módulo de curso jurídico (OAB, português do Brasil).
+const SYSTEM_SLIDES_AULA = `Você gera SLIDES INTERATIVOS para UMA aula de um curso jurídico (OAB, português do Brasil).
 
-Você receberá dados do módulo, lista de aulas (com escopo) e trechos relevantes do material para cada aula.
+Você receberá: módulo, título da aula, escopo e trechos relevantes do material.
 
-OBJETIVO: cada aula deve ser um estudo COMPLETO e PROFUNDO, não um resumo. O aluno precisa:
+OBJETIVO: a aula deve ser um estudo COMPLETO e PROFUNDO, não um resumo. O aluno precisa:
 - entender o conceito (texto + exemplos + comparativos);
 - praticar no meio da aula (quiz de revisão);
 - aplicar em caso concreto (caso_pratico);
@@ -54,26 +54,25 @@ OBJETIVO: cada aula deve ser um estudo COMPLETO e PROFUNDO, não um resumo. O al
 - revisar com dicas estratégicas (dicas);
 - testar de novo no final (quiz estilo OAB).
 
-REGRAS RÍGIDAS PARA CADA AULA:
-- Gere de 9 a 13 slides por aula, seguindo este roteiro (pule um item APENAS se for genuinamente inaplicável ao conteúdo, e nunca pule mais de 2):
+REGRAS RÍGIDAS:
+- Gere de 8 a 11 slides seguindo este roteiro (pule um item APENAS se for genuinamente inaplicável, e nunca pule mais de 2):
   1. capa (objetivos com 3-4 itens)
   2. conceito (texto com 2-4 parágrafos, com **negrito** nos termos-chave; destaque com 1 frase-âncora)
   3. exemplo (caso real, jurisprudência ou questão OAB aplicada — texto com 2-3 parágrafos)
   4. comparativo (correntes, escolas, regras opostas — opcional, mas inclua quando houver contraste relevante)
-  5. quiz (REVISÃO no meio da aula, sobre o que viu até aqui — mais simples)
+  5. quiz (REVISÃO no meio da aula, mais simples)
   6. conceito (segundo aprofundamento OU detalhe técnico)
   7. caso_pratico (enunciado curto + pergunta + analise revelável)
   8. ligar_termos (4 a 6 pares termo↔definição extraídos da aula)
-  9. esquema (passo-a-passo numerado do raciocínio, 4-6 itens)
+  9. esquema (passo-a-passo numerado, 4-6 itens)
   10. dicas (3 a 5 dicas; cada dica com {"tipo": "dica"|"atencao"|"alvo"|"estrela", "texto": "..."})
-  11. resumo (5-6 bullets do que vimos)
-  12. quiz (FINAL estilo OAB — enunciado com mini-caso + 4 alternativas + explicação que diga por que as outras estão erradas)
-  13. conclusao (texto com fecho conectando ao próximo tema; destaque com frase motivadora)
-- Cada aula DEVE ter no mínimo 2 quizzes, 1 ligar_termos, 1 dicas, 1 caso_pratico.
-- Quizzes: enunciado realista (não pergunte "qual o ponto mais importante"); explicação detalha por que cada alternativa errada está errada.
-- Texto de conceito é DENSO (não 1 frase): explique, exemplifique, contextualize. Use **negrito** markdown em termos-chave.
+  11. resumo (5-6 bullets)
+  12. quiz (FINAL estilo OAB — mini-caso + 4 alternativas + explicação que diga por que as outras estão erradas)
+  13. conclusao (texto com fecho; destaque com frase motivadora)
+- A aula DEVE ter no mínimo 2 quizzes, 1 ligar_termos, 1 dicas, 1 caso_pratico.
+- Quizzes: enunciado realista; explicação detalha por que cada alternativa errada está errada.
+- Texto de conceito é DENSO: explique, exemplifique, contextualize. Use **negrito** markdown em termos-chave.
 - Não invente fatos: use só o material. Mas você PODE reformular, exemplificar e cruzar conteúdos do próprio material.
-- Não repita a mesma explicação entre aulas.
 
 TIPOS VÁLIDOS: "capa", "conceito", "exemplo", "esquema", "comparativo", "quiz", "resumo", "conclusao", "ligar_termos", "dicas", "caso_pratico".
 
@@ -93,16 +92,12 @@ SCHEMA DE CONTEUDO POR TIPO:
 
 SAÍDA: APENAS JSON válido (sem markdown ao redor):
 {
-  "aulas": [
-    {
-      "titulo": "mesmo título da aula recebida",
-      "slides": [
-        { "ordem": 0, "tipo": "capa", "conteudo": {...}, "imagem_url": null, "quiz_json": null },
-        ...
-      ]
-    }
+  "slides": [
+    { "ordem": 0, "tipo": "capa", "conteudo": {...}, "imagem_url": null, "quiz_json": null },
+    ...
   ]
 }`;
+
 
 function sseEvent(event: string, data: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
