@@ -23,6 +23,7 @@ import { Route as AppPlanoEstudoRouteImport } from './routes/_app.plano-estudo'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
+import { Route as AppFlashcardsTemaRouteImport } from './routes/_app.flashcards-tema'
 import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
 import { Route as AppCadernoErrosRouteImport } from './routes/_app.caderno-erros'
 import { Route as AppBlogRouteImport } from './routes/_app.blog'
@@ -150,6 +151,11 @@ const AppNoticiasRoute = AppNoticiasRouteImport.update({
 const AppMateriasRoute = AppMateriasRouteImport.update({
   id: '/materias',
   path: '/materias',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFlashcardsTemaRoute = AppFlashcardsTemaRouteImport.update({
+  id: '/flashcards-tema',
+  path: '/flashcards-tema',
   getParentRoute: () => AppRoute,
 } as any)
 const AppFlashcardsRoute = AppFlashcardsRouteImport.update({
@@ -474,6 +480,7 @@ export interface FileRoutesByFullPath {
   '/blog': typeof AppBlogRouteWithChildren
   '/caderno-erros': typeof AppCadernoErrosRoute
   '/flashcards': typeof AppFlashcardsRoute
+  '/flashcards-tema': typeof AppFlashcardsTemaRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
   '/perfil': typeof AppPerfilRoute
@@ -545,6 +552,7 @@ export interface FileRoutesByTo {
   '/blog': typeof AppBlogRouteWithChildren
   '/caderno-erros': typeof AppCadernoErrosRoute
   '/flashcards': typeof AppFlashcardsRoute
+  '/flashcards-tema': typeof AppFlashcardsTemaRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
   '/perfil': typeof AppPerfilRoute
@@ -617,6 +625,7 @@ export interface FileRoutesById {
   '/_app/blog': typeof AppBlogRouteWithChildren
   '/_app/caderno-erros': typeof AppCadernoErrosRoute
   '/_app/flashcards': typeof AppFlashcardsRoute
+  '/_app/flashcards-tema': typeof AppFlashcardsTemaRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/noticias': typeof AppNoticiasRouteWithChildren
   '/_app/perfil': typeof AppPerfilRoute
@@ -693,6 +702,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/caderno-erros'
     | '/flashcards'
+    | '/flashcards-tema'
     | '/materias'
     | '/noticias'
     | '/perfil'
@@ -764,6 +774,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/caderno-erros'
     | '/flashcards'
+    | '/flashcards-tema'
     | '/materias'
     | '/noticias'
     | '/perfil'
@@ -835,6 +846,7 @@ export interface FileRouteTypes {
     | '/_app/blog'
     | '/_app/caderno-erros'
     | '/_app/flashcards'
+    | '/_app/flashcards-tema'
     | '/_app/materias'
     | '/_app/noticias'
     | '/_app/perfil'
@@ -1005,6 +1017,13 @@ declare module '@tanstack/react-router' {
       path: '/materias'
       fullPath: '/materias'
       preLoaderRoute: typeof AppMateriasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/flashcards-tema': {
+      id: '/_app/flashcards-tema'
+      path: '/flashcards-tema'
+      fullPath: '/flashcards-tema'
+      preLoaderRoute: typeof AppFlashcardsTemaRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/flashcards': {
@@ -1580,6 +1599,7 @@ interface AppRouteChildren {
   AppBlogRoute: typeof AppBlogRouteWithChildren
   AppCadernoErrosRoute: typeof AppCadernoErrosRoute
   AppFlashcardsRoute: typeof AppFlashcardsRoute
+  AppFlashcardsTemaRoute: typeof AppFlashcardsTemaRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
   AppPerfilRoute: typeof AppPerfilRoute
@@ -1624,6 +1644,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBlogRoute: AppBlogRouteWithChildren,
   AppCadernoErrosRoute: AppCadernoErrosRoute,
   AppFlashcardsRoute: AppFlashcardsRoute,
+  AppFlashcardsTemaRoute: AppFlashcardsTemaRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
   AppNoticiasRoute: AppNoticiasRouteWithChildren,
   AppPerfilRoute: AppPerfilRoute,
