@@ -367,8 +367,10 @@ function ArquivoMaterialItem({
 
       if (serverError) throw new Error(serverError);
       if (!finalPayload) {
-        // stream caiu sem evento final — tenta ler erro persistido no DB
-        try {
+        // stream caiu sem evento final — tenta recuperar o resultado persistido no DB
+        for (let tentativa = 0; tentativa < 8 && !finalPayload; tentativa++) {
+          if (tentativa > 0) await new Promise((r) => setTimeout(r, 2500));
+          setProgresso("A conexão fechou; conferindo se a prévia terminou no servidor…");
           const arqs = await listarArquivosDrive();
           const arqAtual = arqs.find((x) => x.id === arquivo.id);
           if (arqAtual?.status_ingestao === "erro" && arqAtual.erro_msg) {
@@ -384,10 +386,10 @@ function ArquivoMaterialItem({
               };
             }
           }
-        } catch (e: any) {
-          throw new Error(e?.message ?? "Stream encerrou sem resposta final");
         }
-        if (!finalPayload) throw new Error("Stream encerrou sem resposta final");
+        if (!finalPayload) {
+          throw new Error("A prévia demorou demais e a conexão fechou antes do fim. Tente gerar novamente; reduzi a geração para evitar esse erro.");
+        }
       }
 
       setEstrutura(finalPayload.estrutura);

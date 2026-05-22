@@ -16,6 +16,8 @@ export type GeminiFetchOptions = {
   maxAttemptsPerKey?: number;
   /** Backoff inicial em ms (dobra a cada tentativa). Default 1000. */
   backoffMs?: number;
+  /** Permite cancelar a chamada em operações longas. */
+  signal?: AbortSignal;
 };
 
 /**
@@ -46,6 +48,7 @@ export async function geminiGenerateContent(
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
+            signal: opts.signal,
           },
         );
         if (res.ok) return res;

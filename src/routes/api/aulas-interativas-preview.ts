@@ -17,7 +17,7 @@ const SYSTEM_ESQUELETO = `Você é um arquiteto pedagógico que vai PLANEJAR um 
 Sua tarefa AQUI é apenas o ESQUELETO: módulos e aulas (sem slides).
 
 Regras:
-- 2 a 8 módulos. Cada módulo tem 2 a 8 aulas.
+- 2 a 3 módulos. Cada módulo tem 2 a 3 aulas. Total máximo: 9 aulas.
 - "escopo" da aula deve ser 2-4 frases descrevendo exatamente o que aquela aula vai cobrir, com termos-chave do material. Isso será usado depois para gerar os slides.
 - IGNORE conteúdo que não seja jurídico (citações ao professor, logos, propaganda, redes sociais).
 - NÃO invente: use só o que está no material.
@@ -42,43 +42,158 @@ SAÍDA: APENAS JSON válido, sem markdown ao redor:
   ]
 }`;
 
-const SYSTEM_SLIDES = `Você gera SLIDES de UMA aula de um curso jurídico interativo (OAB, português do Brasil).
+const SYSTEM_SLIDES_MODULO = `Você gera SLIDES para TODAS as aulas de UM módulo de curso jurídico interativo (OAB, português do Brasil).
 
-Você receberá: contexto da aula (módulo, título, escopo) + o MATERIAL DE ESTUDO completo em markdown.
+Você receberá: dados do módulo, lista de aulas com escopo e trechos relevantes do material para cada aula.
 
-Gere de 3 a 10 slides para ESTA AULA APENAS, focados no escopo informado.
+Para CADA aula, gere de 3 a 6 slides, incluindo pelo menos 1 quiz. Seja direto e não repita a mesma explicação em aulas diferentes.
 
-Tipos válidos:
-- "capa": titulo + objetivos (bullets até 4)
-- "conceito": titulo + texto (≤120 palavras) + destaque (1 frase com regra-chave)
-- "exemplo": titulo + texto com caso prático curto
-- "esquema": titulo + bullets (até 6)
-- "comparativo": titulo + colunas[{titulo, itens[]}] (2-3 colunas)
-- "quiz": titulo "Teste rápido" + quiz_json {pergunta, alternativas[{letra:"A",texto}], correta:"A", explicacao}
-- "resumo": titulo "O que vimos" + bullets dos pontos-chave
-- "conclusao": titulo "Próximos passos" + texto motivador curto
-
-Regras:
-- A aula precisa ter PELO MENOS 1 slide tipo "quiz".
-- Use **negrito** em termos-chave dentro de texto/destaque.
-- Se houver imagem útil referenciada no markdown (URL), use em "imagem_url".
-- NÃO repita conteúdo de outras aulas.
+Tipos válidos: "capa", "conceito", "exemplo", "esquema", "comparativo", "quiz", "resumo", "conclusao".
 
 SAÍDA: APENAS JSON válido (sem markdown ao redor):
 {
-  "slides": [
+  "aulas": [
     {
-      "ordem": number,
-      "tipo": "capa"|"conceito"|"exemplo"|"esquema"|"comparativo"|"quiz"|"resumo"|"conclusao",
-      "conteudo": {"titulo":"...","texto":"...","destaque":"...","bullets":[...],"colunas":[{"titulo":"...","itens":[...]}],"objetivos":[...]},
-      "imagem_url": null,
-      "quiz_json": null
+      "titulo": "mesmo título da aula recebida",
+      "slides": [
+        {
+          "ordem": number,
+          "tipo": "capa"|"conceito"|"exemplo"|"esquema"|"comparativo"|"quiz"|"resumo"|"conclusao",
+          "conteudo": {"titulo":"...","texto":"...","destaque":"...","bullets":[...],"colunas":[{"titulo":"...","itens":[...]}],"objetivos":[...]},
+          "imagem_url": null,
+          "quiz_json": null
+        }
+      ]
     }
   ]
 }`;
 
 function sseEvent(event: string, data: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+type PaginaFonte = { n?: number; texto?: string; imagens?: string[] };
+
+const STOPWORDS = new Set([
+  "para", "pela", "pelo", "como", "mais", "menos", "sobre", "entre", "aula", "direito", "juridico", "jurídico",
+  "conceito", "conceitos", "aspectos", "principais", "material", "estudo", "oab", "modulo", "módulo",
+]);
+
+function compactText(text: string, maxChars: number) {
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (cleaned.length <= maxChars) return cleaned;
+  const cut = cleaned.slice(0, maxChars);
+  const lastStop = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("\n"));
+  return cut.slice(0, lastStop > maxChars * 0.75 ? lastStop + 1 : maxChars).trim();
+}
+
+function normalizeText(text: string) {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function extractTokens(...parts: Array<string | undefined | null>) {
+  const raw = normalizeText(parts.filter(Boolean).join(" "));
+  return Array.from(new Set(raw.match(/[a-z0-9]{4,}/g) ?? []))
+    .filter((w) => !STOPWORDS.has(w))
+    .slice(0, 28);
+}
+
+function buildPlanningMaterial(paginas: PaginaFonte[], markdown: string, maxChars = 70_000) {
+  if (!paginas.length) return compactText(markdown, maxChars);
+  const perPage = Math.max(140, Math.min(520, Math.floor(maxChars / Math.max(1, paginas.length)) - 24));
+  const chunks: string[] = [];
+  let used = 0;
+  for (const p of paginas) {
+    const texto = compactText(p.texto ?? "", perPage);
+    if (!texto) continue;
+    const chunk = `PÁGINA ${(p.n ?? chunks.length) + 1}: ${texto}`;
+    used += chunk.length + 2;
+    if (used > maxChars) break;
+    chunks.push(chunk);
+  }
+  return chunks.join("\n\n") || compactText(markdown, maxChars);
+}
+
+function scorePage(text: string, tokens: string[]) {
+  const n = normalizeText(text);
+  let score = 0;
+  for (const t of tokens) {
+    let idx = n.indexOf(t);
+    while (idx !== -1) {
+      score += t.length > 7 ? 3 : 1;
+      idx = n.indexOf(t, idx + t.length);
+    }
+  }
+  return score;
+}
+
+function buildLessonMaterial(
+  paginas: PaginaFonte[],
+  markdown: string,
+  ctx: { modulo?: string; aula?: string; descricao?: string; escopo?: string },
+  maxChars = 28_000,
+) {
+  if (!paginas.length) return compactText(markdown, maxChars);
+  const tokens = extractTokens(ctx.modulo, ctx.aula, ctx.descricao, ctx.escopo);
+  const ranked = paginas
+    .map((p, idx) => ({ p, idx, score: scorePage(p.texto ?? "", tokens) }))
+    .sort((a, b) => b.score - a.score || a.idx - b.idx);
+  const selected = ranked.filter((x) => x.score > 0).slice(0, 10);
+  if (selected.length < 4) selected.push(...ranked.filter((x) => !selected.includes(x)).slice(0, 4 - selected.length));
+  selected.sort((a, b) => ((a.p.n ?? a.idx) - (b.p.n ?? b.idx)));
+
+  const perPage = Math.max(1_400, Math.min(3_200, Math.floor(maxChars / Math.max(1, selected.length)) - 120));
+  return selected.map(({ p, idx }) => {
+    const imgs = Array.isArray(p.imagens) && p.imagens.length ? `\nIMAGENS: ${p.imagens.join(" | ")}` : "";
+    return `PÁGINA ${(p.n ?? idx) + 1}:\n${compactText(p.texto ?? "", perPage)}${imgs}`;
+  }).join("\n\n---\n\n");
+}
+
+function limitarTotalAulas(modulos: any[], limite = 9) {
+  let total = 0;
+  return modulos
+    .map((m) => {
+      const aulas = Array.isArray(m?.aulas) ? m.aulas : [];
+      const restantes = Math.max(0, limite - total);
+      const aulasCortadas = aulas.slice(0, restantes);
+      total += aulasCortadas.length;
+      return { ...m, aulas: aulasCortadas };
+    })
+    .filter((m) => Array.isArray(m.aulas) && m.aulas.length > 0);
+}
+
+function fallbackEsqueleto(titulo: string, materia: string, paginas: PaginaFonte[], markdown: string) {
+  const total = paginas.length || 9;
+  const modulos = Array.from({ length: 3 }, (_, mi) => {
+    const ini = Math.floor((total / 3) * mi);
+    const fim = Math.max(ini + 1, Math.floor((total / 3) * (mi + 1)));
+    const trecho = compactText(
+      paginas.slice(ini, fim).map((p) => p.texto ?? "").join(" ") || markdown,
+      520,
+    );
+    return {
+      titulo: `${materia} — Parte ${mi + 1}`,
+      descricao: `Tópicos centrais do material, páginas ${ini + 1} a ${fim}.`,
+      aulas: [1, 2, 3].map((n) => ({
+        titulo: `${materia}: aula ${mi * 3 + n}`,
+        descricao: `Estudo guiado da parte ${mi + 1}.${n}.`,
+        duracao_min: 10,
+        escopo: trecho || `Conceitos e aplicações principais de ${materia}.`,
+      })),
+    };
+  });
+  return { titulo_sugerido: titulo, materia_sugerida: materia, modulos };
+}
+
+function fallbackSlides(aula: any) {
+  const titulo = aula?.titulo ?? "Aula";
+  const escopo = aula?.escopo ?? aula?.descricao ?? "Tema central da aula.";
+  return [
+    { ordem: 0, tipo: "capa", conteudo: { titulo, objetivos: ["Entender o núcleo do tema", "Fixar os pontos cobrados na OAB"] }, imagem_url: null, quiz_json: null },
+    { ordem: 1, tipo: "conceito", conteudo: { titulo: "Ideia central", texto: escopo, destaque: "Revise o conceito e relacione com a aplicação prática." }, imagem_url: null, quiz_json: null },
+    { ordem: 2, tipo: "resumo", conteudo: { titulo: "O que vimos", bullets: ["Conceito principal", "Pontos de atenção", "Aplicação em prova"] }, imagem_url: null, quiz_json: null },
+    { ordem: 3, tipo: "quiz", conteudo: { titulo: "Teste rápido" }, imagem_url: null, quiz_json: { pergunta: `Qual é o ponto mais importante em ${titulo}?`, alternativas: [{ letra: "A", texto: "Identificar o conceito e sua consequência jurídica" }, { letra: "B", texto: "Ignorar o contexto normativo" }, { letra: "C", texto: "Aplicar regra sem analisar o caso" }, { letra: "D", texto: "Memorizar sem compreender" }], correta: "A", explicacao: "A compreensão do conceito e da consequência jurídica é a base para resolver questões." } },
+  ];
 }
 
 function tryParseJson(raw: string): any {
@@ -116,22 +231,42 @@ function tryParseJson(raw: string): any {
 }
 
 async function callGeminiJson(system: string, user: string, maxTokens: number): Promise<any> {
-  const res = await geminiGenerateContent(MODEL, {
-    system_instruction: { parts: [{ text: system }] },
-    contents: [{ role: "user", parts: [{ text: user }] }],
-    generationConfig: {
-      temperature: 0.4,
-      responseMimeType: "application/json",
-      maxOutputTokens: maxTokens,
-    },
-  });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`Gemini ${res.status}: ${txt.slice(0, 300)}`);
+  const ac = new AbortController();
+  const timeout = setTimeout(() => ac.abort(), 110_000);
+  try {
+    const res = await geminiGenerateContent(MODEL, {
+      system_instruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: user }] }],
+      generationConfig: {
+        temperature: 0.4,
+        responseMimeType: "application/json",
+        maxOutputTokens: maxTokens,
+      },
+    }, {
+      maxAttemptsPerKey: 2,
+      backoffMs: 1200,
+      signal: ac.signal,
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`Gemini ${res.status}: ${txt.slice(0, 300)}`);
+    }
+    const j = await res.json();
+    const finishReason = j?.candidates?.[0]?.finishReason;
+    const text = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join("") ?? "";
+    if (!text && finishReason) {
+      throw new Error(`Gemini terminou sem texto (motivo: ${finishReason})`);
+    }
+    if (finishReason === "MAX_TOKENS") {
+      throw new Error(`Resposta do Gemini truncada por limite de tokens (len=${text.length})`);
+    }
+    return tryParseJson(text);
+  } catch (e: any) {
+    if (e?.name === "AbortError") throw new Error("Gemini demorou demais nesta etapa; o material foi reduzido e pode ser tentado de novo.");
+    throw e;
+  } finally {
+    clearTimeout(timeout);
   }
-  const j = await res.json();
-  const text = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join("") ?? "";
-  return tryParseJson(text);
 }
 
 export const Route = createFileRoute("/api/aulas-interativas-preview")({
@@ -159,7 +294,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
 
         const { data: extr } = await sb
           .from("aulas_interativas_extracoes")
-          .select("markdown")
+          .select("markdown, paginas")
           .eq("arquivo_drive_id", arq.id)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -181,7 +316,9 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
 
         const tituloIn = parsed.tituloCurso ?? arq.nome_arquivo.replace(/\.pdf$/i, "");
         const materiaIn = parsed.materia ?? arq.subpasta;
-        const markdown = extr.markdown.slice(0, 180_000);
+        const markdownCompleto = String(extr.markdown ?? "");
+        const paginasFonte = Array.isArray(extr.paginas) ? (extr.paginas as PaginaFonte[]) : [];
+        const markdownPlanejamento = buildPlanningMaterial(paginasFonte, markdownCompleto);
 
         const encoder = new TextEncoder();
         const stream = new ReadableStream<Uint8Array>({
@@ -221,17 +358,18 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
 
               // ---- PASS 1: esqueleto ----
               send("progress", { fase: "esqueleto", aula: 0, total: 0 });
-              const userEsq = `Curso sugerido: ${tituloIn}\nMatéria: ${materiaIn}\n\nMATERIAL EM MARKDOWN:\n${markdown}`;
+              const userEsq = `Curso sugerido: ${tituloIn}\nMatéria: ${materiaIn}\n\nAMOSTRA REPRESENTATIVA DO MATERIAL EM MARKDOWN:\n${markdownPlanejamento}`;
               let esqueleto: any;
               try {
-                esqueleto = await callGeminiJson(SYSTEM_ESQUELETO, userEsq, 16_000);
+                esqueleto = await callGeminiJson(SYSTEM_ESQUELETO, userEsq, 12_000);
               } catch (e: any) {
-                throw new Error(`Falha no esqueleto: ${e?.message ?? e}`);
+                console.error("[preview] esqueleto falhou; usando fallback:", e?.message);
+                esqueleto = fallbackEsqueleto(tituloIn, materiaIn, paginasFonte, markdownCompleto);
               }
 
               const titulo_sugerido = esqueleto?.titulo_sugerido ?? tituloIn;
               const materia_sugerida = esqueleto?.materia_sugerida ?? materiaIn;
-              const modulosBase: any[] = Array.isArray(esqueleto?.modulos) ? esqueleto.modulos : [];
+              const modulosBase: any[] = limitarTotalAulas(Array.isArray(esqueleto?.modulos) ? esqueleto.modulos : []);
               if (modulosBase.length === 0) throw new Error("Esqueleto vazio (sem módulos)");
 
               // Conta total de aulas
@@ -246,22 +384,31 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
               const modulosOut: any[] = [];
               for (const mod of modulosBase) {
                 const aulasIn: any[] = Array.isArray(mod?.aulas) ? mod.aulas : [];
+                const userModulo =
+                  `MÓDULO: ${mod.titulo}\nDescrição do módulo: ${mod.descricao ?? ""}\n\n` +
+                  aulasIn.map((aul, i) =>
+                    `AULA ${i + 1}: ${aul.titulo}\nDescrição: ${aul.descricao ?? ""}\nEscopo: ${aul.escopo ?? ""}\n` +
+                    `TRECHOS:\n${buildLessonMaterial(paginasFonte, markdownCompleto, {
+                      modulo: mod.titulo,
+                      aula: aul.titulo,
+                      descricao: aul.descricao,
+                      escopo: aul.escopo,
+                    }, 12_000)}`,
+                  ).join("\n\n=====\n\n");
+                let moduloSlides: any;
+                try {
+                  moduloSlides = await callGeminiJson(SYSTEM_SLIDES_MODULO, userModulo, 14_000);
+                } catch (e: any) {
+                  console.error("[preview] módulo falhou; usando fallback:", mod?.titulo, e?.message);
+                  moduloSlides = { aulas: aulasIn.map((aul) => ({ titulo: aul.titulo, slides: fallbackSlides(aul) })) };
+                }
+                const slidesPorTitulo = new Map<string, any[]>();
+                for (const aulaGerada of Array.isArray(moduloSlides?.aulas) ? moduloSlides.aulas : []) {
+                  slidesPorTitulo.set(String(aulaGerada?.titulo ?? "").trim().toLowerCase(), Array.isArray(aulaGerada?.slides) ? aulaGerada.slides : []);
+                }
                 const aulasOut: any[] = [];
                 for (const aul of aulasIn) {
-                  const userSlides =
-                    `MÓDULO: ${mod.titulo}\nDescrição do módulo: ${mod.descricao ?? ""}\n\n` +
-                    `AULA: ${aul.titulo}\nDescrição: ${aul.descricao ?? ""}\nEscopo: ${aul.escopo ?? ""}\n\n` +
-                    `Gere os slides apenas desta aula, conforme o escopo.\n\n` +
-                    `MATERIAL EM MARKDOWN:\n${markdown}`;
-                  let slidesJson: any;
-                  try {
-                    slidesJson = await callGeminiJson(SYSTEM_SLIDES, userSlides, 8_000);
-                  } catch (e: any) {
-                    // não derruba tudo — usa slides vazios e segue
-                    slidesJson = { slides: [] };
-                    console.error("[preview] aula falhou:", aul?.titulo, e?.message);
-                  }
-                  const slides = Array.isArray(slidesJson?.slides) ? slidesJson.slides : [];
+                  const slides = slidesPorTitulo.get(String(aul.titulo ?? "").trim().toLowerCase()) ?? fallbackSlides(aul);
                   aulasOut.push({
                     titulo: aul.titulo,
                     descricao: aul.descricao ?? "",
