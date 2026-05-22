@@ -71,11 +71,13 @@ import { Route as AppAdminResumosRouteImport } from './routes/_app.admin.resumos
 import { Route as AppAdminNarracoesRouteImport } from './routes/_app.admin.narracoes'
 import { Route as AppAdminFlashcardsRouteImport } from './routes/_app.admin.flashcards'
 import { Route as AppAdminBlogRouteImport } from './routes/_app.admin.blog'
+import { Route as AppAdminAulasInterativasRouteImport } from './routes/_app.admin.aulas-interativas'
 import { Route as AppVadeMecumEstatutosIndexRouteImport } from './routes/_app.vade-mecum.estatutos.index'
 import { Route as AppVadeMecumCfIndexRouteImport } from './routes/_app.vade-mecum.cf.index'
 import { Route as AppSimuladosSlugIndexRouteImport } from './routes/_app.simulados.$slug.index'
 import { Route as AppBibliotecaSlugIndexRouteImport } from './routes/_app.biblioteca.$slug.index'
 import { Route as AppAulasMateriaIndexRouteImport } from './routes/_app.aulas.$materia.index'
+import { Route as AppAulasInterativasCursoSlugIndexRouteImport } from './routes/_app.aulas-interativas.$cursoSlug.index'
 import { Route as ApiPublicHooksResenhaSyncRouteImport } from './routes/api/public/hooks.resenha-sync'
 import { Route as ApiPublicHooksCfSyncRouteImport } from './routes/api/public/hooks.cf-sync'
 import { Route as AppVadeMecumEstatutosSlugRouteImport } from './routes/_app.vade-mecum.estatutos.$slug'
@@ -83,6 +85,7 @@ import { Route as AppVadeMecumCfParteRouteImport } from './routes/_app.vade-mecu
 import { Route as AppSimuladosSlugPraticarRouteImport } from './routes/_app.simulados.$slug.praticar'
 import { Route as AppBibliotecaSlugBookIdRouteImport } from './routes/_app.biblioteca.$slug.$bookId'
 import { Route as AppAulasMateriaLivroIdRouteImport } from './routes/_app.aulas.$materia.$livroId'
+import { Route as AppAulasInterativasCursoSlugAulaSlugRouteImport } from './routes/_app.aulas-interativas.$cursoSlug.$aulaSlug'
 import { Route as AppBibliotecaSlugBookIdIndexRouteImport } from './routes/_app.biblioteca.$slug.$bookId.index'
 import { Route as AppAulasMateriaLivroIdIndexRouteImport } from './routes/_app.aulas.$materia.$livroId.index'
 import { Route as AppSimuladosSlugResultadoTentativaIdRouteImport } from './routes/_app.simulados.$slug.resultado.$tentativaId'
@@ -402,6 +405,12 @@ const AppAdminBlogRoute = AppAdminBlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminAulasInterativasRoute =
+  AppAdminAulasInterativasRouteImport.update({
+    id: '/aulas-interativas',
+    path: '/aulas-interativas',
+    getParentRoute: () => AppAdminRoute,
+  } as any)
 const AppVadeMecumEstatutosIndexRoute =
   AppVadeMecumEstatutosIndexRouteImport.update({
     id: '/vade-mecum/estatutos/',
@@ -428,6 +437,12 @@ const AppAulasMateriaIndexRoute = AppAulasMateriaIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppAulasMateriaRoute,
 } as any)
+const AppAulasInterativasCursoSlugIndexRoute =
+  AppAulasInterativasCursoSlugIndexRouteImport.update({
+    id: '/aulas-interativas/$cursoSlug/',
+    path: '/aulas-interativas/$cursoSlug/',
+    getParentRoute: () => AppRoute,
+  } as any)
 const ApiPublicHooksResenhaSyncRoute =
   ApiPublicHooksResenhaSyncRouteImport.update({
     id: '/api/public/hooks/resenha-sync',
@@ -466,6 +481,12 @@ const AppAulasMateriaLivroIdRoute = AppAulasMateriaLivroIdRouteImport.update({
   path: '/$livroId',
   getParentRoute: () => AppAulasMateriaRoute,
 } as any)
+const AppAulasInterativasCursoSlugAulaSlugRoute =
+  AppAulasInterativasCursoSlugAulaSlugRouteImport.update({
+    id: '/aulas-interativas/$cursoSlug/$aulaSlug',
+    path: '/aulas-interativas/$cursoSlug/$aulaSlug',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppBibliotecaSlugBookIdIndexRoute =
   AppBibliotecaSlugBookIdIndexRouteImport.update({
     id: '/',
@@ -529,6 +550,7 @@ export interface FileRoutesByFullPath {
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
   '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
+  '/admin/aulas-interativas': typeof AppAdminAulasInterativasRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -565,6 +587,7 @@ export interface FileRoutesByFullPath {
   '/resumos/': typeof AppResumosIndexRoute
   '/simulados/': typeof AppSimuladosIndexRoute
   '/vade-mecum/': typeof AppVadeMecumIndexRoute
+  '/aulas-interativas/$cursoSlug/$aulaSlug': typeof AppAulasInterativasCursoSlugAulaSlugRoute
   '/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRouteWithChildren
   '/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
@@ -572,6 +595,7 @@ export interface FileRoutesByFullPath {
   '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/api/public/hooks/cf-sync': typeof ApiPublicHooksCfSyncRoute
   '/api/public/hooks/resenha-sync': typeof ApiPublicHooksResenhaSyncRoute
+  '/aulas-interativas/$cursoSlug/': typeof AppAulasInterativasCursoSlugIndexRoute
   '/aulas/$materia/': typeof AppAulasMateriaIndexRoute
   '/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
@@ -607,6 +631,7 @@ export interface FileRoutesByTo {
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
   '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
+  '/admin/aulas-interativas': typeof AppAdminAulasInterativasRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -641,11 +666,13 @@ export interface FileRoutesByTo {
   '/resumos': typeof AppResumosIndexRoute
   '/simulados': typeof AppSimuladosIndexRoute
   '/vade-mecum': typeof AppVadeMecumIndexRoute
+  '/aulas-interativas/$cursoSlug/$aulaSlug': typeof AppAulasInterativasCursoSlugAulaSlugRoute
   '/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
   '/vade-mecum/cf/$parte': typeof AppVadeMecumCfParteRoute
   '/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/api/public/hooks/cf-sync': typeof ApiPublicHooksCfSyncRoute
   '/api/public/hooks/resenha-sync': typeof ApiPublicHooksResenhaSyncRoute
+  '/aulas-interativas/$cursoSlug': typeof AppAulasInterativasCursoSlugIndexRoute
   '/aulas/$materia': typeof AppAulasMateriaIndexRoute
   '/biblioteca/$slug': typeof AppBibliotecaSlugIndexRoute
   '/simulados/$slug': typeof AppSimuladosSlugIndexRoute
@@ -686,6 +713,7 @@ export interface FileRoutesById {
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
   '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
+  '/_app/admin/aulas-interativas': typeof AppAdminAulasInterativasRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
   '/_app/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/_app/admin/narracoes': typeof AppAdminNarracoesRoute
@@ -722,6 +750,7 @@ export interface FileRoutesById {
   '/_app/resumos/': typeof AppResumosIndexRoute
   '/_app/simulados/': typeof AppSimuladosIndexRoute
   '/_app/vade-mecum/': typeof AppVadeMecumIndexRoute
+  '/_app/aulas-interativas/$cursoSlug/$aulaSlug': typeof AppAulasInterativasCursoSlugAulaSlugRoute
   '/_app/aulas/$materia/$livroId': typeof AppAulasMateriaLivroIdRouteWithChildren
   '/_app/biblioteca/$slug/$bookId': typeof AppBibliotecaSlugBookIdRouteWithChildren
   '/_app/simulados/$slug/praticar': typeof AppSimuladosSlugPraticarRoute
@@ -729,6 +758,7 @@ export interface FileRoutesById {
   '/_app/vade-mecum/estatutos/$slug': typeof AppVadeMecumEstatutosSlugRoute
   '/api/public/hooks/cf-sync': typeof ApiPublicHooksCfSyncRoute
   '/api/public/hooks/resenha-sync': typeof ApiPublicHooksResenhaSyncRoute
+  '/_app/aulas-interativas/$cursoSlug/': typeof AppAulasInterativasCursoSlugIndexRoute
   '/_app/aulas/$materia/': typeof AppAulasMateriaIndexRoute
   '/_app/biblioteca/$slug/': typeof AppBibliotecaSlugIndexRoute
   '/_app/simulados/$slug/': typeof AppSimuladosSlugIndexRoute
@@ -769,6 +799,7 @@ export interface FileRouteTypes {
     | '/api/artigo-chat'
     | '/api/assistente-chat'
     | '/api/aulas-interativas-ingest'
+    | '/admin/aulas-interativas'
     | '/admin/blog'
     | '/admin/flashcards'
     | '/admin/narracoes'
@@ -805,6 +836,7 @@ export interface FileRouteTypes {
     | '/resumos/'
     | '/simulados/'
     | '/vade-mecum/'
+    | '/aulas-interativas/$cursoSlug/$aulaSlug'
     | '/aulas/$materia/$livroId'
     | '/biblioteca/$slug/$bookId'
     | '/simulados/$slug/praticar'
@@ -812,6 +844,7 @@ export interface FileRouteTypes {
     | '/vade-mecum/estatutos/$slug'
     | '/api/public/hooks/cf-sync'
     | '/api/public/hooks/resenha-sync'
+    | '/aulas-interativas/$cursoSlug/'
     | '/aulas/$materia/'
     | '/biblioteca/$slug/'
     | '/simulados/$slug/'
@@ -847,6 +880,7 @@ export interface FileRouteTypes {
     | '/api/artigo-chat'
     | '/api/assistente-chat'
     | '/api/aulas-interativas-ingest'
+    | '/admin/aulas-interativas'
     | '/admin/blog'
     | '/admin/flashcards'
     | '/admin/narracoes'
@@ -881,11 +915,13 @@ export interface FileRouteTypes {
     | '/resumos'
     | '/simulados'
     | '/vade-mecum'
+    | '/aulas-interativas/$cursoSlug/$aulaSlug'
     | '/simulados/$slug/praticar'
     | '/vade-mecum/cf/$parte'
     | '/vade-mecum/estatutos/$slug'
     | '/api/public/hooks/cf-sync'
     | '/api/public/hooks/resenha-sync'
+    | '/aulas-interativas/$cursoSlug'
     | '/aulas/$materia'
     | '/biblioteca/$slug'
     | '/simulados/$slug'
@@ -925,6 +961,7 @@ export interface FileRouteTypes {
     | '/api/artigo-chat'
     | '/api/assistente-chat'
     | '/api/aulas-interativas-ingest'
+    | '/_app/admin/aulas-interativas'
     | '/_app/admin/blog'
     | '/_app/admin/flashcards'
     | '/_app/admin/narracoes'
@@ -961,6 +998,7 @@ export interface FileRouteTypes {
     | '/_app/resumos/'
     | '/_app/simulados/'
     | '/_app/vade-mecum/'
+    | '/_app/aulas-interativas/$cursoSlug/$aulaSlug'
     | '/_app/aulas/$materia/$livroId'
     | '/_app/biblioteca/$slug/$bookId'
     | '/_app/simulados/$slug/praticar'
@@ -968,6 +1006,7 @@ export interface FileRouteTypes {
     | '/_app/vade-mecum/estatutos/$slug'
     | '/api/public/hooks/cf-sync'
     | '/api/public/hooks/resenha-sync'
+    | '/_app/aulas-interativas/$cursoSlug/'
     | '/_app/aulas/$materia/'
     | '/_app/biblioteca/$slug/'
     | '/_app/simulados/$slug/'
@@ -1434,6 +1473,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminBlogRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/aulas-interativas': {
+      id: '/_app/admin/aulas-interativas'
+      path: '/aulas-interativas'
+      fullPath: '/admin/aulas-interativas'
+      preLoaderRoute: typeof AppAdminAulasInterativasRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/vade-mecum/estatutos/': {
       id: '/_app/vade-mecum/estatutos/'
       path: '/vade-mecum/estatutos'
@@ -1468,6 +1514,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/aulas/$materia/'
       preLoaderRoute: typeof AppAulasMateriaIndexRouteImport
       parentRoute: typeof AppAulasMateriaRoute
+    }
+    '/_app/aulas-interativas/$cursoSlug/': {
+      id: '/_app/aulas-interativas/$cursoSlug/'
+      path: '/aulas-interativas/$cursoSlug'
+      fullPath: '/aulas-interativas/$cursoSlug/'
+      preLoaderRoute: typeof AppAulasInterativasCursoSlugIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/api/public/hooks/resenha-sync': {
       id: '/api/public/hooks/resenha-sync'
@@ -1518,6 +1571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAulasMateriaLivroIdRouteImport
       parentRoute: typeof AppAulasMateriaRoute
     }
+    '/_app/aulas-interativas/$cursoSlug/$aulaSlug': {
+      id: '/_app/aulas-interativas/$cursoSlug/$aulaSlug'
+      path: '/aulas-interativas/$cursoSlug/$aulaSlug'
+      fullPath: '/aulas-interativas/$cursoSlug/$aulaSlug'
+      preLoaderRoute: typeof AppAulasInterativasCursoSlugAulaSlugRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/biblioteca/$slug/$bookId/': {
       id: '/_app/biblioteca/$slug/$bookId/'
       path: '/'
@@ -1564,6 +1624,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppAdminRouteChildren {
+  AppAdminAulasInterativasRoute: typeof AppAdminAulasInterativasRoute
   AppAdminBlogRoute: typeof AppAdminBlogRoute
   AppAdminFlashcardsRoute: typeof AppAdminFlashcardsRoute
   AppAdminNarracoesRoute: typeof AppAdminNarracoesRoute
@@ -1574,6 +1635,7 @@ interface AppAdminRouteChildren {
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminAulasInterativasRoute: AppAdminAulasInterativasRoute,
   AppAdminBlogRoute: AppAdminBlogRoute,
   AppAdminFlashcardsRoute: AppAdminFlashcardsRoute,
   AppAdminNarracoesRoute: AppAdminNarracoesRoute,
@@ -1746,9 +1808,11 @@ interface AppRouteChildren {
   AppResumosIndexRoute: typeof AppResumosIndexRoute
   AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
   AppVadeMecumIndexRoute: typeof AppVadeMecumIndexRoute
+  AppAulasInterativasCursoSlugAulaSlugRoute: typeof AppAulasInterativasCursoSlugAulaSlugRoute
   AppSimuladosSlugPraticarRoute: typeof AppSimuladosSlugPraticarRoute
   AppVadeMecumCfParteRoute: typeof AppVadeMecumCfParteRoute
   AppVadeMecumEstatutosSlugRoute: typeof AppVadeMecumEstatutosSlugRoute
+  AppAulasInterativasCursoSlugIndexRoute: typeof AppAulasInterativasCursoSlugIndexRoute
   AppSimuladosSlugIndexRoute: typeof AppSimuladosSlugIndexRoute
   AppVadeMecumCfIndexRoute: typeof AppVadeMecumCfIndexRoute
   AppVadeMecumEstatutosIndexRoute: typeof AppVadeMecumEstatutosIndexRoute
@@ -1793,9 +1857,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppResumosIndexRoute: AppResumosIndexRoute,
   AppSimuladosIndexRoute: AppSimuladosIndexRoute,
   AppVadeMecumIndexRoute: AppVadeMecumIndexRoute,
+  AppAulasInterativasCursoSlugAulaSlugRoute:
+    AppAulasInterativasCursoSlugAulaSlugRoute,
   AppSimuladosSlugPraticarRoute: AppSimuladosSlugPraticarRoute,
   AppVadeMecumCfParteRoute: AppVadeMecumCfParteRoute,
   AppVadeMecumEstatutosSlugRoute: AppVadeMecumEstatutosSlugRoute,
+  AppAulasInterativasCursoSlugIndexRoute:
+    AppAulasInterativasCursoSlugIndexRoute,
   AppSimuladosSlugIndexRoute: AppSimuladosSlugIndexRoute,
   AppVadeMecumCfIndexRoute: AppVadeMecumCfIndexRoute,
   AppVadeMecumEstatutosIndexRoute: AppVadeMecumEstatutosIndexRoute,

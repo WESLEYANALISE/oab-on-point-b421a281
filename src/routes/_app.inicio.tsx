@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Calendar, Sparkles, ArrowRight,
   Library, Trophy, Video, Newspaper,
-  FileText,
+  FileText, PlayCircle,
   Zap, Compass, Scale, BellRing, MessageCircle,
 } from "lucide-react";
 import { HomeTopCard } from "@/components/home/HomeTopCard";
@@ -40,6 +40,7 @@ const DATE_FMT = new Intl.DateTimeFormat("pt-BR", {
 });
 
 const ATALHOS = [
+  { label: "Aulas Interativas", sub: "Slides + quiz (IA)", icon: PlayCircle, to: "/aulas-interativas" as const },
   { label: "Vade Mecum", sub: "Legislação rápida", icon: Scale, to: "/vade-mecum" as const },
   { label: "Atualizações de Leis", sub: "Novidades do D.O.U.", icon: BellRing, to: "/atualizacoes-leis" as const },
   { label: "Biblioteca", sub: "Livros e PDFs",     icon: Library,  to: "/biblioteca" as const },
