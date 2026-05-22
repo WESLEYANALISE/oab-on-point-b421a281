@@ -139,7 +139,10 @@ function AbaListaSimples({ tipo, titulo, descricao }: { tipo: "cronograma" | "bo
     queryKey: ["admin", "aulas-interativas", "drive", tipo],
     queryFn: () => listarArquivosDrive(),
   });
-  const itens = useMemo(() => (q.data ?? []).filter((a) => a.tipo === tipo), [q.data, tipo]);
+  const itens = useMemo(() => {
+    const filtrados = (q.data ?? []).filter((a) => a.tipo === tipo);
+    return [...filtrados].sort((a, b) => a.nome_arquivo.localeCompare(b.nome_arquivo, "pt-BR"));
+  }, [q.data, tipo]);
   return (
     <section className="rounded-2xl border border-border bg-card p-5 mb-8">
       <h2 className="font-display text-lg mb-2">{titulo}</h2>
