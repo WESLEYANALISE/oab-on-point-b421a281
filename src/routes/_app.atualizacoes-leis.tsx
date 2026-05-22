@@ -1,19 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
-  Loader2,
   Calendar as CalendarIcon,
   ChevronDown,
 } from "lucide-react";
-import { listResenhaMes, runResenhaSync } from "@/lib/resenha-sync.functions";
-import { useIsAdmin } from "@/hooks/use-admin";
+import { listResenhaMes } from "@/lib/resenha-sync.functions";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/atualizacoes-leis")({
   head: () => ({
