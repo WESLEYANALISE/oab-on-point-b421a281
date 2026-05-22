@@ -211,3 +211,97 @@ export const apagarExtracaoArquivo = createServerFn({ method: "POST" })
     if (e3) throw new Error(e3.message);
     return { ok: true };
   });
+
+export const apagarImagensExtracao = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        arquivoDriveId: z.string().uuid(),
+        urls: z.array(z.string().url()).min(1).max(500),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: row, error: e1 } = await supabase
+      .from("aulas_interativas_extracoes")
+      .select("id, imagens, paginas, markdown")
+      .eq("arquivo_drive_id", data.arquivoDriveId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (e1) throw new Error(e1.message);
+    if (!row) throw new Error("Extração não encontrada");
+
+    const toDel = new Set(data.urls);
+    const imagensAtuais: string[] = Array.isArray(row.imagens) ? (row.imagens as string[]) : [];
+    const imagensNovas = imagensAtuais.filter((u) => !toDel.has(u));
+
+    let mdNovo: string = typeof row.markdown === "string" ? row.markdown : "";
+    for (const u of toDel) {
+      const esc = u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      mdNovo = mdNovo.replace(new RegExp(`!\\[[^\\]]*\\]\\(${esc}\\)`, "g"), "");
+      mdNovo = mdNovo.replace(new RegExp(esc, "g"), "");
+    }
+
+    const paginasAtuais: any[] = Array.isArray(row.paginas) ? (row.paginas as any[]) : [];
+    const paginasNovas = paginasAtuais.map((p) => {
+      if (!p || typeof p !== "object") return p;
+      const out: any = { ...p };
+      if (Array.isArray(p.imagens)) {
+        out.imagens = (p.imagens as string[]).filter((u) => !toDel.has(u));
+      }
+      if (typeof p.markdown === "string") {
+        let md = p.markdown as string;
+        for (const u of toDel) {
+          const esc = u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          md = md.replace(new RegExp(`!\\[[^\\]]*\\]\\(${esc}\\)`, "g"), "");
+          md = md.replace(new RegExp(esc, "g"), "");
+        }
+        out.markdown = md;
+      }
+      return out;
+    });
+
+    const { error: eUp } = await supabase
+      .from("aulas_interativas_extracoes")
+      .update({
+        imagens: imagensNovas as never,
+        paginas: paginasNovas as never,
+        markdown: mdNovo,
+      })
+      .eq("id", row.id);
+    if (eUp) throw new Error(eUp.message);
+
+    // tenta apagar do storage (best-effort)
+    const bucket = "aulas-interativas-imagens";
+    const paths: string[] = [];
+    for (const u of toDel) {
+      const m = u.match(new RegExp(`/storage/v1/object/public/${bucket}/(.+)$`));
+      if (m?.[1]) paths.push(decodeURIComponent(m[1]));
+    }
+    if (paths.length > 0) {
+      try {
+        await supabase.storage.from(bucket).remove(paths);
+      } catch {
+        /* ignora — referências já foram removidas do markdown */
+      }
+    }
+
+    await supabase
+      .from("aulas_interativas_previas")
+      .delete()
+      .eq("arquivo_drive_id", data.arquivoDriveId);
+    await supabase
+      .from("aulas_interativas_arquivos_drive")
+      .update({
+        status_ingestao: "extraido",
+        erro_msg: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.arquivoDriveId);
+
+    return { ok: true, removidas: toDel.size, restantes: imagensNovas.length };
+  });
+
