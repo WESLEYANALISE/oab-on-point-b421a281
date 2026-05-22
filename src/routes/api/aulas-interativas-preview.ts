@@ -42,41 +42,6 @@ SAÍDA: APENAS JSON válido, sem markdown ao redor:
   ]
 }`;
 
-const SYSTEM_SLIDES = `Você gera SLIDES de UMA aula de um curso jurídico interativo (OAB, português do Brasil).
-
-Você receberá: contexto da aula (módulo, título, escopo) + o MATERIAL DE ESTUDO completo em markdown.
-
-Gere de 3 a 10 slides para ESTA AULA APENAS, focados no escopo informado.
-
-Tipos válidos:
-- "capa": titulo + objetivos (bullets até 4)
-- "conceito": titulo + texto (≤120 palavras) + destaque (1 frase com regra-chave)
-- "exemplo": titulo + texto com caso prático curto
-- "esquema": titulo + bullets (até 6)
-- "comparativo": titulo + colunas[{titulo, itens[]}] (2-3 colunas)
-- "quiz": titulo "Teste rápido" + quiz_json {pergunta, alternativas[{letra:"A",texto}], correta:"A", explicacao}
-- "resumo": titulo "O que vimos" + bullets dos pontos-chave
-- "conclusao": titulo "Próximos passos" + texto motivador curto
-
-Regras:
-- A aula precisa ter PELO MENOS 1 slide tipo "quiz".
-- Use **negrito** em termos-chave dentro de texto/destaque.
-- Se houver imagem útil referenciada no markdown (URL), use em "imagem_url".
-- NÃO repita conteúdo de outras aulas.
-
-SAÍDA: APENAS JSON válido (sem markdown ao redor):
-{
-  "slides": [
-    {
-      "ordem": number,
-      "tipo": "capa"|"conceito"|"exemplo"|"esquema"|"comparativo"|"quiz"|"resumo"|"conclusao",
-      "conteudo": {"titulo":"...","texto":"...","destaque":"...","bullets":[...],"colunas":[{"titulo":"...","itens":[...]}],"objetivos":[...]},
-      "imagem_url": null,
-      "quiz_json": null
-    }
-  ]
-}`;
-
 const SYSTEM_SLIDES_MODULO = `Você gera SLIDES para TODAS as aulas de UM módulo de curso jurídico interativo (OAB, português do Brasil).
 
 Você receberá: dados do módulo, lista de aulas com escopo e trechos relevantes do material para cada aula.
