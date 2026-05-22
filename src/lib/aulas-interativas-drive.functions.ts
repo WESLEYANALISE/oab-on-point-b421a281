@@ -170,11 +170,15 @@ export const obterExtracaoArquivo = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase
       .from("aulas_interativas_extracoes")
-      .select("id, paginas_total, modelo, created_at, imagens")
+      .select("id, paginas_total, modelo, created_at, imagens, paginas")
       .eq("arquivo_drive_id", data.arquivoDriveId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return row;
+    if (!row) return null;
+    return {
+      ...row,
+      paginas_processadas: Array.isArray(row.paginas) ? row.paginas.length : 0,
+    };
   });
