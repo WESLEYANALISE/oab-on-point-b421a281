@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getMateria } from "@/data/materias";
-import { ArrowLeft, BookOpen, FileText, Layers, ClipboardList, CheckCircle2 } from "lucide-react";
+import { BookOpen, FileText, Layers, ClipboardList, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/materias/$slug")({
   loader: ({ params }) => {
