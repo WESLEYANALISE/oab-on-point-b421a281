@@ -62,6 +62,7 @@ import { Route as AppAdminVadeMecumSyncRouteImport } from './routes/_app.admin.v
 import { Route as AppAdminSimuladosRouteImport } from './routes/_app.admin.simulados'
 import { Route as AppAdminResumosRouteImport } from './routes/_app.admin.resumos'
 import { Route as AppAdminNarracoesRouteImport } from './routes/_app.admin.narracoes'
+import { Route as AppAdminFlashcardsRouteImport } from './routes/_app.admin.flashcards'
 import { Route as AppAdminBlogRouteImport } from './routes/_app.admin.blog'
 import { Route as AppVadeMecumEstatutosIndexRouteImport } from './routes/_app.vade-mecum.estatutos.index'
 import { Route as AppVadeMecumCfIndexRouteImport } from './routes/_app.vade-mecum.cf.index'
@@ -346,6 +347,11 @@ const AppAdminNarracoesRoute = AppAdminNarracoesRouteImport.update({
   path: '/narracoes',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminFlashcardsRoute = AppAdminFlashcardsRouteImport.update({
+  id: '/flashcards',
+  path: '/flashcards',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 const AppAdminBlogRoute = AppAdminBlogRouteImport.update({
   id: '/blog',
   path: '/blog',
@@ -477,6 +483,7 @@ export interface FileRoutesByFullPath {
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/admin/blog': typeof AppAdminBlogRoute
+  '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -547,6 +554,7 @@ export interface FileRoutesByTo {
   '/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/admin/blog': typeof AppAdminBlogRoute
+  '/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/admin/narracoes': typeof AppAdminNarracoesRoute
   '/admin/resumos': typeof AppAdminResumosRoute
   '/admin/simulados': typeof AppAdminSimuladosRoute
@@ -618,6 +626,7 @@ export interface FileRoutesById {
   '/_app/reta-final': typeof AppRetaFinalRoute
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
+  '/_app/admin/flashcards': typeof AppAdminFlashcardsRoute
   '/_app/admin/narracoes': typeof AppAdminNarracoesRoute
   '/_app/admin/resumos': typeof AppAdminResumosRoute
   '/_app/admin/simulados': typeof AppAdminSimuladosRoute
@@ -693,6 +702,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/api/artigo-chat'
     | '/admin/blog'
+    | '/admin/flashcards'
     | '/admin/narracoes'
     | '/admin/resumos'
     | '/admin/simulados'
@@ -763,6 +773,7 @@ export interface FileRouteTypes {
     | '/reta-final'
     | '/api/artigo-chat'
     | '/admin/blog'
+    | '/admin/flashcards'
     | '/admin/narracoes'
     | '/admin/resumos'
     | '/admin/simulados'
@@ -833,6 +844,7 @@ export interface FileRouteTypes {
     | '/_app/reta-final'
     | '/api/artigo-chat'
     | '/_app/admin/blog'
+    | '/_app/admin/flashcards'
     | '/_app/admin/narracoes'
     | '/_app/admin/resumos'
     | '/_app/admin/simulados'
@@ -1268,6 +1280,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminNarracoesRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/flashcards': {
+      id: '/_app/admin/flashcards'
+      path: '/flashcards'
+      fullPath: '/admin/flashcards'
+      preLoaderRoute: typeof AppAdminFlashcardsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
     '/_app/admin/blog': {
       id: '/_app/admin/blog'
       path: '/blog'
@@ -1406,6 +1425,7 @@ declare module '@tanstack/react-router' {
 
 interface AppAdminRouteChildren {
   AppAdminBlogRoute: typeof AppAdminBlogRoute
+  AppAdminFlashcardsRoute: typeof AppAdminFlashcardsRoute
   AppAdminNarracoesRoute: typeof AppAdminNarracoesRoute
   AppAdminResumosRoute: typeof AppAdminResumosRoute
   AppAdminSimuladosRoute: typeof AppAdminSimuladosRoute
@@ -1415,6 +1435,7 @@ interface AppAdminRouteChildren {
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
   AppAdminBlogRoute: AppAdminBlogRoute,
+  AppAdminFlashcardsRoute: AppAdminFlashcardsRoute,
   AppAdminNarracoesRoute: AppAdminNarracoesRoute,
   AppAdminResumosRoute: AppAdminResumosRoute,
   AppAdminSimuladosRoute: AppAdminSimuladosRoute,
