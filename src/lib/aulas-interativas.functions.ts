@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { ensureLongCourseStructure } from "@/lib/aulas-interativas-long-slides";
 
 // ---------- Tipos públicos ----------
 
@@ -142,6 +143,7 @@ const CursoInput = z.object({
   materia: z.string().max(80).nullable().optional(),
   pdf_origem_url: z.string().url().nullable().optional(),
   publicado: z.boolean().default(false),
+  replaceCursoId: z.string().uuid().nullable().optional(),
   modulos: z.array(ModuloInput).min(1).max(40),
 });
 
@@ -330,6 +332,16 @@ export const publicarCurso = createServerFn({ method: "POST" })
       .rpc("has_role" as never, { _user_id: context.userId, _role: "admin" } as never);
     // Fallback: usa policy padrão (se falhar a chamada acima, ainda obedece RLS)
 
+    if (data.replaceCursoId) {
+      const { error: eDel } = await supabase
+        .from("aulas_interativas_cursos")
+        .delete()
+        .eq("id", data.replaceCursoId);
+      if (eDel) throw new Error(eDel.message);
+    }
+
+    const modulosNormalizados = ensureLongCourseStructure({ modulos: data.modulos }).modulos;
+
     // Cria curso (garante slug único)
     const slugBase = data.slug;
     let slugFinal = slugBase;
@@ -366,8 +378,8 @@ export const publicarCurso = createServerFn({ method: "POST" })
 
     const cursoId = curso.id;
 
-    for (let mi = 0; mi < data.modulos.length; mi++) {
-      const m = data.modulos[mi];
+    for (let mi = 0; mi < modulosNormalizados.length; mi++) {
+      const m = modulosNormalizados[mi];
       const { data: modulo, error: em } = await supabase
         .from("aulas_interativas_modulos")
         .insert({
