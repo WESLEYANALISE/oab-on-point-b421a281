@@ -13,7 +13,13 @@ export type SlideTipo =
   | "quiz"
   | "resumo"
   | "conclusao"
-  | "mapa_mental";
+  | "mapa_mental"
+  | "ligar_termos"
+  | "dicas"
+  | "caso_pratico";
+
+export type ParTermo = { termo: string; definicao: string };
+export type DicaItem = { tipo?: "dica" | "atencao" | "alvo" | "estrela"; texto: string };
 
 export type SlideConteudo = {
   titulo?: string;
@@ -23,6 +29,14 @@ export type SlideConteudo = {
   objetivos?: string[];
   colunas?: { titulo: string; itens: string[] }[];
   pdf_url?: string;
+  // ligar_termos
+  pares?: ParTermo[];
+  // dicas
+  dicas?: DicaItem[];
+  // caso_pratico
+  enunciado?: string;
+  pergunta?: string;
+  analise?: string;
 };
 
 export type QuizJson = {
