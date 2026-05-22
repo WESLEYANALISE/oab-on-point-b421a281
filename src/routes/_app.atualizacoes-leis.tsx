@@ -114,24 +114,10 @@ function AtualizacoesLeisPage() {
         </button>
       </div>
 
-      {isAdmin.data && (
-        <div className="flex items-center justify-between rounded-xl border border-gold/30 bg-gold/5 p-3">
-          <div className="text-xs text-muted-foreground">
-            {ultimoSync ? (
-              <>Última sinc: <span className="text-foreground">{new Date(ultimoSync).toLocaleString("pt-BR")}</span></>
-            ) : (
-              <>Sem sincronização para este mês.</>
-            )}
-          </div>
-          <button
-            onClick={() => syncMutation.mutate()}
-            disabled={syncMutation.isPending}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gold text-gold-foreground text-xs font-semibold disabled:opacity-50"
-          >
-            {syncMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            Sincronizar
-          </button>
-        </div>
+      {ultimoSync && (
+        <p className="text-[11px] text-muted-foreground">
+          Última atualização automática: <span className="text-foreground">{new Date(ultimoSync).toLocaleString("pt-BR")}</span>
+        </p>
       )}
 
       {/* Lista de dias numerados + toggle calendário */}
