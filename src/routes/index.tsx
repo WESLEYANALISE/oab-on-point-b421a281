@@ -133,9 +133,9 @@ function Welcome() {
         </nav>
 
         {/* Hero content */}
-        <div className="relative z-10 flex-1 flex flex-col lg:flex-row lg:items-center lg:justify-between px-6 lg:px-12 xl:px-20 pb-6 pt-16 sm:pt-20 max-w-[1400px] mx-auto w-full lg:py-16">
+        <div className="relative z-10 flex-1 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 lg:gap-12 px-6 lg:px-12 xl:px-20 pb-6 pt-16 sm:pt-20 lg:pt-10 max-w-[1400px] mx-auto w-full lg:py-12">
 
-          <motion.div className="lg:flex-1 lg:max-w-2xl" initial={false}>
+          <motion.div className="w-full lg:flex-1 lg:max-w-xl min-w-0" initial={false}>
             <div className="mb-6 text-center lg:text-left" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "-0.02em" }}>
               <div className="headline-shine">
                 <motion.h1
@@ -198,10 +198,10 @@ function Welcome() {
                 </p>
               </motion.div>
 
-              {/* Louros + V-shape overlay */}
+              {/* Louros + V-shape overlay (mobile only — desktop usa DesktopMockupRotator) */}
               <motion.div
                 initial={false}
-                className="relative w-full max-w-[280px] md:max-w-[400px] lg:max-w-[320px] mx-auto my-2"
+                className="relative w-full max-w-[280px] md:max-w-[400px] mx-auto my-2 lg:hidden"
               >
                 <img
                   src={lourosDourados}
@@ -255,26 +255,28 @@ function Welcome() {
               </motion.div>
             </div>
 
-            <BadgeCarousel />
+            <div className="lg:hidden">
+              <BadgeCarousel />
 
-            <motion.p
-              initial={false}
-              className="relative text-center text-[clamp(1.1rem,3.5vw,1.4rem)] font-semibold tracking-wide mb-4 overflow-hidden"
-              style={{
-                fontFamily: "'Georgia', 'Times New Roman', serif",
-                color: "rgba(255,255,255,0.9)",
-                textShadow: "0 0 12px rgba(255,255,255,0.3), 0 0 30px rgba(255,255,255,0.1)",
-              }}
-            >
-              <span className="relative z-10">Alcance a aprovação no Exame da Ordem.</span>
-              <span
-                className="absolute inset-0 pointer-events-none"
+              <motion.p
+                initial={false}
+                className="relative text-center text-[clamp(1.1rem,3.5vw,1.4rem)] font-semibold tracking-wide mb-4 overflow-hidden"
                 style={{
-                  background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.4) 55%, transparent 70%)",
-                  animation: "shimmerSlide 3s ease-in-out infinite",
+                  fontFamily: "'Georgia', 'Times New Roman', serif",
+                  color: "rgba(255,255,255,0.9)",
+                  textShadow: "0 0 12px rgba(255,255,255,0.3), 0 0 30px rgba(255,255,255,0.1)",
                 }}
-              />
-            </motion.p>
+              >
+                <span className="relative z-10">Alcance a aprovação no Exame da Ordem.</span>
+                <span
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.4) 55%, transparent 70%)",
+                    animation: "shimmerSlide 3s ease-in-out infinite",
+                  }}
+                />
+              </motion.p>
+            </div>
           </motion.div>
 
           <DesktopMockupRotator />
