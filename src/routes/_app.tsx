@@ -25,7 +25,8 @@ function AppLayout() {
   const isBiblioteca = pathname.startsWith("/biblioteca");
   const isLeitor = /^\/biblioteca\/[^/]+\/[^/]+\/ler$/.test(pathname);
   const isAssistente = pathname === "/assistente";
-  const isFullscreen = isLeitor || isAssistente;
+  const isAulaInterativaPlayer = /^\/aulas-interativas\/[^/]+\/[^/]+$/.test(pathname);
+  const isFullscreen = isLeitor || isAssistente || isAulaInterativaPlayer;
   const isHome = pathname === "/inicio";
   const showBottomNav = isHome;
 
@@ -50,7 +51,7 @@ function AppLayout() {
   if (!user) return null;
 
   if (isFullscreen) {
-    // Leitor de livros ocupa toda a tela — sem sidebar, header ou wrapper com transform.
+    // Telas imersivas ocupam toda a tela — sem sidebar, header ou wrapper com transform.
     return (
       <>
         <Outlet />

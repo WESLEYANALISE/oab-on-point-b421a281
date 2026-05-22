@@ -145,6 +145,8 @@ function SlideRenderer({
 }) {
   const c = slide.conteudo ?? {};
   const titulo = c.titulo ?? "";
+  const objetivos = Array.isArray((c as any).objetivos) ? ((c as any).objetivos as string[]) : [];
+  const bullets = Array.isArray(c.bullets) ? c.bullets : objetivos;
 
   if (slide.tipo === "quiz" && slide.quiz_json) {
     return <SlideQuiz quiz={slide.quiz_json} titulo={titulo} onAvancar={onResponderQuiz} />;
@@ -185,13 +187,13 @@ function SlideRenderer({
         <div className="max-w-2xl text-center">
           <p className="text-xs uppercase tracking-widest text-gold mb-3">Aula interativa</p>
           <h1 className="font-display text-3xl md:text-5xl leading-tight mb-6">{titulo}</h1>
-          {c.bullets && c.bullets.length > 0 && (
+          {bullets.length > 0 && (
             <div className="mt-8 text-left bg-card border border-border rounded-2xl p-6">
               <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">
                 Ao final você saberá:
               </p>
               <ul className="space-y-2">
-                {c.bullets.map((b, i) => (
+                {bullets.map((b, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm md:text-base">
                     <Check className="h-4 w-4 text-gold mt-1 shrink-0" />
                     <span>{b}</span>
