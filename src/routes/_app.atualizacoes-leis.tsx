@@ -51,23 +51,12 @@ function AtualizacoesLeisPage() {
   const [filtro, setFiltro] = useState<string>("todos");
   const [calendarioAberto, setCalendarioAberto] = useState(false);
 
-  const isAdmin = useIsAdmin();
   const listMes = useServerFn(listResenhaMes);
-  const runSync = useServerFn(runResenhaSync);
 
   const q = useQuery({
     queryKey: ["resenha-mes", ano, mes],
     queryFn: () => listMes({ data: { ano, mes } }),
     staleTime: 60_000,
-  });
-
-  const syncMutation = useMutation({
-    mutationFn: () => runSync({ data: { meses: [{ ano, mes }] } }),
-    onSuccess: (r) => {
-      toast.success(`Sincronizado: ${r.novos} novos, ${r.atualizados} atualizados`);
-      q.refetch();
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha no sync"),
   });
 
   const atos = q.data?.atos ?? [];
