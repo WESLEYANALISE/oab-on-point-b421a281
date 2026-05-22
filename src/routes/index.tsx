@@ -1,439 +1,380 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { useState } from "react";
-import {
-  ArrowRight, Sparkles, Headphones, Star, BookOpen, Target, FileText, Layers,
-  Trophy, Newspaper, ScrollText, CalendarDays, ClipboardList, Library,
-  CheckCircle2, ShieldCheck, GraduationCap, Brain, Clock,
-} from "lucide-react";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { lazy, Suspense, useCallback, useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowRight, Headphones, Smartphone, Sparkles, GraduationCap, Scale, FileText, BookOpen, Trophy, ScrollText, CalendarDays } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
-import { Reveal } from "@/components/landing/Reveal";
-import { CountdownExame } from "@/components/shared/CountdownExame";
-import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
-} from "@/components/ui/accordion";
-import heroImage from "@/assets/oab-landing-hero.jpg";
+import { useDeviceType } from "@/hooks/use-device-type";
+
 import logoNaRisca from "@/assets/logo-oab-na-risca.webp";
-import heroAvif from "@/assets/oab-landing-hero.jpg?format=avif&w=640;960;1280&as=srcset";
-import heroWebp from "@/assets/oab-landing-hero.jpg?format=webp&w=640;960;1280&as=srcset";
+import lourosDourados from "@/assets/louros-dourados.webp";
+const welcomeHero = "/welcome-hero.webp";
+
+import { CSSInfiniteSlider } from "@/components/ui/css-infinite-slider";
+import { BadgeCarousel } from "@/components/welcome/BadgeCarousel";
+import { DesktopMockupRotator } from "@/components/welcome/DesktopMockupRotator";
+import { MockupSlideshow } from "@/components/welcome/MockupSlideshow";
+import { WelcomeAuthModal } from "@/components/welcome/WelcomeAuthModal";
+import { StartChoiceSheet } from "@/components/welcome/StartChoiceSheet";
+import { SupportSheet } from "@/components/welcome/SupportSheet";
+
+const AppShowcaseSection = lazy(() => import("@/components/welcome/AppShowcaseSection").then((m) => ({ default: m.AppShowcaseSection })));
+const TestimonialsSection = lazy(() => import("@/components/ui/testimonials-columns").then((m) => ({ default: m.TestimonialsSection })));
+const DemoVideoModal = lazy(() => import("@/components/welcome/DemoVideoModal").then((m) => ({ default: m.DemoVideoModal })));
+
+const FACULDADES = ["USP", "UFMG", "UFRJ", "UnB", "PUC-SP", "FGV Direito", "Mackenzie", "UFPE", "UFC", "UFRGS", "UFSC", "UFPR", "UERJ", "PUC-Rio", "Unicamp"];
+
+const features = [
+  { icon: Scale, label: "1ª Fase completa", desc: "17 matérias do edital, aulas curtas e diretas para você dominar a teoria sem cansar." },
+  { icon: FileText, label: "2ª Fase prática", desc: "Peças, recursos e treinos comentados nas 5 áreas — Civil, Penal, Trabalho, Tributário e Empresarial." },
+  { icon: Trophy, label: "Simulados como na prova", desc: "80 questões, tempo real e gabarito comentado para você chegar acostumado ao exame." },
+  { icon: Sparkles, label: "Flashcards e mapas mentais", desc: "Repetição espaçada para fixar o que importa — sem decoreba, com fixação real." },
+  { icon: ScrollText, label: "Vade Mecum sempre à mão", desc: "Lei seca, súmulas e jurisprudência atualizadas em um só lugar." },
+  { icon: CalendarDays, label: "Cronograma personalizado", desc: "Plano semanal sob medida para sua rotina e o calendário do próximo exame." },
+];
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
-    if (data.session?.user) {
-      throw redirect({ to: "/inicio" });
-    }
+    if (data.session?.user) throw redirect({ to: "/inicio" });
   },
   head: () => ({
     meta: [
       { title: "OAB na Risca — Tudo para você passar na OAB em um só lugar" },
-      { name: "description", content: "Plataforma completa de preparação para o Exame de Ordem: aulas, resumos, flashcards, simulados, provas comentadas, vade mecum e cronograma. Estude com método e seja aprovado na OAB." },
+      { name: "description", content: "Plataforma completa de preparação para o Exame de Ordem: aulas, resumos, flashcards, simulados, vade mecum e cronograma. Estude com método e seja aprovado." },
       { property: "og:title", content: "OAB na Risca — Sua aprovação na OAB começa aqui" },
-      { property: "og:description", content: "Aulas, resumos, flashcards, simulados e muito mais para você dominar o Exame da Ordem." },
-      { property: "og:image", content: heroImage },
+      { property: "og:description", content: "Aulas, resumos, flashcards, simulados e muito mais para dominar o Exame da Ordem." },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: LandingPage,
+  component: Welcome,
 });
 
-function LandingPage() {
+function Welcome() {
+  const { isDesktop } = useDeviceType();
+  const [showDemoVideo, setShowDemoVideo] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authTab, setAuthTab] = useState<"login" | "signup">("signup");
+  const [choiceOpen, setChoiceOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+
+  const handleStart = useCallback(() => setChoiceOpen(true), []);
+  const handleChoice = useCallback((mode: "login" | "signup") => {
+    setChoiceOpen(false);
+    setAuthTab(mode);
+    setAuthOpen(true);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
-      {/* ============ HERO ============ */}
-      <section className="relative min-h-[100svh] flex flex-col">
-        {/* background image */}
-        <div className="absolute inset-0">
-          <div
-            aria-hidden
-            className="absolute inset-0 bg-gradient-toga"
-          />
-          <picture>
-            <source type="image/avif" srcSet={heroAvif} sizes="100vw" />
-            <source type="image/webp" srcSet={heroWebp} sizes="100vw" />
+    <div className="min-h-[100dvh] w-full bg-black overflow-x-hidden relative">
+
+      {/* ───── HERO SECTION ───── */}
+      <motion.div className="relative min-h-[100dvh] flex flex-col">
+        {/* Background image */}
+        <div className="absolute inset-0 overflow-hidden bg-black">
+          <div className="relative w-full">
             <img
-              src={heroImage}
-              alt="Estátua da deusa Themis com balança e advogado em traje formal contemplando a luz divina"
-              width={1280}
-              height={1600}
+              src={welcomeHero}
+              alt=""
               loading="eager"
               fetchPriority="high"
               decoding="async"
-              className="absolute inset-0 h-full w-full object-cover"
+              className="w-full h-auto max-w-none object-cover object-top"
+              style={{
+                WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 70%, rgba(0,0,0,0.6) 88%, transparent 100%)",
+                maskImage: "linear-gradient(to bottom, black 0%, black 70%, rgba(0,0,0,0.6) 88%, transparent 100%)",
+              }}
             />
-          </picture>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/60 to-black/95" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-          <div className="absolute -top-20 -right-20 h-96 w-96 rounded-full bg-gold/15 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-20 -left-20 h-96 w-96 rounded-full bg-primary/30 blur-3xl pointer-events-none" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-black" />
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 via-40% to-black" />
         </div>
 
-        {/* header */}
-        <header className="relative z-10 px-5 md:px-10 pt-5 md:pt-7">
-          <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-            <Link to="/" className="flex items-center gap-2.5 group">
-              <img
-                src={logoNaRisca}
-                alt="OAB na Risca"
-                width={44}
-                height={44}
-                className="h-10 w-10 md:h-11 md:w-11 rounded-2xl object-cover border border-gold/40 shadow-lg shadow-black/40 group-hover:border-gold/70 transition"
-                loading="eager"
-                decoding="async"
-              />
-              <div className="leading-tight">
-                <p className="font-display text-base md:text-lg font-bold text-primary-foreground tracking-tight">OAB na Risca</p>
-                <p className="text-[9px] md:text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold">Exame da Ordem</p>
+        {/* Navbar */}
+        <nav className="relative z-20 px-4 lg:px-8 pt-6 pb-2">
+          <div className="flex flex-row items-center justify-between gap-3 max-w-7xl mx-auto">
+            <div className="flex items-center gap-3">
+              <div className="relative shine-effect rounded-2xl overflow-hidden">
+                <img src={logoNaRisca} alt="OAB na Risca" loading="eager" decoding="sync" fetchPriority="high" className="h-14 w-14 lg:h-16 lg:w-16 object-cover drop-shadow-2xl" />
+                <div className="absolute inset-0 rounded-2xl" style={{ boxShadow: "0 0 30px rgba(212,168,75,0.25)" }} />
               </div>
-            </Link>
-            <a
-              href="https://wa.me/5500000000000?text=Olá!%20Tenho%20uma%20dúvida%20sobre%20o%20OAB%20na%20Risca."
-              target="_blank"
-              rel="noreferrer noopener"
-              className="inline-flex items-center gap-2 px-3.5 md:px-4 h-10 md:h-11 rounded-full bg-background/70 backdrop-blur-md border border-gold/30 text-primary-foreground text-sm font-semibold hover:bg-background/90 hover:border-gold/60 active:scale-95 transition shadow-lg shadow-black/30"
+              <div className="flex flex-col leading-tight">
+                <span className="text-white font-black text-base lg:text-lg" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "-0.02em" }}>OAB na Risca</span>
+                <span className="text-white/50 text-[10px] lg:text-xs font-medium" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "0.04em" }}>Exame da Ordem</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setSupportOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold text-black hover:bg-white transition-all active:scale-[0.96]"
+              style={{
+                background: "#ffffff",
+                border: "1px solid rgba(212,168,75,0.5)",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.25), 0 0 16px rgba(212,168,75,0.18)",
+              }}
             >
-              <Headphones className="h-4 w-4 text-gold" />
-              Suporte
-            </a>
+              <Headphones className="w-4 h-4" style={{ color: "#8B0000" }} />
+              <span>Suporte</span>
+            </button>
           </div>
-        </header>
+        </nav>
 
-        {/* hero content */}
-        <div className="relative z-10 flex-1 flex items-center px-5 md:px-10 py-10 md:py-16">
-          <div className="max-w-6xl mx-auto w-full">
-            <div className="max-w-3xl mx-auto md:mx-0 text-center md:text-left">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gold/15 border border-gold/40 text-gold text-[10px] uppercase tracking-[0.22em] font-semibold backdrop-blur-md mb-5 md:mb-6">
-                <Sparkles className="h-3 w-3" /> 42º Exame de Ordem
-              </div>
+        {/* Hero content */}
+        <div className="relative z-10 flex-1 flex flex-col lg:flex-row lg:items-center lg:justify-between px-6 lg:px-12 xl:px-20 pb-6 pt-16 sm:pt-20 max-w-[1400px] mx-auto w-full lg:py-16">
 
-              <h1 className="font-display font-extrabold text-[34px] leading-[1.05] md:text-6xl lg:text-7xl text-primary-foreground tracking-tight text-balance drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]">
-                Tudo para você <span className="text-gold">passar na OAB</span> em um <span className="text-gold">só lugar</span>.
-              </h1>
-
-              <p className="mt-5 md:mt-7 text-[15px] md:text-lg text-primary-foreground/85 leading-relaxed max-w-2xl mx-auto md:mx-0 text-balance">
-                Aulas, resumos, flashcards, simulados, vade mecum, peças da 2ª fase e muito mais — tudo para você <span className="text-gold font-semibold">dominar o Exame da Ordem</span> com método.
-              </p>
-
-              <div className="mt-7 md:mt-9 flex flex-col items-center md:items-start gap-4">
-                <Link
-                  to="/login"
-                  className="group relative inline-flex items-center justify-center gap-2 px-7 md:px-9 py-4 md:py-[18px] rounded-full bg-gradient-to-r from-gold via-[oklch(0.82_0.14_82)] to-gold text-gold-foreground font-bold text-base md:text-lg shadow-[0_18px_50px_-12px_oklch(0.78_0.13_80/0.7)] hover:scale-[1.03] hover:shadow-[0_22px_60px_-10px_oklch(0.78_0.13_80/0.9)] active:scale-95 transition-all overflow-hidden"
+          <motion.div className="lg:flex-1 lg:max-w-2xl" initial={false}>
+            <div className="mb-6 text-center lg:text-left" style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "-0.02em" }}>
+              <div className="headline-shine">
+                <motion.h1
+                  initial={false}
+                  className="text-[clamp(1.8rem,5.5vw,3rem)] font-black text-white leading-[1.1] mb-4"
+                  style={{ textShadow: "0 2px 12px rgba(0,0,0,0.5)" }}
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                  <span className="relative">Iniciar jornada</span>
-                  <ArrowRight className="relative h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-
-                <div className="inline-flex items-center gap-2 text-sm text-primary-foreground/80">
-                  <Star className="h-4 w-4 fill-gold text-gold" />
-                  <span><span className="font-bold text-gold">+10.000</span> estudantes já estudam com a gente</span>
-                </div>
+                  Tudo para você{" "}
+                  <span className="inline" style={{ color: "#ef4444", textShadow: "0 0 20px rgba(239,68,68,0.4)" }}>passar na OAB</span>{" "}
+                  em um{" "}
+                  <span className="inline" style={{ color: "#ef4444", textShadow: "0 0 20px rgba(239,68,68,0.4)" }}>só lugar</span>.
+                </motion.h1>
               </div>
-            </div>
-          </div>
-        </div>
+              <motion.p
+                initial={false}
+                className="text-white/85 text-center lg:text-left text-[clamp(0.95rem,3vw,1.15rem)] leading-relaxed mb-2"
+                style={{ fontFamily: "'Georgia', 'Times New Roman', serif", letterSpacing: "0.01em", textShadow: "0 1px 6px rgba(0,0,0,0.4)" }}
+              >
+                Aulas, resumos, flashcards, simulados, vade mecum, peças da 2ª fase e muito mais — tudo para você{" "}
+                <span className="font-bold" style={{ color: "#ef4444" }}>dominar o Exame da Ordem</span>.
+              </motion.p>
 
-        {/* OAB laurel */}
-        <div className="relative z-10 pb-10 md:pb-14 px-5">
-          <OabLaurel />
-        </div>
-
-        {/* scroll indicator */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-primary-foreground/60 text-[10px] uppercase tracking-[0.3em] font-semibold flex flex-col items-center gap-1.5 pointer-events-none">
-          <span>Role para descobrir</span>
-          <span className="h-6 w-[1px] bg-gradient-to-b from-gold/80 to-transparent animate-pulse" />
-        </div>
-      </section>
-
-      {/* ============ POR QUE ============ */}
-      <section className="relative px-5 md:px-10 py-20 md:py-28">
-        <div className="max-w-6xl mx-auto">
-          <Reveal>
-            <SectionHeader eyebrow="Por que OAB na Risca" title="Aprovação não é sorte — é método." subtitle="Cada ferramenta foi construída para fazer você render mais em menos tempo." />
-          </Reveal>
-          <div className="mt-12 md:mt-16 grid md:grid-cols-3 gap-5 md:gap-6">
-            {[
-              { icon: BookOpen, title: "Conteúdo completo", desc: "Todas as 17 matérias da 1ª fase e as 5 áreas da 2ª fase, atualizadas com edital vigente." },
-              { icon: Brain, title: "Método comprovado", desc: "Trilhas guiadas, repetição espaçada com flashcards e simulados que recriam a pressão do exame." },
-              { icon: ShieldCheck, title: "Acompanhamento próximo", desc: "Cronograma personalizado, caderno de erros e indicadores de desempenho para você não estudar no escuro." },
-            ].map((f, i) => (
-              <Reveal key={f.title} delay={i * 0.12}>
-                <FeatureCard {...f} />
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ============ MÉTODO ============ */}
-      <section className="relative px-5 md:px-10 py-20 md:py-28 bg-gradient-to-b from-background via-[oklch(0.13_0.04_18)] to-background">
-        <div className="max-w-5xl mx-auto">
-          <Reveal>
-            <SectionHeader eyebrow="Nosso método" title="Da inscrição à aprovação em 4 passos." />
-          </Reveal>
-          <div className="mt-12 md:mt-16 grid md:grid-cols-2 gap-5 md:gap-6">
-            {[
-              { n: "01", title: "Diagnóstico inicial", desc: "Identificamos seu nível em cada matéria e suas dores reais de estudo." },
-              { n: "02", title: "Plano personalizado", desc: "Cronograma semanal pensado para sua rotina, seu tempo e o calendário do próximo exame." },
-              { n: "03", title: "Estudo guiado", desc: "Aulas curtas, resumos densos e flashcards diários — sempre na ordem certa." },
-              { n: "04", title: "Simulação e correção", desc: "Simulados cronometrados + caderno de erros para virar fraqueza em ponto forte." },
-            ].map((s, i) => (
-              <Reveal key={s.n} delay={i * 0.1}>
-                <StepCard {...s} />
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ============ FERRAMENTAS ============ */}
-      <section className="relative px-5 md:px-10 py-20 md:py-28">
-        <div className="max-w-6xl mx-auto">
-          <Reveal>
-            <SectionHeader eyebrow="O que você encontra" title="Toda a estrutura. Uma assinatura." />
-          </Reveal>
-          <div className="mt-12 md:mt-16 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {[
-              { icon: Target, label: "1ª Fase", sub: "Trilhas objetivas" },
-              { icon: FileText, label: "2ª Fase", sub: "Peças e discursivas" },
-              { icon: Library, label: "Biblioteca", sub: "Livros e PDFs" },
-              { icon: FileText, label: "Resumos", sub: "Por capítulo" },
-              { icon: Layers, label: "Flashcards", sub: "Repetição espaçada" },
-              { icon: Trophy, label: "Simulados", sub: "Treino cronometrado" },
-              { icon: FileText, label: "Provas OAB", sub: "Exames comentados" },
-              { icon: ScrollText, label: "Vade Mecum", sub: "Lei seca atualizada" },
-              { icon: CalendarDays, label: "Calendário", sub: "Datas oficiais" },
-              { icon: ClipboardList, label: "Cronograma", sub: "Plano semanal" },
-              { icon: Newspaper, label: "Notícias OAB", sub: "Atualidades do exame" },
-              { icon: GraduationCap, label: "Assistente IA", sub: "Tira-dúvidas 24h" },
-            ].map((t, i) => (
-              <Reveal key={t.label} delay={(i % 4) * 0.08}>
-                <ToolCard {...t} />
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ============ COUNTDOWN ============ */}
-      <section className="relative px-5 md:px-10 py-20 md:py-28">
-        <div className="max-w-4xl mx-auto">
-          <Reveal>
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-toga border border-gold/25 p-7 md:p-12 shadow-2xl shadow-black/50">
-              <div className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
-              <div className="relative text-center">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold/15 border border-gold/40 text-gold text-[10px] uppercase tracking-[0.22em] font-semibold mb-5">
-                  <Clock className="h-3 w-3" /> Sua chance está próxima
-                </div>
-                <h2 className="font-display font-extrabold text-3xl md:text-5xl text-primary-foreground tracking-tight text-balance">
-                  O próximo Exame da Ordem<br className="hidden md:block" /> está chegando.
-                </h2>
-                <p className="mt-3 text-primary-foreground/75 text-sm md:text-base">Faltam para a 1ª fase do 42º Exame:</p>
-                <div className="mt-7">
-                  <CountdownExame light hero />
-                </div>
-                <Link
-                  to="/login"
-                  className="mt-8 inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gold text-gold-foreground font-bold shadow-[0_14px_40px_-12px_oklch(0.78_0.13_80/0.7)] hover:scale-[1.03] active:scale-95 transition"
+              {/* CTA Iniciar jornada */}
+              <motion.div initial={false} className="flex flex-col items-center lg:items-start mt-5 mb-6">
+                <button
+                  onClick={handleStart}
+                  className="group relative flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-base font-bold text-white transition-all active:scale-[0.97] overflow-hidden"
+                  style={{
+                    background: "linear-gradient(135deg, #b91c1c, #991b1b)",
+                    boxShadow: "0 0 20px rgba(185,28,28,0.4), 0 4px 16px rgba(0,0,0,0.4)",
+                  }}
                 >
-                  Começar agora
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ============ DEPOIMENTOS ============ */}
-      <section className="relative px-5 md:px-10 py-20 md:py-28 bg-gradient-to-b from-background via-[oklch(0.13_0.04_18)] to-background">
-        <div className="max-w-6xl mx-auto">
-          <Reveal>
-            <SectionHeader eyebrow="Quem estuda com a gente" title="Histórias de quem passou na risca." />
-          </Reveal>
-          <div className="mt-12 md:mt-16 grid md:grid-cols-3 gap-5 md:gap-6">
-            {[
-              { name: "Marina S.", city: "Recife, PE", text: "Estudei 4 meses pela plataforma e passei na 1ª tentativa. O cronograma diário foi o que faltava na minha rotina." },
-              { name: "João R.", city: "Belo Horizonte, MG", text: "Os simulados são idênticos à prova real. Quando cheguei no exame, já estava acostumado com o ritmo." },
-              { name: "Carla F.", city: "Salvador, BA", text: "Os flashcards salvaram minha vida em direito tributário. Revisava no metrô e fixei tudo." },
-            ].map((d, i) => (
-              <Reveal key={d.name} delay={i * 0.12}>
-                <TestimonialCard {...d} />
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ============ FAQ ============ */}
-      <section className="relative px-5 md:px-10 py-20 md:py-28">
-        <div className="max-w-3xl mx-auto">
-          <Reveal>
-            <SectionHeader eyebrow="Dúvidas frequentes" title="Tudo que você precisa saber antes de começar." />
-          </Reveal>
-          <Reveal delay={0.15}>
-            <div className="mt-12 md:mt-14 rounded-3xl border border-gold/15 bg-card/60 backdrop-blur-sm p-2 md:p-3">
-              <Accordion type="single" collapsible className="w-full">
-                {[
-                  { q: "Preciso de algum conhecimento prévio?", a: "Não. A plataforma atende desde quem está começando até quem está na reta final. O diagnóstico inicial monta um plano sob medida para o seu nível." },
-                  { q: "O conteúdo cobre a 1ª e a 2ª fase?", a: "Sim. Temos trilhas completas para as 17 matérias da 1ª fase e as 5 áreas da 2ª fase (Civil, Penal, Trabalho, Tributário e Empresarial), com peças comentadas." },
-                  { q: "Posso estudar pelo celular?", a: "Sim. A plataforma é totalmente responsiva — aulas, resumos, flashcards e simulados funcionam perfeitamente no celular, tablet ou desktop." },
-                  { q: "Com que frequência o conteúdo é atualizado?", a: "Toda mudança no edital, súmulas, jurisprudência e legislação relevante é incorporada antes do próximo exame." },
-                  { q: "Como funciona o suporte?", a: "Você tem suporte direto via WhatsApp para dúvidas operacionais e o Assistente IA disponível 24h para dúvidas jurídicas." },
-                ].map((item, i) => (
-                  <AccordionItem key={i} value={`item-${i}`} className="border-gold/10">
-                    <AccordionTrigger className="px-4 md:px-5 py-4 text-left font-semibold text-foreground hover:text-gold hover:no-underline">
-                      {item.q}
-                    </AccordionTrigger>
-                    <AccordionContent className="px-4 md:px-5 pb-4 text-muted-foreground leading-relaxed">
-                      {item.a}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ============ CTA FINAL ============ */}
-      <section className="relative px-5 md:px-10 pb-20 md:pb-28">
-        <div className="max-w-5xl mx-auto">
-          <Reveal>
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-toga border border-gold/30 p-8 md:p-14 text-center shadow-2xl shadow-black/50">
-              <div className="absolute inset-0 opacity-[0.06] pointer-events-none" style={{
-                backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
-                backgroundSize: "22px 22px",
-              }} />
-              <div className="absolute -top-24 -left-16 h-72 w-72 rounded-full bg-gold/25 blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
-              <div className="relative">
-                <h2 className="font-display font-extrabold text-3xl md:text-5xl text-primary-foreground tracking-tight text-balance">
-                  Sua aprovação começa <span className="text-gold">hoje</span>.
-                </h2>
-                <p className="mt-4 text-primary-foreground/80 text-base md:text-lg max-w-xl mx-auto">
-                  Crie sua conta gratuita, faça seu diagnóstico e receba seu plano personalizado em menos de 5 minutos.
+                  <span
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.2) 45%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.2) 55%, transparent 70%)",
+                      animation: "shimmerSlide 3s ease-in-out infinite",
+                    }}
+                  />
+                  <span className="relative z-10 flex items-center gap-2">
+                    Iniciar jornada
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </button>
+                <p className="text-white text-xs mt-2.5 tracking-wide font-medium">
+                  ⭐ +10.000 estudantes já estudam com a gente
                 </p>
-                <Link
-                  to="/login"
-                  className="mt-8 inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gold text-gold-foreground font-bold text-base md:text-lg shadow-[0_18px_50px_-12px_oklch(0.78_0.13_80/0.8)] hover:scale-[1.03] active:scale-95 transition"
-                >
-                  Iniciar jornada
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-                <div className="mt-5 flex items-center justify-center gap-2 text-sm text-primary-foreground/70">
-                  <CheckCircle2 className="h-4 w-4 text-gold" />
-                  Sem cartão de crédito · Comece em 1 minuto
+              </motion.div>
+
+              {/* Louros + V-shape overlay */}
+              <motion.div
+                initial={false}
+                className="relative w-full max-w-[280px] md:max-w-[400px] lg:max-w-[320px] mx-auto my-2"
+              >
+                <img
+                  src={lourosDourados}
+                  alt=""
+                  className="w-full h-auto object-contain pointer-events-none select-none"
+                  loading="eager"
+                  fetchPriority="high"
+                  decoding="sync"
+                  style={{ filter: "drop-shadow(0 0 12px rgba(212,168,75,0.3))" }}
+                />
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <div className="flex justify-between w-full -mt-2 px-1">
+                    {["1ª Fase", "2ª Fase"].map((word, i) => (
+                      <span
+                        key={word}
+                        className="text-[clamp(1rem,3.2vw,1.5rem)] font-black text-white uppercase whitespace-nowrap"
+                        style={{
+                          fontFamily: "'Georgia', 'Times New Roman', serif",
+                          animation: `neonPulseText 3s ease-in-out ${i * 1}s infinite`,
+                          textShadow: "0 0 20px rgba(212,168,75,0.5), 0 2px 8px rgba(0,0,0,0.6)",
+                        }}
+                      >
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+
+                  <svg viewBox="0 0 400 36" className="w-[80%] h-8" preserveAspectRatio="none">
+                    <line x1="50" y1="0" x2="200" y2="32" stroke="url(#goldLine)" strokeWidth="3.5" style={{ animation: "lineGlow 3s ease-in-out 0.5s infinite" }} />
+                    <line x1="350" y1="0" x2="200" y2="32" stroke="url(#goldLine)" strokeWidth="3.5" style={{ animation: "lineGlow 3s ease-in-out 1.5s infinite" }} />
+                    <defs>
+                      <linearGradient id="goldLine" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="transparent" />
+                        <stop offset="50%" stopColor="#d4a84b" />
+                        <stop offset="100%" stopColor="transparent" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+
+                  <span
+                    className="text-[clamp(1.8rem,7vw,2.6rem)] font-black text-white uppercase"
+                    style={{
+                      fontFamily: "'Georgia', 'Times New Roman', serif",
+                      animation: "neonPulseText 3s ease-in-out 2s infinite",
+                      textShadow: "0 0 25px rgba(212,168,75,0.6), 0 0 50px rgba(212,168,75,0.2), 0 2px 8px rgba(0,0,0,0.6)",
+                    }}
+                  >
+                    OAB
+                  </span>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </Reveal>
-        </div>
-      </section>
 
-      {/* ============ FOOTER ============ */}
-      <footer className="px-5 md:px-10 py-10 border-t border-gold/10">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-gradient-gold grid place-items-center">
-              <span className="font-display font-extrabold text-gold-foreground">O</span>
-            </div>
-            <span className="font-display font-semibold text-foreground">OAB na Risca</span>
+            <BadgeCarousel />
+
+            <motion.p
+              initial={false}
+              className="relative text-center text-[clamp(1.1rem,3.5vw,1.4rem)] font-semibold tracking-wide mb-4 overflow-hidden"
+              style={{
+                fontFamily: "'Georgia', 'Times New Roman', serif",
+                color: "rgba(255,255,255,0.9)",
+                textShadow: "0 0 12px rgba(255,255,255,0.3), 0 0 30px rgba(255,255,255,0.1)",
+              }}
+            >
+              <span className="relative z-10">Alcance a aprovação no Exame da Ordem.</span>
+              <span
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.4) 55%, transparent 70%)",
+                  animation: "shimmerSlide 3s ease-in-out infinite",
+                }}
+              />
+            </motion.p>
+          </motion.div>
+
+          <DesktopMockupRotator />
+        </div>
+
+        {/* Marquee universidades */}
+        <div className="relative z-10 bg-black/60 py-3">
+          <p className="text-center text-[9px] uppercase tracking-widest mb-3" style={{ color: "rgba(255,255,255,0.85)", textShadow: "0 0 12px rgba(255,255,255,0.5)" }}>
+            Aprovado por estudantes de todo o Brasil
+          </p>
+          <div
+            style={{
+              WebkitMaskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+              maskImage: "linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)",
+            }}
+          >
+            <CSSInfiniteSlider gap={32} duration={28}>
+              {FACULDADES.map((uni) => (
+                <span key={uni} className="flex items-center gap-2 text-white/60 text-sm font-semibold shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500/80 inline-block" />
+                  {uni}
+                </span>
+              ))}
+            </CSSInfiniteSlider>
           </div>
-          <p className="text-xs">© {new Date().getFullYear()} OAB na Risca. Todos os direitos reservados.</p>
         </div>
-      </footer>
-    </div>
-  );
-}
+      </motion.div>
 
-function SectionHeader({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
-  return (
-    <div className="text-center max-w-3xl mx-auto">
-      <p className="text-[10px] md:text-xs uppercase tracking-[0.28em] text-gold font-bold mb-3">{eyebrow}</p>
-      <h2 className="font-display font-extrabold text-3xl md:text-5xl text-foreground tracking-tight text-balance leading-[1.08]">{title}</h2>
-      {subtitle && <p className="mt-4 text-muted-foreground text-base md:text-lg leading-relaxed text-balance">{subtitle}</p>}
-    </div>
-  );
-}
-
-function FeatureCard({ icon: Icon, title, desc }: { icon: typeof BookOpen; title: string; desc: string }) {
-  return (
-    <div className="group relative h-full rounded-3xl border border-gold/15 bg-card/70 backdrop-blur-sm p-7 md:p-8 hover:border-gold/40 hover:-translate-y-1 transition-all shadow-lg shadow-black/30">
-      <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-gold/30 to-gold/10 border border-gold/40 grid place-items-center mb-5 group-hover:scale-110 transition-transform">
-        <Icon className="h-5 w-5 text-gold" strokeWidth={2} />
+      {/* ── CARD PERSUASIVO ── */}
+      <div className="bg-black px-6 lg:px-12 pt-10 pb-2">
+        <div className="max-w-4xl mx-auto">
+          <div
+            className="rounded-2xl px-6 py-5 relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, rgba(212,168,75,0.12) 0%, rgba(0,0,0,0.85) 100%)",
+              border: "1px solid rgba(212,168,75,0.22)",
+            }}
+          >
+            <div className="absolute top-0 left-0 w-1 h-full rounded-l-2xl" style={{ background: "linear-gradient(to bottom, transparent, #d4a84b, #fbbf24, #d4a84b, transparent)", boxShadow: "0 0 10px 4px rgba(212,168,75,0.8), 0 0 22px 8px rgba(212,168,75,0.35)" }} />
+            <p className="text-white font-black text-[17px] leading-snug mb-2" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+              O que é o OAB na Risca?
+            </p>
+            <p className="text-white/60 text-[13px] leading-relaxed">
+              O OAB na Risca nasce para guiar você da inscrição até a carteirinha. Quando há método, há aprovação. Aqui o{" "}
+              <span className="font-bold" style={{ color: "#d4a84b" }}>conteúdo certo encontra sua dedicação</span>{" "}
+              e transforma estudo em conquista.
+            </p>
+          </div>
+        </div>
       </div>
-      <h3 className="font-display font-bold text-xl text-foreground mb-2.5">{title}</h3>
-      <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
-    </div>
-  );
-}
 
-function StepCard({ n, title, desc }: { n: string; title: string; desc: string }) {
-  return (
-    <div className="relative rounded-3xl border border-gold/15 bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm p-7 md:p-8 hover:border-gold/40 transition-all">
-      <span className="absolute top-5 right-6 font-display font-extrabold text-5xl md:text-6xl text-gold/15 leading-none select-none">{n}</span>
-      <h3 className="relative font-display font-bold text-xl text-foreground mb-2.5">{title}</h3>
-      <p className="relative text-muted-foreground text-sm leading-relaxed max-w-md">{desc}</p>
-    </div>
-  );
-}
+      {/* ───── APP SHOWCASE ───── */}
+      <Suspense fallback={<div className="h-[600px]" aria-hidden />}>
+        <AppShowcaseSection />
+      </Suspense>
 
-function ToolCard({ icon: Icon, label, sub }: { icon: typeof BookOpen; label: string; sub: string }) {
-  return (
-    <div className="group relative h-full rounded-2xl border border-gold/12 bg-gradient-to-br from-[oklch(0.22_0.06_18)] to-[oklch(0.16_0.04_18)] p-4 md:p-5 hover:border-gold/35 hover:-translate-y-1 transition-all shadow-md shadow-black/40">
-      <div className="h-10 w-10 rounded-xl bg-gold/15 border border-gold/25 grid place-items-center mb-3 group-hover:bg-gold/25 transition-colors">
-        <Icon className="h-4 w-4 text-gold" strokeWidth={2} />
-      </div>
-      <p className="font-display font-semibold text-[15px] text-primary-foreground tracking-tight leading-tight">{label}</p>
-      <p className="text-[11px] text-primary-foreground/55 mt-1">{sub}</p>
-    </div>
-  );
-}
+      {/* ───── TESTIMONIALS ───── */}
+      <Suspense fallback={<div className="h-[500px]" aria-hidden />}>
+        <TestimonialsSection />
+      </Suspense>
 
-function TestimonialCard({ name, city, text }: { name: string; city: string; text: string }) {
-  return (
-    <div className="h-full rounded-3xl border border-gold/15 bg-card/70 backdrop-blur-sm p-7 md:p-8 hover:border-gold/35 transition-all">
-      <div className="flex gap-0.5 mb-4">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Star key={i} className="h-4 w-4 fill-gold text-gold" />
-        ))}
-      </div>
-      <p className="text-foreground/90 leading-relaxed text-[15px] mb-5">"{text}"</p>
-      <div className="pt-4 border-t border-gold/10">
-        <p className="font-display font-bold text-foreground">{name}</p>
-        <p className="text-xs text-muted-foreground">{city}</p>
-      </div>
-    </div>
-  );
-}
+      {/* ───── MOCKUP SLIDESHOW (mobile) ───── */}
+      <MockupSlideshow />
 
-function OabLaurel() {
-  return (
-    <div className="max-w-md mx-auto flex items-center justify-center gap-3 md:gap-5">
-      <svg viewBox="0 0 100 120" className="h-20 md:h-28 text-gold/90 -scale-x-100" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-        <path d="M85 110 Q 50 90, 30 50 Q 22 25, 30 10" />
-        {Array.from({ length: 7 }).map((_, i) => {
-          const t = i / 7;
-          const x = 85 - 55 * t * t;
-          const y = 110 - 100 * t;
-          return <ellipse key={i} cx={x - 8} cy={y - 4} rx="9" ry="4" transform={`rotate(${-40 + t * 30} ${x - 8} ${y - 4})`} fill="currentColor" opacity="0.85" />;
-        })}
-      </svg>
-      <div className="text-center px-2">
-        <p className="font-display font-extrabold text-4xl md:text-6xl text-gold tracking-[0.08em] drop-shadow-[0_2px_18px_oklch(0.78_0.13_80/0.55)]">OAB</p>
-        <p className="text-[9px] md:text-[10px] uppercase tracking-[0.32em] text-primary-foreground/70 font-semibold mt-1.5">Exame da Ordem</p>
+      {/* ───── FEATURES SECTION ───── */}
+      <div className="bg-black px-6 lg:px-12 pt-10 pb-14">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+            <div className="h-px mb-10 mx-auto max-w-[200px]" style={{ background: "linear-gradient(to right, transparent, rgba(251,191,36,0.6), transparent)" }} />
+            <h2 className="text-2xl font-black text-white text-center mb-2" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+              O que você vai ter:
+            </h2>
+            <p className="text-center text-white/45 text-sm mb-10">para passar na OAB com método, não com sorte</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 mb-12">
+              {features.map((f, i) => (
+                <motion.div
+                  key={f.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1, duration: 0.5 }}
+                  className="flex items-start gap-4 text-left"
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.25)" }}>
+                    <f.icon className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white mb-1">{f.label}</h3>
+                    <p className="text-white/45 text-sm leading-relaxed">{f.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleStart}
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-full text-base font-extrabold text-black transition-all active:scale-[0.97]"
+                style={{ background: "#fff", boxShadow: "0 0 30px rgba(255,255,255,0.2)" }}
+              >
+                <Smartphone className="w-5 h-5 text-amber-500" />
+                Acessar App
+              </button>
+              <button
+                onClick={() => handleChoice("login")}
+                className="w-full py-4 rounded-2xl text-sm font-semibold text-white/50 hover:text-white transition-colors border border-white/10"
+              >
+                Já sou aluno →
+              </button>
+            </div>
+          </motion.div>
+        </div>
       </div>
-      <svg viewBox="0 0 100 120" className="h-20 md:h-28 text-gold/90" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-        <path d="M85 110 Q 50 90, 30 50 Q 22 25, 30 10" />
-        {Array.from({ length: 7 }).map((_, i) => {
-          const t = i / 7;
-          const x = 85 - 55 * t * t;
-          const y = 110 - 100 * t;
-          return <ellipse key={i} cx={x - 8} cy={y - 4} rx="9" ry="4" transform={`rotate(${-40 + t * 30} ${x - 8} ${y - 4})`} fill="currentColor" opacity="0.85" />;
-        })}
-      </svg>
+
+      {showDemoVideo && (
+        <Suspense fallback={null}>
+          <DemoVideoModal isOpen={showDemoVideo} onClose={() => setShowDemoVideo(false)} />
+        </Suspense>
+      )}
+
+      <WelcomeAuthModal open={authOpen} onClose={() => setAuthOpen(false)} initialTab={authTab} sidePanel={isDesktop} />
+      <StartChoiceSheet open={choiceOpen} onClose={() => setChoiceOpen(false)} onChoose={handleChoice} />
+      <SupportSheet open={supportOpen} onClose={() => setSupportOpen(false)} />
     </div>
   );
 }
