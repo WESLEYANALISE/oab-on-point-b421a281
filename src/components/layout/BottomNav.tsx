@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { MenuDrawer, MenuTriggerButton } from "@/components/layout/MenuDrawer";
 
 const left = [
-  { to: "/app", label: "Início", icon: Home, exact: true },
+  { to: "/inicio", label: "Início", icon: Home, exact: true },
   { to: "/materias", label: "Matérias", icon: BookOpen },
 ] as const;
 

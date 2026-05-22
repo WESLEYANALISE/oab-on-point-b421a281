@@ -7,7 +7,7 @@ import { resolverVoltar } from "@/lib/voltar";
 export function MobileHeader() {
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
-  const isHome = pathname === "/" || pathname === "/app";
+  const isHome = pathname === "/" || pathname === "/inicio";
   const destino = resolverVoltar(pathname, search as Record<string, unknown>);
   const [scrolled, setScrolled] = useState(false);
 
@@ -25,7 +25,7 @@ export function MobileHeader() {
     >
       <div className="flex items-center justify-between px-4 h-16 gap-2">
         {isHome ? (
-          <Link to="/app" className="flex items-center gap-2 tap-feedback min-w-0">
+          <Link to="/inicio" className="flex items-center gap-2 tap-feedback min-w-0">
             <div className="h-8 w-8 shrink-0 rounded-md bg-gradient-toga grid place-items-center">
               <Scale className="h-4 w-4 text-primary-foreground" />
             </div>
@@ -74,7 +74,7 @@ export function MobileHeader() {
           ) : (
             <button
               type="button"
-              onClick={() => navigate({ to: "/app" })}
+              onClick={() => navigate({ to: "/inicio" })}
               className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-white/10 text-white border border-white/20 text-sm font-medium hover:bg-white/15 tap-feedback"
               aria-label="Ir para o início"
             >

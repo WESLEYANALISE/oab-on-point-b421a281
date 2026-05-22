@@ -40,7 +40,7 @@ function ResetPasswordPage() {
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Senha atualizada!");
-    navigate({ to: "/app" });
+    navigate({ to: "/inicio" });
   }
 
   return (

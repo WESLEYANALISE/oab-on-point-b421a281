@@ -12,7 +12,7 @@ export type DestinoVoltar = {
 
 // Dicionário canônico raiz -> nome humano
 const NOME_RAIZ: Record<string, string> = {
-  "/app": "Início",
+  "/inicio": "Início",
   "/resumos": "Resumos",
   "/aulas": "Aulas",
   "/biblioteca": "Biblioteca",
@@ -68,7 +68,7 @@ export function resolverVoltar(
   // /resumos?area=X -> /resumos
   if (p === "/resumos") {
     if (sp.area) return { to: "/resumos", label: "Resumos" };
-    return { to: "/app", label: "Início" };
+    return { to: "/inicio", label: "Início" };
   }
   // /resumos/capitulo/:livroId/:ordem -> /resumos/:livroId
   const mCap = p.match(/^\/resumos\/capitulo\/([^/]+)\/[^/]+$/);
@@ -85,7 +85,7 @@ export function resolverVoltar(
   if (mAulaLivro) return { to: `/aulas/${mAulaLivro[1]}`, label: nomeMateria(mAulaLivro[1]) };
   // /aulas/:materia -> /aulas
   if (/^\/aulas\/[^/]+$/.test(p)) return { to: "/aulas", label: "Aulas" };
-  if (p === "/aulas") return { to: "/app", label: "Início" };
+  if (p === "/aulas") return { to: "/inicio", label: "Início" };
 
   // ===== Biblioteca =====
   const mBibLer = p.match(/^\/biblioteca\/([^/]+)\/([^/]+)\/ler$/);
@@ -93,7 +93,7 @@ export function resolverVoltar(
   const mBibBook = p.match(/^\/biblioteca\/([^/]+)\/[^/]+$/);
   if (mBibBook) return { to: `/biblioteca/${mBibBook[1]}`, label: "Categoria" };
   if (/^\/biblioteca\/[^/]+$/.test(p)) return { to: "/biblioteca", label: "Biblioteca" };
-  if (p === "/biblioteca") return { to: "/app", label: "Início" };
+  if (p === "/biblioteca") return { to: "/inicio", label: "Início" };
 
   // ===== Vade-Mécum =====
   if (/^\/vade-mecum\/cf\/[^/]+$/.test(p)) return { to: "/vade-mecum/cf", label: "Constituição" };
@@ -101,12 +101,12 @@ export function resolverVoltar(
   if (/^\/vade-mecum\/estatutos\/[^/]+$/.test(p)) return { to: "/vade-mecum/estatutos", label: "Estatutos" };
   if (p === "/vade-mecum/estatutos") return { to: "/vade-mecum", label: "Vade-Mécum" };
   if (/^\/vade-mecum\/[^/]+$/.test(p)) return { to: "/vade-mecum", label: "Vade-Mécum" };
-  if (p === "/vade-mecum") return { to: "/app", label: "Início" };
+  if (p === "/vade-mecum") return { to: "/inicio", label: "Início" };
 
   // ===== OAB =====
-  if (p === "/oab/primeira-fase" || p === "/oab/segunda-fase") return { to: "/app", label: "Início" };
+  if (p === "/oab/primeira-fase" || p === "/oab/segunda-fase") return { to: "/inicio", label: "Início" };
   if (/^\/oab\/(progresso|reforco|caderno-erros)$/.test(p)) return { to: "/oab/primeira-fase", label: "1ª Fase" };
-  if (/^\/oab\/.+$/.test(p)) return { to: "/app", label: "Início" };
+  if (/^\/oab\/.+$/.test(p)) return { to: "/inicio", label: "Início" };
 
   // ===== Simulados =====
   if (/^\/simulados\/[^/]+\/resultado\/[^/]+$/.test(p)) return { to: "/simulados", label: "Simulados" };
@@ -115,11 +115,11 @@ export function resolverVoltar(
     return { to: `/simulados/${slug}`, label: "Simulado" };
   }
   if (/^\/simulados\/[^/]+$/.test(p)) return { to: "/simulados", label: "Simulados" };
-  if (p === "/simulados") return { to: "/app", label: "Início" };
+  if (p === "/simulados") return { to: "/inicio", label: "Início" };
 
   // ===== Provas =====
   if (/^\/provas\/[^/]+$/.test(p)) return { to: "/provas", label: "Provas" };
-  if (p === "/provas") return { to: "/app", label: "Início" };
+  if (p === "/provas") return { to: "/inicio", label: "Início" };
 
   // ===== Notícias / Blog =====
   if (/^\/noticias\/[^/]+$/.test(p)) return { to: "/noticias", label: "Notícias" };
@@ -133,7 +133,7 @@ export function resolverVoltar(
 
   // ===== Admin =====
   if (/^\/admin\/.+/.test(p)) return { to: "/admin", label: "Admin" };
-  if (p === "/admin") return { to: "/app", label: "Início" };
+  if (p === "/admin") return { to: "/inicio", label: "Início" };
 
   // ===== Genérico: sobe um nível =====
   const idx = p.lastIndexOf("/");
@@ -142,5 +142,5 @@ export function resolverVoltar(
     return { to: pai, label: rotuloRaiz(pai) };
   }
 
-  return { to: "/app", label: "Início" };
+  return { to: "/inicio", label: "Início" };
 }

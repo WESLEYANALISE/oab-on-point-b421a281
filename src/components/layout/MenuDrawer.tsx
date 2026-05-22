@@ -9,7 +9,7 @@ const baseGroups = [
   {
     label: "Navegar",
     items: [
-      { to: "/app", label: "Início", icon: Home },
+      { to: "/inicio", label: "Início", icon: Home },
       { to: "/materias", label: "Matérias", icon: BookOpen },
       { to: "/reta-final", label: "Reta Final", icon: Award },
       { to: "/progresso", label: "Meu Progresso", icon: TrendingUp },

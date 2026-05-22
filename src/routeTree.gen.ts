@@ -23,6 +23,7 @@ import { Route as AppPlanoEstudoRouteImport } from './routes/_app.plano-estudo'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNoticiasRouteImport } from './routes/_app.noticias'
 import { Route as AppMateriasRouteImport } from './routes/_app.materias'
+import { Route as AppInicioRouteImport } from './routes/_app.inicio'
 import { Route as AppFlashcardsTemaRouteImport } from './routes/_app.flashcards-tema'
 import { Route as AppFlashcardsRouteImport } from './routes/_app.flashcards'
 import { Route as AppCadernoErrosRouteImport } from './routes/_app.caderno-erros'
@@ -31,7 +32,6 @@ import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
-import { Route as AppAppRouteImport } from './routes/_app.app'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppVadeMecumIndexRouteImport } from './routes/_app.vade-mecum.index'
 import { Route as AppSimuladosIndexRouteImport } from './routes/_app.simulados.index'
@@ -154,6 +154,11 @@ const AppMateriasRoute = AppMateriasRouteImport.update({
   path: '/materias',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInicioRoute = AppInicioRouteImport.update({
+  id: '/inicio',
+  path: '/inicio',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppFlashcardsTemaRoute = AppFlashcardsTemaRouteImport.update({
   id: '/flashcards-tema',
   path: '/flashcards-tema',
@@ -192,11 +197,6 @@ const AppAudioaulasRoute = AppAudioaulasRouteImport.update({
 const AppAssistenteRoute = AppAssistenteRouteImport.update({
   id: '/assistente',
   path: '/assistente',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAppRoute = AppAppRouteImport.update({
-  id: '/app',
-  path: '/app',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminRoute = AppAdminRouteImport.update({
@@ -479,7 +479,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/admin': typeof AppAdminRouteWithChildren
-  '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRouteWithChildren
@@ -488,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/caderno-erros': typeof AppCadernoErrosRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/flashcards-tema': typeof AppFlashcardsTemaRoute
+  '/inicio': typeof AppInicioRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
   '/perfil': typeof AppPerfilRoute
@@ -554,13 +554,13 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
   '/audioaulas': typeof AppAudioaulasRoute
   '/blog': typeof AppBlogRouteWithChildren
   '/caderno-erros': typeof AppCadernoErrosRoute
   '/flashcards': typeof AppFlashcardsRoute
   '/flashcards-tema': typeof AppFlashcardsTemaRoute
+  '/inicio': typeof AppInicioRoute
   '/materias': typeof AppMateriasRouteWithChildren
   '/noticias': typeof AppNoticiasRouteWithChildren
   '/perfil': typeof AppPerfilRoute
@@ -626,7 +626,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_app/admin': typeof AppAdminRouteWithChildren
-  '/_app/app': typeof AppAppRoute
   '/_app/assistente': typeof AppAssistenteRoute
   '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRouteWithChildren
@@ -635,6 +634,7 @@ export interface FileRoutesById {
   '/_app/caderno-erros': typeof AppCadernoErrosRoute
   '/_app/flashcards': typeof AppFlashcardsRoute
   '/_app/flashcards-tema': typeof AppFlashcardsTemaRoute
+  '/_app/inicio': typeof AppInicioRoute
   '/_app/materias': typeof AppMateriasRouteWithChildren
   '/_app/noticias': typeof AppNoticiasRouteWithChildren
   '/_app/perfil': typeof AppPerfilRoute
@@ -704,7 +704,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/admin'
-    | '/app'
     | '/assistente'
     | '/audioaulas'
     | '/aulas'
@@ -713,6 +712,7 @@ export interface FileRouteTypes {
     | '/caderno-erros'
     | '/flashcards'
     | '/flashcards-tema'
+    | '/inicio'
     | '/materias'
     | '/noticias'
     | '/perfil'
@@ -779,13 +779,13 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/reset-password'
     | '/signup'
-    | '/app'
     | '/assistente'
     | '/audioaulas'
     | '/blog'
     | '/caderno-erros'
     | '/flashcards'
     | '/flashcards-tema'
+    | '/inicio'
     | '/materias'
     | '/noticias'
     | '/perfil'
@@ -850,7 +850,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_app/admin'
-    | '/_app/app'
     | '/_app/assistente'
     | '/_app/audioaulas'
     | '/_app/aulas'
@@ -859,6 +858,7 @@ export interface FileRouteTypes {
     | '/_app/caderno-erros'
     | '/_app/flashcards'
     | '/_app/flashcards-tema'
+    | '/_app/inicio'
     | '/_app/materias'
     | '/_app/noticias'
     | '/_app/perfil'
@@ -1033,6 +1033,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMateriasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/inicio': {
+      id: '/_app/inicio'
+      path: '/inicio'
+      fullPath: '/inicio'
+      preLoaderRoute: typeof AppInicioRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/flashcards-tema': {
       id: '/_app/flashcards-tema'
       path: '/flashcards-tema'
@@ -1087,13 +1094,6 @@ declare module '@tanstack/react-router' {
       path: '/assistente'
       fullPath: '/assistente'
       preLoaderRoute: typeof AppAssistenteRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/app': {
-      id: '/_app/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppAppRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin': {
@@ -1611,7 +1611,6 @@ const AppNoticiasRouteWithChildren = AppNoticiasRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
-  AppAppRoute: typeof AppAppRoute
   AppAssistenteRoute: typeof AppAssistenteRoute
   AppAudioaulasRoute: typeof AppAudioaulasRoute
   AppAulasRoute: typeof AppAulasRouteWithChildren
@@ -1620,6 +1619,7 @@ interface AppRouteChildren {
   AppCadernoErrosRoute: typeof AppCadernoErrosRoute
   AppFlashcardsRoute: typeof AppFlashcardsRoute
   AppFlashcardsTemaRoute: typeof AppFlashcardsTemaRoute
+  AppInicioRoute: typeof AppInicioRoute
   AppMateriasRoute: typeof AppMateriasRouteWithChildren
   AppNoticiasRoute: typeof AppNoticiasRouteWithChildren
   AppPerfilRoute: typeof AppPerfilRoute
@@ -1657,7 +1657,6 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
-  AppAppRoute: AppAppRoute,
   AppAssistenteRoute: AppAssistenteRoute,
   AppAudioaulasRoute: AppAudioaulasRoute,
   AppAulasRoute: AppAulasRouteWithChildren,
@@ -1666,6 +1665,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCadernoErrosRoute: AppCadernoErrosRoute,
   AppFlashcardsRoute: AppFlashcardsRoute,
   AppFlashcardsTemaRoute: AppFlashcardsTemaRoute,
+  AppInicioRoute: AppInicioRoute,
   AppMateriasRoute: AppMateriasRouteWithChildren,
   AppNoticiasRoute: AppNoticiasRouteWithChildren,
   AppPerfilRoute: AppPerfilRoute,
