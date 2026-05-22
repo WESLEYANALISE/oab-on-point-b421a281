@@ -7,9 +7,23 @@ import {
   ChevronRight,
   Calendar as CalendarIcon,
   ChevronDown,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { listResenhaMes } from "@/lib/resenha-sync.functions";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  PRESETS,
+  LEIS_IMPORTANTES,
+  matchPreset,
+  matchLeisAcompanhadas,
+  type PresetKey,
+} from "@/lib/atualizacoes-filtros";
+
+const STORAGE_LEIS = "oab:atualizacoes:leis-acompanhadas";
+
 
 export const Route = createFileRoute("/_app/atualizacoes-leis/")({
   head: () => ({
@@ -50,6 +64,29 @@ function AtualizacoesLeisPage() {
   const [diaSel, setDiaSel] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<string>("todos");
   const [calendarioAberto, setCalendarioAberto] = useState(false);
+  const [painelAberto, setPainelAberto] = useState(false);
+  const [preset, setPreset] = useState<PresetKey>("todos");
+  const [leisAcompanhadas, setLeisAcompanhadas] = useState<string[]>([]);
+
+  // hidrata leis acompanhadas do localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_LEIS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setLeisAcompanhadas(parsed.filter((s) => typeof s === "string"));
+      }
+    } catch {}
+  }, []);
+
+  // persiste
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_LEIS, JSON.stringify(leisAcompanhadas));
+    } catch {}
+  }, [leisAcompanhadas]);
+
+
 
   const listMes = useServerFn(listResenhaMes);
 
@@ -91,10 +128,19 @@ function AtualizacoesLeisPage() {
     });
   }, [ano, mes, contagemPorDia]);
 
+  const aplicaFiltros = (a: { tipo: string; numero: string; ementa: string }) =>
+    (filtro === "todos" || a.tipo === filtro) &&
+    matchPreset(a, preset) &&
+    matchLeisAcompanhadas(a, leisAcompanhadas);
+
   const atosDoDia = useMemo(() => {
     if (!diaSel) return [];
-    return atos.filter((a) => a.data_dou === diaSel && (filtro === "todos" || a.tipo === filtro));
-  }, [atos, diaSel, filtro]);
+    return atos.filter((a) => a.data_dou === diaSel && aplicaFiltros(a));
+  }, [atos, diaSel, filtro, preset, leisAcompanhadas]);
+
+  const filtroAtivo = preset !== "todos" || leisAcompanhadas.length > 0 || filtro !== "todos";
+  const presetLabel = PRESETS.find((p) => p.key === preset)?.label ?? "Todos";
+
 
   const diaSelInfo = useMemo(
     () => diasDoMes.find((d) => d.iso === diaSel) ?? null,
@@ -187,23 +233,33 @@ function AtualizacoesLeisPage() {
         )}
       </div>
 
-      {/* Filtros */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1">
-        {FILTROS.map((f) => (
+      {/* Indicador de filtros ativos */}
+      {filtroAtivo && (
+        <div className="flex items-center gap-2 flex-wrap text-xs">
+          <span className="text-muted-foreground">Filtrando por:</span>
+          {preset !== "todos" && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gold/15 text-gold border border-gold/30 font-semibold">
+              {presetLabel}
+            </span>
+          )}
+          {filtro !== "todos" && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-card border border-border text-foreground font-semibold">
+              {FILTROS.find((f) => f.key === filtro)?.label}
+            </span>
+          )}
+          {leisAcompanhadas.length > 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-card border border-border text-foreground font-semibold">
+              {leisAcompanhadas.length} {leisAcompanhadas.length === 1 ? "lei acompanhada" : "leis acompanhadas"}
+            </span>
+          )}
           <button
-            key={f.key}
-            onClick={() => setFiltro(f.key)}
-            className={cn(
-              "shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
-              filtro === f.key
-                ? "bg-foreground text-background border-foreground"
-                : "bg-card text-muted-foreground border-border hover:text-foreground",
-            )}
+            onClick={() => { setPreset("todos"); setFiltro("todos"); setLeisAcompanhadas([]); }}
+            className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
           >
-            {f.label}
+            <X className="h-3 w-3" /> limpar
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
       {/* Lista */}
       {q.isLoading ? (
@@ -222,7 +278,7 @@ function AtualizacoesLeisPage() {
             text={
               diaSelInfo?.status === "sem-atos"
                 ? `Não houve publicação de atos no D.O.U. em ${formatarDia(diaSel)}.`
-                : `Nenhum ato ${filtro !== "todos" ? "deste tipo " : ""}em ${formatarDia(diaSel)}.`
+                : `Nenhum ato corresponde aos filtros em ${formatarDia(diaSel)}.`
             }
           />
         ) : (
@@ -231,11 +287,43 @@ function AtualizacoesLeisPage() {
           </ul>
         )
       ) : (
-        <UltimosAtos atos={atos.filter((a) => filtro === "todos" || a.tipo === filtro).slice(0, 20)} />
+        <UltimosAtos atos={atos.filter(aplicaFiltros).slice(0, 20)} />
       )}
+
+      {/* FAB de filtros */}
+      <button
+        onClick={() => setPainelAberto(true)}
+        aria-label="Abrir filtros"
+        className={cn(
+          "fixed z-40 bottom-24 right-4 md:bottom-6 md:right-6",
+          "h-14 w-14 rounded-full bg-gold text-gold-foreground shadow-lg",
+          "grid place-items-center hover:scale-105 active:scale-95 transition-transform",
+          "shadow-[0_10px_30px_-8px_color-mix(in_oklab,var(--gold)_50%,transparent)]",
+        )}
+      >
+        <SlidersHorizontal className="h-5 w-5" />
+        {filtroAtivo && (
+          <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-400 ring-2 ring-background" />
+        )}
+      </button>
+
+      <FiltrosPanel
+        aberto={painelAberto}
+        onClose={() => setPainelAberto(false)}
+        preset={preset}
+        onPreset={setPreset}
+        filtroTipo={filtro}
+        onFiltroTipo={setFiltro}
+        leisAcompanhadas={leisAcompanhadas}
+        onToggleLei={(slug) =>
+          setLeisAcompanhadas((prev) => (prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]))
+        }
+        onLimpar={() => { setPreset("todos"); setFiltro("todos"); setLeisAcompanhadas([]); }}
+      />
     </div>
   );
 }
+
 
 type DiaInfo = { iso: string; dia: number; count: number; status: "ultimo" | "com-atos" | "sem-atos" | "futuro" };
 
@@ -412,4 +500,133 @@ function EmptyState({ text }: { text: string }) {
 function formatarDia(iso: string) {
   const [y, m, d] = iso.split("-").map(Number);
   return `${String(d).padStart(2,"0")}/${String(m).padStart(2,"0")}/${y}`;
+}
+
+function FiltrosPanel({
+  aberto, onClose, preset, onPreset, filtroTipo, onFiltroTipo,
+  leisAcompanhadas, onToggleLei, onLimpar,
+}: {
+  aberto: boolean;
+  onClose: () => void;
+  preset: PresetKey;
+  onPreset: (p: PresetKey) => void;
+  filtroTipo: string;
+  onFiltroTipo: (t: string) => void;
+  leisAcompanhadas: string[];
+  onToggleLei: (slug: string) => void;
+  onLimpar: () => void;
+}) {
+  return (
+    <Sheet open={aberto} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col gap-0">
+        <SheetHeader className="px-5 pt-5 pb-3 border-b border-border">
+          <SheetTitle className="font-display text-xl">Filtros</SheetTitle>
+          <SheetDescription>
+            Escolha um tema rápido ou marque as leis que você quer acompanhar.
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+          <section>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Filtros rápidos</p>
+            <div className="flex flex-wrap gap-2">
+              {PRESETS.map((p) => {
+                const ativo = preset === p.key;
+                return (
+                  <button
+                    key={p.key}
+                    onClick={() => onPreset(p.key)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
+                      ativo
+                        ? "bg-gold text-gold-foreground border-gold"
+                        : "bg-card text-muted-foreground border-border hover:text-foreground",
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Por tipo de ato</p>
+            <div className="flex flex-wrap gap-2">
+              {FILTROS.map((f) => {
+                const ativo = filtroTipo === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => onFiltroTipo(f.key)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
+                      ativo
+                        ? "bg-foreground text-background border-foreground"
+                        : "bg-card text-muted-foreground border-border hover:text-foreground",
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <div className="flex items-baseline justify-between mb-2">
+              <p className="text-[11px] uppercase tracking-widest text-muted-foreground">Leis importantes</p>
+              {leisAcompanhadas.length > 0 && (
+                <span className="text-[11px] text-gold font-semibold">
+                  {leisAcompanhadas.length} marcada{leisAcompanhadas.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              Marque as leis que mais importam pra você. A lista vai mostrar quando elas forem alteradas.
+            </p>
+            <ul className="space-y-1.5">
+              {LEIS_IMPORTANTES.map((lei) => {
+                const marcada = leisAcompanhadas.includes(lei.slug);
+                return (
+                  <li key={lei.slug}>
+                    <label
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors",
+                        marcada
+                          ? "bg-gold/10 border-gold/40 text-foreground"
+                          : "bg-card border-border hover:border-gold/30",
+                      )}
+                    >
+                      <Checkbox
+                        checked={marcada}
+                        onCheckedChange={() => onToggleLei(lei.slug)}
+                        className="data-[state=checked]:bg-gold data-[state=checked]:border-gold"
+                      />
+                      <span className="text-sm leading-tight">{lei.label}</span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </div>
+
+        <div className="px-5 py-4 border-t border-border flex items-center justify-between gap-3">
+          <button
+            onClick={onLimpar}
+            className="text-xs text-muted-foreground hover:text-foreground font-semibold"
+          >
+            Limpar filtros
+          </button>
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-full bg-gold text-gold-foreground text-sm font-semibold hover:opacity-90"
+          >
+            Ver resultados
+          </button>
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
 }
