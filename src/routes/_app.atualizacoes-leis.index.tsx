@@ -62,21 +62,45 @@ function AtualizacoesLeisPage() {
   const atos = q.data?.atos ?? [];
   const dias = q.data?.dias ?? [];
 
-  // Lista ordenada de dias (numerados) que têm atos no mês
-  const diasNumerados = useMemo(() => {
-    const set = new Map<string, number>(); // iso -> count
-    for (const a of atos) set.set(a.data_dou, (set.get(a.data_dou) ?? 0) + 1);
-    return Array.from(set.entries())
-      .map(([iso, count]) => ({ iso, dia: Number(iso.split("-")[2]), count }))
-      .sort((a, b) => b.dia - a.dia);
+  // Mapa de contagens por dia ISO
+  const contagemPorDia = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const a of atos) m.set(a.data_dou, (m.get(a.data_dou) ?? 0) + 1);
+    return m;
   }, [atos]);
 
-  const diasComAtos = useMemo(() => new Set(diasNumerados.map((d) => d.iso)), [diasNumerados]);
+  const diasComAtos = useMemo(() => new Set(contagemPorDia.keys()), [contagemPorDia]);
+
+  // Todos os dias do mês, em ordem crescente, com status
+  const diasDoMes = useMemo(() => {
+    const total = new Date(ano, mes, 0).getDate();
+    const hojeStr = new Date().toISOString().slice(0, 10);
+    // último dia com atos publicados
+    let ultimoComAtos: string | null = null;
+    for (const iso of contagemPorDia.keys()) {
+      if (!ultimoComAtos || iso > ultimoComAtos) ultimoComAtos = iso;
+    }
+    return Array.from({ length: total }, (_, i) => {
+      const dia = i + 1;
+      const iso = `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+      const count = contagemPorDia.get(iso) ?? 0;
+      const futuro = iso > hojeStr;
+      const status: "ultimo" | "com-atos" | "sem-atos" | "futuro" =
+        futuro ? "futuro" : iso === ultimoComAtos ? "ultimo" : count > 0 ? "com-atos" : "sem-atos";
+      return { iso, dia, count, status };
+    });
+  }, [ano, mes, contagemPorDia]);
 
   const atosDoDia = useMemo(() => {
     if (!diaSel) return [];
     return atos.filter((a) => a.data_dou === diaSel && (filtro === "todos" || a.tipo === filtro));
   }, [atos, diaSel, filtro]);
+
+  const diaSelInfo = useMemo(
+    () => diasDoMes.find((d) => d.iso === diaSel) ?? null,
+    [diasDoMes, diaSel],
+  );
+
 
   const ultimoSync = dias[0]?.extraido_em ?? null;
 
@@ -151,24 +175,36 @@ function AtualizacoesLeisPage() {
                 <div key={i} className="h-14 w-14 shrink-0 rounded-xl bg-card border border-border animate-pulse" />
               ))}
             </div>
-          ) : diasNumerados.length === 0 ? null : (
+          ) : (
             <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
-              {diasNumerados.map((d) => {
+              {diasDoMes.map((d) => {
                 const ativo = diaSel === d.iso;
+                const isUltimo = d.status === "ultimo";
+                const isFuturo = d.status === "futuro";
+                const isSemAtos = d.status === "sem-atos";
                 return (
                   <button
                     key={d.iso}
                     onClick={() => setDiaSel(ativo ? null : d.iso)}
                     className={cn(
-                      "shrink-0 h-14 w-14 rounded-xl border flex flex-col items-center justify-center transition-all",
+                      "shrink-0 h-14 w-14 rounded-xl border flex flex-col items-center justify-center transition-all relative",
                       ativo
                         ? "bg-gold text-gold-foreground border-gold font-bold"
+                        : isUltimo
+                        ? "bg-gold/15 border-gold text-foreground shadow-[0_0_18px_-2px_var(--gold)] animate-pulse"
+                        : isFuturo
+                        ? "bg-card/40 border-border/50 text-muted-foreground/40"
+                        : isSemAtos
+                        ? "bg-card/60 border-border/60 text-muted-foreground/60"
                         : "bg-card border-border hover:border-gold/50 text-foreground",
                     )}
                   >
                     <span className="font-display text-lg leading-none">{String(d.dia).padStart(2, "0")}</span>
-                    <span className={cn("text-[10px] mt-0.5", ativo ? "text-gold-foreground/80" : "text-muted-foreground")}>
-                      {d.count} {d.count === 1 ? "ato" : "atos"}
+                    <span className={cn(
+                      "text-[10px] mt-0.5",
+                      ativo ? "text-gold-foreground/80" : isUltimo ? "text-gold" : "text-muted-foreground",
+                    )}>
+                      {isFuturo ? "—" : d.count > 0 ? `${d.count} ${d.count === 1 ? "ato" : "atos"}` : "vazio"}
                     </span>
                   </button>
                 );
@@ -204,8 +240,18 @@ function AtualizacoesLeisPage() {
           ))}
         </div>
       ) : diaSel ? (
-        atosDoDia.length === 0 ? (
-          <EmptyState text={`Nenhum ato ${filtro !== "todos" ? "deste tipo " : ""}em ${formatarDia(diaSel)}.`} />
+        diaSelInfo?.status === "futuro" ? (
+          <EmptyState
+            text={`Este dia ainda não foi publicado no D.O.U. A sincronização automática roda 3x ao dia (08h, 14h e 20h, horário de Brasília). Volte mais tarde para ver as atualizações de ${formatarDia(diaSel)}.`}
+          />
+        ) : atosDoDia.length === 0 ? (
+          <EmptyState
+            text={
+              diaSelInfo?.status === "sem-atos"
+                ? `Não houve publicação de atos no D.O.U. em ${formatarDia(diaSel)}.`
+                : `Nenhum ato ${filtro !== "todos" ? "deste tipo " : ""}em ${formatarDia(diaSel)}.`
+            }
+          />
         ) : (
           <ul className="space-y-2.5">
             {atosDoDia.map((a) => <AtoItem key={a.id} ato={a} />)}
@@ -279,13 +325,13 @@ function AtoItem({ ato }: { ato: { id: string; tipo: string; numero: string; dat
       <Link
         to="/atualizacoes-leis/$atoId"
         params={{ atoId: ato.id }}
-        className="block rounded-xl border border-border bg-card p-3.5 hover:border-gold/40 transition-colors"
+        className="flex h-[7.5rem] rounded-xl border border-border bg-card p-3.5 hover:border-gold/40 transition-colors"
       >
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-3 w-full">
           <span className={cn("shrink-0 inline-flex items-center px-2 py-0.5 rounded-md border text-[10px] font-bold tracking-wider", t.cor)}>
             {t.short}
           </span>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex flex-col">
             <p className="font-display text-sm leading-tight">
               {t.label} nº {ato.numero}
               {ato.data_assinatura && <span className="text-muted-foreground font-sans"> · {formatarDia(ato.data_assinatura)}</span>}
