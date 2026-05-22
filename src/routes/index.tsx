@@ -82,7 +82,7 @@ function Welcome() {
       <motion.div className="relative min-h-[100dvh] flex flex-col">
         {/* Background image */}
         <div className="absolute inset-0 overflow-hidden bg-black">
-          <div className="relative w-full pt-20 sm:pt-24">
+          <div className="relative w-full pt-[420px] sm:pt-[460px] lg:pt-[380px]">
             <img
               src={welcomeHero}
               alt=""
@@ -91,14 +91,14 @@ function Welcome() {
               decoding="async"
               className="w-full h-auto max-w-none object-cover object-top"
               style={{
-                WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 14%, black 88%, transparent 100%)",
-                maskImage: "linear-gradient(to bottom, transparent 0%, black 14%, black 88%, transparent 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 15%, black 35%, black 80%, transparent 100%)",
+                maskImage: "linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 15%, black 35%, black 80%, transparent 100%)",
               }}
             />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black via-black/70 to-transparent" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black via-black/70 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-black via-black/85 to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black via-black/80 to-transparent" />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/45 via-45% to-black" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black" />
         </div>
 
 
