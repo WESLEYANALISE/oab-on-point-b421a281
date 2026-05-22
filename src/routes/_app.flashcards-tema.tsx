@@ -170,13 +170,11 @@ function CapituloView({ capituloId, backTo }: { capituloId: string; backTo: () =
   });
   return (
     <div className="px-4 md:px-8 py-6 max-w-2xl mx-auto">
-      <button onClick={backTo} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="h-4 w-4" /> Voltar
-      </button>
       {isLoading ? <Loading /> : <FlashcardCuradoViewer cards={data ?? []} />}
     </div>
   );
 }
+
 
 function Loading() {
   return (
