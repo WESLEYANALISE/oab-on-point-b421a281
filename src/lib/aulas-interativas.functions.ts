@@ -12,7 +12,8 @@ export type SlideTipo =
   | "comparativo"
   | "quiz"
   | "resumo"
-  | "conclusao";
+  | "conclusao"
+  | "mapa_mental";
 
 export type SlideConteudo = {
   titulo?: string;
@@ -20,6 +21,7 @@ export type SlideConteudo = {
   destaque?: string;
   bullets?: string[];
   colunas?: { titulo: string; itens: string[] }[];
+  pdf_url?: string;
 };
 
 export type QuizJson = {
@@ -82,6 +84,7 @@ const SlideInput = z.object({
     "quiz",
     "resumo",
     "conclusao",
+    "mapa_mental",
   ]),
   conteudo: z.record(z.string(), z.unknown()).default({}),
   imagem_url: z.string().url().nullable().optional(),

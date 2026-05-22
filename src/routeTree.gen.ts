@@ -15,6 +15,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiAulasInterativasPdfToCourseRouteImport } from './routes/api/aulas-interativas-pdf-to-course'
 import { Route as ApiAulasInterativasIngestRouteImport } from './routes/api/aulas-interativas-ingest'
 import { Route as ApiAssistenteChatRouteImport } from './routes/api/assistente-chat'
 import { Route as ApiArtigoChatRouteImport } from './routes/api/artigo-chat'
@@ -122,6 +123,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAulasInterativasPdfToCourseRoute =
+  ApiAulasInterativasPdfToCourseRouteImport.update({
+    id: '/api/aulas-interativas-pdf-to-course',
+    path: '/api/aulas-interativas-pdf-to-course',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAulasInterativasIngestRoute =
   ApiAulasInterativasIngestRouteImport.update({
     id: '/api/aulas-interativas-ingest',
@@ -550,6 +557,7 @@ export interface FileRoutesByFullPath {
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
   '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
+  '/api/aulas-interativas-pdf-to-course': typeof ApiAulasInterativasPdfToCourseRoute
   '/admin/aulas-interativas': typeof AppAdminAulasInterativasRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/flashcards': typeof AppAdminFlashcardsRoute
@@ -631,6 +639,7 @@ export interface FileRoutesByTo {
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
   '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
+  '/api/aulas-interativas-pdf-to-course': typeof ApiAulasInterativasPdfToCourseRoute
   '/admin/aulas-interativas': typeof AppAdminAulasInterativasRoute
   '/admin/blog': typeof AppAdminBlogRoute
   '/admin/flashcards': typeof AppAdminFlashcardsRoute
@@ -713,6 +722,7 @@ export interface FileRoutesById {
   '/api/artigo-chat': typeof ApiArtigoChatRoute
   '/api/assistente-chat': typeof ApiAssistenteChatRoute
   '/api/aulas-interativas-ingest': typeof ApiAulasInterativasIngestRoute
+  '/api/aulas-interativas-pdf-to-course': typeof ApiAulasInterativasPdfToCourseRoute
   '/_app/admin/aulas-interativas': typeof AppAdminAulasInterativasRoute
   '/_app/admin/blog': typeof AppAdminBlogRoute
   '/_app/admin/flashcards': typeof AppAdminFlashcardsRoute
@@ -799,6 +809,7 @@ export interface FileRouteTypes {
     | '/api/artigo-chat'
     | '/api/assistente-chat'
     | '/api/aulas-interativas-ingest'
+    | '/api/aulas-interativas-pdf-to-course'
     | '/admin/aulas-interativas'
     | '/admin/blog'
     | '/admin/flashcards'
@@ -880,6 +891,7 @@ export interface FileRouteTypes {
     | '/api/artigo-chat'
     | '/api/assistente-chat'
     | '/api/aulas-interativas-ingest'
+    | '/api/aulas-interativas-pdf-to-course'
     | '/admin/aulas-interativas'
     | '/admin/blog'
     | '/admin/flashcards'
@@ -961,6 +973,7 @@ export interface FileRouteTypes {
     | '/api/artigo-chat'
     | '/api/assistente-chat'
     | '/api/aulas-interativas-ingest'
+    | '/api/aulas-interativas-pdf-to-course'
     | '/_app/admin/aulas-interativas'
     | '/_app/admin/blog'
     | '/_app/admin/flashcards'
@@ -1030,6 +1043,7 @@ export interface RootRouteChildren {
   ApiArtigoChatRoute: typeof ApiArtigoChatRoute
   ApiAssistenteChatRoute: typeof ApiAssistenteChatRoute
   ApiAulasInterativasIngestRoute: typeof ApiAulasInterativasIngestRoute
+  ApiAulasInterativasPdfToCourseRoute: typeof ApiAulasInterativasPdfToCourseRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicSeedProvasRoute: typeof ApiPublicSeedProvasRoute
   ApiPublicSitemapDotxmlRoute: typeof ApiPublicSitemapDotxmlRoute
@@ -1079,6 +1093,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/aulas-interativas-pdf-to-course': {
+      id: '/api/aulas-interativas-pdf-to-course'
+      path: '/api/aulas-interativas-pdf-to-course'
+      fullPath: '/api/aulas-interativas-pdf-to-course'
+      preLoaderRoute: typeof ApiAulasInterativasPdfToCourseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/aulas-interativas-ingest': {
@@ -1884,6 +1905,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiArtigoChatRoute: ApiArtigoChatRoute,
   ApiAssistenteChatRoute: ApiAssistenteChatRoute,
   ApiAulasInterativasIngestRoute: ApiAulasInterativasIngestRoute,
+  ApiAulasInterativasPdfToCourseRoute: ApiAulasInterativasPdfToCourseRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicSeedProvasRoute: ApiPublicSeedProvasRoute,
   ApiPublicSitemapDotxmlRoute: ApiPublicSitemapDotxmlRoute,
