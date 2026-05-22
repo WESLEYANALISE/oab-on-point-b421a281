@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { ensureLongCourseStructure } from "@/lib/aulas-interativas-long-slides";
+import { ensureLongCourseStructure, ensureLongSlides } from "@/lib/aulas-interativas-long-slides";
 
 // ---------- Tipos públicos ----------
 
@@ -262,10 +262,24 @@ export const getAulaCompleta = createServerFn({ method: "POST" })
         ? { slug: todasOrdenadas[idxAtual - 1].slug, titulo: todasOrdenadas[idxAtual - 1].titulo }
         : null;
 
+    const slidesNormalizados = ensureLongSlides({
+      titulo: aula.titulo,
+      descricao: aula.descricao,
+      slides: (slides ?? []) as never,
+    }).map((s, i) => ({
+      id: (slides?.[i] as { id?: string } | undefined)?.id ?? `generated-${aula.id}-${i}`,
+      aula_id: aula.id,
+      ordem: typeof s.ordem === "number" ? s.ordem : i,
+      tipo: s.tipo,
+      conteudo: s.conteudo ?? {},
+      imagem_url: s.imagem_url ?? null,
+      quiz_json: s.quiz_json ?? null,
+    })) as unknown as SlideRow[];
+
     return {
       curso: curso as Pick<CursoRow, "id" | "titulo" | "slug">,
       aula: aula as AulaRow,
-      slides: (slides ?? []) as unknown as SlideRow[],
+      slides: slidesNormalizados,
       proximaAula,
       aulaAnterior,
     };
