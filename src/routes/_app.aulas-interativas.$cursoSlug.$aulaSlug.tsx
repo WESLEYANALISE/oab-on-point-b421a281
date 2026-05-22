@@ -39,11 +39,17 @@ function AulaPlayerPage() {
   }
   if (!q.data) throw notFound();
 
+  const proximaAulaHref = q.data.proximaAula
+    ? `/aulas-interativas/${cursoSlug}/${q.data.proximaAula.slug}`
+    : undefined;
+
   return (
     <SlidePlayer
       slides={q.data.slides}
       tituloAula={q.data.aula.titulo}
       voltarHref={`/aulas-interativas/${cursoSlug}`}
+      proximaAulaHref={proximaAulaHref}
+      proximaAulaTitulo={q.data.proximaAula?.titulo}
       onProgresso={onProgresso}
     />
   );
