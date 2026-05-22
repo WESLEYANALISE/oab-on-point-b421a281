@@ -1,6 +1,7 @@
 // PDF parsing no browser usando pdfjs-dist.
 // Identifica capítulos top-level (1., 2., 3.) e devolve "chunks" prontos para a IA.
 
+import * as pdfjsLib from "pdfjs-dist";
 // @ts-ignore - vite ?url import
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
