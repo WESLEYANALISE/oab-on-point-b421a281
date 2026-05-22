@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Clock, Share2, ChevronRight, Sparkles } from "lucide-react";
+import { Clock, Share2, ChevronRight, Sparkles } from "lucide-react";
 import { getBlogPost, getRelatedBlogPosts } from "@/lib/blog.functions";
 import { MarkdownView } from "@/components/blog/MarkdownView";
 import { PostCard } from "@/components/blog/PostCard";
