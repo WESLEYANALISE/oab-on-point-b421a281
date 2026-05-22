@@ -17,6 +17,13 @@ import heroAvif from "@/assets/oab-landing-hero.jpg?format=avif&w=640;960;1280&a
 import heroWebp from "@/assets/oab-landing-hero.jpg?format=webp&w=640;960;1280&as=srcset";
 
 export const Route = createFileRoute("/")({
+  beforeLoad: async () => {
+    if (typeof window === "undefined") return;
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user) {
+      throw redirect({ to: "/inicio" });
+    }
+  },
   head: () => ({
     meta: [
       { title: "OAB na Risca — Tudo para você passar na OAB em um só lugar" },
@@ -31,13 +38,8 @@ export const Route = createFileRoute("/")({
 });
 
 function LandingPage() {
-  const navigate = useNavigate();
-  const { user, loading } = useAuth();
   const [heroLoaded, setHeroLoaded] = useState(false);
 
-  useEffect(() => {
-    if (!loading && user) navigate({ to: "/inicio" });
-  }, [user, loading, navigate]);
 
   return (
     <div className="min-h-screen bg-background text-foreground antialiased overflow-x-hidden">
