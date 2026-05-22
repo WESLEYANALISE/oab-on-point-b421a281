@@ -457,6 +457,34 @@ function ArquivoMaterialItem({
           {publicar.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
           3. Publicar curso
         </button>
+
+        {temExtracao && (
+          <button
+            onClick={async () => {
+              if (!confirm("Apagar páginas extraídas e prévia deste material? Você poderá extrair novamente do zero.")) return;
+              setAcao("extrair");
+              setProgresso("Apagando extração…");
+              try {
+                await apagarExtracaoArquivo({ data: { arquivoDriveId: arquivo.id } });
+                toast.success("Extração apagada");
+                setProgresso("");
+                setEstrutura(null);
+                qc.invalidateQueries({ queryKey: ["admin"] });
+                onChanged();
+              } catch (e: any) {
+                toast.error(e?.message ?? "Falha ao apagar");
+              } finally {
+                setAcao(null);
+              }
+            }}
+            disabled={acao !== null}
+            className="h-9 px-3 rounded-full border border-destructive/40 text-destructive text-xs inline-flex items-center gap-1.5 disabled:opacity-50 hover:bg-destructive/10"
+            title="Apagar páginas extraídas para refazer a extração"
+          >
+            <Trash2 className="h-3 w-3" />
+            Apagar extração
+          </button>
+        )}
       </div>
 
       {progresso && <p className="mt-2 text-[11px] text-muted-foreground">{progresso}</p>}
