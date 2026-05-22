@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import { resolverVoltar } from "@/lib/voltar";
 
 export function MobileHeader() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const isHome = pathname === "/" || pathname === "/app";
-  const destinoVoltar = resolverVoltar(pathname);
+  const destino = resolverVoltar(pathname, search as Record<string, unknown>);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ export function MobileHeader() {
       data-scrolled={scrolled}
       className="md:hidden sticky top-0 z-30 bg-background/95 backdrop-blur-md border-b border-border header-scroll-shadow"
     >
-      <div className="flex items-center justify-between px-4 h-16">
+      <div className="flex items-center justify-between px-4 h-16 gap-2">
         {isHome ? (
           <Link to="/app" className="flex items-center gap-2 tap-feedback min-w-0">
             <div className="h-8 w-8 shrink-0 rounded-md bg-gradient-toga grid place-items-center">
@@ -38,19 +38,20 @@ export function MobileHeader() {
           </Link>
         ) : (
           <Link
-            to={destinoVoltar as "/"}
+            to={destino.to as string}
+            search={destino.search as never}
             preload="intent"
             preloadDelay={0}
-            className="inline-flex items-center gap-2 pl-2 pr-3.5 h-10 rounded-full bg-muted/70 border border-border text-sm font-medium text-foreground hover:bg-muted tap-feedback"
-            aria-label="Voltar"
+            className="inline-flex items-center gap-2 pl-2 pr-3.5 h-10 rounded-full bg-muted/70 border border-border text-sm font-medium text-foreground hover:bg-muted tap-feedback min-w-0 max-w-[60vw]"
+            aria-label={`Voltar para ${destino.label}`}
           >
-            <span className="h-7 w-7 grid place-items-center rounded-full bg-foreground/10 text-foreground">
+            <span className="h-7 w-7 grid place-items-center rounded-full bg-foreground/10 text-foreground shrink-0">
               <ArrowLeft className="h-4 w-4" />
             </span>
-            Voltar
+            <span className="truncate">{destino.label}</span>
           </Link>
         )}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           {isHome ? (
             <>
               <button

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Brain, ChevronRight, Loader2 } from "lucide-react";
+import { Brain, ChevronRight, Loader2 } from "lucide-react";
 import {
   listarAreasFlashcardsCurados,
   listarLivrosDaAreaFlashcards,
@@ -39,19 +39,15 @@ function FlashcardsTema() {
   return <AreasView onArea={(a) => navigate({ to: "/flashcards-tema", search: { area: a } })} />;
 }
 
-function Header({ title, sub, back }: { title: string; sub?: string; back?: () => void }) {
+function Header({ title, sub }: { title: string; sub?: string; back?: () => void }) {
   return (
     <header className="mb-5">
-      {back && (
-        <button onClick={back} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-2">
-          <ArrowLeft className="h-4 w-4" /> Voltar
-        </button>
-      )}
       <h1 className="font-display text-2xl md:text-3xl">{title}</h1>
       {sub && <p className="text-sm text-muted-foreground mt-1">{sub}</p>}
     </header>
   );
 }
+
 
 function AreasView({ onArea }: { onArea: (area: string) => void }) {
   const fn = useServerFn(listarAreasFlashcardsCurados);
@@ -174,13 +170,11 @@ function CapituloView({ capituloId, backTo }: { capituloId: string; backTo: () =
   });
   return (
     <div className="px-4 md:px-8 py-6 max-w-2xl mx-auto">
-      <button onClick={backTo} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="h-4 w-4" /> Voltar
-      </button>
       {isLoading ? <Loading /> : <FlashcardCuradoViewer cards={data ?? []} />}
     </div>
   );
 }
+
 
 function Loading() {
   return (

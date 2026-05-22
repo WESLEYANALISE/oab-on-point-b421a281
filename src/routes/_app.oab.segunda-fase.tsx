@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ScrollText, Video, GraduationCap, ChevronRight } from "lucide-react";
+import { ScrollText, Video, GraduationCap, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_app/oab/segunda-fase")({
   head: () => ({
@@ -24,9 +24,6 @@ function SegundaFasePage() {
         <div className="absolute -top-20 -right-12 h-56 w-56 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-6 h-44 w-44 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
 
-        <Link to="/app" className="relative inline-flex items-center gap-1.5 text-[12px] text-primary-foreground/80 hover:text-primary-foreground mb-3">
-          <ArrowLeft className="h-3.5 w-3.5" /> Início
-        </Link>
 
         <div className="relative">
           <p className="text-[10px] uppercase tracking-[0.24em] text-gold/85 font-semibold mb-2">

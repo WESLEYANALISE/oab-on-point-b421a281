@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Notebook, CheckCircle2, Circle, Trash2, BookOpen, Filter } from "lucide-react";
+import { Notebook, CheckCircle2, Circle, Trash2, BookOpen, Filter } from "lucide-react";
 import { listarErros, marcarRevisado, apagarErro } from "@/lib/caderno-erros.functions";
 import { toast } from "sonner";
 
@@ -34,9 +34,6 @@ function CadernoErrosPage() {
     <div className="pb-16">
       <header className="px-4 pt-5 pb-7 md:px-8 bg-gradient-toga text-primary-foreground relative overflow-hidden">
         <div className="absolute -top-20 -right-12 h-56 w-56 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
-        <Link to="/oab/primeira-fase" className="relative inline-flex items-center gap-1.5 text-[12px] text-primary-foreground/80 hover:text-primary-foreground mb-3">
-          <ArrowLeft className="h-3.5 w-3.5" /> 1ª Fase
-        </Link>
         <p className="text-[10px] uppercase tracking-[0.24em] text-gold/85 font-semibold mb-2">Revisão personalizada</p>
         <h1 className="font-display font-semibold text-3xl md:text-4xl leading-tight tracking-tight">Caderno de erros</h1>
         <p className="mt-2 text-[13px] text-primary-foreground/80 max-w-xl">

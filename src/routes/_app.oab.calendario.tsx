@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, ExternalLink, Calendar, CheckCircle2, Clock, CircleDashed, FileText } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { ExternalLink, Calendar, CheckCircle2, Clock, CircleDashed, FileText } from "lucide-react";
 import { EXAMES_OAB, FONTE_OFICIAL, FONTE_EDITAIS, type EventoCalendario } from "@/data/oab-calendario";
 
 export const Route = createFileRoute("/_app/oab/calendario")({
@@ -38,9 +38,6 @@ function CalendarioPage() {
       {/* Header */}
       <header className="px-4 pt-5 pb-6 bg-gradient-toga text-primary-foreground relative overflow-hidden">
         <div className="absolute -top-20 -right-12 h-56 w-56 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
-        <Link to="/app" className="inline-flex items-center gap-1.5 text-[12px] text-primary-foreground/80 hover:text-primary-foreground mb-4">
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-        </Link>
         <p className="text-[10px] uppercase tracking-[0.24em] text-gold/85 font-semibold mb-2">Calendário OAB</p>
         <h1 className="font-display font-bold text-[26px] md:text-[34px] leading-[1.1] tracking-tight mb-2">
           Cronograma do Exame de Ordem

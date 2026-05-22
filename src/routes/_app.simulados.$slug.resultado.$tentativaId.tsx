@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { getResultado } from "@/lib/simulados.functions";
 import { cn } from "@/lib/utils";
 
@@ -40,9 +40,6 @@ function ResultadoPage() {
 
   return (
     <div className="px-4 md:px-8 py-6 max-w-3xl mx-auto">
-      <Link to="/simulados" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4">
-        <ArrowLeft className="h-4 w-4 mr-1" /> Voltar aos simulados
-      </Link>
 
       <header className="rounded-xl bg-gradient-toga text-primary-foreground p-6 mb-5">
         <p className="text-xs uppercase tracking-widest opacity-80">{data.simulado?.titulo}</p>

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { MATERIAS_OAB_46 } from "@/data/oab-materias-46";
 import { getStatsPrimeiraFase } from "@/lib/primeira-fase.functions";
 import { cn } from "@/lib/utils";
@@ -38,9 +38,6 @@ function ReforcoPage() {
     <div className="pb-16">
       <header className="px-4 pt-5 pb-7 md:px-8 bg-gradient-toga text-primary-foreground relative overflow-hidden">
         <div className="absolute -top-20 -right-12 h-56 w-56 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
-        <Link to="/oab/primeira-fase" className="relative inline-flex items-center gap-1.5 text-[12px] text-primary-foreground/80 hover:text-primary-foreground mb-3">
-          <ArrowLeft className="h-3.5 w-3.5" /> 1ª Fase
-        </Link>
         <p className="text-[10px] uppercase tracking-[0.24em] text-gold/85 font-semibold mb-2">Onde você precisa subir</p>
         <h1 className="font-display font-semibold text-3xl md:text-4xl leading-tight tracking-tight">Reforço</h1>
         <p className="mt-2 text-[13px] text-primary-foreground/80 max-w-xl">As matérias com menor aproveitamento aparecem aqui — foque nelas primeiro.</p>

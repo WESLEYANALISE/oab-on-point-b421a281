@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { ArrowLeft, ChevronRight, BookOpen, Clock, ArrowDownAZ, Heart } from "lucide-react";
+import { ChevronRight, BookOpen, Clock, ArrowDownAZ, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { BIB_MAP, livrosQueryOptions, areasQueryOptions, countsQueryOptions, favoritosQueryOptions, toggleFavorito, type SortMode } from "@/lib/biblioteca";
 import { supabaseImage, supabaseImageSrcSet } from "@/lib/supabase-image";
@@ -76,13 +76,6 @@ function BibliotecaList() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
         <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-          <button
-            onClick={goBack}
-            className="p-2 -ml-2 rounded-full hover:bg-muted"
-            aria-label="Voltar"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
           <div className="min-w-0">
             <h1 className="font-sans text-lg font-bold text-foreground leading-tight truncate">
               {area ?? cfg.title}

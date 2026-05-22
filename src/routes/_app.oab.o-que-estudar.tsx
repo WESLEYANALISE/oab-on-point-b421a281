@@ -1,7 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
-  ArrowLeft,
   ExternalLink,
   FileText,
   ChevronDown,
@@ -51,12 +50,6 @@ function OQueEstudarPage() {
       {/* Header */}
       <header className="px-4 pt-5 pb-6 bg-gradient-toga text-primary-foreground relative overflow-hidden">
         <div className="absolute -top-20 -right-12 h-56 w-56 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
-        <Link
-          to="/app"
-          className="inline-flex items-center gap-1.5 text-[12px] text-primary-foreground/80 hover:text-primary-foreground mb-4"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" /> Voltar
-        </Link>
         <p className="text-[10px] uppercase tracking-[0.24em] text-gold/85 font-semibold mb-2">
           O que estudar
         </p>

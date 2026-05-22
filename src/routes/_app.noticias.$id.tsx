@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { getNoticia } from "@/data/noticias";
-import { ArrowLeft, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 
 export const Route = createFileRoute("/_app/noticias/$id")({
   loader: ({ params }) => {
@@ -29,9 +29,6 @@ function NoticiaPage() {
   const { noticia } = Route.useLoaderData();
   return (
     <article className="max-w-3xl mx-auto px-4 md:px-6 py-8 md:py-12">
-      <Link to="/noticias" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-6">
-        <ArrowLeft className="h-3.5 w-3.5" /> Todas as notícias
-      </Link>
       <div className="flex items-center gap-2 mb-4">
         <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded font-semibold bg-primary text-primary-foreground">{noticia.categoria}</span>
         <span className="text-xs text-muted-foreground">{new Date(noticia.data).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</span>

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Clock, Share2, ChevronRight, Sparkles } from "lucide-react";
+import { Clock, Share2, ChevronRight, Sparkles } from "lucide-react";
 import { getBlogPost, getRelatedBlogPosts } from "@/lib/blog.functions";
 import { MarkdownView } from "@/components/blog/MarkdownView";
 import { PostCard } from "@/components/blog/PostCard";
@@ -101,14 +101,6 @@ function BlogArticle() {
           <div className="absolute inset-0 bg-gradient-toga" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-        <div className="absolute top-4 left-4">
-          <Link
-            to="/blog"
-            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full bg-black/40 backdrop-blur-sm text-white border border-white/20 hover:bg-black/60"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Blog
-          </Link>
-        </div>
       </div>
 
       {/* Cabeçalho */}

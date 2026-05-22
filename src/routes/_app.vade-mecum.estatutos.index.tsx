@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Search, Star, Clock, List, Camera } from "lucide-react";
+import { Search, Star, Clock, List, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ESTATUTOS_DESTAQUE, ESTATUTOS_SLUGS, getEstatuto } from "@/lib/vade-mecum-data";
 import { getRecentes } from "@/lib/vade-mecum-recentes";
@@ -116,17 +116,7 @@ function EstatutosListPage() {
         />
 
         <div className="relative px-4 md:px-8 pt-4 pb-6">
-          <div className="flex items-center justify-between">
-            <Link
-              to="/vade-mecum"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span className="leading-none">
-                <span className="block text-[9px] uppercase tracking-[0.2em] text-muted-foreground/80">Voltar</span>
-                <span className="block font-semibold text-foreground">Vade Mecum</span>
-              </span>
-            </Link>
+          <div className="flex items-center justify-end">
             <button
               type="button"
               className="h-9 w-9 grid place-items-center rounded-lg bg-card/60 border border-border/60 text-muted-foreground hover:text-gold transition-colors"
@@ -135,6 +125,7 @@ function EstatutosListPage() {
               <Camera className="h-4 w-4" />
             </button>
           </div>
+
 
           <div className="mt-6 flex flex-col items-center text-center">
             <img
