@@ -693,20 +693,33 @@ function MapaItem({
     onError: (e: any) => toast.error(e?.message ?? "Falha"),
   });
 
+  const ordem = ordemOAB(mapa.subpasta);
+  const ordemTxt = ordem === 999 ? "—" : String(ordem + 1).padStart(2, "0");
+
   return (
     <li className="rounded-xl border border-border bg-background p-3">
       <div className="flex items-start gap-3">
-        <FileText className="h-5 w-5 text-gold shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <p className="font-display text-sm truncate">{mapa.nome_arquivo}</p>
-          <p className="text-[11px] text-muted-foreground">
-            {mapa.subpasta} · <span className={statusColor(mapa.status_ingestao)}>{mapa.status_ingestao}</span>
-            {mapa.aula_id && " · vinculado"}
-          </p>
+        <div className="shrink-0 h-10 w-10 rounded-lg bg-gold/10 border border-gold/30 flex flex-col items-center justify-center">
+          <span className="text-[9px] uppercase tracking-wider text-gold/70 leading-none">OAB</span>
+          <span className="text-xs font-display text-gold leading-none mt-0.5">{ordemTxt}</span>
         </div>
-        {mapa.pdf_url && (
-          <a href={mapa.pdf_url} target="_blank" rel="noreferrer" className="text-[11px] text-muted-foreground hover:text-foreground">Ver PDF</a>
-        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-display text-sm leading-snug break-words">{mapa.subpasta}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5 break-words">
+            {mapa.nome_arquivo.replace(/\.pdf$/i, "")}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-[10px]">
+            <span className={`px-1.5 py-0.5 rounded-full border border-border ${statusColor(mapa.status_ingestao)}`}>
+              {statusLabel(mapa.status_ingestao)}
+            </span>
+            {mapa.aula_id && <span className="text-emerald-400">• vinculado</span>}
+            {mapa.pdf_url && (
+              <a href={mapa.pdf_url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
+                Ver PDF
+              </a>
+            )}
+          </div>
+        </div>
       </div>
       <div className="mt-3 grid md:grid-cols-3 gap-2">
         <select
