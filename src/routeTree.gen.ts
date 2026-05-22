@@ -30,7 +30,6 @@ import { Route as AppBlogRouteImport } from './routes/_app.blog'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAulasRouteImport } from './routes/_app.aulas'
 import { Route as AppAudioaulasRouteImport } from './routes/_app.audioaulas'
-import { Route as AppAtualizacoesLeisRouteImport } from './routes/_app.atualizacoes-leis'
 import { Route as AppAssistenteRouteImport } from './routes/_app.assistente'
 import { Route as AppAppRouteImport } from './routes/_app.app'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
@@ -40,6 +39,7 @@ import { Route as AppResumosIndexRouteImport } from './routes/_app.resumos.index
 import { Route as AppProvasIndexRouteImport } from './routes/_app.provas.index'
 import { Route as AppBibliotecaIndexRouteImport } from './routes/_app.biblioteca.index'
 import { Route as AppAulasIndexRouteImport } from './routes/_app.aulas.index'
+import { Route as AppAtualizacoesLeisIndexRouteImport } from './routes/_app.atualizacoes-leis.index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app.admin.index'
 import { Route as ApiPublicSeedProvasRouteImport } from './routes/api.public.seed-provas'
 import { Route as AppVadeMecumSlugRouteImport } from './routes/_app.vade-mecum.$slug'
@@ -189,11 +189,6 @@ const AppAudioaulasRoute = AppAudioaulasRouteImport.update({
   path: '/audioaulas',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAtualizacoesLeisRoute = AppAtualizacoesLeisRouteImport.update({
-  id: '/atualizacoes-leis',
-  path: '/atualizacoes-leis',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAssistenteRoute = AppAssistenteRouteImport.update({
   id: '/assistente',
   path: '/assistente',
@@ -239,6 +234,12 @@ const AppAulasIndexRoute = AppAulasIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppAulasRoute,
 } as any)
+const AppAtualizacoesLeisIndexRoute =
+  AppAtualizacoesLeisIndexRouteImport.update({
+    id: '/atualizacoes-leis/',
+    path: '/atualizacoes-leis/',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -336,9 +337,9 @@ const AppAulasMateriaRoute = AppAulasMateriaRouteImport.update({
 } as any)
 const AppAtualizacoesLeisAtoIdRoute =
   AppAtualizacoesLeisAtoIdRouteImport.update({
-    id: '/$atoId',
-    path: '/$atoId',
-    getParentRoute: () => AppAtualizacoesLeisRoute,
+    id: '/atualizacoes-leis/$atoId',
+    path: '/atualizacoes-leis/$atoId',
+    getParentRoute: () => AppRoute,
   } as any)
 const AppAdminVadeMecumSyncRoute = AppAdminVadeMecumSyncRouteImport.update({
   id: '/vade-mecum-sync',
@@ -480,7 +481,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRouteWithChildren
   '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
-  '/atualizacoes-leis': typeof AppAtualizacoesLeisRouteWithChildren
   '/audioaulas': typeof AppAudioaulasRoute
   '/aulas': typeof AppAulasRouteWithChildren
   '/biblioteca': typeof AppBibliotecaRouteWithChildren
@@ -522,6 +522,7 @@ export interface FileRoutesByFullPath {
   '/vade-mecum/$slug': typeof AppVadeMecumSlugRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/admin/': typeof AppAdminIndexRoute
+  '/atualizacoes-leis/': typeof AppAtualizacoesLeisIndexRoute
   '/aulas/': typeof AppAulasIndexRoute
   '/biblioteca/': typeof AppBibliotecaIndexRoute
   '/provas/': typeof AppProvasIndexRoute
@@ -555,7 +556,6 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/app': typeof AppAppRoute
   '/assistente': typeof AppAssistenteRoute
-  '/atualizacoes-leis': typeof AppAtualizacoesLeisRouteWithChildren
   '/audioaulas': typeof AppAudioaulasRoute
   '/blog': typeof AppBlogRouteWithChildren
   '/caderno-erros': typeof AppCadernoErrosRoute
@@ -593,6 +593,7 @@ export interface FileRoutesByTo {
   '/vade-mecum/$slug': typeof AppVadeMecumSlugRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/admin': typeof AppAdminIndexRoute
+  '/atualizacoes-leis': typeof AppAtualizacoesLeisIndexRoute
   '/aulas': typeof AppAulasIndexRoute
   '/biblioteca': typeof AppBibliotecaIndexRoute
   '/provas': typeof AppProvasIndexRoute
@@ -627,7 +628,6 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/app': typeof AppAppRoute
   '/_app/assistente': typeof AppAssistenteRoute
-  '/_app/atualizacoes-leis': typeof AppAtualizacoesLeisRouteWithChildren
   '/_app/audioaulas': typeof AppAudioaulasRoute
   '/_app/aulas': typeof AppAulasRouteWithChildren
   '/_app/biblioteca': typeof AppBibliotecaRouteWithChildren
@@ -669,6 +669,7 @@ export interface FileRoutesById {
   '/_app/vade-mecum/$slug': typeof AppVadeMecumSlugRoute
   '/api/public/seed-provas': typeof ApiPublicSeedProvasRoute
   '/_app/admin/': typeof AppAdminIndexRoute
+  '/_app/atualizacoes-leis/': typeof AppAtualizacoesLeisIndexRoute
   '/_app/aulas/': typeof AppAulasIndexRoute
   '/_app/biblioteca/': typeof AppBibliotecaIndexRoute
   '/_app/provas/': typeof AppProvasIndexRoute
@@ -705,7 +706,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/assistente'
-    | '/atualizacoes-leis'
     | '/audioaulas'
     | '/aulas'
     | '/biblioteca'
@@ -747,6 +747,7 @@ export interface FileRouteTypes {
     | '/vade-mecum/$slug'
     | '/api/public/seed-provas'
     | '/admin/'
+    | '/atualizacoes-leis/'
     | '/aulas/'
     | '/biblioteca/'
     | '/provas/'
@@ -780,7 +781,6 @@ export interface FileRouteTypes {
     | '/signup'
     | '/app'
     | '/assistente'
-    | '/atualizacoes-leis'
     | '/audioaulas'
     | '/blog'
     | '/caderno-erros'
@@ -818,6 +818,7 @@ export interface FileRouteTypes {
     | '/vade-mecum/$slug'
     | '/api/public/seed-provas'
     | '/admin'
+    | '/atualizacoes-leis'
     | '/aulas'
     | '/biblioteca'
     | '/provas'
@@ -851,7 +852,6 @@ export interface FileRouteTypes {
     | '/_app/admin'
     | '/_app/app'
     | '/_app/assistente'
-    | '/_app/atualizacoes-leis'
     | '/_app/audioaulas'
     | '/_app/aulas'
     | '/_app/biblioteca'
@@ -893,6 +893,7 @@ export interface FileRouteTypes {
     | '/_app/vade-mecum/$slug'
     | '/api/public/seed-provas'
     | '/_app/admin/'
+    | '/_app/atualizacoes-leis/'
     | '/_app/aulas/'
     | '/_app/biblioteca/'
     | '/_app/provas/'
@@ -1081,13 +1082,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAudioaulasRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/atualizacoes-leis': {
-      id: '/_app/atualizacoes-leis'
-      path: '/atualizacoes-leis'
-      fullPath: '/atualizacoes-leis'
-      preLoaderRoute: typeof AppAtualizacoesLeisRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/assistente': {
       id: '/_app/assistente'
       path: '/assistente'
@@ -1150,6 +1144,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/aulas/'
       preLoaderRoute: typeof AppAulasIndexRouteImport
       parentRoute: typeof AppAulasRoute
+    }
+    '/_app/atualizacoes-leis/': {
+      id: '/_app/atualizacoes-leis/'
+      path: '/atualizacoes-leis'
+      fullPath: '/atualizacoes-leis/'
+      preLoaderRoute: typeof AppAtualizacoesLeisIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/admin/': {
       id: '/_app/admin/'
@@ -1286,10 +1287,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/atualizacoes-leis/$atoId': {
       id: '/_app/atualizacoes-leis/$atoId'
-      path: '/$atoId'
+      path: '/atualizacoes-leis/$atoId'
       fullPath: '/atualizacoes-leis/$atoId'
       preLoaderRoute: typeof AppAtualizacoesLeisAtoIdRouteImport
-      parentRoute: typeof AppAtualizacoesLeisRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/admin/vade-mecum-sync': {
       id: '/_app/admin/vade-mecum-sync'
@@ -1486,17 +1487,6 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
   AppAdminRouteChildren,
 )
 
-interface AppAtualizacoesLeisRouteChildren {
-  AppAtualizacoesLeisAtoIdRoute: typeof AppAtualizacoesLeisAtoIdRoute
-}
-
-const AppAtualizacoesLeisRouteChildren: AppAtualizacoesLeisRouteChildren = {
-  AppAtualizacoesLeisAtoIdRoute: AppAtualizacoesLeisAtoIdRoute,
-}
-
-const AppAtualizacoesLeisRouteWithChildren =
-  AppAtualizacoesLeisRoute._addFileChildren(AppAtualizacoesLeisRouteChildren)
-
 interface AppAulasMateriaLivroIdRouteChildren {
   AppAulasMateriaLivroIdOrdemRoute: typeof AppAulasMateriaLivroIdOrdemRoute
   AppAulasMateriaLivroIdIndexRoute: typeof AppAulasMateriaLivroIdIndexRoute
@@ -1623,7 +1613,6 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAppRoute: typeof AppAppRoute
   AppAssistenteRoute: typeof AppAssistenteRoute
-  AppAtualizacoesLeisRoute: typeof AppAtualizacoesLeisRouteWithChildren
   AppAudioaulasRoute: typeof AppAudioaulasRoute
   AppAulasRoute: typeof AppAulasRouteWithChildren
   AppBibliotecaRoute: typeof AppBibliotecaRouteWithChildren
@@ -1638,6 +1627,7 @@ interface AppRouteChildren {
   AppProgressoRoute: typeof AppProgressoRoute
   AppQuestoesRoute: typeof AppQuestoesRoute
   AppRetaFinalRoute: typeof AppRetaFinalRoute
+  AppAtualizacoesLeisAtoIdRoute: typeof AppAtualizacoesLeisAtoIdRoute
   AppOabCadernoErrosRoute: typeof AppOabCadernoErrosRoute
   AppOabCalendarioRoute: typeof AppOabCalendarioRoute
   AppOabCronogramaRoute: typeof AppOabCronogramaRoute
@@ -1650,6 +1640,7 @@ interface AppRouteChildren {
   AppProvasNumeroRoute: typeof AppProvasNumeroRoute
   AppResumosLivroIdRoute: typeof AppResumosLivroIdRoute
   AppVadeMecumSlugRoute: typeof AppVadeMecumSlugRoute
+  AppAtualizacoesLeisIndexRoute: typeof AppAtualizacoesLeisIndexRoute
   AppProvasIndexRoute: typeof AppProvasIndexRoute
   AppResumosIndexRoute: typeof AppResumosIndexRoute
   AppSimuladosIndexRoute: typeof AppSimuladosIndexRoute
@@ -1668,7 +1659,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppAppRoute: AppAppRoute,
   AppAssistenteRoute: AppAssistenteRoute,
-  AppAtualizacoesLeisRoute: AppAtualizacoesLeisRouteWithChildren,
   AppAudioaulasRoute: AppAudioaulasRoute,
   AppAulasRoute: AppAulasRouteWithChildren,
   AppBibliotecaRoute: AppBibliotecaRouteWithChildren,
@@ -1683,6 +1673,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProgressoRoute: AppProgressoRoute,
   AppQuestoesRoute: AppQuestoesRoute,
   AppRetaFinalRoute: AppRetaFinalRoute,
+  AppAtualizacoesLeisAtoIdRoute: AppAtualizacoesLeisAtoIdRoute,
   AppOabCadernoErrosRoute: AppOabCadernoErrosRoute,
   AppOabCalendarioRoute: AppOabCalendarioRoute,
   AppOabCronogramaRoute: AppOabCronogramaRoute,
@@ -1695,6 +1686,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProvasNumeroRoute: AppProvasNumeroRoute,
   AppResumosLivroIdRoute: AppResumosLivroIdRoute,
   AppVadeMecumSlugRoute: AppVadeMecumSlugRoute,
+  AppAtualizacoesLeisIndexRoute: AppAtualizacoesLeisIndexRoute,
   AppProvasIndexRoute: AppProvasIndexRoute,
   AppResumosIndexRoute: AppResumosIndexRoute,
   AppSimuladosIndexRoute: AppSimuladosIndexRoute,
@@ -1727,3 +1719,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

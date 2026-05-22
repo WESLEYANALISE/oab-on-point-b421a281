@@ -11,7 +11,7 @@ import {
 import { listResenhaMes } from "@/lib/resenha-sync.functions";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_app/atualizacoes-leis")({
+export const Route = createFileRoute("/_app/atualizacoes-leis/")({
   head: () => ({
     meta: [
       { title: "Atualizações de Leis — OAB na Risca" },
