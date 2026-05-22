@@ -58,17 +58,17 @@ export function WelcomeAuthModal({ open, onClose, initialTab, sidePanel }: Props
 
   const panelClasses = sidePanel
     ? "fixed inset-y-0 right-0 w-full max-w-md"
-    : "fixed inset-x-0 bottom-0 md:inset-0 md:flex md:items-center md:justify-center";
+    : "fixed inset-0 flex items-center justify-center p-4";
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md" onClick={onClose}>
       <div className={panelClasses} onClick={(e) => e.stopPropagation()}>
         <div
-          className={`relative w-full ${sidePanel ? "h-full" : "max-w-md mx-auto rounded-t-3xl md:rounded-3xl"} p-6 md:p-8`}
+          className={`relative w-full ${sidePanel ? "h-full" : "max-w-md mx-auto rounded-3xl"} p-6 md:p-8`}
           style={{
             background: "linear-gradient(180deg, #14100a, #000)",
             border: "1px solid rgba(212,168,75,0.3)",
-            boxShadow: "0 -20px 60px rgba(0,0,0,0.6)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
           }}
         >
           <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white">
@@ -85,17 +85,6 @@ export function WelcomeAuthModal({ open, onClose, initialTab, sidePanel }: Props
             {mode === "login" ? "Continue de onde parou." : "Crie sua conta e monte seu plano de aprovação."}
           </p>
 
-          <div className="mb-5 grid grid-cols-2 rounded-2xl border border-gold/20 bg-white/5 p-1">
-            <button
-              type="button" onClick={() => setMode("login")}
-              className={`rounded-xl py-2.5 text-sm font-semibold transition ${mode === "login" ? "bg-gold text-gold-foreground shadow-lg shadow-black/20" : "text-white/70 hover:text-white"}`}
-            >Entrar</button>
-            <button
-              type="button" onClick={() => setMode("signup")}
-              className={`rounded-xl py-2.5 text-sm font-semibold transition ${mode === "signup" ? "bg-gold text-gold-foreground shadow-lg shadow-black/20" : "text-white/70 hover:text-white"}`}
-            >Criar conta</button>
-          </div>
-
           <form onSubmit={mode === "login" ? handleLogin : handleSignup} className="space-y-3.5">
             {mode === "signup" && (
               <Field icon={User} type="text" placeholder="Seu nome" value={displayName} onChange={setDisplayName} autoComplete="name" />
@@ -110,6 +99,18 @@ export function WelcomeAuthModal({ open, onClose, initialTab, sidePanel }: Props
               {mode === "login" ? "Entrar" : "Criar minha conta"}
             </button>
           </form>
+
+          <p className="mt-4 text-center text-xs text-white/55">
+            {mode === "login" ? (
+              <>Ainda não tem conta?{" "}
+                <button type="button" onClick={() => setMode("signup")} className="font-semibold text-gold hover:underline">Criar conta</button>
+              </>
+            ) : (
+              <>Já tem uma conta?{" "}
+                <button type="button" onClick={() => setMode("login")} className="font-semibold text-gold hover:underline">Entrar</button>
+              </>
+            )}
+          </p>
         </div>
       </div>
     </div>
