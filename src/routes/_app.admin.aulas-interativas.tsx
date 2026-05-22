@@ -36,6 +36,7 @@ import {
   apagarImagensExtracao,
   type ArquivoDrive,
 } from "@/lib/aulas-interativas-drive.functions";
+import { ensureLongCourseStructure } from "@/lib/aulas-interativas-long-slides";
 import { SlidePlayer } from "@/components/aulas-interativas/SlidePlayer";
 
 export const Route = createFileRoute("/_app/admin/aulas-interativas")({
@@ -240,7 +241,7 @@ function ArquivoMaterialItem({
 
   useMemo(() => {
     if (previaQ.data?.estrutura) {
-      setEstrutura(previaQ.data.estrutura as Estrutura);
+      setEstrutura(ensureLongCourseStructure(previaQ.data.estrutura as Estrutura));
       if (previaQ.data.titulo_sugerido) setTitulo(previaQ.data.titulo_sugerido);
       if (previaQ.data.materia_sugerida) setMateria(previaQ.data.materia_sugerida);
     }
@@ -392,7 +393,7 @@ function ArquivoMaterialItem({
         }
       }
 
-      setEstrutura(finalPayload.estrutura);
+      setEstrutura(ensureLongCourseStructure(finalPayload.estrutura as Estrutura));
       if (finalPayload.titulo_sugerido) setTitulo(finalPayload.titulo_sugerido);
       if (finalPayload.materia_sugerida) setMateria(finalPayload.materia_sugerida);
       setProgresso(`Prévia: ${finalPayload.estrutura.modulos.length} módulo(s). Revise abaixo.`);
