@@ -21,6 +21,7 @@ import {
   LEIS_IMPORTANTES,
   matchPreset,
   matchLeisAcompanhadas,
+  detectarLeiAlvo,
   type PresetKey,
 } from "@/lib/atualizacoes-filtros";
 
