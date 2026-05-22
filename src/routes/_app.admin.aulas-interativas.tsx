@@ -32,6 +32,7 @@ import {
   vincularMapaAula,
   obterPreviaArquivo,
   obterExtracaoArquivo,
+  apagarExtracaoArquivo,
   type ArquivoDrive,
 } from "@/lib/aulas-interativas-drive.functions";
 import { SlidePlayer } from "@/components/aulas-interativas/SlidePlayer";
