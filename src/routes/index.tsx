@@ -128,25 +128,15 @@ function LandingPage() {
         </div>
 
         {/* OAB laurel */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.7 }}
-          className="relative z-10 pb-10 md:pb-14 px-5"
-        >
+        <div className="relative z-10 pb-10 md:pb-14 px-5">
           <OabLaurel />
-        </motion.div>
+        </div>
 
         {/* scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.4, duration: 0.8 }}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 text-primary-foreground/60 text-[10px] uppercase tracking-[0.3em] font-semibold flex flex-col items-center gap-1.5 pointer-events-none"
-        >
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-primary-foreground/60 text-[10px] uppercase tracking-[0.3em] font-semibold flex flex-col items-center gap-1.5 pointer-events-none">
           <span>Role para descobrir</span>
           <span className="h-6 w-[1px] bg-gradient-to-b from-gold/80 to-transparent animate-pulse" />
-        </motion.div>
+        </div>
       </section>
 
       {/* ============ POR QUE ============ */}
