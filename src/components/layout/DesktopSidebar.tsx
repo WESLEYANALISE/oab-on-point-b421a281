@@ -56,9 +56,7 @@ export function DesktopSidebar() {
     <aside className="hidden md:flex flex-col w-64 shrink-0 sticky top-0 h-screen bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
       <div className="px-6 py-5 border-b border-sidebar-border">
         <Link to="/inicio" className="flex items-center gap-2.5">
-          <div className="h-9 w-9 rounded-md bg-gradient-gold grid place-items-center shadow-sm">
-            <Scale className="h-5 w-5 text-gold-foreground" />
-          </div>
+          <img src={logoNaRisca} alt="OAB na Risca" width={36} height={36} className="h-9 w-9 rounded-md object-cover shadow-sm" />
           <div>
             <p className="font-display text-xl leading-none">OAB na Risca</p>
             <p className="text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/60 mt-0.5">Estude na precisão</p>
