@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -290,22 +291,25 @@ function AtualizacoesLeisPage() {
         <UltimosAtos atos={atos.filter(aplicaFiltros).slice(0, 20)} />
       )}
 
-      {/* FAB de filtros */}
-      <button
-        onClick={() => setPainelAberto(true)}
-        aria-label="Abrir filtros"
-        className={cn(
-          "fixed z-40 bottom-24 right-4 md:bottom-6 md:right-6",
-          "h-14 w-14 rounded-full bg-gold text-gold-foreground shadow-lg",
-          "grid place-items-center hover:scale-105 active:scale-95 transition-transform",
-          "shadow-[0_10px_30px_-8px_color-mix(in_oklab,var(--gold)_50%,transparent)]",
-        )}
-      >
-        <SlidersHorizontal className="h-5 w-5" />
-        {filtroAtivo && (
-          <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-400 ring-2 ring-background" />
-        )}
-      </button>
+      {/* FAB de filtros — portal para escapar do ancestral com transform (animate-route-slide) */}
+      {typeof document !== "undefined" && createPortal(
+        <button
+          onClick={() => setPainelAberto(true)}
+          aria-label="Abrir filtros"
+          className={cn(
+            "fixed z-50 bottom-24 right-4 md:bottom-6 md:right-6",
+            "h-14 w-14 rounded-full bg-gold text-gold-foreground shadow-lg",
+            "grid place-items-center hover:scale-105 active:scale-95 transition-transform",
+            "shadow-[0_10px_30px_-8px_color-mix(in_oklab,var(--gold)_50%,transparent)]",
+          )}
+        >
+          <SlidersHorizontal className="h-5 w-5" />
+          {filtroAtivo && (
+            <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-400 ring-2 ring-background" />
+          )}
+        </button>,
+        document.body,
+      )}
 
       <FiltrosPanel
         aberto={painelAberto}
