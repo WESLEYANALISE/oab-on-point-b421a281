@@ -311,30 +311,41 @@ function ArquivoMaterialItem({
     return { mod: estrutura.modulos.length, aulas, slides, quizzes };
   }, [estrutura]);
 
+  const ordem = ordemOAB(arquivo.subpasta);
+  const ordemTxt = ordem === 999 ? "—" : String(ordem + 1).padStart(2, "0");
+
   return (
     <li className="rounded-xl border border-border bg-background p-3">
       <div className="flex items-start gap-3">
-        <FileText className="h-5 w-5 text-gold shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <p className="font-display text-sm truncate">{arquivo.nome_arquivo}</p>
-          <p className="text-[11px] text-muted-foreground">
-            {arquivo.subpasta} · {arquivo.bytes ? `${(arquivo.bytes / 1024 / 1024).toFixed(1)} MB` : "?"} ·{" "}
-            <span className={statusColor(arquivo.status_ingestao)}>{arquivo.status_ingestao}</span>
-            {arquivo.curso_id && " · vinculado"}
-          </p>
+        <div className="shrink-0 h-10 w-10 rounded-lg bg-gold/10 border border-gold/30 flex flex-col items-center justify-center">
+          <span className="text-[9px] uppercase tracking-wider text-gold/70 leading-none">OAB</span>
+          <span className="text-xs font-display text-gold leading-none mt-0.5">{ordemTxt}</span>
         </div>
-        {arquivo.pdf_url && (
-          <a href={arquivo.pdf_url} target="_blank" rel="noreferrer" className="text-[11px] text-muted-foreground hover:text-foreground">
-            Ver PDF
-          </a>
-        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-display text-sm leading-snug break-words">{arquivo.subpasta}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5 break-words">
+            {arquivo.nome_arquivo.replace(/\.pdf$/i, "")}
+          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-[10px]">
+            <span className="text-muted-foreground">{arquivo.bytes ? `${(arquivo.bytes / 1024 / 1024).toFixed(1)} MB` : "?"}</span>
+            <span className={`px-1.5 py-0.5 rounded-full border border-border ${statusColor(arquivo.status_ingestao)}`}>
+              {statusLabel(arquivo.status_ingestao)}
+            </span>
+            {arquivo.curso_id && <span className="text-emerald-400">• vinculado</span>}
+            {arquivo.pdf_url && (
+              <a href={arquivo.pdf_url} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground underline-offset-2 hover:underline">
+                Ver PDF
+              </a>
+            )}
+          </div>
+        </div>
         <button
           onClick={gerar}
           disabled={gerando}
-          className="h-9 px-3 rounded-full bg-gradient-toga text-primary-foreground text-xs inline-flex items-center gap-1 disabled:opacity-50"
+          className="h-9 px-3 rounded-full bg-gradient-toga text-primary-foreground text-xs inline-flex items-center gap-1 disabled:opacity-50 shrink-0"
         >
           {gerando ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
-          Gerar curso
+          Gerar
         </button>
       </div>
 
