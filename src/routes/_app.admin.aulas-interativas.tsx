@@ -64,7 +64,7 @@ function AdminAulasInterativas() {
   const [tab, setTab] = useState<TabKey>("drive");
 
   return (
-    <div className="px-4 md:px-8 py-6 max-w-6xl mx-auto">
+    <div className="px-2 sm:px-4 md:px-8 py-6 max-w-6xl mx-auto">
       <Link
         to="/admin"
         className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground mb-4"
@@ -468,7 +468,7 @@ function ArquivoMaterialItem({
   const temExtracao = !!extracaoQ.data;
 
   return (
-    <li className="rounded-xl border border-border bg-background p-3">
+    <li className="rounded-xl border border-border bg-background px-2 py-3 sm:p-3">
       <div className="flex items-start gap-3">
         <div className="shrink-0 h-10 w-10 rounded-lg bg-gold/10 border border-gold/30 flex flex-col items-center justify-center">
           <span className="text-[9px] uppercase tracking-wider text-gold/70 leading-none">OAB</span>
@@ -711,7 +711,7 @@ function ArquivoMaterialItem({
               Salvar rascunho
             </button>
           </div>
-          <div className="max-h-60 overflow-y-auto space-y-1">
+          <div className="max-h-60 overflow-y-auto space-y-1 scrollbar-gold pr-1">
             {estrutura.modulos.map((m, mi) => (
               <details key={mi} className="text-xs" open={mi === 0}>
                 <summary className="cursor-pointer">
