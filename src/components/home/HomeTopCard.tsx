@@ -45,14 +45,22 @@ export function HomeTopCard() {
       <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full bg-gold/20 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-12 -left-6 h-32 w-32 rounded-full bg-primary/40 blur-3xl pointer-events-none" />
 
-      {/* Themis — meia face alinhada à direita */}
+      {/* Themis — meia face alinhada à direita (entra suavemente da direita quando carrega) */}
       <img
+        ref={themisRef}
         src={themisHalf}
         alt=""
         aria-hidden
         loading="lazy"
         decoding="async"
-        className="pointer-events-none select-none absolute top-0 right-0 h-full w-auto object-cover object-left opacity-90 z-0 [mask-image:linear-gradient(to_left,black_55%,transparent_100%)]"
+        onLoad={() => setThemisLoaded(true)}
+        style={{
+          transition: "opacity 900ms ease-out, transform 900ms cubic-bezier(0.22, 1, 0.36, 1)",
+          opacity: themisLoaded ? 0.9 : 0,
+          transform: themisLoaded ? "translateX(0)" : "translateX(24px)",
+          willChange: "opacity, transform",
+        }}
+        className="pointer-events-none select-none absolute top-0 right-0 h-full w-auto object-cover object-left z-0 [mask-image:linear-gradient(to_left,black_55%,transparent_100%)]"
       />
       <div className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-transparent via-black/10 to-black/40 pointer-events-none z-0" />
 
