@@ -496,25 +496,47 @@
 
 
 /* ===== Documento oficial do Planalto (leis, decretos, etc.) =====
-   Renderiza com fundo claro pra preservar a identidade visual original:
-   brasão, cabeçalho oliva, número em azul, ementa em vermelho. */
+   Mesmo estilo de leitura do Vade Mecum: tema escuro do app, sem fundo
+   branco, sem scroll horizontal. Cores oficiais (azul/vermelho/oliva) são
+   neutralizadas; brasão fica escondido pra leitura limpa tipo artigo. */
 .planalto-doc {
-  background: #ffffff;
-  color: #000000;
-  border-radius: 0.75rem;
-  padding: 1.5rem 1rem;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 0.95rem;
-  line-height: 1.55;
-  overflow-x: auto;
+  color: var(--foreground);
+  font-family: var(--font-body, Georgia, "Times New Roman", serif);
+  font-size: 1rem;
+  line-height: 1.7;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
-.planalto-doc * { max-width: 100%; }
-.planalto-doc img { display: inline-block; height: auto; }
-.planalto-doc a { color: #0000ee; text-decoration: underline; }
-.planalto-doc a:visited { color: #551a8b; }
-.planalto-doc table { border-collapse: collapse; margin: 0 auto; }
-.planalto-doc td, .planalto-doc th { padding: 0.25rem 0.5rem; vertical-align: top; }
-.planalto-doc p { margin: 0 0 0.85em; }
-.planalto-doc strong, .planalto-doc b { font-weight: 700; }
-.planalto-doc center { text-align: center; }
-.planalto-doc hr { border: 0; border-top: 1px solid #ccc; margin: 1.2em 0; }
+.planalto-doc * { max-width: 100% !important; }
+.planalto-doc img { display: none; }
+.planalto-doc font[color],
+.planalto-doc [color] { color: inherit !important; }
+.planalto-doc a {
+  color: var(--gold, hsl(45 80% 60%));
+  text-decoration: none;
+  border-bottom: 1px dotted color-mix(in oklab, var(--gold) 60%, transparent);
+}
+.planalto-doc a:hover { border-bottom-style: solid; }
+.planalto-doc table,
+.planalto-doc tbody,
+.planalto-doc tr,
+.planalto-doc td,
+.planalto-doc th {
+  display: block;
+  width: 100% !important;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent !important;
+}
+.planalto-doc center { text-align: left; }
+.planalto-doc p { margin: 0 0 1em; }
+.planalto-doc strong, .planalto-doc b { font-weight: 700; color: var(--foreground); }
+.planalto-doc hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.5em 0;
+}
+.planalto-doc strike, .planalto-doc s, .planalto-doc del {
+  color: color-mix(in oklab, var(--muted-foreground) 80%, transparent);
+}
