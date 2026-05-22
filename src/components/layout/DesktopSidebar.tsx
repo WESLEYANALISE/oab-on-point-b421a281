@@ -3,6 +3,7 @@ import { Home, BookOpen, FileText, Layers, Target, Sparkles, Newspaper, Award, S
 import { cn } from "@/lib/utils";
 import { useIsAdmin } from "@/hooks/use-admin";
 import { useFontScale } from "@/hooks/use-font-scale";
+import logoNaRisca from "@/assets/logo-oab-na-risca.webp";
 
 const baseGroups = [
   {
