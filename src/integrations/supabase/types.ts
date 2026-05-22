@@ -1412,6 +1412,36 @@ export type Database = {
         }
         Relationships: []
       }
+      oab_metas: {
+        Row: {
+          created_at: string
+          data_prova: string | null
+          meta_semanal_aulas: number
+          meta_semanal_minutos: number
+          meta_semanal_questoes: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_prova?: string | null
+          meta_semanal_aulas?: number
+          meta_semanal_minutos?: number
+          meta_semanal_questoes?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_prova?: string | null
+          meta_semanal_aulas?: number
+          meta_semanal_minutos?: number
+          meta_semanal_questoes?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
