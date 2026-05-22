@@ -227,6 +227,44 @@ function fallbackSlides(aula: any) {
   ];
 }
 
+function splitSentences(text: string, max = 8) {
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  const sentences = cleaned.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((s) => s.trim()).filter(Boolean) ?? [];
+  return sentences.slice(0, max);
+}
+
+function pickSentences(text: string, start: number, count: number, fallback: string) {
+  const sentences = splitSentences(text, start + count + 2).slice(start, start + count);
+  return sentences.length ? sentences.join(" ") : fallback;
+}
+
+function buildLocalSlides(aula: any, trechos: string) {
+  const titulo = String(aula?.titulo ?? "Aula");
+  const escopo = String(aula?.escopo ?? aula?.descricao ?? "Tema central da aula.");
+  const base = compactText(trechos.replace(/PÁGINA \d+:/g, " ").replace(/---/g, " "), 9_000);
+  const conceito1 = pickSentences(base, 0, 4, escopo);
+  const conceito2 = pickSentences(base, 4, 4, escopo);
+  const exemplo = pickSentences(base, 8, 3, `Aplique ${titulo} a um caso concreto, identificando o conceito, a regra e a consequência jurídica.`);
+  const termos = extractTokens(titulo, escopo, base).slice(0, 5);
+  const pares = (termos.length ? termos : ["conceito", "regra", "aplicação", "exceção"]).map((termo) => ({
+    termo: termo.charAt(0).toUpperCase() + termo.slice(1),
+    definicao: `Ponto ligado ao estudo de ${titulo}, conforme o material extraído.`,
+  }));
+
+  return [
+    { ordem: 0, tipo: "capa", conteudo: { titulo, objetivos: ["Compreender o tema no contexto da OAB", "Identificar conceitos centrais", "Aplicar o raciocínio em questões"] }, imagem_url: null, quiz_json: null },
+    { ordem: 1, tipo: "conceito", conteudo: { titulo: "Base conceitual", texto: conceito1, destaque: "Domine o conceito antes de resolver o caso." }, imagem_url: null, quiz_json: null },
+    { ordem: 2, tipo: "exemplo", conteudo: { titulo: "Aplicação prática", texto: exemplo, destaque: "Em prova, conecte fato, regra e consequência." }, imagem_url: null, quiz_json: null },
+    { ordem: 3, tipo: "quiz", conteudo: { titulo: "Teste rápido" }, imagem_url: null, quiz_json: { pergunta: `Ao estudar ${titulo}, qual postura é mais adequada?`, alternativas: [{ letra: "A", texto: "Relacionar conceito, fundamento e aplicação prática" }, { letra: "B", texto: "Memorizar palavras isoladas do material" }, { letra: "C", texto: "Ignorar exceções e detalhes do enunciado" }, { letra: "D", texto: "Responder sem identificar a regra aplicável" }], correta: "A", explicacao: "A alternativa A é correta porque organiza o raciocínio jurídico. B, C e D prejudicam a análise do caso e aumentam o risco de erro." } },
+    { ordem: 4, tipo: "conceito", conteudo: { titulo: "Aprofundamento", texto: conceito2, destaque: "Atenção às palavras que alteram o alcance da regra." }, imagem_url: null, quiz_json: null },
+    { ordem: 5, tipo: "caso_pratico", conteudo: { titulo: "Caso prático", enunciado: `Uma questão apresenta situação relacionada a ${titulo}.`, pergunta: "Qual é o primeiro passo para resolver corretamente?", analise: `Identifique o instituto central, destaque os fatos juridicamente relevantes e confronte com o conteúdo estudado. Em ${titulo}, a resposta nasce da ligação entre conceito e aplicação.` }, imagem_url: null, quiz_json: null },
+    { ordem: 6, tipo: "ligar_termos", conteudo: { titulo: "Ligue os termos", pares }, imagem_url: null, quiz_json: null },
+    { ordem: 7, tipo: "dicas", conteudo: { titulo: "Dicas de prova", dicas: [{ tipo: "dica", texto: "Leia o enunciado procurando a regra cobrada." }, { tipo: "atencao", texto: "Cuidado com alternativas absolutas quando o tema admite nuances." }, { tipo: "alvo", texto: "Revise conceitos que aparecem de forma repetida no material." }] }, imagem_url: null, quiz_json: null },
+    { ordem: 8, tipo: "resumo", conteudo: { titulo: "Resumo final", bullets: ["Conceito central", "Aplicação prática", "Pontos de atenção", "Vocabulário essencial", "Estratégia de prova"] }, imagem_url: null, quiz_json: null },
+    { ordem: 9, tipo: "quiz", conteudo: { titulo: "Questão final" }, imagem_url: null, quiz_json: { pergunta: `Em uma questão de OAB sobre ${titulo}, o melhor caminho é:`, alternativas: [{ letra: "A", texto: "Ler os fatos, identificar o instituto e aplicar a consequência jurídica" }, { letra: "B", texto: "Escolher a alternativa mais longa" }, { letra: "C", texto: "Desconsiderar o contexto do material" }, { letra: "D", texto: "Responder só por familiaridade com o tema" }], correta: "A", explicacao: "A é correta porque reproduz o método jurídico adequado. B, C e D são atalhos inseguros e não garantem aderência ao conteúdo." } },
+  ];
+}
+
 function tryParseJson(raw: string): any {
   if (!raw) throw new Error("Resposta vazia do modelo");
   try {
