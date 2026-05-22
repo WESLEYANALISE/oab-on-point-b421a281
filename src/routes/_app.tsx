@@ -47,6 +47,20 @@ function AppLayout() {
 
   if (!user) return null;
 
+  if (isLeitor) {
+    // Leitor de livros ocupa toda a tela — sem sidebar, header ou wrapper com transform.
+    return (
+      <>
+        <Outlet />
+        {isAdmin ? (
+          <Suspense fallback={null}>
+            <AdminQueueOverlays />
+          </Suspense>
+        ) : null}
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen flex bg-background text-foreground">
       <DesktopSidebar />
