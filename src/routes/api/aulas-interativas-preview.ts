@@ -2,7 +2,7 @@ import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
-import { geminiGenerateContent } from "@/lib/gemini.server";
+import { geminiStreamContent } from "@/lib/gemini.server";
 
 const MODEL = "gemini-2.5-flash";
 
@@ -63,6 +63,10 @@ SAÍDA: APENAS JSON válido (sem markdown ao redor):
   ]
 }`;
 
+function sseEvent(event: string, data: unknown) {
+  return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
 export const Route = createFileRoute("/api/aulas-interativas-preview")({
   server: {
     handlers: {
@@ -108,85 +112,145 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
           })
           .eq("id", arq.id);
 
-        try {
-          const titulo =
-            parsed.tituloCurso ?? arq.nome_arquivo.replace(/\.pdf$/i, "");
-          const materia = parsed.materia ?? arq.subpasta;
-          const prompt = `Curso sugerido: ${titulo}\nMatéria: ${materia}\n\nMATERIAL EM MARKDOWN:\n${extr.markdown.slice(0, 300_000)}`;
+        const titulo = parsed.tituloCurso ?? arq.nome_arquivo.replace(/\.pdf$/i, "");
+        const materia = parsed.materia ?? arq.subpasta;
+        const prompt = `Curso sugerido: ${titulo}\nMatéria: ${materia}\n\nMATERIAL EM MARKDOWN:\n${extr.markdown.slice(0, 180_000)}`;
 
-          const res = await geminiGenerateContent(
-            MODEL,
-            {
-              system_instruction: { parts: [{ text: SYSTEM }] },
-              contents: [{ role: "user", parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.4,
-                responseMimeType: "application/json",
-                maxOutputTokens: 60000,
-              },
-            },
-            { maxAttemptsPerKey: 2, backoffMs: 2000 },
-          );
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream<Uint8Array>({
+          async start(controller) {
+            const send = (event: string, data: unknown) => {
+              try {
+                controller.enqueue(encoder.encode(sseEvent(event, data)));
+              } catch {
+                /* closed */
+              }
+            };
 
-          if (!res.ok) {
-            const txt = await res.text().catch(() => "");
-            throw new Error(`Gemini ${res.status}: ${txt.slice(0, 400)}`);
-          }
-          const json = await res.json();
-          const text = json?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-          let estrutura: any;
-          try {
-            estrutura = JSON.parse(text);
-          } catch {
-            const m = text.match(/\{[\s\S]*\}/);
-            estrutura = m ? JSON.parse(m[0]) : { modulos: [] };
-          }
-          const out = {
-            modulos: Array.isArray(estrutura?.modulos) ? estrutura.modulos : [],
-          };
+            // keep-alive a cada 10s pra não estourar gateway
+            const ping = setInterval(() => {
+              try {
+                controller.enqueue(encoder.encode(`: ping\n\n`));
+              } catch {
+                /* closed */
+              }
+            }, 10_000);
 
-          await sb
-            .from("aulas_interativas_previas")
-            .delete()
-            .eq("arquivo_drive_id", arq.id);
+            let fullText = "";
+            try {
+              send("start", { ok: true });
 
-          const { error: eIns } = await sb.from("aulas_interativas_previas").insert({
-            arquivo_drive_id: arq.id,
-            estrutura: out as never,
-            titulo_sugerido: estrutura?.titulo_sugerido ?? titulo,
-            materia_sugerida: estrutura?.materia_sugerida ?? materia,
-          } as never);
-          if (eIns) throw new Error(eIns.message);
+              const res = await geminiStreamContent(MODEL, {
+                system_instruction: { parts: [{ text: SYSTEM }] },
+                contents: [{ role: "user", parts: [{ text: prompt }] }],
+                generationConfig: {
+                  temperature: 0.4,
+                  responseMimeType: "application/json",
+                  maxOutputTokens: 32000,
+                },
+              });
 
-          await sb
-            .from("aulas_interativas_arquivos_drive")
-            .update({
-              status_ingestao: "previa_pronta",
-              erro_msg: null,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", arq.id);
+              if (!res.ok || !res.body) {
+                const txt = await res.text().catch(() => "");
+                throw new Error(`Gemini ${res.status}: ${txt.slice(0, 400)}`);
+              }
 
-          return Response.json({
-            ok: true,
-            estrutura: out,
-            titulo_sugerido: estrutura?.titulo_sugerido ?? titulo,
-            materia_sugerida: estrutura?.materia_sugerida ?? materia,
-          });
-        } catch (err: any) {
-          await sb
-            .from("aulas_interativas_arquivos_drive")
-            .update({
-              status_ingestao: "erro",
-              erro_msg: String(err?.message ?? err).slice(0, 500),
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", arq.id);
-          return new Response(
-            JSON.stringify({ error: String(err?.message ?? err) }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
-        }
+              const reader = res.body.getReader();
+              const decoder = new TextDecoder();
+              let buf = "";
+              while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                buf += decoder.decode(value, { stream: true });
+                let idx: number;
+                while ((idx = buf.indexOf("\n\n")) !== -1) {
+                  const raw = buf.slice(0, idx);
+                  buf = buf.slice(idx + 2);
+                  for (const line of raw.split("\n")) {
+                    if (!line.startsWith("data:")) continue;
+                    const payload = line.slice(5).trim();
+                    if (!payload || payload === "[DONE]") continue;
+                    try {
+                      const j = JSON.parse(payload);
+                      const t = j?.candidates?.[0]?.content?.parts?.[0]?.text;
+                      if (typeof t === "string" && t.length) {
+                        fullText += t;
+                        send("progress", { chars: fullText.length });
+                      }
+                    } catch {
+                      /* parcial */
+                    }
+                  }
+                }
+              }
+
+              let estrutura: any;
+              try {
+                estrutura = JSON.parse(fullText);
+              } catch {
+                const m = fullText.match(/\{[\s\S]*\}/);
+                estrutura = m ? JSON.parse(m[0]) : { modulos: [] };
+              }
+              const out = {
+                modulos: Array.isArray(estrutura?.modulos) ? estrutura.modulos : [],
+              };
+
+              await sb
+                .from("aulas_interativas_previas")
+                .delete()
+                .eq("arquivo_drive_id", arq.id);
+
+              const { error: eIns } = await sb.from("aulas_interativas_previas").insert({
+                arquivo_drive_id: arq.id,
+                estrutura: out as never,
+                titulo_sugerido: estrutura?.titulo_sugerido ?? titulo,
+                materia_sugerida: estrutura?.materia_sugerida ?? materia,
+              } as never);
+              if (eIns) throw new Error(eIns.message);
+
+              await sb
+                .from("aulas_interativas_arquivos_drive")
+                .update({
+                  status_ingestao: "previa_pronta",
+                  erro_msg: null,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", arq.id);
+
+              send("done", {
+                estrutura: out,
+                titulo_sugerido: estrutura?.titulo_sugerido ?? titulo,
+                materia_sugerida: estrutura?.materia_sugerida ?? materia,
+              });
+            } catch (err: any) {
+              await sb
+                .from("aulas_interativas_arquivos_drive")
+                .update({
+                  status_ingestao: "erro",
+                  erro_msg: String(err?.message ?? err).slice(0, 500),
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", arq.id);
+              send("error", { error: String(err?.message ?? err) });
+            } finally {
+              clearInterval(ping);
+              try {
+                controller.close();
+              } catch {
+                /* já fechado */
+              }
+            }
+          },
+        });
+
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            Connection: "keep-alive",
+            "X-Accel-Buffering": "no",
+          },
+        });
       },
     },
   },

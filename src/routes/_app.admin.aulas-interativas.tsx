@@ -277,17 +277,18 @@ function ArquivoMaterialItem({
         const proc = j.proximaPagina as number;
         const extraidas = j.processadas as number;
         const pct = total ? Math.min(100, Math.round((proc / total) * 100)) : null;
+        const imgs = j.imagens as number | undefined;
         setProgresso(
           total
-            ? `Extraindo… prova real ${proc}/${total} páginas (${pct}%) · ${extraidas} salvas`
-            : `Extraindo… ${extraidas} páginas salvas`,
+            ? `Extraindo… prova real ${proc}/${total} páginas (${pct}%) · ${extraidas} págs salvas · ${imgs ?? 0} imagens`
+            : `Extraindo… ${extraidas} páginas salvas · ${imgs ?? 0} imagens`,
         );
         done = j.done;
         pageStart = j.proximaPagina;
       }
       toast.success(`Extraído: ${last?.processadas ?? "?"}/${last?.total ?? "?"} páginas, ${last?.imagens ?? 0} imagens`);
       setProgresso(
-        `Extração pronta: prova real ${last?.processadas ?? "?"}/${last?.total ?? "?"} páginas · ${last?.chars ?? 0} chars.`,
+        `Extração pronta: ${last?.processadas ?? "?"}/${last?.total ?? "?"} páginas · ${last?.chars ?? 0} caracteres · ${last?.imagens ?? 0} imagens.`,
       );
       onChanged();
     } catch (err: any) {
@@ -300,23 +301,66 @@ function ArquivoMaterialItem({
 
   async function rodarPrevia() {
     setAcao("previa");
-    setProgresso("Gemini estruturando módulos e aulas…");
+    setProgresso("Conectando ao Gemini…");
     setEstrutura(null);
     try {
       const res = await fetch("/api/aulas-interativas-preview", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
         body: JSON.stringify({ arquivoDriveId: arquivo.id, tituloCurso: titulo, materia }),
       });
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
         const txt = await res.text().catch(() => "");
         throw new Error(`HTTP ${res.status}: ${txt.slice(0, 200)}`);
       }
-      const j = await res.json();
-      setEstrutura(j.estrutura);
-      if (j.titulo_sugerido) setTitulo(j.titulo_sugerido);
-      if (j.materia_sugerida) setMateria(j.materia_sugerida);
-      setProgresso(`Prévia: ${j.estrutura.modulos.length} módulo(s). Revise abaixo.`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let finalPayload: any = null;
+      let serverError: string | null = null;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let idx: number;
+        while ((idx = buf.indexOf("\n\n")) !== -1) {
+          const raw = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          let evt = "message";
+          let dataLine = "";
+          for (const line of raw.split("\n")) {
+            if (line.startsWith("event:")) evt = line.slice(6).trim();
+            else if (line.startsWith("data:")) dataLine += line.slice(5).trim();
+          }
+          if (!dataLine) continue;
+          let payload: any;
+          try {
+            payload = JSON.parse(dataLine);
+          } catch {
+            continue;
+          }
+          if (evt === "progress") {
+            const chars = payload?.chars ?? 0;
+            setProgresso(`Gemini gerando… ${chars.toLocaleString("pt-BR")} caracteres`);
+          } else if (evt === "done") {
+            finalPayload = payload;
+          } else if (evt === "error") {
+            serverError = payload?.error ?? "erro desconhecido";
+          } else if (evt === "start") {
+            setProgresso("Gemini começou a gerar a estrutura…");
+          }
+        }
+      }
+
+      if (serverError) throw new Error(serverError);
+      if (!finalPayload) throw new Error("Stream encerrou sem resposta final");
+
+      setEstrutura(finalPayload.estrutura);
+      if (finalPayload.titulo_sugerido) setTitulo(finalPayload.titulo_sugerido);
+      if (finalPayload.materia_sugerida) setMateria(finalPayload.materia_sugerida);
+      setProgresso(`Prévia: ${finalPayload.estrutura.modulos.length} módulo(s). Revise abaixo.`);
       onChanged();
     } catch (err: any) {
       toast.error(err?.message ?? "Falha");
@@ -491,6 +535,44 @@ function ArquivoMaterialItem({
       {arquivo.erro_msg && status === "erro" && (
         <p className="mt-2 text-[11px] text-red-400 break-words">⚠ {arquivo.erro_msg}</p>
       )}
+
+      {temExtracao && (() => {
+        const imgs = (extracaoQ.data?.imagens as string[] | null) ?? [];
+        if (imgs.length === 0) {
+          return (
+            <p className="mt-2 text-[11px] text-muted-foreground">Sem imagens extraídas.</p>
+          );
+        }
+        const max = 8;
+        const visiveis = imgs.slice(0, max);
+        const sobra = imgs.length - visiveis.length;
+        return (
+          <div className="mt-2">
+            <p className="text-[11px] text-muted-foreground mb-1">
+              {imgs.length} imagem{imgs.length === 1 ? "" : "ns"} extraída{imgs.length === 1 ? "" : "s"}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {visiveis.map((url, i) => (
+                <a
+                  key={i}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block h-14 w-14 rounded-md overflow-hidden border border-border bg-background hover:border-gold/60"
+                  title={`Imagem ${i + 1}`}
+                >
+                  <img src={url} alt={`Imagem ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+                </a>
+              ))}
+              {sobra > 0 && (
+                <span className="h-14 w-14 rounded-md border border-border bg-background flex items-center justify-center text-[11px] text-muted-foreground">
+                  +{sobra}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {estrutura && (
         <div className="mt-3 grid md:grid-cols-2 gap-2">
