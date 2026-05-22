@@ -2,7 +2,7 @@ import "@tanstack/react-start";
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
-import { geminiStreamContent } from "@/lib/gemini.server";
+import { geminiGenerateContent } from "@/lib/gemini.server";
 
 const MODEL = "gemini-2.5-flash";
 
@@ -12,30 +12,17 @@ const Input = z.object({
   materia: z.string().min(1).max(120).optional(),
 });
 
-const SYSTEM = `Você é um arquiteto pedagógico que transforma um MATERIAL DE ESTUDO em CURSO INTERATIVO de slides para alunos brasileiros da OAB.
+const SYSTEM_ESQUELETO = `Você é um arquiteto pedagógico que vai PLANEJAR um curso interativo a partir de um MATERIAL DE ESTUDO em markdown (português do Brasil, OAB).
 
-Receberá o TEXTO EM MARKDOWN já extraído de um PDF (com imagens referenciadas por URL).
-
-Tarefa:
-1) Identifique a estrutura: MÓDULOS (capítulos) → AULAS (subseções) → SLIDES (3 a 10 por aula).
-2) Cada slide tem 1 ideia central, em português do Brasil, direto e didático.
-3) Tipos de slide válidos:
-   - "capa": titulo + objetivos (bullets até 4)
-   - "conceito": titulo + texto (≤120 palavras) + destaque (1 frase com dispositivo/regra-chave)
-   - "exemplo": titulo + texto com caso prático curto
-   - "esquema": titulo + bullets (até 6)
-   - "comparativo": titulo + colunas[{titulo, itens[]}] (2-3 colunas)
-   - "quiz": titulo "Teste rápido" + quiz_json {pergunta, alternativas[{letra:"A",texto}], correta:"A", explicacao}. A CADA 3-4 slides.
-   - "resumo": titulo "O que vimos" + bullets dos pontos-chave
-   - "conclusao": titulo "Próximos passos" + texto motivador curto
+Sua tarefa AQUI é apenas o ESQUELETO: módulos e aulas (sem slides).
 
 Regras:
-- Use **negrito** (markdown) em termos-chave dentro de texto/destaque.
-- Cada aula precisa de pelo menos 1 quiz.
-- NÃO invente: use só o conteúdo do material. Se houver imagem útil (URL no markdown), referencie em "imagem_url" do slide.
-- IGNORE conteúdo que não seja jurídico (citações ao professor, logos, propaganda de cursinho, redes sociais).
+- 2 a 8 módulos. Cada módulo tem 2 a 8 aulas.
+- "escopo" da aula deve ser 2-4 frases descrevendo exatamente o que aquela aula vai cobrir, com termos-chave do material. Isso será usado depois para gerar os slides.
+- IGNORE conteúdo que não seja jurídico (citações ao professor, logos, propaganda, redes sociais).
+- NÃO invente: use só o que está no material.
 
-SAÍDA: APENAS JSON válido (sem markdown ao redor):
+SAÍDA: APENAS JSON válido, sem markdown ao redor:
 {
   "titulo_sugerido": "string",
   "materia_sugerida": "string",
@@ -48,23 +35,103 @@ SAÍDA: APENAS JSON válido (sem markdown ao redor):
           "titulo": "string",
           "descricao": "string curta",
           "duracao_min": number,
-          "slides": [
-            {
-              "ordem": number,
-              "tipo": "capa"|"conceito"|"exemplo"|"esquema"|"comparativo"|"quiz"|"resumo"|"conclusao",
-              "conteudo": {"titulo":"...","texto":"...","destaque":"...","bullets":[...],"colunas":[{"titulo":"...","itens":[...]}]},
-              "imagem_url": null,
-              "quiz_json": null
-            }
-          ]
+          "escopo": "string com 2-4 frases descrevendo o que entra nessa aula"
         }
       ]
     }
   ]
 }`;
 
+const SYSTEM_SLIDES = `Você gera SLIDES de UMA aula de um curso jurídico interativo (OAB, português do Brasil).
+
+Você receberá: contexto da aula (módulo, título, escopo) + o MATERIAL DE ESTUDO completo em markdown.
+
+Gere de 3 a 10 slides para ESTA AULA APENAS, focados no escopo informado.
+
+Tipos válidos:
+- "capa": titulo + objetivos (bullets até 4)
+- "conceito": titulo + texto (≤120 palavras) + destaque (1 frase com regra-chave)
+- "exemplo": titulo + texto com caso prático curto
+- "esquema": titulo + bullets (até 6)
+- "comparativo": titulo + colunas[{titulo, itens[]}] (2-3 colunas)
+- "quiz": titulo "Teste rápido" + quiz_json {pergunta, alternativas[{letra:"A",texto}], correta:"A", explicacao}
+- "resumo": titulo "O que vimos" + bullets dos pontos-chave
+- "conclusao": titulo "Próximos passos" + texto motivador curto
+
+Regras:
+- A aula precisa ter PELO MENOS 1 slide tipo "quiz".
+- Use **negrito** em termos-chave dentro de texto/destaque.
+- Se houver imagem útil referenciada no markdown (URL), use em "imagem_url".
+- NÃO repita conteúdo de outras aulas.
+
+SAÍDA: APENAS JSON válido (sem markdown ao redor):
+{
+  "slides": [
+    {
+      "ordem": number,
+      "tipo": "capa"|"conceito"|"exemplo"|"esquema"|"comparativo"|"quiz"|"resumo"|"conclusao",
+      "conteudo": {"titulo":"...","texto":"...","destaque":"...","bullets":[...],"colunas":[{"titulo":"...","itens":[...]}],"objetivos":[...]},
+      "imagem_url": null,
+      "quiz_json": null
+    }
+  ]
+}`;
+
 function sseEvent(event: string, data: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+function tryParseJson(raw: string): any {
+  if (!raw) throw new Error("Resposta vazia do modelo");
+  try {
+    return JSON.parse(raw);
+  } catch {
+    // tenta extrair primeiro bloco { ... }
+    const m = raw.match(/\{[\s\S]*\}/);
+    if (m) {
+      try { return JSON.parse(m[0]); } catch { /* segue */ }
+    }
+    // tenta reparar truncamento: corta na última `}` válida por contagem de chaves
+    let depth = 0, lastOk = -1, inStr = false, esc = false;
+    for (let i = 0; i < raw.length; i++) {
+      const c = raw[i];
+      if (inStr) {
+        if (esc) esc = false;
+        else if (c === "\\") esc = true;
+        else if (c === '"') inStr = false;
+        continue;
+      }
+      if (c === '"') { inStr = true; continue; }
+      if (c === "{") depth++;
+      else if (c === "}") {
+        depth--;
+        if (depth === 0) lastOk = i;
+      }
+    }
+    if (lastOk > 0) {
+      try { return JSON.parse(raw.slice(0, lastOk + 1)); } catch { /* segue */ }
+    }
+    throw new Error(`JSON inválido do modelo (len=${raw.length})`);
+  }
+}
+
+async function callGeminiJson(system: string, user: string, maxTokens: number): Promise<any> {
+  const res = await geminiGenerateContent(MODEL, {
+    system_instruction: { parts: [{ text: system }] },
+    contents: [{ role: "user", parts: [{ text: user }] }],
+    generationConfig: {
+      temperature: 0.4,
+      responseMimeType: "application/json",
+      maxOutputTokens: maxTokens,
+    },
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`Gemini ${res.status}: ${txt.slice(0, 300)}`);
+  }
+  const j = await res.json();
+  const text = j?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join("") ?? "";
+  return tryParseJson(text);
 }
 
 export const Route = createFileRoute("/api/aulas-interativas-preview")({
@@ -112,88 +179,118 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
           })
           .eq("id", arq.id);
 
-        const titulo = parsed.tituloCurso ?? arq.nome_arquivo.replace(/\.pdf$/i, "");
-        const materia = parsed.materia ?? arq.subpasta;
-        const prompt = `Curso sugerido: ${titulo}\nMatéria: ${materia}\n\nMATERIAL EM MARKDOWN:\n${extr.markdown.slice(0, 180_000)}`;
+        const tituloIn = parsed.tituloCurso ?? arq.nome_arquivo.replace(/\.pdf$/i, "");
+        const materiaIn = parsed.materia ?? arq.subpasta;
+        const markdown = extr.markdown.slice(0, 180_000);
 
         const encoder = new TextEncoder();
         const stream = new ReadableStream<Uint8Array>({
           async start(controller) {
+            let closed = false;
             const send = (event: string, data: unknown) => {
+              if (closed) return;
               try {
                 controller.enqueue(encoder.encode(sseEvent(event, data)));
               } catch {
-                /* closed */
+                closed = true;
               }
             };
-
-            // keep-alive a cada 10s pra não estourar gateway
             const ping = setInterval(() => {
+              if (closed) return;
               try {
                 controller.enqueue(encoder.encode(`: ping\n\n`));
               } catch {
-                /* closed */
+                closed = true;
               }
             }, 10_000);
 
-            let fullText = "";
+            const failAndPersist = async (msg: string) => {
+              await sb
+                .from("aulas_interativas_arquivos_drive")
+                .update({
+                  status_ingestao: "erro",
+                  erro_msg: msg.slice(0, 500),
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", arq.id);
+              send("error", { error: msg });
+            };
+
             try {
               send("start", { ok: true });
 
-              const res = await geminiStreamContent(MODEL, {
-                system_instruction: { parts: [{ text: SYSTEM }] },
-                contents: [{ role: "user", parts: [{ text: prompt }] }],
-                generationConfig: {
-                  temperature: 0.4,
-                  responseMimeType: "application/json",
-                  maxOutputTokens: 32000,
-                },
-              });
-
-              if (!res.ok || !res.body) {
-                const txt = await res.text().catch(() => "");
-                throw new Error(`Gemini ${res.status}: ${txt.slice(0, 400)}`);
-              }
-
-              const reader = res.body.getReader();
-              const decoder = new TextDecoder();
-              let buf = "";
-              while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                buf += decoder.decode(value, { stream: true });
-                let idx: number;
-                while ((idx = buf.indexOf("\n\n")) !== -1) {
-                  const raw = buf.slice(0, idx);
-                  buf = buf.slice(idx + 2);
-                  for (const line of raw.split("\n")) {
-                    if (!line.startsWith("data:")) continue;
-                    const payload = line.slice(5).trim();
-                    if (!payload || payload === "[DONE]") continue;
-                    try {
-                      const j = JSON.parse(payload);
-                      const t = j?.candidates?.[0]?.content?.parts?.[0]?.text;
-                      if (typeof t === "string" && t.length) {
-                        fullText += t;
-                        send("progress", { chars: fullText.length });
-                      }
-                    } catch {
-                      /* parcial */
-                    }
-                  }
-                }
-              }
-
-              let estrutura: any;
+              // ---- PASS 1: esqueleto ----
+              send("progress", { fase: "esqueleto", aula: 0, total: 0 });
+              const userEsq = `Curso sugerido: ${tituloIn}\nMatéria: ${materiaIn}\n\nMATERIAL EM MARKDOWN:\n${markdown}`;
+              let esqueleto: any;
               try {
-                estrutura = JSON.parse(fullText);
-              } catch {
-                const m = fullText.match(/\{[\s\S]*\}/);
-                estrutura = m ? JSON.parse(m[0]) : { modulos: [] };
+                esqueleto = await callGeminiJson(SYSTEM_ESQUELETO, userEsq, 16_000);
+              } catch (e: any) {
+                throw new Error(`Falha no esqueleto: ${e?.message ?? e}`);
               }
-              const out = {
-                modulos: Array.isArray(estrutura?.modulos) ? estrutura.modulos : [],
-              };
+
+              const titulo_sugerido = esqueleto?.titulo_sugerido ?? tituloIn;
+              const materia_sugerida = esqueleto?.materia_sugerida ?? materiaIn;
+              const modulosBase: any[] = Array.isArray(esqueleto?.modulos) ? esqueleto.modulos : [];
+              if (modulosBase.length === 0) throw new Error("Esqueleto vazio (sem módulos)");
+
+              // Conta total de aulas
+              const totalAulas = modulosBase.reduce(
+                (acc, m) => acc + (Array.isArray(m?.aulas) ? m.aulas.length : 0),
+                0,
+              );
+              send("progress", { fase: "esqueleto", aula: 0, total: totalAulas, modulos: modulosBase.length });
+
+              // ---- PASS 2: slides por aula ----
+              let feita = 0;
+              const modulosOut: any[] = [];
+              for (const mod of modulosBase) {
+                const aulasIn: any[] = Array.isArray(mod?.aulas) ? mod.aulas : [];
+                const aulasOut: any[] = [];
+                for (const aul of aulasIn) {
+                  const userSlides =
+                    `MÓDULO: ${mod.titulo}\nDescrição do módulo: ${mod.descricao ?? ""}\n\n` +
+                    `AULA: ${aul.titulo}\nDescrição: ${aul.descricao ?? ""}\nEscopo: ${aul.escopo ?? ""}\n\n` +
+                    `Gere os slides apenas desta aula, conforme o escopo.\n\n` +
+                    `MATERIAL EM MARKDOWN:\n${markdown}`;
+                  let slidesJson: any;
+                  try {
+                    slidesJson = await callGeminiJson(SYSTEM_SLIDES, userSlides, 8_000);
+                  } catch (e: any) {
+                    // não derruba tudo — usa slides vazios e segue
+                    slidesJson = { slides: [] };
+                    console.error("[preview] aula falhou:", aul?.titulo, e?.message);
+                  }
+                  const slides = Array.isArray(slidesJson?.slides) ? slidesJson.slides : [];
+                  aulasOut.push({
+                    titulo: aul.titulo,
+                    descricao: aul.descricao ?? "",
+                    duracao_min: aul.duracao_min ?? 10,
+                    slides: slides.map((s: any, i: number) => ({
+                      ordem: typeof s?.ordem === "number" ? s.ordem : i,
+                      tipo: s?.tipo ?? "conceito",
+                      conteudo: s?.conteudo ?? {},
+                      imagem_url: s?.imagem_url ?? null,
+                      quiz_json: s?.quiz_json ?? null,
+                    })),
+                  });
+                  feita++;
+                  send("progress", {
+                    fase: "slides",
+                    aula: feita,
+                    total: totalAulas,
+                    aulaTitulo: aul.titulo,
+                    slides: slides.length,
+                  });
+                }
+                modulosOut.push({
+                  titulo: mod.titulo,
+                  descricao: mod.descricao ?? "",
+                  aulas: aulasOut,
+                });
+              }
+
+              const out = { modulos: modulosOut };
 
               await sb
                 .from("aulas_interativas_previas")
@@ -203,8 +300,8 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
               const { error: eIns } = await sb.from("aulas_interativas_previas").insert({
                 arquivo_drive_id: arq.id,
                 estrutura: out as never,
-                titulo_sugerido: estrutura?.titulo_sugerido ?? titulo,
-                materia_sugerida: estrutura?.materia_sugerida ?? materia,
+                titulo_sugerido,
+                materia_sugerida,
               } as never);
               if (eIns) throw new Error(eIns.message);
 
@@ -217,28 +314,13 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                 })
                 .eq("id", arq.id);
 
-              send("done", {
-                estrutura: out,
-                titulo_sugerido: estrutura?.titulo_sugerido ?? titulo,
-                materia_sugerida: estrutura?.materia_sugerida ?? materia,
-              });
+              send("done", { estrutura: out, titulo_sugerido, materia_sugerida });
             } catch (err: any) {
-              await sb
-                .from("aulas_interativas_arquivos_drive")
-                .update({
-                  status_ingestao: "erro",
-                  erro_msg: String(err?.message ?? err).slice(0, 500),
-                  updated_at: new Date().toISOString(),
-                })
-                .eq("id", arq.id);
-              send("error", { error: String(err?.message ?? err) });
+              await failAndPersist(String(err?.message ?? err));
             } finally {
               clearInterval(ping);
-              try {
-                controller.close();
-              } catch {
-                /* já fechado */
-              }
+              closed = true;
+              try { controller.close(); } catch { /* já fechado */ }
             }
           },
         });
