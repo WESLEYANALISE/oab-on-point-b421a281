@@ -183,63 +183,153 @@ export const listResenhaRuns = createServerFn({ method: "GET" })
     return { runs: data ?? [] };
   });
 
-// ====== Conteúdo do ato (leitor interno tipo artigo) ======
+// ====== Conteúdo do ato (leitor estruturado tipo Vade Mecum) ======
 
-function resolverUrlsRelativas(html: string, baseUrl: string): string {
-  let base: URL;
-  try {
-    base = new URL(baseUrl);
-  } catch {
-    return html;
-  }
-  const resolve = (val: string) => {
-    if (!val) return val;
-    if (/^(https?:|mailto:|tel:|data:|#)/i.test(val)) return val;
-    try {
-      return new URL(val, base).toString();
-    } catch {
-      return val;
-    }
-  };
-  return html
-    .replace(/(<a\b[^>]*?\shref=")([^"]+)(")/gi, (_, p, u, s) => p + resolve(u) + s)
-    .replace(/(<a\b[^>]*?\shref=')([^']+)(')/gi, (_, p, u, s) => p + resolve(u) + s)
-    .replace(/(<img\b[^>]*?\ssrc=")([^"]+)(")/gi, (_, p, u, s) => p + resolve(u) + s)
-    .replace(/(<img\b[^>]*?\ssrc=')([^']+)(')/gi, (_, p, u, s) => p + resolve(u) + s);
+function stripTags(s: string): string {
+  return s
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCharCode(parseInt(n, 16)));
 }
 
-function extrairConteudoPlanalto(
-  html: string,
-  baseUrl: string,
-): { titulo: string | null; html: string } {
-  let h = html
+function collapse(s: string): string {
+  return s.replace(/\s+/g, " ").trim();
+}
+
+export type AtoSecao =
+  | { kind: "preambulo"; text: string }
+  | { kind: "estrutura"; rotulo: string; texto: string }
+  | { kind: "artigo"; numero: string; titulo: string; itens: { text: string; italic?: boolean }[] };
+
+export type AtoEstruturado = {
+  titulo: string | null;
+  ementa: string | null;
+  secoes: AtoSecao[];
+  assinaturas: { text: string; italic?: boolean }[];
+  fonteUrl: string;
+};
+
+function parseAtoEstruturado(html: string, baseUrl: string): AtoEstruturado {
+  // 1. Título oficial (link com "LEI Nº ... DE ...")
+  let titulo: string | null = null;
+  const titRe =
+    /<strong[^>]*>\s*((?:LEI|DECRETO|EMENDA|MEDIDA\s+PROVIS[ÓO]RIA|MENSAGEM)[^<]*?N[ºo°]?\s*[\d.\-A-Z]+[^<]*?)<\/strong>/i;
+  const titMatch = html.match(titRe);
+  if (titMatch) titulo = collapse(stripTags(titMatch[1]));
+
+  // 2. Ementa (texto em vermelho — color="#800000" ou similar)
+  let ementa: string | null = null;
+  const ementaRe = /<font[^>]*color\s*=\s*["']?#?800000["']?[^>]*>([\s\S]*?)<\/font>/i;
+  const ementaMatch = html.match(ementaRe);
+  if (ementaMatch) {
+    const t = collapse(stripTags(ementaMatch[1]));
+    if (t.length > 10) ementa = t;
+  }
+
+  // 3. Body — remove cabeçalhos (brasão+presidência), título+ementa e rodapé
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  let body = bodyMatch ? bodyMatch[1] : html;
+  body = body
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<link[^>]*>/gi, "")
-    .replace(/<meta[^>]*>/gi, "")
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, "")
     .replace(/<iframe[\s\S]*?<\/iframe>/gi, "")
     .replace(/<form[\s\S]*?<\/form>/gi, "")
-    .replace(/<header[\s\S]*?<\/header>/gi, "")
-    .replace(/<nav[\s\S]*?<\/nav>/gi, "")
-    .replace(/<footer[\s\S]*?<\/footer>/gi, "")
-    .replace(/ on\w+="[^"]*"/gi, "")
-    .replace(/ on\w+='[^']*'/gi, "");
+    .replace(/<img[^>]*>/gi, "");
 
-  const tituloMatch = h.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const titulo = tituloMatch ? tituloMatch[1].replace(/\s+/g, " ").trim() : null;
+  // Tira tabelas do topo (primeira table = brasão+presidência; segunda costuma
+  // ser título+ementa). Só remove as 2 primeiras.
+  for (let i = 0; i < 2; i++) {
+    body = body.replace(/<table[\s\S]*?<\/table>/i, "");
+  }
+  // Tira rodapé "Este texto não substitui..."
+  body = body.replace(
+    /<(?:p|small|font)[^>]*>\s*Este texto n[ãa]o substitui[\s\S]*?<\/(?:p|small|font)>/gi,
+    "",
+  );
 
-  const bodyMatch = h.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  let conteudo = bodyMatch ? bodyMatch[1] : h;
+  // 4. Extrai parágrafos
+  type Para = { text: string; align: "left" | "center"; italic: boolean };
+  const paras: Para[] = [];
+  const pRe = /<p\b([^>]*)>([\s\S]*?)<\/p>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = pRe.exec(body)) !== null) {
+    const attrs = m[1] || "";
+    const inner = m[2] || "";
+    const align =
+      /align\s*=\s*["']?center["']?/i.test(attrs) ||
+      /text-align\s*:\s*center/i.test(attrs) ||
+      /text-align\s*:\s*center/i.test(inner)
+        ? "center"
+        : "left";
+    const italic = /<i\b|<em\b|font-style\s*:\s*italic/i.test(inner);
+    const text = collapse(stripTags(inner));
+    if (text) paras.push({ text, align, italic });
+  }
 
-  // Força links a abrirem em nova aba e resolve URLs relativas (img/a).
-  conteudo = conteudo.replace(/<a\b([^>]*)>/gi, (m, attrs) => {
-    if (/\btarget=/i.test(attrs)) return m;
-    return `<a${attrs} target="_blank" rel="noopener noreferrer">`;
-  });
-  conteudo = resolverUrlsRelativas(conteudo, baseUrl);
+  // 5. Agrupa em seções
+  const secoes: AtoSecao[] = [];
+  const assinaturas: { text: string; italic?: boolean }[] = [];
 
-  return { titulo, html: conteudo.trim() };
+  const ART_RE = /^(Art\.?\s*\d+[ºoOª°.]?(?:[-‑–][A-Za-z\d]+)?)\s*[.\-–—:]?\s*(.*)$/i;
+  const ESTRUTURA_RE = /^(LIVRO|PARTE|T[ÍI]TULO|CAP[ÍI]TULO|SE[ÇC][ÃA]O|SUBSE[ÇC][ÃA]O|DISPOSI[ÇC][ÕO]ES)\b/i;
+  const SIG_RE = /^Bras[íi]lia,/i;
+
+  let currentArt: Extract<AtoSecao, { kind: "artigo" }> | null = null;
+  let preambuloAdicionado = false;
+  let inSignatures = false;
+
+  for (const p of paras) {
+    if (inSignatures) {
+      assinaturas.push({ text: p.text, italic: p.italic });
+      continue;
+    }
+    if (SIG_RE.test(p.text)) {
+      inSignatures = true;
+      assinaturas.push({ text: p.text, italic: p.italic });
+      continue;
+    }
+
+    const artMatch = p.text.match(ART_RE);
+    if (artMatch) {
+      currentArt = {
+        kind: "artigo",
+        numero: artMatch[1].replace(/\s+/g, " ").trim(),
+        titulo: artMatch[2] ? collapse(artMatch[2]) : "",
+        itens: [{ text: p.text, italic: p.italic }],
+      };
+      secoes.push(currentArt);
+      continue;
+    }
+
+    if (currentArt) {
+      currentArt.itens.push({ text: p.text, italic: p.italic });
+      continue;
+    }
+
+    // Antes do primeiro artigo
+    if (!preambuloAdicionado && /PRESIDENTE\s+DA\s+REP[ÚU]BLICA/i.test(p.text)) {
+      secoes.push({ kind: "preambulo", text: p.text });
+      preambuloAdicionado = true;
+      continue;
+    }
+    const estMatch = p.text.match(ESTRUTURA_RE);
+    if (estMatch) {
+      // Quebra título/subtítulo em rótulo + texto
+      const linhas = stripTags(p.text).split(/\n+/).map((x) => x.trim()).filter(Boolean);
+      const rotulo = linhas[0] ?? p.text;
+      const texto = linhas.slice(1).join(" ");
+      secoes.push({ kind: "estrutura", rotulo, texto });
+    }
+  }
+
+  return { titulo, ementa, secoes, assinaturas, fonteUrl: baseUrl };
 }
 
 export const getAtoConteudo = createServerFn({ method: "POST" })
@@ -253,17 +343,14 @@ export const getAtoConteudo = createServerFn({ method: "POST" })
     if (error) throw error;
     if (!ato) throw new Error("Ato não encontrado");
 
-    let conteudoHtml = "";
-    let tituloFonte: string | null = null;
+    let estruturado: AtoEstruturado | null = null;
     let erroConteudo: string | null = null;
     try {
       const html = await fetchDirect(ato.url);
-      const parsed = extrairConteudoPlanalto(html, ato.url);
-      conteudoHtml = parsed.html;
-      tituloFonte = parsed.titulo;
+      estruturado = parseAtoEstruturado(html, ato.url);
     } catch (e) {
       erroConteudo = e instanceof Error ? e.message : String(e);
     }
 
-    return { ato, conteudoHtml, tituloFonte, erroConteudo };
+    return { ato, estruturado, erroConteudo };
   });
