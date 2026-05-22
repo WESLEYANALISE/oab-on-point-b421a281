@@ -1,0 +1,2 @@
+ALTER TABLE public.aulas_interativas_slides DROP CONSTRAINT IF EXISTS aulas_interativas_slides_tipo_check;
+ALTER TABLE public.aulas_interativas_slides ADD CONSTRAINT aulas_interativas_slides_tipo_check CHECK (tipo = ANY (ARRAY['capa'::text, 'conceito'::text, 'exemplo'::text, 'esquema'::text, 'comparativo'::text, 'quiz'::text, 'resumo'::text, 'conclusao'::text, 'mapa_mental'::text]));
