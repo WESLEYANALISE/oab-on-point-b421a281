@@ -21,6 +21,7 @@ export type SlideConteudo = {
   destaque?: string;
   bullets?: string[];
   colunas?: { titulo: string; itens: string[] }[];
+  pdf_url?: string;
 };
 
 export type QuizJson = {
