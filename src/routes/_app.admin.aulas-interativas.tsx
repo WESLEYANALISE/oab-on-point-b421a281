@@ -529,12 +529,13 @@ function ArquivoMaterialItem({
 
         <button
           onClick={() => publicar.mutate(true)}
-          disabled={!estrutura || publicar.isPending}
+          disabled={!estrutura || publicar.isPending || status === "concluido"}
           className="h-9 px-3 rounded-full bg-gradient-gold text-gold-foreground text-xs inline-flex items-center gap-1.5 disabled:opacity-50"
           title="3. Publicar o curso no Supabase"
         >
           {publicar.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-          3. Publicar curso
+          {status === "concluido" ? "3. Publicado" : "3. Publicar curso"}
+          {status === "concluido" && <CheckCircle2 className="h-3 w-3" />}
         </button>
 
         {temExtracao && (
