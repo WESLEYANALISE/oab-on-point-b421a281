@@ -240,8 +240,18 @@ function AtualizacoesLeisPage() {
           ))}
         </div>
       ) : diaSel ? (
-        atosDoDia.length === 0 ? (
-          <EmptyState text={`Nenhum ato ${filtro !== "todos" ? "deste tipo " : ""}em ${formatarDia(diaSel)}.`} />
+        diaSelInfo?.status === "futuro" ? (
+          <EmptyState
+            text={`Este dia ainda não foi publicado no D.O.U. A sincronização automática roda 3x ao dia (08h, 14h e 20h, horário de Brasília). Volte mais tarde para ver as atualizações de ${formatarDia(diaSel)}.`}
+          />
+        ) : atosDoDia.length === 0 ? (
+          <EmptyState
+            text={
+              diaSelInfo?.status === "sem-atos"
+                ? `Não houve publicação de atos no D.O.U. em ${formatarDia(diaSel)}.`
+                : `Nenhum ato ${filtro !== "todos" ? "deste tipo " : ""}em ${formatarDia(diaSel)}.`
+            }
+          />
         ) : (
           <ul className="space-y-2.5">
             {atosDoDia.map((a) => <AtoItem key={a.id} ato={a} />)}
