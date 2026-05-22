@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Calendar, ChevronRight } from "lucide-react";
 import { useProfile, greetingFor, readCachedProfileOptimistic } from "@/hooks/use-auth";
 import themisHalf from "@/assets/themis-half.png";
