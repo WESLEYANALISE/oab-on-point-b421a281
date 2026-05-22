@@ -344,20 +344,51 @@ function ArquivoMaterialItem({
             continue;
           }
           if (evt === "progress") {
-            const chars = payload?.chars ?? 0;
-            setProgresso(`Gemini gerando… ${chars.toLocaleString("pt-BR")} caracteres`);
+            const fase = payload?.fase as string | undefined;
+            if (fase === "esqueleto") {
+              setProgresso("Gemini planejando módulos e aulas (passo 1/2)…");
+            } else if (fase === "slides") {
+              const a = payload?.aula ?? 0;
+              const t = payload?.total ?? 0;
+              const titAula = payload?.aulaTitulo ? ` — ${payload.aulaTitulo}` : "";
+              setProgresso(`Gerando slides ${a}/${t}${titAula}`);
+            } else if (typeof payload?.chars === "number") {
+              setProgresso(`Gemini gerando… ${payload.chars.toLocaleString("pt-BR")} caracteres`);
+            }
           } else if (evt === "done") {
             finalPayload = payload;
           } else if (evt === "error") {
             serverError = payload?.error ?? "erro desconhecido";
           } else if (evt === "start") {
-            setProgresso("Gemini começou a gerar a estrutura…");
+            setProgresso("Gemini começou a planejar a estrutura…");
           }
         }
       }
 
       if (serverError) throw new Error(serverError);
-      if (!finalPayload) throw new Error("Stream encerrou sem resposta final");
+      if (!finalPayload) {
+        // stream caiu sem evento final — tenta ler erro persistido no DB
+        try {
+          const arqs = await listarArquivosDrive();
+          const arqAtual = arqs.find((x) => x.id === arquivo.id);
+          if (arqAtual?.status_ingestao === "erro" && arqAtual.erro_msg) {
+            throw new Error(arqAtual.erro_msg);
+          }
+          if (arqAtual?.status_ingestao === "previa_pronta") {
+            const pv = await obterPreviaArquivo({ data: { arquivoDriveId: arquivo.id } });
+            if (pv?.estrutura) {
+              finalPayload = {
+                estrutura: pv.estrutura,
+                titulo_sugerido: pv.titulo_sugerido,
+                materia_sugerida: pv.materia_sugerida,
+              };
+            }
+          }
+        } catch (e: any) {
+          throw new Error(e?.message ?? "Stream encerrou sem resposta final");
+        }
+        if (!finalPayload) throw new Error("Stream encerrou sem resposta final");
+      }
 
       setEstrutura(finalPayload.estrutura);
       if (finalPayload.titulo_sugerido) setTitulo(finalPayload.titulo_sugerido);
