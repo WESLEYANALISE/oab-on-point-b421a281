@@ -23,9 +23,19 @@ export type MistralOcrResult = {
   model?: string;
 };
 
-export async function mistralOcrFromUrl(documentUrl: string): Promise<MistralOcrResult> {
+export async function mistralOcrFromUrl(
+  documentUrl: string,
+  opts?: { pages?: number[] },
+): Promise<MistralOcrResult> {
   const apiKey = process.env.MISTRAL_API_KEY;
   if (!apiKey) throw new Error("MISTRAL_API_KEY não configurada");
+
+  const body: any = {
+    model: "mistral-ocr-latest",
+    document: { type: "document_url", document_url: documentUrl },
+    include_image_base64: true,
+  };
+  if (opts?.pages && opts.pages.length > 0) body.pages = opts.pages;
 
   const res = await fetch(MISTRAL_URL, {
     method: "POST",
@@ -33,11 +43,7 @@ export async function mistralOcrFromUrl(documentUrl: string): Promise<MistralOcr
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: "mistral-ocr-latest",
-      document: { type: "document_url", document_url: documentUrl },
-      include_image_base64: true,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
