@@ -71,9 +71,15 @@ function LandingPage() {
         <header className="relative z-10 px-5 md:px-10 pt-5 md:pt-7">
           <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
             <Link to="/" className="flex items-center gap-2.5 group">
-              <div className="h-10 w-10 md:h-11 md:w-11 rounded-2xl border border-gold/40 bg-background/60 backdrop-blur-md grid place-items-center shadow-lg shadow-black/40 group-hover:border-gold/70 transition">
-                <span className="font-display text-xl md:text-2xl font-extrabold text-gold">O</span>
-              </div>
+              <img
+                src={logoNaRisca}
+                alt="OAB na Risca"
+                width={44}
+                height={44}
+                className="h-10 w-10 md:h-11 md:w-11 rounded-2xl object-cover border border-gold/40 shadow-lg shadow-black/40 group-hover:border-gold/70 transition"
+                loading="eager"
+                decoding="async"
+              />
               <div className="leading-tight">
                 <p className="font-display text-base md:text-lg font-bold text-primary-foreground tracking-tight">OAB na Risca</p>
                 <p className="text-[9px] md:text-[10px] uppercase tracking-[0.22em] text-gold/80 font-semibold">Exame da Ordem</p>
