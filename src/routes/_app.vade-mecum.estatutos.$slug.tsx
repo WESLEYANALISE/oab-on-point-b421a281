@@ -974,28 +974,36 @@ function ArtigoSheet({
             </div>
           </div>
 
-          {/* Toggle 4 abas: Artigo / Explicação / Exemplo / Termos */}
-          <div className="mt-4 grid grid-cols-4 w-full">
-            {(["artigo", "explicacao", "exemplo", "termos"] as ContentTab[]).map((t) => {
-              const labels: Record<ContentTab, string> = {
-                artigo: "Artigo", explicacao: "Explicação", exemplo: "Exemplo", termos: "Termos",
-              };
-              const ativo = contentTab === t;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setContentTab(t)}
-                  className={`relative pb-2 text-[12px] sm:text-[13px] font-semibold whitespace-nowrap text-center transition-colors ${
-                    ativo ? "text-gold" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {labels[t]}
-                  {ativo && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-gold rounded-full" />}
-                </button>
-              );
-            })}
-          </div>
+          {/* Toggle abas */}
+          {(() => {
+            const temAlteracoes = Array.isArray(artigo?.alteracoes) && artigo!.alteracoes!.length > 0;
+            const tabs: ContentTab[] = temAlteracoes
+              ? ["artigo", "explicacao", "exemplo", "termos", "alteracoes"]
+              : ["artigo", "explicacao", "exemplo", "termos"];
+            const labels: Record<ContentTab, string> = {
+              artigo: "Artigo", explicacao: "Explicação", exemplo: "Exemplo", termos: "Termos", alteracoes: "Alterações",
+            };
+            return (
+              <div className={`mt-4 grid w-full ${temAlteracoes ? "grid-cols-5" : "grid-cols-4"}`}>
+                {tabs.map((t) => {
+                  const ativo = contentTab === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setContentTab(t)}
+                      className={`relative pb-2 text-[12px] sm:text-[13px] font-semibold whitespace-nowrap text-center transition-colors ${
+                        ativo ? "text-gold" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {labels[t]}
+                      {ativo && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-gold rounded-full" />}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Conteúdo */}
