@@ -1141,7 +1141,7 @@ function ArtigoSheet({
                   <div className="space-y-6">
                     <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
                       {epigrafe && (
-                        <div className="not-italic font-sans text-[13px] font-semibold uppercase tracking-[0.08em] text-gold/80 mb-2">
+                        <div className="not-italic font-sans text-[15px] font-semibold tracking-[0.01em] text-gold/90 mb-2">
                           {epigrafe}
                         </div>
                       )}
