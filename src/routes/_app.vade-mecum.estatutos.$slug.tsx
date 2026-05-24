@@ -2216,3 +2216,59 @@ function PlaylistPlayer({
   );
 }
 export { SCALES };
+
+function AlteracoesView({ alteracoes, planaltoUrl }: { alteracoes: AlteracaoArtigo[]; planaltoUrl: string | null }) {
+  const tipoLabel: Record<AlteracaoArtigo["tipo"], string> = {
+    redacao: "Nova redação", inclusao: "Incluído", revogacao: "Revogado", vigencia: "Vigência", vide: "Vide",
+  };
+  const tipoCor: Record<AlteracaoArtigo["tipo"], string> = {
+    redacao: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+    inclusao: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+    revogacao: "bg-red-500/15 text-red-300 border-red-500/30",
+    vigencia: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+    vide: "bg-muted text-muted-foreground border-border",
+  };
+  const fmtData = (iso: string) => {
+    const [y, m, d] = iso.split("-");
+    if (!y) return iso;
+    if (d && d !== "01" && m !== "01") return `${d}/${m}/${y}`;
+    return y;
+  };
+  return (
+    <div className="space-y-4">
+      {planaltoUrl && (
+        <a
+          href={planaltoUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold/40 bg-gold/10 text-gold text-[12.5px] font-semibold hover:bg-gold/15 transition-colors"
+        >
+          Abrir artigo no Planalto
+        </a>
+      )}
+      <ul className="space-y-3">
+        {alteracoes.map((a, i) => (
+          <li key={i} className="rounded-xl border border-border/60 bg-card/60 p-4 space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${tipoCor[a.tipo]}`}>
+                {tipoLabel[a.tipo]}
+              </span>
+              <span className="text-[12px] text-muted-foreground">{fmtData(a.data)}</span>
+            </div>
+            <p className="font-semibold text-foreground text-[14px]">{a.lei}</p>
+            {a.url && (
+              <a
+                href={a.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[12px] text-gold hover:underline"
+              >
+                Ver lei no Planalto →
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
