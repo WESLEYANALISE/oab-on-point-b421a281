@@ -8,7 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL!;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SERVICE_ROLE_KEY!;
-const PLANALTO_BASE = "https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilada.htm";
+const PLANALTO_BASE = "https://www.planalto.gov.br/ccivil_03/leis/2002/l10406.htm";
 
 if (!SUPABASE_URL || !SERVICE_KEY) {
   console.error("Faltam SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
