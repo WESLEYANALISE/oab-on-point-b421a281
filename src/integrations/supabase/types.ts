@@ -1937,6 +1937,7 @@ export type Database = {
           narracao_url: string | null
           numero: string | null
           ordem: number
+          planalto_url: string | null
           questoes: Json | null
           relevancia: string | null
           relevancia_fontes: Json | null
@@ -1966,6 +1967,7 @@ export type Database = {
           narracao_url?: string | null
           numero?: string | null
           ordem?: number
+          planalto_url?: string | null
           questoes?: Json | null
           relevancia?: string | null
           relevancia_fontes?: Json | null
@@ -1995,6 +1997,7 @@ export type Database = {
           narracao_url?: string | null
           numero?: string | null
           ordem?: number
+          planalto_url?: string | null
           questoes?: Json | null
           relevancia?: string | null
           relevancia_fontes?: Json | null
@@ -2263,6 +2266,7 @@ export type Database = {
           narracao_url: string | null
           numero: string | null
           ordem: number
+          planalto_url: string | null
           questoes: Json | null
           relevancia: string | null
           relevancia_fontes: Json | null
