@@ -1163,7 +1163,8 @@ function ArtigoSheet({
                       </div>
                     )}
                   </div>
-                )}
+                  );
+                })()}
                 {contentTab === "explicacao" && (
                   <ExplicacaoView artigo={artigo} />
                 )}
