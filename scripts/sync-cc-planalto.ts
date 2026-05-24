@@ -191,7 +191,8 @@ async function main() {
     console.error("Falha ao baixar Planalto:", res.status);
     process.exit(1);
   }
-  const html = await res.text();
+  const buf = new Uint8Array(await res.arrayBuffer());
+  const html = new TextDecoder("windows-1252").decode(buf);
   console.log(`  HTML: ${(html.length / 1024).toFixed(1)} KB`);
 
   const blocos = extractBlocos(html);
