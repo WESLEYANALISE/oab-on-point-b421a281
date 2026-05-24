@@ -864,7 +864,7 @@ function ArtigoSheet({
     queryFn: async (): Promise<ArtigoCompleto> => {
       const { data, error } = await supabase
         .from("vade_mecum_artigos")
-        .select("id, numero, texto, ordem, comentario, explicacao_tecnico, explicacao_resumido, explicacao_simples_maior16, explicacao_simples_menor16, exemplo, termos, narracao_url, relevancia, relevancia_nota")
+        .select("id, numero, texto, ordem, comentario, explicacao_tecnico, explicacao_resumido, explicacao_simples_maior16, explicacao_simples_menor16, exemplo, termos, narracao_url, relevancia, relevancia_nota, planalto_url, alteracoes, ult_alteracao_em, revogado")
         .eq("id", artigoId!)
         .single();
       if (error) throw error;
