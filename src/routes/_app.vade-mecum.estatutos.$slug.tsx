@@ -55,7 +55,7 @@ export const HEAD_LIMIT = 40;
 
 export const estatutoHeadQueryOptions = (slug: string) =>
   queryOptions({
-    queryKey: ["vade-mecum", "estatuto-head", slug],
+    queryKey: ["vade-mecum", "estatuto-head", slug, "v2-epigrafe"],
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
     queryFn: async () => {
@@ -74,7 +74,7 @@ export const estatutoHeadQueryOptions = (slug: string) =>
 
 const estatutoTailQueryOptions = (slug: string) =>
   queryOptions({
-    queryKey: ["vade-mecum", "estatuto-tail", slug],
+    queryKey: ["vade-mecum", "estatuto-tail", slug, "v2-epigrafe"],
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
     queryFn: async () => {
@@ -955,7 +955,7 @@ function ArtigoSheet({
 
   const { data: artigo, isLoading } = useQuery({
     enabled: !!artigoId,
-    queryKey: ["vade-mecum", "artigo", artigoId],
+    queryKey: ["vade-mecum", "artigo", artigoId, "v2-epigrafe"],
     // Artigo individual também é praticamente imutável.
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
