@@ -2067,6 +2067,7 @@ export type Database = {
           nome: string
           nome_curto: string | null
           ordem: number
+          planalto_url: string | null
           slug: string
           total_artigos: number
           updated_at: string
@@ -2078,6 +2079,7 @@ export type Database = {
           nome: string
           nome_curto?: string | null
           ordem?: number
+          planalto_url?: string | null
           slug: string
           total_artigos?: number
           updated_at?: string
@@ -2089,6 +2091,7 @@ export type Database = {
           nome?: string
           nome_curto?: string | null
           ordem?: number
+          planalto_url?: string | null
           slug?: string
           total_artigos?: number
           updated_at?: string
