@@ -74,7 +74,7 @@ export const estatutoHeadQueryOptions = (slug: string) =>
 
 const estatutoTailQueryOptions = (slug: string) =>
   queryOptions({
-    queryKey: ["vade-mecum", "estatuto-tail", slug],
+    queryKey: ["vade-mecum", "estatuto-tail", slug, "v2-epigrafe"],
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
     queryFn: async () => {
