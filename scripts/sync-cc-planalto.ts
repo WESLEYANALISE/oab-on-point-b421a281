@@ -232,7 +232,8 @@ async function main() {
   for (const a of artigos) {
     // Normalizar número do banco para casar com a âncora.
     // ex: "1º" -> art1, "1.245" -> art1245, "1º-A" -> art1A
-    const num = a.numero.trim();
+    const num = (a.numero ?? "").trim();
+    if (!num) { semLink++; continue; }
     const mm = num.match(/^(\d+(?:\.\d+)*)º?(?:-([A-Z]))?$/);
     let anchor: string | null = null;
     if (mm) {
