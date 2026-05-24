@@ -1066,6 +1066,9 @@ function ArtigoSheet({
                 {contentTab === "termos" && (
                   <TermosView termos={termos} />
                 )}
+                {contentTab === "alteracoes" && (
+                  <AlteracoesView alteracoes={artigo.alteracoes ?? []} planaltoUrl={artigo.planalto_url ?? planaltoUrl ?? null} />
+                )}
               </div>
             )}
           </div>
