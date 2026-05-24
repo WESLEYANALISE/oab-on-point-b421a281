@@ -592,10 +592,12 @@ function ListaArtigos({
   lista,
   onOpen,
   query,
+  loading = false,
 }: {
   lista: ArtigoLista[];
   onOpen: (id: string) => void;
   query: string;
+  loading?: boolean;
 }) {
   const parentRef = useRef<HTMLDivElement | null>(null);
   const virtualizer = useVirtualizer({
@@ -610,6 +612,19 @@ function ListaArtigos({
   });
 
   if (lista.length === 0) {
+    if (loading) {
+      return (
+        <ul className="space-y-2.5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <li
+              key={i}
+              className="h-[88px] rounded-2xl border border-border/60 bg-card/40 animate-pulse"
+              style={{ animationDelay: `${Math.min(i, 6) * 60}ms` }}
+            />
+          ))}
+        </ul>
+      );
+    }
     return (
       <div className="rounded-2xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
         Nenhum artigo encontrado{query ? ` para "${query}".` : "."}
@@ -621,8 +636,8 @@ function ListaArtigos({
   if (lista.length < 40) {
     return (
       <ul className="space-y-2.5">
-        {lista.map((a) => (
-          <ArtigoItem key={a.id} a={a} onOpen={onOpen} />
+        {lista.map((a, i) => (
+          <ArtigoItem key={a.id} a={a} onOpen={onOpen} index={i} />
         ))}
       </ul>
     );
@@ -652,7 +667,7 @@ function ListaArtigos({
                 paddingBottom: 10,
               }}
             >
-              <ArtigoItem a={a} onOpen={onOpen} />
+              <ArtigoItem a={a} onOpen={onOpen} index={vi.index} />
             </div>
           );
         })}
@@ -661,7 +676,10 @@ function ListaArtigos({
   );
 }
 
-function ArtigoItem({ a, onOpen }: { a: ArtigoLista; onOpen: (id: string) => void }) {
+function ArtigoItem({ a, onOpen, index = 0 }: { a: ArtigoLista; onOpen: (id: string) => void; index?: number }) {
+  // Cascata só nos primeiros itens visíveis (cap 12 * 25ms = 300ms). Itens
+  // mais abaixo / que entram via tail aparecem sem delay.
+  const delay = index < 12 ? index * 25 : 0;
   return (
     <button
       type="button"
