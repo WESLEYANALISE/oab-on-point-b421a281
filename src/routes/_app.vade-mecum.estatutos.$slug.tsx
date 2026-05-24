@@ -253,34 +253,34 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
 
   const meta = getEstatuto(slug);
 
-  // 1 chamada só: lei + artigos + favoritos + anotações do usuário.
-  // RPC `get_estatuto_overview` colapsa 3 round-trips em 1. Conteúdo legal
-  // muda raramente: 1h em memória, 24h no localStorage.
-  const { data, isLoading } = useQuery({
-    queryKey: ["vade-mecum", "estatuto", slug, userId],
-    staleTime: 60 * 60_000,
-    gcTime: 24 * 60 * 60_000,
-    queryFn: async () => {
-      const { data: payload, error } = await (supabase as any).rpc(
-        "get_estatuto_overview",
-        { _slug: slug, _user_id: userId },
-      );
-      if (error) throw error;
-      if (!payload?.lei) throw new Error("Estatuto não encontrado");
-      const lei = payload.lei as Lei;
-      const artigos = (payload.artigos ?? []) as ArtigoLista[];
-      const favoritos = (payload.favoritos ?? []) as string[];
-      const anotados = (payload.anotados ?? []) as string[];
-      return { lei, artigos, favoritos, anotados };
-    },
+  // Split em 3 queries para abrir instantaneamente:
+  // - HEAD: lei + 40 primeiros artigos (rápido, sem userId no key → não pisca).
+  // - TAIL: o resto, em background, mesclado sem segurar a primeira pintura.
+  // - USER: favoritos/anotações, só quando o auth resolve.
+  const { data: head, isLoading: headLoading } = useQuery(
+    estatutoHeadQueryOptions(slug),
+  );
+  const totalArtigos = head?.lei?.total_artigos ?? 0;
+  const { data: tail } = useQuery({
+    ...estatutoTailQueryOptions(slug),
+    enabled: !!head && totalArtigos > HEAD_LIMIT,
   });
+  const { data: userData } = useQuery(estatutoUserQueryOptions(slug, userId));
+
+  const isLoading = headLoading;
+  const lei = head?.lei ?? null;
 
   const favoritos = useMemo(
-    () => new Set<string>(data?.favoritos ?? []),
-    [data?.favoritos],
+    () => new Set<string>(userData?.favoritos ?? []),
+    [userData?.favoritos],
   );
 
-  const artigosRaw = data?.artigos ?? [];
+  const artigosRaw = useMemo<ArtigoLista[]>(() => {
+    const h = head?.artigos ?? [];
+    const t = tail?.artigos ?? [];
+    return t.length > 0 ? [...h, ...t] : h;
+  }, [head?.artigos, tail?.artigos]);
+
   const artigos = useMemo(() => {
     if (!parteCF || artigosRaw.length === 0) return artigosRaw;
     // ADCT começa quando o numero "1º" reaparece após ordem 1.
