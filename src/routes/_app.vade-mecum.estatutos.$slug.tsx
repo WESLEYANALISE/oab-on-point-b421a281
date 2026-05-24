@@ -2244,7 +2244,7 @@ function PlaylistPlayer({
               Acompanhe a leitura
             </p>
             <p className="text-[14.5px] leading-relaxed whitespace-pre-line">
-              {limparPrefixoArtigo(item.texto)}
+              {splitArtigo(item.texto).corpo}
             </p>
           </div>
         </div>
