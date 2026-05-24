@@ -730,7 +730,7 @@ function ArtigoItem({ a, onOpen, index = 0 }: { a: ArtigoLista; onOpen: (id: str
           className="block text-[12.5px] text-muted-foreground leading-snug overflow-hidden"
           style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
         >
-          {a.texto}
+          {splitArtigo(a.texto).corpo}
         </span>
       </span>
       <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0 mt-2" />
