@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { limparTituloLei } from "@/lib/narracoes.utils";
 
 import { useQuery, useQueryClient, queryOptions, type QueryClient } from "@tanstack/react-query";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, useWindowVirtualizer } from "@tanstack/react-virtual";
 import { markdownToWhatsapp } from "@/lib/whatsapp-markdown";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
@@ -617,11 +617,11 @@ function ListaArtigos({
   loading?: boolean;
 }) {
   const parentRef = useRef<HTMLDivElement | null>(null);
-  const virtualizer = useVirtualizer({
+  const virtualizer = useWindowVirtualizer({
     count: lista.length,
-    getScrollElement: () => parentRef.current,
     estimateSize: () => 98, // 88px min-height + 10px gap (space-y-2.5)
     overscan: 6,
+    scrollMargin: parentRef.current?.offsetTop ?? 0,
     measureElement:
       typeof ResizeObserver !== "undefined"
         ? (el) => el.getBoundingClientRect().height
@@ -661,12 +661,9 @@ function ListaArtigos({
   }
 
   const items = virtualizer.getVirtualItems();
+  const scrollMargin = parentRef.current?.offsetTop ?? 0;
   return (
-    <div
-      ref={parentRef}
-      className="overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      style={{ height: "calc(100svh - 220px)", contain: "strict" }}
-    >
+    <div ref={parentRef}>
       <div style={{ height: virtualizer.getTotalSize(), position: "relative", width: "100%" }}>
         {items.map((vi) => {
           const a = lista[vi.index];
@@ -680,7 +677,7 @@ function ListaArtigos({
                 top: 0,
                 left: 0,
                 width: "100%",
-                transform: `translateY(${vi.start}px)`,
+                transform: `translateY(${vi.start - scrollMargin}px)`,
                 paddingBottom: 10,
               }}
             >
