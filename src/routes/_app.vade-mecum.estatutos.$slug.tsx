@@ -307,9 +307,10 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
   const [filtroChip, setFiltroChip] = useState<null | "favoritos" | "anotacoes" | "radar">(null);
 
   const idsAnotados = useMemo(
-    () => new Set<string>(data?.anotados ?? []),
-    [data?.anotados],
+    () => new Set<string>(userData?.anotados ?? []),
+    [userData?.anotados],
   );
+
 
 
   const listaArtigos = useMemo(() => {
