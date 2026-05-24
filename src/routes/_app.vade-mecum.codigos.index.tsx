@@ -67,8 +67,7 @@ export const Route = createFileRoute("/_app/vade-mecum/codigos/")({
   // Prime o cache no hover/touch (router preload="intent") e na navegação real,
   // pra entrar instantaneamente sem flash de carregamento.
   loader: ({ context }) =>
-    (context as { queryClient: import("@tanstack/react-query").QueryClient }).queryClient
-      .ensureQueryData(codigosListaQueryOptions),
+    (context as { queryClient: QueryClient }).queryClient.ensureQueryData(codigosListaQueryOptions),
   component: CodigosListPage,
 });
 
