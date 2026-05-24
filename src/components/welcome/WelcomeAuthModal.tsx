@@ -26,6 +26,8 @@ export function WelcomeAuthModal({ open, onClose, initialTab, sidePanel }: Props
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => { if (open) setMode(initialTab); }, [open, initialTab]);
+
   if (!open) return null;
 
   async function handleLogin(e: FormEvent) {
