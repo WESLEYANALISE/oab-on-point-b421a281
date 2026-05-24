@@ -520,9 +520,9 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
 
       <ArtigoSheet
         artigoId={artigoId}
-        leiId={data?.lei.id ?? null}
-        leiRotulo={(tituloOverride ?? meta?.nomeCompleto ?? data?.lei.nome ?? "ESTATUTO").toUpperCase()}
-        planaltoUrl={data?.lei.planalto_url ?? meta?.planaltoUrl}
+        leiId={lei?.id ?? null}
+        leiRotulo={(tituloOverride ?? meta?.nomeCompleto ?? lei?.nome ?? "ESTATUTO").toUpperCase()}
+        planaltoUrl={lei?.planalto_url ?? meta?.planaltoUrl}
         userId={userId}
         favorito={!!artigoId && !!favoritos?.has(artigoId)}
         caminho={caminhoAtual}
@@ -536,9 +536,10 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
       <PlaylistSheet
         open={playlistOpen}
         onClose={() => setPlaylistOpen(false)}
-        leiId={data?.lei.id ?? null}
-        leiNome={meta?.nomeCompleto ?? data?.lei.nome ?? "Estatuto"}
+        leiId={lei?.id ?? null}
+        leiNome={meta?.nomeCompleto ?? lei?.nome ?? "Estatuto"}
       />
+
     </div>
   );
 }
