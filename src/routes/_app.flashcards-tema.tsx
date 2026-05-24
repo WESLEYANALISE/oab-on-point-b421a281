@@ -186,9 +186,9 @@ function AreaPlayerView({ area }: { area: string }) {
     return Array.from(map.values()).sort((a, b) => a.titulo.localeCompare(b.titulo));
   }, [cards]);
 
-  const selectedIds = useMemo(() => {
+  const selectedIds = useMemo<Set<string>>(() => {
     if (!caps) return new Set<string>();
-    return new Set(caps.split(",").filter(Boolean));
+    return new Set<string>(caps.split(",").filter(Boolean));
   }, [caps]);
 
   const usingSelection = selectedIds.size > 0;
