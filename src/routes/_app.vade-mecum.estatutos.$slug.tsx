@@ -55,7 +55,7 @@ export const HEAD_LIMIT = 40;
 
 export const estatutoHeadQueryOptions = (slug: string) =>
   queryOptions({
-    queryKey: ["vade-mecum", "estatuto-head", slug],
+    queryKey: ["vade-mecum", "estatuto-head", slug, "v2-epigrafe"],
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
     queryFn: async () => {
