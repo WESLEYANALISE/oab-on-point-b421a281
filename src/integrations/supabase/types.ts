@@ -2350,8 +2350,20 @@ export type Database = {
           total: number
         }[]
       }
+      get_estatuto_head: {
+        Args: { _limit?: number; _slug: string }
+        Returns: Json
+      }
       get_estatuto_overview: {
         Args: { _slug: string; _user_id?: string }
+        Returns: Json
+      }
+      get_estatuto_tail: {
+        Args: { _offset?: number; _slug: string }
+        Returns: Json
+      }
+      get_estatuto_user: {
+        Args: { _slug: string; _user_id: string }
         Returns: Json
       }
       has_role: {

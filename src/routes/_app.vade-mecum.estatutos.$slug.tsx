@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { limparTituloLei } from "@/lib/narracoes.utils";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, queryOptions, type QueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { markdownToWhatsapp } from "@/lib/whatsapp-markdown";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -51,6 +51,61 @@ import { AnotacoesPanel } from "@/components/vade-mecum/AnotacoesPanel";
 import { ArtigoFocusOverlay } from "@/components/vade-mecum/ArtigoFocusOverlay";
 import { AnimatePresence, motion } from "framer-motion";
 
+export const HEAD_LIMIT = 40;
+
+export const estatutoHeadQueryOptions = (slug: string) =>
+  queryOptions({
+    queryKey: ["vade-mecum", "estatuto-head", slug],
+    staleTime: 60 * 60_000,
+    gcTime: 24 * 60 * 60_000,
+    queryFn: async () => {
+      const { data: payload, error } = await (supabase as any).rpc(
+        "get_estatuto_head",
+        { _slug: slug, _limit: HEAD_LIMIT },
+      );
+      if (error) throw error;
+      if (!payload?.lei) throw new Error("Estatuto não encontrado");
+      return {
+        lei: payload.lei as Lei,
+        artigos: (payload.artigos ?? []) as ArtigoLista[],
+      };
+    },
+  });
+
+const estatutoTailQueryOptions = (slug: string) =>
+  queryOptions({
+    queryKey: ["vade-mecum", "estatuto-tail", slug],
+    staleTime: 60 * 60_000,
+    gcTime: 24 * 60 * 60_000,
+    queryFn: async () => {
+      const { data: payload, error } = await (supabase as any).rpc(
+        "get_estatuto_tail",
+        { _slug: slug, _offset: HEAD_LIMIT },
+      );
+      if (error) throw error;
+      return { artigos: (payload?.artigos ?? []) as ArtigoLista[] };
+    },
+  });
+
+const estatutoUserQueryOptions = (slug: string, userId: string | null) =>
+  queryOptions({
+    queryKey: ["vade-mecum", "estatuto-user", slug, userId],
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data: payload, error } = await (supabase as any).rpc(
+        "get_estatuto_user",
+        { _slug: slug, _user_id: userId },
+      );
+      if (error) throw error;
+      return {
+        favoritos: (payload?.favoritos ?? []) as string[],
+        anotados: (payload?.anotados ?? []) as string[],
+      };
+    },
+  });
+
 export const Route = createFileRoute("/_app/vade-mecum/estatutos/$slug")({
   head: ({ params }) => ({
     meta: [
@@ -58,6 +113,10 @@ export const Route = createFileRoute("/_app/vade-mecum/estatutos/$slug")({
       { name: "description", content: "Leia os artigos do estatuto com explicações, exemplos e termos." },
     ],
   }),
+  loader: ({ context, params }) =>
+    (context as { queryClient: QueryClient }).queryClient.ensureQueryData(
+      estatutoHeadQueryOptions(params.slug),
+    ),
   component: EstatutoArtigosPage,
 });
 
@@ -194,34 +253,34 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
 
   const meta = getEstatuto(slug);
 
-  // 1 chamada só: lei + artigos + favoritos + anotações do usuário.
-  // RPC `get_estatuto_overview` colapsa 3 round-trips em 1. Conteúdo legal
-  // muda raramente: 1h em memória, 24h no localStorage.
-  const { data, isLoading } = useQuery({
-    queryKey: ["vade-mecum", "estatuto", slug, userId],
-    staleTime: 60 * 60_000,
-    gcTime: 24 * 60 * 60_000,
-    queryFn: async () => {
-      const { data: payload, error } = await (supabase as any).rpc(
-        "get_estatuto_overview",
-        { _slug: slug, _user_id: userId },
-      );
-      if (error) throw error;
-      if (!payload?.lei) throw new Error("Estatuto não encontrado");
-      const lei = payload.lei as Lei;
-      const artigos = (payload.artigos ?? []) as ArtigoLista[];
-      const favoritos = (payload.favoritos ?? []) as string[];
-      const anotados = (payload.anotados ?? []) as string[];
-      return { lei, artigos, favoritos, anotados };
-    },
+  // Split em 3 queries para abrir instantaneamente:
+  // - HEAD: lei + 40 primeiros artigos (rápido, sem userId no key → não pisca).
+  // - TAIL: o resto, em background, mesclado sem segurar a primeira pintura.
+  // - USER: favoritos/anotações, só quando o auth resolve.
+  const { data: head, isLoading: headLoading } = useQuery(
+    estatutoHeadQueryOptions(slug),
+  );
+  const totalArtigos = head?.lei?.total_artigos ?? 0;
+  const { data: tail } = useQuery({
+    ...estatutoTailQueryOptions(slug),
+    enabled: !!head && totalArtigos > HEAD_LIMIT,
   });
+  const { data: userData } = useQuery(estatutoUserQueryOptions(slug, userId));
+
+  const isLoading = headLoading;
+  const lei = head?.lei ?? null;
 
   const favoritos = useMemo(
-    () => new Set<string>(data?.favoritos ?? []),
-    [data?.favoritos],
+    () => new Set<string>(userData?.favoritos ?? []),
+    [userData?.favoritos],
   );
 
-  const artigosRaw = data?.artigos ?? [];
+  const artigosRaw = useMemo<ArtigoLista[]>(() => {
+    const h = head?.artigos ?? [];
+    const t = tail?.artigos ?? [];
+    return t.length > 0 ? [...h, ...t] : h;
+  }, [head?.artigos, tail?.artigos]);
+
   const artigos = useMemo(() => {
     if (!parteCF || artigosRaw.length === 0) return artigosRaw;
     // ADCT começa quando o numero "1º" reaparece após ordem 1.
@@ -248,9 +307,10 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
   const [filtroChip, setFiltroChip] = useState<null | "favoritos" | "anotacoes" | "radar">(null);
 
   const idsAnotados = useMemo(
-    () => new Set<string>(data?.anotados ?? []),
-    [data?.anotados],
+    () => new Set<string>(userData?.anotados ?? []),
+    [userData?.anotados],
   );
+
 
 
   const listaArtigos = useMemo(() => {
@@ -313,16 +373,16 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
               loading="eager"
             />
             <h1 className="font-display font-semibold text-[15px] sm:text-[18px] md:text-[24px] tracking-[0.04em] mt-2.5 leading-tight uppercase px-2 max-w-full break-words">
-              {tituloOverride ?? meta?.nomeCompleto ?? (limparTituloLei(data?.lei.nome ?? "") || "Estatuto")}
+              {tituloOverride ?? meta?.nomeCompleto ?? (limparTituloLei(lei?.nome ?? "") || "Estatuto")}
             </h1>
             <p className="text-[12.5px] text-muted-foreground mt-1.5">
               {slug === "cf"
                 ? "1988"
-                : meta?.decreto ?? `${data?.lei.total_artigos.toLocaleString("pt-BR") ?? "—"} artigos`}
+                : meta?.decreto ?? `${lei?.total_artigos?.toLocaleString("pt-BR") ?? "—"} artigos`}
             </p>
-            {(data?.lei.planalto_url ?? meta?.planaltoUrl) && (
+            {(lei?.planalto_url ?? meta?.planaltoUrl) && (
               <a
-                href={(data?.lei.planalto_url ?? meta?.planaltoUrl)!}
+                href={(lei?.planalto_url ?? meta?.planaltoUrl)!}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 mt-2.5 text-[12px] text-gold hover:text-gold/80 transition-colors font-medium"
@@ -439,30 +499,23 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
       </section>
 
       <section className="px-4 md:px-8 mt-4">
-        {isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-[76px] rounded-2xl border border-border/60 bg-card/40 animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div key={aba} className="animate-fade-in">
-            {aba === "artigos" ? (
-              <ListaArtigos lista={listaArtigos} onOpen={setArtigoId} query={query} />
-            ) : aba === "capitulos" ? (
-              <ArvoreCapitulos nos={arvore} onOpen={setArtigoId} />
-            ) : (
-              <ListaArtigos lista={listaRelevantes} onOpen={setArtigoId} query={query} />
-            )}
-          </div>
-        )}
+        <div key={aba} className="animate-fade-in">
+          {aba === "artigos" ? (
+            <ListaArtigos lista={listaArtigos} onOpen={setArtigoId} query={query} loading={isLoading} />
+          ) : aba === "capitulos" ? (
+            <ArvoreCapitulos nos={arvore} onOpen={setArtigoId} />
+          ) : (
+            <ListaArtigos lista={listaRelevantes} onOpen={setArtigoId} query={query} loading={isLoading} />
+          )}
+        </div>
       </section>
+
 
       <ArtigoSheet
         artigoId={artigoId}
-        leiId={data?.lei.id ?? null}
-        leiRotulo={(tituloOverride ?? meta?.nomeCompleto ?? data?.lei.nome ?? "ESTATUTO").toUpperCase()}
-        planaltoUrl={data?.lei.planalto_url ?? meta?.planaltoUrl}
+        leiId={lei?.id ?? null}
+        leiRotulo={(tituloOverride ?? meta?.nomeCompleto ?? lei?.nome ?? "ESTATUTO").toUpperCase()}
+        planaltoUrl={lei?.planalto_url ?? meta?.planaltoUrl}
         userId={userId}
         favorito={!!artigoId && !!favoritos?.has(artigoId)}
         caminho={caminhoAtual}
@@ -476,9 +529,10 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
       <PlaylistSheet
         open={playlistOpen}
         onClose={() => setPlaylistOpen(false)}
-        leiId={data?.lei.id ?? null}
-        leiNome={meta?.nomeCompleto ?? data?.lei.nome ?? "Estatuto"}
+        leiId={lei?.id ?? null}
+        leiNome={meta?.nomeCompleto ?? lei?.nome ?? "Estatuto"}
       />
+
     </div>
   );
 }
@@ -538,10 +592,12 @@ function ListaArtigos({
   lista,
   onOpen,
   query,
+  loading = false,
 }: {
   lista: ArtigoLista[];
   onOpen: (id: string) => void;
   query: string;
+  loading?: boolean;
 }) {
   const parentRef = useRef<HTMLDivElement | null>(null);
   const virtualizer = useVirtualizer({
@@ -556,6 +612,19 @@ function ListaArtigos({
   });
 
   if (lista.length === 0) {
+    if (loading) {
+      return (
+        <ul className="space-y-2.5">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <li
+              key={i}
+              className="h-[88px] rounded-2xl border border-border/60 bg-card/40 animate-pulse"
+              style={{ animationDelay: `${Math.min(i, 6) * 60}ms` }}
+            />
+          ))}
+        </ul>
+      );
+    }
     return (
       <div className="rounded-2xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground">
         Nenhum artigo encontrado{query ? ` para "${query}".` : "."}
@@ -567,8 +636,8 @@ function ListaArtigos({
   if (lista.length < 40) {
     return (
       <ul className="space-y-2.5">
-        {lista.map((a) => (
-          <ArtigoItem key={a.id} a={a} onOpen={onOpen} />
+        {lista.map((a, i) => (
+          <ArtigoItem key={a.id} a={a} onOpen={onOpen} index={i} />
         ))}
       </ul>
     );
@@ -598,7 +667,7 @@ function ListaArtigos({
                 paddingBottom: 10,
               }}
             >
-              <ArtigoItem a={a} onOpen={onOpen} />
+              <ArtigoItem a={a} onOpen={onOpen} index={vi.index} />
             </div>
           );
         })}
@@ -607,11 +676,15 @@ function ListaArtigos({
   );
 }
 
-function ArtigoItem({ a, onOpen }: { a: ArtigoLista; onOpen: (id: string) => void }) {
+function ArtigoItem({ a, onOpen, index = 0 }: { a: ArtigoLista; onOpen: (id: string) => void; index?: number }) {
+  // Cascata só nos primeiros itens visíveis (cap 12 * 25ms = 300ms). Itens
+  // mais abaixo / que entram via tail aparecem sem delay.
+  const delay = index < 12 ? index * 25 : 0;
   return (
     <button
       type="button"
       onClick={() => onOpen(a.id)}
+      style={delay > 0 ? { animation: `fade-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both`, animationDelay: `${delay}ms` } : undefined}
       className="relative w-full min-h-[88px] flex items-start gap-3 pl-4 pr-3 py-3.5 rounded-2xl bg-card/70 border border-border/60 hover:border-gold/40 hover:bg-card transition-all cursor-pointer group overflow-hidden text-left active:scale-[0.99]"
     >
       <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gold/70" />
@@ -897,7 +970,7 @@ function ArtigoSheet({
           .insert({ user_id: userId, artigo_id: artigoId, lei_id: leiId });
         if (error) throw error;
       }
-      queryClient.invalidateQueries({ queryKey: ["vade-mecum", "estatuto"] });
+      queryClient.invalidateQueries({ queryKey: ["vade-mecum", "estatuto-user"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao favoritar");
     }
@@ -1470,7 +1543,7 @@ function AnotacoesEditor({
         toast.success("Anotação salva");
       }
       queryClient.invalidateQueries({ queryKey: ["vade-mecum", "anotacao", artigoId, userId] });
-      queryClient.invalidateQueries({ queryKey: ["vade-mecum", "estatuto"] });
+      queryClient.invalidateQueries({ queryKey: ["vade-mecum", "estatuto-user"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao salvar");
     } finally {
