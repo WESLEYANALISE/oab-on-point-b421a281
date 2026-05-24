@@ -162,7 +162,7 @@ function VadeMecumPage() {
             <Link
               key={cat.id}
               to={cat.id === "constituicao" ? "/vade-mecum/cf" : "/vade-mecum/codigos"}
-              className="block h-full"
+              className="block h-full w-full"
             >
               <CategoriaCardCompact cat={cat} />
             </Link>
@@ -296,7 +296,7 @@ function CategoriaCardCompact({ cat }: { cat: Categoria }) {
     <button
       type="button"
       className={cn(
-        "group relative overflow-hidden text-left rounded-2xl border bg-card/60 p-4 transition-all cursor-pointer h-full min-h-[170px] flex",
+        "group relative overflow-hidden text-left rounded-2xl border bg-card/60 p-4 transition-all cursor-pointer h-full w-full min-h-[170px] flex",
         "hover:bg-card hover:border-gold/40 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-12px_color-mix(in_oklab,var(--gold)_25%,transparent)]",
         cat.destaque ? "border-gold/30" : "border-border/60",
       )}
