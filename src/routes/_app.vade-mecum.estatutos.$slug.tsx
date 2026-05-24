@@ -229,6 +229,23 @@ function limparPrefixoArtigo(texto: string): string {
   );
 }
 
+/**
+ * Separa a "epígrafe" (título do artigo, ex.: "Lei excepcional ou temporária")
+ * do corpo. A epígrafe é o que aparece ANTES da primeira ocorrência de
+ * "Art. N..." dentro do texto. O corpo já vem sem o prefixo "Art. N".
+ */
+function splitArtigo(texto: string): { epigrafe: string; corpo: string } {
+  if (!texto) return { epigrafe: "", corpo: "" };
+  const re = /^\s*art\.?\s*[\dIVXLCDM]+(?:[ºoOªªA]|\.º|°)?(?:[-‑–][A-Za-z\d]+)*\s*[.\-–—:]?\s*/im;
+  const match = texto.match(re);
+  if (!match || match.index === undefined || match.index === 0) {
+    return { epigrafe: "", corpo: limparPrefixoArtigo(texto) };
+  }
+  const epigrafe = texto.slice(0, match.index).replace(/\s+/g, " ").trim();
+  const corpo = texto.slice(match.index + match[0].length);
+  return { epigrafe, corpo };
+}
+
 // ----------- Page -----------
 type EstatutoArtigosPageProps = {
   slugOverride?: string;
