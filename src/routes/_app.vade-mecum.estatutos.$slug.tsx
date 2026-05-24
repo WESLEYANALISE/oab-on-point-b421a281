@@ -51,6 +51,61 @@ import { AnotacoesPanel } from "@/components/vade-mecum/AnotacoesPanel";
 import { ArtigoFocusOverlay } from "@/components/vade-mecum/ArtigoFocusOverlay";
 import { AnimatePresence, motion } from "framer-motion";
 
+export const HEAD_LIMIT = 40;
+
+export const estatutoHeadQueryOptions = (slug: string) =>
+  queryOptions({
+    queryKey: ["vade-mecum", "estatuto-head", slug],
+    staleTime: 60 * 60_000,
+    gcTime: 24 * 60 * 60_000,
+    queryFn: async () => {
+      const { data: payload, error } = await (supabase as any).rpc(
+        "get_estatuto_head",
+        { _slug: slug, _limit: HEAD_LIMIT },
+      );
+      if (error) throw error;
+      if (!payload?.lei) throw new Error("Estatuto não encontrado");
+      return {
+        lei: payload.lei as Lei,
+        artigos: (payload.artigos ?? []) as ArtigoLista[],
+      };
+    },
+  });
+
+const estatutoTailQueryOptions = (slug: string) =>
+  queryOptions({
+    queryKey: ["vade-mecum", "estatuto-tail", slug],
+    staleTime: 60 * 60_000,
+    gcTime: 24 * 60 * 60_000,
+    queryFn: async () => {
+      const { data: payload, error } = await (supabase as any).rpc(
+        "get_estatuto_tail",
+        { _slug: slug, _offset: HEAD_LIMIT },
+      );
+      if (error) throw error;
+      return { artigos: (payload?.artigos ?? []) as ArtigoLista[] };
+    },
+  });
+
+const estatutoUserQueryOptions = (slug: string, userId: string | null) =>
+  queryOptions({
+    queryKey: ["vade-mecum", "estatuto-user", slug, userId],
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data: payload, error } = await (supabase as any).rpc(
+        "get_estatuto_user",
+        { _slug: slug, _user_id: userId },
+      );
+      if (error) throw error;
+      return {
+        favoritos: (payload?.favoritos ?? []) as string[],
+        anotados: (payload?.anotados ?? []) as string[],
+      };
+    },
+  });
+
 export const Route = createFileRoute("/_app/vade-mecum/estatutos/$slug")({
   head: ({ params }) => ({
     meta: [
@@ -58,6 +113,10 @@ export const Route = createFileRoute("/_app/vade-mecum/estatutos/$slug")({
       { name: "description", content: "Leia os artigos do estatuto com explicações, exemplos e termos." },
     ],
   }),
+  loader: ({ context, params }) =>
+    (context as { queryClient: QueryClient }).queryClient.ensureQueryData(
+      estatutoHeadQueryOptions(params.slug),
+    ),
   component: EstatutoArtigosPage,
 });
 
