@@ -625,6 +625,16 @@ function ArtigoItem({ a, onOpen }: { a: ArtigoLista; onOpen: (id: string) => voi
           </span>
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
           {a.relevancia && <BadgeRelevancia peso={a.relevancia} />}
+          {a.revogado && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-300 border border-red-500/30">
+              Revogado
+            </span>
+          )}
+          {!a.revogado && a.ult_alteracao_em && a.ult_alteracao_em >= "2020-01-01" && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              Atualizado {a.ult_alteracao_em.slice(0, 4)}
+            </span>
+          )}
         </span>
         <span
           className="block text-[12.5px] text-muted-foreground leading-snug overflow-hidden"
