@@ -209,13 +209,19 @@ async function main() {
     console.error("Lei CC não encontrada:", leiErr); process.exit(1);
   }
 
-  const { data: artigos, error: artErr } = await supabase
-    .from("vade_mecum_artigos")
-    .select("id, numero")
-    .eq("lei_id", lei.id)
-    .order("ordem");
-  if (artErr || !artigos) {
-    console.error(artErr); process.exit(1);
+  const artigos: { id: string; numero: string }[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from("vade_mecum_artigos")
+      .select("id, numero")
+      .eq("lei_id", lei.id)
+      .order("ordem")
+      .range(from, from + PAGE - 1);
+    if (error) { console.error(error); process.exit(1); }
+    if (!data || data.length === 0) break;
+    artigos.push(...data);
+    if (data.length < PAGE) break;
   }
   console.log(`  ${artigos.length} artigos no banco.`);
 
