@@ -76,7 +76,8 @@ function BibliotecaHub() {
           to="/biblioteca/$slug"
           params={{ slug: ESTUDOS.slug }}
           preload="intent"
-          className="group relative block rounded-2xl border border-gold/40 bg-card overflow-hidden shadow-lg shadow-black/40 hover:border-gold/70 hover:-translate-y-0.5 transition-all"
+          className="group relative block rounded-2xl border border-gold/40 bg-card overflow-hidden shadow-lg shadow-black/40 hover:border-gold/70 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-gold/10 transition-all duration-300 animate-fade-in opacity-0"
+          style={{ animationDelay: "60ms", animationFillMode: "forwards" }}
         >
           <div className="relative h-44 md:h-56 w-full overflow-hidden">
             <ShimmerCover
@@ -135,7 +136,8 @@ function BibliotecaHub() {
                 to="/biblioteca/$slug"
                 params={{ slug: b.slug }}
                 preload="intent"
-                className="group relative flex items-stretch gap-3 p-3 rounded-2xl border border-border bg-card hover:border-gold/40 hover:-translate-y-0.5 transition-all shadow-md shadow-black/30 overflow-hidden"
+                className="group relative flex items-stretch gap-3 p-3 rounded-2xl border border-border bg-card hover:border-gold/40 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-gold/10 active:scale-[0.98] transition-all duration-300 shadow-md shadow-black/30 overflow-hidden animate-fade-in opacity-0"
+                style={{ animationDelay: `${120 + idx * 60}ms`, animationFillMode: "forwards" }}
               >
                 <div className="relative h-[88px] w-[88px] md:h-[96px] md:w-[96px] shrink-0 rounded-xl overflow-hidden border border-border">
                   <ShimmerCover
