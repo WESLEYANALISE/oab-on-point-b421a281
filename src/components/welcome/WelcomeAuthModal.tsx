@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { X, Mail, Lock, User, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
@@ -25,6 +25,8 @@ export function WelcomeAuthModal({ open, onClose, initialTab, sidePanel }: Props
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => { if (open) setMode(initialTab); }, [open, initialTab]);
 
   if (!open) return null;
 
