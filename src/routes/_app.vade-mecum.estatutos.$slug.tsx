@@ -499,24 +499,17 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
       </section>
 
       <section className="px-4 md:px-8 mt-4">
-        {isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-[76px] rounded-2xl border border-border/60 bg-card/40 animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <div key={aba} className="animate-fade-in">
-            {aba === "artigos" ? (
-              <ListaArtigos lista={listaArtigos} onOpen={setArtigoId} query={query} />
-            ) : aba === "capitulos" ? (
-              <ArvoreCapitulos nos={arvore} onOpen={setArtigoId} />
-            ) : (
-              <ListaArtigos lista={listaRelevantes} onOpen={setArtigoId} query={query} />
-            )}
-          </div>
-        )}
+        <div key={aba} className="animate-fade-in">
+          {aba === "artigos" ? (
+            <ListaArtigos lista={listaArtigos} onOpen={setArtigoId} query={query} loading={isLoading} />
+          ) : aba === "capitulos" ? (
+            <ArvoreCapitulos nos={arvore} onOpen={setArtigoId} />
+          ) : (
+            <ListaArtigos lista={listaRelevantes} onOpen={setArtigoId} query={query} loading={isLoading} />
+          )}
+        </div>
       </section>
+
 
       <ArtigoSheet
         artigoId={artigoId}
