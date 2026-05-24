@@ -103,22 +103,19 @@ function BibliotecaList() {
       <div className="container mx-auto px-4 py-3">
         {showAreas ? (
           <>
-            {areasLoading && !areas && (
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <li key={i} className="h-20 rounded-2xl bg-muted/40 animate-pulse" />
-                ))}
-              </ul>
-            )}
             {areas && areas.length > 0 && (
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {areas.map(({ area: a, total: t }) => (
-                  <li key={a}>
+                {areas.map(({ area: a, total: t }, idx) => (
+                  <li
+                    key={a}
+                    className="animate-fade-in opacity-0"
+                    style={{ animationDelay: `${Math.min(idx, 12) * 30}ms`, animationFillMode: "forwards" }}
+                  >
                     <button
                       onClick={() => { setArea(a); setLimit(PAGE_SIZE); window.scrollTo(0, 0); }}
-                      className="group w-full flex items-center gap-4 p-4 text-left rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 hover:from-primary/10 hover:to-card hover:border-primary/40 active:scale-[0.98] transition-all shadow-sm"
+                      className="group w-full flex items-center gap-4 p-4 text-left rounded-2xl border border-border bg-gradient-to-br from-card to-card/60 hover:from-primary/10 hover:to-card hover:border-primary/40 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/10 active:scale-[0.98] transition-all duration-200 shadow-sm"
                     >
-                      <div className="w-12 h-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      <div className="w-12 h-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center flex-shrink-0 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-200">
                         <BookOpen className="w-5 h-5" strokeWidth={2.2} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -127,7 +124,7 @@ function BibliotecaList() {
                           {t} {t === 1 ? "livro" : "livros"}
                         </div>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary flex-shrink-0 transition-colors" />
+                      <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 flex-shrink-0 transition-all duration-200" />
                     </button>
                   </li>
                 ))}
@@ -139,7 +136,7 @@ function BibliotecaList() {
           </>
         ) : (
           <>
-            <div className="mb-3 inline-flex rounded-xl border border-border bg-card p-1 text-xs font-medium">
+            <div className="mb-3 inline-flex rounded-xl border border-border bg-card p-1 text-xs font-medium animate-fade-in">
               {([
                 { id: "cronologica", label: "Ordem de estudo", Icon: Clock },
                 { id: "alfabetica", label: "A–Z", Icon: ArrowDownAZ },
@@ -150,31 +147,17 @@ function BibliotecaList() {
                   <button
                     key={id}
                     onClick={() => { setView(id); setLimit(PAGE_SIZE); }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all duration-200 active:scale-95 ${active ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30" : "text-muted-foreground hover:text-foreground hover:bg-muted/60"}`}
                     aria-pressed={active}
                   >
-                    <Icon className="w-3.5 h-3.5" /> {label}
+                    <Icon className={`w-3.5 h-3.5 transition-transform duration-200 ${active ? "scale-110" : ""}`} /> {label}
                   </button>
                 );
               })}
             </div>
 
-            {livrosLoading && !livros && (
-              <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden bg-card">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <li key={i} className="flex items-center gap-3 p-3">
-                    <div className="w-14 h-20 rounded bg-muted animate-pulse flex-shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3 w-3/4 rounded bg-muted animate-pulse" />
-                      <div className="h-2 w-1/2 rounded bg-muted animate-pulse" />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-
             {livrosVisiveis && livrosVisiveis.length === 0 && !livrosLoading && (
-              <p className="text-sm text-muted-foreground text-center py-8">
+              <p className="text-sm text-muted-foreground text-center py-8 animate-fade-in">
                 {view === "favoritos" ? "Você ainda não favoritou nenhum livro." : "Nenhum livro disponível."}
               </p>
             )}
@@ -186,12 +169,16 @@ function BibliotecaList() {
                     const id = String(l.id);
                     const isFav = favSet.has(Number(l.id));
                     return (
-                      <li key={id} className="relative">
+                      <li
+                        key={id}
+                        className="relative animate-fade-in opacity-0"
+                        style={{ animationDelay: `${Math.min(idx, 12) * 30}ms`, animationFillMode: "forwards" }}
+                      >
                         <Link
                           to="/biblioteca/$slug/$bookId"
                           params={{ slug, bookId: id }}
                           preload={false}
-                          className="flex items-center gap-3 p-3 pr-12 hover:bg-muted/50 transition-colors"
+                          className="flex items-center gap-3 p-3 pr-12 hover:bg-muted/50 active:bg-muted/70 transition-colors duration-150"
                         >
                           <div className="relative w-14 h-20 rounded overflow-hidden bg-white border border-border flex-shrink-0">
                             {l.capa ? (
@@ -223,9 +210,9 @@ function BibliotecaList() {
                           }}
                           aria-label={isFav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
                           aria-pressed={isFav}
-                          className="absolute top-1.5 left-1.5 z-10 p-1 rounded-full bg-background/85 backdrop-blur shadow-sm border border-border hover:scale-110 active:scale-95 transition"
+                          className="absolute top-1.5 left-1.5 z-10 p-1 rounded-full bg-background/85 backdrop-blur shadow-sm border border-border hover:scale-110 active:scale-90 transition-transform duration-200"
                         >
-                          <Heart className={`w-3.5 h-3.5 ${isFav ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+                          <Heart key={String(isFav)} className={`w-3.5 h-3.5 transition-colors ${isFav ? "fill-primary text-primary animate-scale-in" : "text-muted-foreground"}`} />
                         </button>
                       </li>
                     );
@@ -236,7 +223,7 @@ function BibliotecaList() {
                   <div className="mt-4 flex justify-center">
                     <button
                       onClick={() => setLimit((n) => n + PAGE_SIZE)}
-                      className="px-4 py-2 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted"
+                      className="px-4 py-2 rounded-xl border border-border bg-card text-sm font-medium hover:bg-muted hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
                     >
                       Carregar mais
                     </button>
@@ -247,6 +234,7 @@ function BibliotecaList() {
           </>
         )}
       </div>
+
     </div>
   );
 }
