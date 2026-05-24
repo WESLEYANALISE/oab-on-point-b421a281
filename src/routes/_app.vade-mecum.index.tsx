@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft, Search, Scale, BookMarked, Landmark, Gavel, Library,
   FileText, ScrollText, ShieldCheck, Sparkles, ChevronRight, Star,
