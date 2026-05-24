@@ -93,6 +93,15 @@ const DESTAQUES = [
 function VadeMecumPage() {
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
+  const router = useRouter();
+
+  // Pré-carrega as rotas mais acessadas em segundo plano assim que a hub
+  // monta — quando o usuário tocar em "Códigos" ou "CF", já entra instantâneo.
+  useEffect(() => {
+    router.preloadRoute({ to: "/vade-mecum/codigos" }).catch(() => {});
+    router.preloadRoute({ to: "/vade-mecum/cf" }).catch(() => {});
+    router.preloadRoute({ to: "/vade-mecum/estatutos" }).catch(() => {});
+  }, [router]);
 
   const destaquesFiltrados = useMemo(() => {
     const q = query.trim().toLowerCase();
