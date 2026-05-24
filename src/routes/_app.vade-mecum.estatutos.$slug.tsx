@@ -1051,13 +1051,13 @@ function ArtigoSheet({
                       <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
                       {renderTextoArtigo(formatarQuebrasArtigo(limparPrefixoArtigo(artigo.texto)), mostrarParenteses)}
                     </article>
-                    {planaltoUrl && (
+                    {(artigo.planalto_url ?? planaltoUrl) && (
                       <div className="flex justify-center pt-2 pb-4">
                         <a
-                          href={planaltoUrl}
+                          href={(artigo.planalto_url ?? planaltoUrl)!}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold/40 bg-gold/10 text-gold text-[12.5px] font-semibold hover:bg-gold/15 transition-colors"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold/40 bg-gold/10 text-gold text-[12.5px] font-semibold hover:bg-gold/15 hover:border-gold/60 active:scale-95 transition-all duration-200"
                         >
                           <Scale className="h-3.5 w-3.5" />
                           Ver no Planalto
