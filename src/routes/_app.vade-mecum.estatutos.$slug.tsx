@@ -462,7 +462,7 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
         artigoId={artigoId}
         leiId={data?.lei.id ?? null}
         leiRotulo={(tituloOverride ?? meta?.nomeCompleto ?? data?.lei.nome ?? "ESTATUTO").toUpperCase()}
-        planaltoUrl={meta?.planaltoUrl}
+        planaltoUrl={data?.lei.planalto_url ?? meta?.planaltoUrl}
         userId={userId}
         favorito={!!artigoId && !!favoritos?.has(artigoId)}
         caminho={caminhoAtual}
