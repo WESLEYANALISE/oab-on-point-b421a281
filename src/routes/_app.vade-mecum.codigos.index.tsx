@@ -38,6 +38,25 @@ const CODIGO_STYLE: Record<string, CodigoStyle> = {
 };
 const DEFAULT_STYLE: CodigoStyle = { Icon: BookMarked, bg: "bg-gradient-to-br from-primary to-primary/70", barra: "bg-primary" };
 
+type LeiRow = { slug: string; nome: string; nome_curto: string | null; total_artigos: number };
+
+const codigosListaQueryOptions = queryOptions({
+  queryKey: ["vade-mecum", "codigos", "lista"],
+  staleTime: 60 * 60_000,
+  gcTime: 24 * 60 * 60_000,
+  queryFn: async (): Promise<LeiRow[]> => {
+    const { data, error } = await supabase
+      .from("vade_mecum_leis")
+      .select("slug, nome, nome_curto, total_artigos, ordem, categoria")
+      .eq("categoria", "codigo")
+      .neq("slug", "cf")
+      .order("ordem", { ascending: true, nullsFirst: false })
+      .order("nome", { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as LeiRow[];
+  },
+});
+
 export const Route = createFileRoute("/_app/vade-mecum/codigos/")({
   head: () => ({
     meta: [
@@ -45,6 +64,11 @@ export const Route = createFileRoute("/_app/vade-mecum/codigos/")({
       { name: "description", content: "Todos os códigos brasileiros: Civil, Penal, Processuais, CTN, CLT, CDC e mais." },
     ],
   }),
+  // Prime o cache no hover/touch (router preload="intent") e na navegação real,
+  // pra entrar instantaneamente sem flash de carregamento.
+  loader: ({ context }) =>
+    (context as { queryClient: import("@tanstack/react-query").QueryClient }).queryClient
+      .ensureQueryData(codigosListaQueryOptions),
   component: CodigosListPage,
 });
 
