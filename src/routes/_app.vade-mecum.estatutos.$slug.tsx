@@ -2089,7 +2089,7 @@ function PlaylistLista({
                       Art. {it.numero}
                     </span>
                     <span className="block text-[12px] text-muted-foreground line-clamp-1 mt-0.5">
-                      {limparPrefixoArtigo(it.texto)}
+                      {splitArtigo(it.texto).corpo}
                     </span>
                   </span>
                   <span className="h-9 w-9 shrink-0 grid place-items-center rounded-full btn-narracao-elegant text-black opacity-90 group-hover:opacity-100 transition">
