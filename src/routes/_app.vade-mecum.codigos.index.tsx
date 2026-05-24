@@ -72,7 +72,6 @@ export const Route = createFileRoute("/_app/vade-mecum/codigos/")({
   component: CodigosListPage,
 });
 
-type LeiRow = { slug: string; nome: string; nome_curto: string | null; total_artigos: number };
 type Aba = "todos" | "favoritos" | "recentes";
 
 function CodigosListPage() {
@@ -86,22 +85,9 @@ function CodigosListPage() {
     setRecentes(getRecentes().map((r) => r.slug));
   }, []);
 
-  const { data: leis } = useQuery({
-    queryKey: ["vade-mecum", "codigos", "lista"],
-    staleTime: 60 * 60_000,
-    gcTime: 24 * 60 * 60_000,
-    queryFn: async (): Promise<LeiRow[]> => {
-      const { data, error } = await supabase
-        .from("vade_mecum_leis")
-        .select("slug, nome, nome_curto, total_artigos, ordem, categoria")
-        .eq("categoria", "codigo")
-        .neq("slug", "cf")
-        .order("ordem", { ascending: true, nullsFirst: false })
-        .order("nome", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as LeiRow[];
-    },
-  });
+  // Loader já garantiu a presença no cache → render instantâneo.
+  const { data: leis } = useSuspenseQuery(codigosListaQueryOptions);
+
 
   const { data: favoritosSlugs } = useQuery({
     enabled: !!userId,
