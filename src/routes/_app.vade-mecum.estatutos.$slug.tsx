@@ -229,6 +229,23 @@ function limparPrefixoArtigo(texto: string): string {
   );
 }
 
+/**
+ * Separa a "epígrafe" (título do artigo, ex.: "Lei excepcional ou temporária")
+ * do corpo. A epígrafe é o que aparece ANTES da primeira ocorrência de
+ * "Art. N..." dentro do texto. O corpo já vem sem o prefixo "Art. N".
+ */
+function splitArtigo(texto: string): { epigrafe: string; corpo: string } {
+  if (!texto) return { epigrafe: "", corpo: "" };
+  const re = /^\s*art\.?\s*[\dIVXLCDM]+(?:[ºoOªªA]|\.º|°)?(?:[-‑–][A-Za-z\d]+)*\s*[.\-–—:]?\s*/im;
+  const match = texto.match(re);
+  if (!match || match.index === undefined || match.index === 0) {
+    return { epigrafe: "", corpo: limparPrefixoArtigo(texto) };
+  }
+  const epigrafe = texto.slice(0, match.index).replace(/\s+/g, " ").trim();
+  const corpo = texto.slice(match.index + match[0].length);
+  return { epigrafe, corpo };
+}
+
 // ----------- Page -----------
 type EstatutoArtigosPageProps = {
   slugOverride?: string;
@@ -713,7 +730,7 @@ function ArtigoItem({ a, onOpen, index = 0 }: { a: ArtigoLista; onOpen: (id: str
           className="block text-[12.5px] text-muted-foreground leading-snug overflow-hidden"
           style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}
         >
-          {a.texto}
+          {splitArtigo(a.texto).corpo}
         </span>
       </span>
       <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all shrink-0 mt-2" />
@@ -1118,11 +1135,18 @@ function ArtigoSheet({
             ) : (
               // Conteúdo padrão = Estudar. Praticar/Anotações/Perguntar abrem em overlay.
               <div style={{ fontSize: fontPx }}>
-                {contentTab === "artigo" && (
+                {contentTab === "artigo" && (() => {
+                  const { epigrafe, corpo } = splitArtigo(artigo.texto);
+                  return (
                   <div className="space-y-6">
                     <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
+                      {epigrafe && (
+                        <div className="not-italic font-sans text-[13px] font-semibold uppercase tracking-[0.08em] text-gold/80 mb-2">
+                          {epigrafe}
+                        </div>
+                      )}
                       <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
-                      {renderTextoArtigo(formatarQuebrasArtigo(limparPrefixoArtigo(artigo.texto)), mostrarParenteses)}
+                      {renderTextoArtigo(formatarQuebrasArtigo(corpo), mostrarParenteses)}
                     </article>
                     {(artigo.planalto_url ?? planaltoUrl) && (
                       <div className="flex justify-center pt-2 pb-4">
@@ -1139,7 +1163,8 @@ function ArtigoSheet({
                       </div>
                     )}
                   </div>
-                )}
+                  );
+                })()}
                 {contentTab === "explicacao" && (
                   <ExplicacaoView artigo={artigo} />
                 )}
@@ -2064,7 +2089,7 @@ function PlaylistLista({
                       Art. {it.numero}
                     </span>
                     <span className="block text-[12px] text-muted-foreground line-clamp-1 mt-0.5">
-                      {limparPrefixoArtigo(it.texto)}
+                      {splitArtigo(it.texto).corpo}
                     </span>
                   </span>
                   <span className="h-9 w-9 shrink-0 grid place-items-center rounded-full btn-narracao-elegant text-black opacity-90 group-hover:opacity-100 transition">
@@ -2219,7 +2244,7 @@ function PlaylistPlayer({
               Acompanhe a leitura
             </p>
             <p className="text-[14.5px] leading-relaxed whitespace-pre-line">
-              {limparPrefixoArtigo(item.texto)}
+              {splitArtigo(item.texto).corpo}
             </p>
           </div>
         </div>
