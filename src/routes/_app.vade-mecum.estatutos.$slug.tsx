@@ -1135,11 +1135,18 @@ function ArtigoSheet({
             ) : (
               // Conteúdo padrão = Estudar. Praticar/Anotações/Perguntar abrem em overlay.
               <div style={{ fontSize: fontPx }}>
-                {contentTab === "artigo" && (
+                {contentTab === "artigo" && (() => {
+                  const { epigrafe, corpo } = splitArtigo(artigo.texto);
+                  return (
                   <div className="space-y-6">
                     <article className="font-serif leading-[1.75] text-foreground/95 whitespace-pre-wrap tracking-[0.005em]">
+                      {epigrafe && (
+                        <div className="not-italic font-sans text-[13px] font-semibold uppercase tracking-[0.08em] text-gold/80 mb-2">
+                          {epigrafe}
+                        </div>
+                      )}
                       <span className="font-bold text-gold">Art. {artigo.numero ?? "—"} – </span>
-                      {renderTextoArtigo(formatarQuebrasArtigo(limparPrefixoArtigo(artigo.texto)), mostrarParenteses)}
+                      {renderTextoArtigo(formatarQuebrasArtigo(corpo), mostrarParenteses)}
                     </article>
                     {(artigo.planalto_url ?? planaltoUrl) && (
                       <div className="flex justify-center pt-2 pb-4">
