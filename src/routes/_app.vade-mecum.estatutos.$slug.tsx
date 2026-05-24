@@ -958,7 +958,7 @@ function ArtigoSheet({
           .insert({ user_id: userId, artigo_id: artigoId, lei_id: leiId });
         if (error) throw error;
       }
-      queryClient.invalidateQueries({ queryKey: ["vade-mecum", "estatuto"] });
+      queryClient.invalidateQueries({ queryKey: ["vade-mecum", "estatuto-user"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao favoritar");
     }
