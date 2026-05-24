@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { limparTituloLei } from "@/lib/narracoes.utils";
 
 import { useQuery, useQueryClient, queryOptions, type QueryClient } from "@tanstack/react-query";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useVirtualizer, useWindowVirtualizer } from "@tanstack/react-virtual";
 import { markdownToWhatsapp } from "@/lib/whatsapp-markdown";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
