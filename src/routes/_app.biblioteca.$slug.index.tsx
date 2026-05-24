@@ -76,7 +76,15 @@ function BibliotecaList() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
         <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-          <div className="min-w-0">
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label="Voltar"
+            className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-muted/70 border border-border text-foreground hover:bg-muted active:scale-95 transition-all tap-feedback flex-shrink-0"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div className="min-w-0 flex-1 animate-fade-in">
             <h1 className="font-sans text-lg font-bold text-foreground leading-tight truncate">
               {area ?? cfg.title}
             </h1>
@@ -85,13 +93,12 @@ function BibliotecaList() {
                 ? `${areas?.length ?? 0} áreas${total ? ` · ${total} livros` : ""}`
                 : view === "favoritos"
                   ? `${livrosVisiveis?.length ?? 0} favoritos`
-                  : livrosLoading && !livros
-                    ? "Carregando…"
-                    : `${livros?.length ?? 0} livros`}
+                  : `${livros?.length ?? 0} livros`}
             </p>
           </div>
         </div>
       </header>
+
 
       <div className="container mx-auto px-4 py-3">
         {showAreas ? (
