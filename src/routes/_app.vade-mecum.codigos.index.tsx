@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery, queryOptions, type QueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -67,8 +67,7 @@ export const Route = createFileRoute("/_app/vade-mecum/codigos/")({
   // Prime o cache no hover/touch (router preload="intent") e na navegação real,
   // pra entrar instantaneamente sem flash de carregamento.
   loader: ({ context }) =>
-    (context as { queryClient: import("@tanstack/react-query").QueryClient }).queryClient
-      .ensureQueryData(codigosListaQueryOptions),
+    (context as { queryClient: QueryClient }).queryClient.ensureQueryData(codigosListaQueryOptions),
   component: CodigosListPage,
 });
 
