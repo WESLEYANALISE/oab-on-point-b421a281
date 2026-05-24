@@ -61,7 +61,7 @@ export const Route = createFileRoute("/_app/vade-mecum/estatutos/$slug")({
   component: EstatutoArtigosPage,
 });
 
-type Lei = { id: string; slug: string; nome: string; nome_curto: string | null; total_artigos: number };
+type Lei = { id: string; slug: string; nome: string; nome_curto: string | null; total_artigos: number; planalto_url: string | null };
 type ArtigoLista = {
   id: string;
   numero: string | null;
