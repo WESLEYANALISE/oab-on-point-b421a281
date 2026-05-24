@@ -69,6 +69,17 @@ type ArtigoLista = {
   ordem: number;
   relevancia?: string | null;
   relevancia_nota?: string | null;
+  ult_alteracao_em?: string | null;
+  revogado?: boolean | null;
+};
+export type AlteracaoArtigo = {
+  tipo: "redacao" | "inclusao" | "revogacao" | "vigencia" | "vide";
+  lei: string;
+  data: string;
+  ano: number;
+  url: string | null;
+  escopo: string;
+  texto_original?: string;
 };
 type ArtigoCompleto = ArtigoLista & {
   comentario: string | null;
@@ -79,6 +90,8 @@ type ArtigoCompleto = ArtigoLista & {
   exemplo: string | null;
   termos: unknown;
   narracao_url: string | null;
+  planalto_url: string | null;
+  alteracoes: AlteracaoArtigo[] | null;
 };
 
 type Aba = "artigos" | "capitulos" | "relevantes";
@@ -612,6 +625,16 @@ function ArtigoItem({ a, onOpen }: { a: ArtigoLista; onOpen: (id: string) => voi
           </span>
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
           {a.relevancia && <BadgeRelevancia peso={a.relevancia} />}
+          {a.revogado && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-red-500/15 text-red-300 border border-red-500/30">
+              Revogado
+            </span>
+          )}
+          {!a.revogado && a.ult_alteracao_em && a.ult_alteracao_em >= "2020-01-01" && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-300 border border-amber-500/30">
+              Atualizado {a.ult_alteracao_em.slice(0, 4)}
+            </span>
+          )}
         </span>
         <span
           className="block text-[12.5px] text-muted-foreground leading-snug overflow-hidden"
@@ -717,7 +740,7 @@ function NoArvore({ no, nivel, onOpen }: { no: Nó; nivel: number; onOpen: (id: 
 // ============== ARTIGO SHEET (3 telas em uma) ==============
 
 type FuncTab = "estudar" | "praticar" | "narracao" | "anotacoes" | "perguntar";
-type ContentTab = "artigo" | "explicacao" | "exemplo" | "termos";
+type ContentTab = "artigo" | "explicacao" | "exemplo" | "termos" | "alteracoes";
 
 /** Insere quebras de linha antes de incisos (I, II...), parágrafos (§) e "Parágrafo único". */
 function formatarQuebrasArtigo(texto: string): string {
@@ -851,7 +874,7 @@ function ArtigoSheet({
     queryFn: async (): Promise<ArtigoCompleto> => {
       const { data, error } = await supabase
         .from("vade_mecum_artigos")
-        .select("id, numero, texto, ordem, comentario, explicacao_tecnico, explicacao_resumido, explicacao_simples_maior16, explicacao_simples_menor16, exemplo, termos, narracao_url, relevancia, relevancia_nota")
+        .select("id, numero, texto, ordem, comentario, explicacao_tecnico, explicacao_resumido, explicacao_simples_maior16, explicacao_simples_menor16, exemplo, termos, narracao_url, relevancia, relevancia_nota, planalto_url, alteracoes, ult_alteracao_em, revogado")
         .eq("id", artigoId!)
         .single();
       if (error) throw error;
@@ -961,28 +984,36 @@ function ArtigoSheet({
             </div>
           </div>
 
-          {/* Toggle 4 abas: Artigo / Explicação / Exemplo / Termos */}
-          <div className="mt-4 grid grid-cols-4 w-full">
-            {(["artigo", "explicacao", "exemplo", "termos"] as ContentTab[]).map((t) => {
-              const labels: Record<ContentTab, string> = {
-                artigo: "Artigo", explicacao: "Explicação", exemplo: "Exemplo", termos: "Termos",
-              };
-              const ativo = contentTab === t;
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setContentTab(t)}
-                  className={`relative pb-2 text-[12px] sm:text-[13px] font-semibold whitespace-nowrap text-center transition-colors ${
-                    ativo ? "text-gold" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {labels[t]}
-                  {ativo && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-gold rounded-full" />}
-                </button>
-              );
-            })}
-          </div>
+          {/* Toggle abas */}
+          {(() => {
+            const temAlteracoes = Array.isArray(artigo?.alteracoes) && artigo!.alteracoes!.length > 0;
+            const tabs: ContentTab[] = temAlteracoes
+              ? ["artigo", "explicacao", "exemplo", "termos", "alteracoes"]
+              : ["artigo", "explicacao", "exemplo", "termos"];
+            const labels: Record<ContentTab, string> = {
+              artigo: "Artigo", explicacao: "Explicação", exemplo: "Exemplo", termos: "Termos", alteracoes: "Alterações",
+            };
+            return (
+              <div className={`mt-4 grid w-full ${temAlteracoes ? "grid-cols-5" : "grid-cols-4"}`}>
+                {tabs.map((t) => {
+                  const ativo = contentTab === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setContentTab(t)}
+                      className={`relative pb-2 text-[12px] sm:text-[13px] font-semibold whitespace-nowrap text-center transition-colors ${
+                        ativo ? "text-gold" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {labels[t]}
+                      {ativo && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-gold rounded-full" />}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Conteúdo */}
@@ -1044,6 +1075,9 @@ function ArtigoSheet({
                 )}
                 {contentTab === "termos" && (
                   <TermosView termos={termos} />
+                )}
+                {contentTab === "alteracoes" && (
+                  <AlteracoesView alteracoes={artigo.alteracoes ?? []} planaltoUrl={artigo.planalto_url ?? planaltoUrl ?? null} />
                 )}
               </div>
             )}
@@ -2182,3 +2216,59 @@ function PlaylistPlayer({
   );
 }
 export { SCALES };
+
+function AlteracoesView({ alteracoes, planaltoUrl }: { alteracoes: AlteracaoArtigo[]; planaltoUrl: string | null }) {
+  const tipoLabel: Record<AlteracaoArtigo["tipo"], string> = {
+    redacao: "Nova redação", inclusao: "Incluído", revogacao: "Revogado", vigencia: "Vigência", vide: "Vide",
+  };
+  const tipoCor: Record<AlteracaoArtigo["tipo"], string> = {
+    redacao: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+    inclusao: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+    revogacao: "bg-red-500/15 text-red-300 border-red-500/30",
+    vigencia: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+    vide: "bg-muted text-muted-foreground border-border",
+  };
+  const fmtData = (iso: string) => {
+    const [y, m, d] = iso.split("-");
+    if (!y) return iso;
+    if (d && d !== "01" && m !== "01") return `${d}/${m}/${y}`;
+    return y;
+  };
+  return (
+    <div className="space-y-4">
+      {planaltoUrl && (
+        <a
+          href={planaltoUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gold/40 bg-gold/10 text-gold text-[12.5px] font-semibold hover:bg-gold/15 transition-colors"
+        >
+          Abrir artigo no Planalto
+        </a>
+      )}
+      <ul className="space-y-3">
+        {alteracoes.map((a, i) => (
+          <li key={i} className="rounded-xl border border-border/60 bg-card/60 p-4 space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${tipoCor[a.tipo]}`}>
+                {tipoLabel[a.tipo]}
+              </span>
+              <span className="text-[12px] text-muted-foreground">{fmtData(a.data)}</span>
+            </div>
+            <p className="font-semibold text-foreground text-[14px]">{a.lei}</p>
+            {a.url && (
+              <a
+                href={a.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-[12px] text-gold hover:underline"
+              >
+                Ver lei no Planalto →
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}

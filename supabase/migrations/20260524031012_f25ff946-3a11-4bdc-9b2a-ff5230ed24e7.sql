@@ -1,0 +1,2 @@
+ALTER TABLE public.vade_mecum_artigos ADD COLUMN IF NOT EXISTS planalto_url text;
+CREATE INDEX IF NOT EXISTS idx_vade_mecum_artigos_ult_alteracao ON public.vade_mecum_artigos(lei_id, ult_alteracao_em);
