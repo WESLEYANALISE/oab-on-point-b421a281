@@ -320,9 +320,9 @@ export function EstatutoArtigosPage({ slugOverride, parteCF, tituloOverride }: E
                 ? "1988"
                 : meta?.decreto ?? `${data?.lei.total_artigos.toLocaleString("pt-BR") ?? "—"} artigos`}
             </p>
-            {meta?.planaltoUrl && (
+            {(data?.lei.planalto_url ?? meta?.planaltoUrl) && (
               <a
-                href={meta.planaltoUrl}
+                href={(data?.lei.planalto_url ?? meta?.planaltoUrl)!}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1.5 mt-2.5 text-[12px] text-gold hover:text-gold/80 transition-colors font-medium"
