@@ -69,6 +69,17 @@ type ArtigoLista = {
   ordem: number;
   relevancia?: string | null;
   relevancia_nota?: string | null;
+  ult_alteracao_em?: string | null;
+  revogado?: boolean | null;
+};
+export type AlteracaoArtigo = {
+  tipo: "redacao" | "inclusao" | "revogacao" | "vigencia" | "vide";
+  lei: string;
+  data: string;
+  ano: number;
+  url: string | null;
+  escopo: string;
+  texto_original?: string;
 };
 type ArtigoCompleto = ArtigoLista & {
   comentario: string | null;
@@ -79,6 +90,8 @@ type ArtigoCompleto = ArtigoLista & {
   exemplo: string | null;
   termos: unknown;
   narracao_url: string | null;
+  planalto_url: string | null;
+  alteracoes: AlteracaoArtigo[] | null;
 };
 
 type Aba = "artigos" | "capitulos" | "relevantes";
