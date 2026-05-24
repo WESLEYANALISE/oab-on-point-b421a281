@@ -955,7 +955,7 @@ function ArtigoSheet({
 
   const { data: artigo, isLoading } = useQuery({
     enabled: !!artigoId,
-    queryKey: ["vade-mecum", "artigo", artigoId],
+    queryKey: ["vade-mecum", "artigo", artigoId, "v2-epigrafe"],
     // Artigo individual também é praticamente imutável.
     staleTime: 60 * 60_000,
     gcTime: 24 * 60 * 60_000,
