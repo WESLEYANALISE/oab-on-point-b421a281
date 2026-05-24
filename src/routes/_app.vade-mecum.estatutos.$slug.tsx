@@ -684,6 +684,7 @@ function ArtigoItem({ a, onOpen, index = 0 }: { a: ArtigoLista; onOpen: (id: str
     <button
       type="button"
       onClick={() => onOpen(a.id)}
+      style={delay > 0 ? { animation: `fade-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both`, animationDelay: `${delay}ms` } : undefined}
       className="relative w-full min-h-[88px] flex items-start gap-3 pl-4 pr-3 py-3.5 rounded-2xl bg-card/70 border border-border/60 hover:border-gold/40 hover:bg-card transition-all cursor-pointer group overflow-hidden text-left active:scale-[0.99]"
     >
       <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-gold/70" />
