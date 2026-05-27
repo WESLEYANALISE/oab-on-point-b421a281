@@ -549,18 +549,38 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                     descricao: aul.descricao,
                     escopo: aul.escopo,
                   }, 14_000);
-                  const slides = buildLongSlides(aul, trechos);
+
+                  const userSlides = `MÓDULO: ${mod.titulo}\nAULA: ${aul.titulo}\nDESCRIÇÃO: ${aul.descricao ?? ""}\nESCOPO: ${aul.escopo ?? ""}\n\nTRECHOS DO MATERIAL DE ESTUDO (use como fonte real, não copie literal):\n${trechos}`;
+
+                  let slides: any[] | null = null;
+                  for (let tentativa = 0; tentativa < 2 && !slides; tentativa++) {
+                    try {
+                      const resp = await callGeminiJson(SYSTEM_SLIDES, userSlides, 16_000);
+                      const arr = Array.isArray(resp?.slides) ? resp.slides : null;
+                      if (arr && arr.length >= 10) {
+                        slides = arr.map((s: any, i: number) => ({
+                          ordem: i,
+                          tipo: String(s?.tipo ?? "conceito"),
+                          conteudo: s?.conteudo ?? {},
+                          imagem_url: null,
+                          quiz_json: s?.quiz_json ?? null,
+                        }));
+                      }
+                    } catch (e: any) {
+                      console.error(`[preview] slides Gemini falhou (aula="${aul.titulo}", tentativa=${tentativa + 1}):`, e?.message);
+                    }
+                  }
+
+                  if (!slides) {
+                    console.error(`[preview] usando fallback determinístico para aula "${aul.titulo}"`);
+                    slides = buildLocalSlides(aul, trechos);
+                  }
+
                   aulasOut.push({
                     titulo: aul.titulo,
                     descricao: aul.descricao ?? "",
                     duracao_min: aul.duracao_min ?? 10,
-                    slides: slides.map((s: any, i: number) => ({
-                      ordem: typeof s?.ordem === "number" ? s.ordem : i,
-                      tipo: s?.tipo ?? "conceito",
-                      conteudo: s?.conteudo ?? {},
-                      imagem_url: s?.imagem_url ?? null,
-                      quiz_json: s?.quiz_json ?? null,
-                    })),
+                    slides,
                   });
                   feita++;
                   send("progress", {
@@ -571,6 +591,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                     slides: slides.length,
                   });
                 }
+
 
                 modulosOut.push({
                   titulo: mod.titulo,
