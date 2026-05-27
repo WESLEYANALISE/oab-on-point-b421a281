@@ -65,14 +65,18 @@ function existingSlideText(slides: SlideDraft[] = []) {
     .join(" ");
 }
 
-function buildPares(titulo: string, base: string, termos: string[]) {
+function buildPares(_titulo: string, base: string, termos: string[]) {
   const sentences = splitSentences(base, 24);
-  const pool = termos.length ? termos : ["conceito", "regra", "exceção", "aplicação", "fundamento"];
-  return pool.slice(0, 5).map((termo, i) => {
-    const frase = sentences[i] || sentences[(i + 3) % Math.max(1, sentences.length)] || `Elemento essencial no estudo de ${titulo}.`;
-    return { termo: cap(termo), definicao: compactText(frase, 160) };
-  });
+  const pares = termos.slice(0, 5)
+    .map((termo, i) => {
+      const frase = sentences[i] || sentences[(i + 3) % Math.max(1, sentences.length)] || "";
+      const definicao = compactText(frase, 160).trim();
+      return { termo: cap(termo), definicao };
+    })
+    .filter((p) => p.termo.trim().length >= 2 && p.definicao.length >= 60);
+  return pares.length >= 3 ? pares : [];
 }
+
 
 function buildRamos(titulo: string, escopo: string, termos: string[]) {
   const base = termos.length >= 4 ? termos.slice(0, 4) : [...termos, "conceito", "regra", "aplicação", "exceção"].slice(0, 4);
