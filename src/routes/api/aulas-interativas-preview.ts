@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { geminiGenerateContent } from "@/lib/gemini.server";
-import { buildLongSlides } from "@/lib/aulas-interativas-long-slides";
+// buildLongSlides removido — slides agora vêm do Gemini com fallback `buildLocalSlides` local.
 
 const MODEL = "gemini-2.5-flash";
 
@@ -12,6 +12,44 @@ const Input = z.object({
   tituloCurso: z.string().min(1).max(200).optional(),
   materia: z.string().min(1).max(120).optional(),
 });
+
+const SYSTEM_SLIDES = `Você é um(a) professor(a) de Direito muito didático(a) preparando uma AULA INTERATIVA em slides para alunos da OAB (português do Brasil).
+
+Você recebe: o título da aula, descrição, escopo, e TRECHOS REAIS do material de estudo (PDF do professor). Sua tarefa é gerar UMA AULA COMPLETA E DENSA com EXATAMENTE 17 slides na ordem abaixo.
+
+REGRAS GERAIS DE CONTEÚDO:
+- Escreva como se estivesse FALANDO COM O ALUNO ("vamos entender...", "perceba que...", "agora repare...", "fica a dica..."). Tom dinâmico, claro, passo a passo.
+- USE o material recebido — nada de inventar instituto que não está lá. Mas EXPLIQUE com suas palavras, não copie o PDF.
+- Quando um termo técnico aparecer pela primeira vez, EXPLIQUE em uma frase antes de seguir.
+- Cada slide de conteúdo (conceito, exemplo, resumo, conclusão) deve ter TEXTO com 2 a 4 PARÁGRAFOS de explicação real. NUNCA devolva uma frase solta como conteúdo.
+- Quizzes precisam ter pergunta ESPECÍFICA do tema (cite institutos, autores ou termos reais que apareceram no material), nunca o template "Sobre X, qual afirmação é correta?".
+
+SAÍDA: APENAS JSON válido com a forma { "slides": [ ... ] }. NADA fora do JSON. 17 slides nesta ordem e tipos:
+
+1. { "tipo": "capa", "conteudo": { "titulo": "<título da aula>", "objetivos": ["3 a 4 objetivos do que o aluno saberá ao final, frases completas"] } }
+2. { "tipo": "conceito", "conteudo": { "titulo": "Base conceitual", "texto": "<2-3 parágrafos didáticos introduzindo o tema, contextualizando o aluno e definindo o conceito central com clareza>", "destaque": "<1 frase curta, máximo de impacto>" } }
+3. { "tipo": "esquema", "conteudo": { "titulo": "Mapa do conteúdo", "bullets": ["5 a 6 itens curtos (até 10 palavras cada) listando as subpartes do tema que serão estudadas"] } }
+4. { "tipo": "exemplo", "conteudo": { "titulo": "<título específico do exemplo>", "texto": "<2-3 parágrafos com um exemplo concreto aplicando o conceito; mostre o raciocínio: situação, regra aplicável, conclusão>", "destaque": "<lição curta extraída do exemplo>" } }
+5. { "tipo": "quiz", "conteudo": { "titulo": "Checagem rápida" }, "quiz_json": { "pergunta": "<pergunta de múltipla escolha ESPECÍFICA do conteúdo dos slides 2-4>", "alternativas": [{"letra":"A","texto":"..."},{"letra":"B","texto":"..."},{"letra":"C","texto":"..."},{"letra":"D","texto":"..."}], "correta": "<A|B|C|D>", "explicacao": "<por que a correta acerta E por que cada uma das outras 3 erra; comente A, B, C e D individualmente>" } }
+6. { "tipo": "conceito", "conteudo": { "titulo": "Aprofundamento", "texto": "<2-3 parágrafos aprofundando o tema: distinções importantes, escolas de pensamento, nuances, exceções>", "destaque": "<frase chave>" } }
+7. { "tipo": "comparativo", "conteudo": { "titulo": "<título do contraste, ex: 'Regra x exceção' ou 'Doutrina X vs Doutrina Y'>", "colunas": [ { "titulo": "<lado 1>", "itens": ["3-4 itens"] }, { "titulo": "<lado 2>", "itens": ["3-4 itens"] } ] } }
+8. { "tipo": "ligar_termos", "conteudo": { "titulo": "Ligue os conceitos", "pares": [ {"termo":"<conceito real do tema, 1-3 palavras>","definicao":"<frase completa 80-160 caracteres explicando o termo>"}, ... EXATAMENTE 5 pares, todos preenchidos, todos com sentido jurídico real ] } }
+9. { "tipo": "caso_pratico", "conteudo": { "titulo": "Caso prático", "enunciado": "<situação fática concreta em 3-6 frases, com nomes, fatos, datas se ajudar>", "pergunta": "<pergunta objetiva sobre o caso>", "analise": "<2-3 parágrafos resolvendo passo a passo: identificação do instituto → regra aplicável → conclusão>" } }
+10. { "tipo": "quiz", "conteudo": { "titulo": "Aplicação em prova" }, "quiz_json": { ... mesma estrutura do slide 5, pergunta diferente, focada em APLICAÇÃO/caso ... } }
+11. { "tipo": "mapa_mental", "conteudo": { "titulo": "Mapa mental", "central": "<conceito central, 1-3 palavras>", "ramos": [ {"titulo":"<ramo 1>","descricao":"<1 frase explicando>"}, ... EXATAMENTE 4 ramos ] } }
+12. { "tipo": "dicas", "conteudo": { "titulo": "Dicas para a prova", "dicas": [ {"tipo":"dica","texto":"..."}, {"tipo":"atencao","texto":"..."}, {"tipo":"alvo","texto":"..."}, {"tipo":"estrela","texto":"..."} ] } }
+13. { "tipo": "exemplo", "conteudo": { "titulo": "Outra aplicação", "texto": "<2-3 parágrafos com um segundo exemplo, diferente do primeiro>", "destaque": "<frase>" } }
+14. { "tipo": "quiz", "conteudo": { "titulo": "Pegadinha clássica" }, "quiz_json": { ... pergunta sobre um ERRO comum que os alunos cometem nesse tema ... } }
+15. { "tipo": "resumo", "conteudo": { "titulo": "Resumo da aula", "bullets": ["5-6 bullets, cada um com 1 frase completa recapitulando os pontos centrais do que foi visto"] } }
+16. { "tipo": "quiz", "conteudo": { "titulo": "Questão final integradora" }, "quiz_json": { ... pergunta integrando 2+ conceitos da aula ... } }
+17. { "tipo": "conclusao", "conteudo": { "titulo": "Fechamento", "texto": "<2 parágrafos: o que o aluno aprendeu + como conecta com o resto da matéria + motivação para a próxima aula>", "bullets": ["3 próximos passos práticos para o aluno"] } }
+
+IMPORTANTE:
+- Nunca devolva pares de "ligar_termos" com termo de uma palavra solta sem significado ou definição vazia/curta. Se não tiver 5 pares de qualidade, devolva uma lista vazia em "pares".
+- Todos os textos em português do Brasil.
+- Não inclua markdown além de **negrito** e *itálico* dentro de "texto".
+- Não retorne campos extras além dos especificados.`;
+
 
 const SYSTEM_ESQUELETO = `Você é um arquiteto pedagógico que vai PLANEJAR um curso interativo a partir de um MATERIAL DE ESTUDO em markdown (português do Brasil, OAB).
 
@@ -177,12 +215,18 @@ function cap(s: string) {
 
 function buildPares(titulo: string, base: string, termos: string[]) {
   const sentences = splitSentences(base, 24);
-  const pool = termos.length ? termos : ["conceito", "regra", "exceção", "aplicação", "fundamento"];
-  return pool.slice(0, 5).map((termo, i) => {
-    const frase = sentences[i] || sentences[(i + 3) % Math.max(1, sentences.length)] || `Elemento essencial no estudo de ${titulo}.`;
-    return { termo: cap(termo), definicao: compactText(frase, 160) };
-  });
+  const candidatos = termos.slice(0, 5);
+  const pares = candidatos
+    .map((termo, i) => {
+      const frase = sentences[i] || sentences[(i + 3) % Math.max(1, sentences.length)] || "";
+      const definicao = compactText(frase, 160).trim();
+      return { termo: cap(termo), definicao };
+    })
+    .filter((p) => p.termo.trim().length >= 2 && p.definicao.length >= 60);
+  // Só devolve a atividade se conseguirmos 3+ pares de qualidade — evita caixas vazias e palavras soltas no aluno.
+  return pares.length >= 3 ? pares : [];
 }
+
 
 function buildRamos(titulo: string, escopo: string, termos: string[]) {
   const base = termos.length >= 4 ? termos.slice(0, 4) : [...termos, "conceito", "regra", "aplicação", "exceção"].slice(0, 4);
@@ -511,18 +555,38 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                     descricao: aul.descricao,
                     escopo: aul.escopo,
                   }, 14_000);
-                  const slides = buildLongSlides(aul, trechos);
+
+                  const userSlides = `MÓDULO: ${mod.titulo}\nAULA: ${aul.titulo}\nDESCRIÇÃO: ${aul.descricao ?? ""}\nESCOPO: ${aul.escopo ?? ""}\n\nTRECHOS DO MATERIAL DE ESTUDO (use como fonte real, não copie literal):\n${trechos}`;
+
+                  let slides: any[] | null = null;
+                  for (let tentativa = 0; tentativa < 2 && !slides; tentativa++) {
+                    try {
+                      const resp = await callGeminiJson(SYSTEM_SLIDES, userSlides, 16_000);
+                      const arr = Array.isArray(resp?.slides) ? resp.slides : null;
+                      if (arr && arr.length >= 10) {
+                        slides = arr.map((s: any, i: number) => ({
+                          ordem: i,
+                          tipo: String(s?.tipo ?? "conceito"),
+                          conteudo: s?.conteudo ?? {},
+                          imagem_url: null,
+                          quiz_json: s?.quiz_json ?? null,
+                        }));
+                      }
+                    } catch (e: any) {
+                      console.error(`[preview] slides Gemini falhou (aula="${aul.titulo}", tentativa=${tentativa + 1}):`, e?.message);
+                    }
+                  }
+
+                  if (!slides) {
+                    console.error(`[preview] usando fallback determinístico para aula "${aul.titulo}"`);
+                    slides = buildLocalSlides(aul, trechos);
+                  }
+
                   aulasOut.push({
                     titulo: aul.titulo,
                     descricao: aul.descricao ?? "",
                     duracao_min: aul.duracao_min ?? 10,
-                    slides: slides.map((s: any, i: number) => ({
-                      ordem: typeof s?.ordem === "number" ? s.ordem : i,
-                      tipo: s?.tipo ?? "conceito",
-                      conteudo: s?.conteudo ?? {},
-                      imagem_url: s?.imagem_url ?? null,
-                      quiz_json: s?.quiz_json ?? null,
-                    })),
+                    slides,
                   });
                   feita++;
                   send("progress", {
@@ -533,6 +597,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                     slides: slides.length,
                   });
                 }
+
 
                 modulosOut.push({
                   titulo: mod.titulo,

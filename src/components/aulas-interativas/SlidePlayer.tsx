@@ -484,7 +484,16 @@ function SlideLigarTermos({
   onConcluir: () => void;
 }) {
   const paresValidos = useMemo(
-    () => (pares ?? []).filter((p) => p?.termo && p?.definicao).slice(0, 6),
+    () =>
+      (pares ?? [])
+        .filter(
+          (p) =>
+            p?.termo?.trim() &&
+            p.termo.trim().length >= 2 &&
+            p?.definicao?.trim() &&
+            p.definicao.trim().length >= 10,
+        )
+        .slice(0, 6),
     [pares],
   );
 
@@ -495,6 +504,13 @@ function SlideLigarTermos({
   const [defSel, setDefSel] = useState<number | null>(null);
   const [acertados, setAcertados] = useState<Set<number>>(new Set());
   const [erro, setErro] = useState<{ termo: number; def: number } | null>(null);
+
+  const insuficiente = paresValidos.length < 3;
+
+  // Se a atividade não tem pares válidos suficientes, libera o avanço imediatamente.
+  useEffect(() => {
+    if (insuficiente) onConcluir();
+  }, [insuficiente, onConcluir]);
 
   useEffect(() => {
     if (termoSel === null || defSel === null) return;
@@ -523,13 +539,18 @@ function SlideLigarTermos({
     }
   }, [acertados.size, paresValidos.length, onConcluir]);
 
-  if (paresValidos.length === 0) {
+  if (insuficiente) {
     return (
       <div className="max-w-2xl mx-auto px-6 py-10">
-        <p className="text-sm text-muted-foreground">Atividade indisponível.</p>
+        <p className="text-xs uppercase tracking-widest text-gold mb-2">Ligar termos</p>
+        <h2 className="font-display text-2xl md:text-3xl mb-2">{titulo || "Associe termo e definição"}</h2>
+        <p className="text-sm text-muted-foreground">
+          Atividade indisponível para esta aula. Toque em <strong>Próximo</strong> para continuar.
+        </p>
       </div>
     );
   }
+
 
   const completo = acertados.size === paresValidos.length;
 
