@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
 import { geminiGenerateContent } from "@/lib/gemini.server";
-import { buildLongSlides } from "@/lib/aulas-interativas-long-slides";
+// buildLongSlides removido — slides agora vêm do Gemini com fallback `buildLocalSlides` local.
 
 const MODEL = "gemini-2.5-flash";
 
