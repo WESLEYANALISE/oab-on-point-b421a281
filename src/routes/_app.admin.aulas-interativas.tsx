@@ -393,6 +393,19 @@ function ArquivoMaterialItem({
         }
       }
 
+      if (!finalPayload.estrutura && finalPayload.persisted) {
+        const pv = await obterPreviaArquivo({ data: { arquivoDriveId: arquivo.id } });
+        if (pv?.estrutura) {
+          finalPayload = {
+            ...finalPayload,
+            estrutura: pv.estrutura,
+            titulo_sugerido: pv.titulo_sugerido ?? finalPayload.titulo_sugerido,
+            materia_sugerida: pv.materia_sugerida ?? finalPayload.materia_sugerida,
+          };
+        }
+      }
+      if (!finalPayload.estrutura) throw new Error("Prévia concluída, mas não foi possível carregar a estrutura salva.");
+
       setEstrutura(ensureLongCourseStructure(finalPayload.estrutura as Estrutura));
       if (finalPayload.titulo_sugerido) setTitulo(finalPayload.titulo_sugerido);
       if (finalPayload.materia_sugerida) setMateria(finalPayload.materia_sugerida);
