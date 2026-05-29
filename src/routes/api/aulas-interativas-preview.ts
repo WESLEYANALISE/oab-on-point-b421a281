@@ -164,7 +164,7 @@ function buildLessonMaterial(
   }).join("\n\n---\n\n");
 }
 
-function limitarTotalAulas(modulos: any[], limite = 9) {
+function limitarTotalAulas(modulos: any[], limite = 6) {
   let total = 0;
   return modulos
     .map((m) => {
