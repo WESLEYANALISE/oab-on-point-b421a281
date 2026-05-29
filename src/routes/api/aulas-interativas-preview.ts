@@ -454,7 +454,7 @@ async function callGeminiJson(system: string, user: string, maxTokens: number, t
         maxOutputTokens: maxTokens,
       },
     }, {
-      maxAttemptsPerKey: 2,
+      maxAttemptsPerKey: 1,
       backoffMs: 1200,
       signal: ac.signal,
     });
