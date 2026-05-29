@@ -657,7 +657,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                 })
                 .eq("id", arq.id);
 
-              send("done", { estrutura: out, titulo_sugerido, materia_sugerida });
+              send("done", { persisted: true, titulo_sugerido, materia_sugerida });
             } catch (err: any) {
               await failAndPersist(String(err?.message ?? err));
             } finally {
