@@ -566,7 +566,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                   let slides: any[] | null = null;
                   for (let tentativa = 0; tentativa < 2 && !slides; tentativa++) {
                     try {
-                      const resp = await callGeminiJson(SYSTEM_SLIDES, userSlides, 16_000);
+                      const resp = await callGeminiJson(SYSTEM_SLIDES, userSlides, 24_000);
                       const arr = Array.isArray(resp?.slides) ? resp.slides : null;
                       if (arr && arr.length >= 10) {
                         slides = arr.map((s: any, i: number) => ({
