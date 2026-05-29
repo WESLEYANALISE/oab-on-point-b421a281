@@ -575,7 +575,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
               const userEsq = `Curso sugerido: ${tituloIn}\nMatéria: ${materiaIn}\n\nAMOSTRA REPRESENTATIVA DO MATERIAL EM MARKDOWN:\n${markdownPlanejamento}`;
               let esqueleto: any;
               try {
-                esqueleto = await callGeminiJson(SYSTEM_ESQUELETO, userEsq, 12_000);
+                esqueleto = await callGeminiJson(SYSTEM_ESQUELETO, userEsq, 8_000, 35_000);
               } catch (e: any) {
                 console.error("[preview] esqueleto falhou; usando fallback:", e?.message);
                 esqueleto = fallbackEsqueleto(tituloIn, materiaIn, paginasFonte, markdownCompleto);
@@ -593,9 +593,8 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
               );
               send("progress", { fase: "esqueleto", aula: 0, total: totalAulas, modulos: modulosBase.length });
 
-              // ---- PASS 2: slides por AULA (duas aulas com IA + fallback local denso para nunca estourar a conexão) ----
+              // ---- PASS 2: slides locais densos e imediatos; evita queda da conexão em materiais longos. ----
               let feita = 0;
-              let aulasComGemini = 0;
               const modulosOut: any[] = [];
               for (const mod of modulosBase) {
                 const aulasIn: any[] = Array.isArray(mod?.aulas) ? mod.aulas : [];
@@ -608,26 +607,7 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                     escopo: aul.escopo,
                   }, 14_000);
 
-                  const userSlides = `MÓDULO: ${mod.titulo}\nAULA: ${aul.titulo}\nDESCRIÇÃO: ${aul.descricao ?? ""}\nESCOPO: ${aul.escopo ?? ""}\n\nTRECHOS DO MATERIAL DE ESTUDO (use como fonte real, não copie literal):\n${trechos}`;
-
-                  let slides: any[] | null = null;
-                  if (aulasComGemini < 2) for (let tentativa = 0; tentativa < 1 && !slides; tentativa++) {
-                    try {
-                      const resp = await callGeminiJson(SYSTEM_SLIDES, userSlides, 14_000, 55_000);
-                      const arr = Array.isArray(resp?.slides) ? resp.slides : null;
-                      if (arr && arr.length >= 10) {
-                        slides = normalizeSlides(arr, aul, trechos);
-                        aulasComGemini++;
-                      }
-                    } catch (e: any) {
-                      console.error(`[preview] slides Gemini falhou (aula="${aul.titulo}", tentativa=${tentativa + 1}):`, e?.message);
-                    }
-                  }
-
-                  if (!slides) {
-                    console.error(`[preview] usando fallback determinístico para aula "${aul.titulo}"`);
-                    slides = buildLocalSlides(aul, trechos);
-                  }
+                  const slides = buildLocalSlides(aul, trechos);
 
                   aulasOut.push({
                     titulo: aul.titulo,
