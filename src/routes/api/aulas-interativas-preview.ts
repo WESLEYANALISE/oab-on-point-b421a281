@@ -593,8 +593,9 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
               );
               send("progress", { fase: "esqueleto", aula: 0, total: totalAulas, modulos: modulosBase.length });
 
-              // ---- PASS 2: slides por AULA (chamadas menores, mais resilientes) ----
+              // ---- PASS 2: slides por AULA (duas aulas com IA + fallback local denso para nunca estourar a conexão) ----
               let feita = 0;
+              let aulasComGemini = 0;
               const modulosOut: any[] = [];
               for (const mod of modulosBase) {
                 const aulasIn: any[] = Array.isArray(mod?.aulas) ? mod.aulas : [];
@@ -610,18 +611,13 @@ export const Route = createFileRoute("/api/aulas-interativas-preview")({
                   const userSlides = `MÓDULO: ${mod.titulo}\nAULA: ${aul.titulo}\nDESCRIÇÃO: ${aul.descricao ?? ""}\nESCOPO: ${aul.escopo ?? ""}\n\nTRECHOS DO MATERIAL DE ESTUDO (use como fonte real, não copie literal):\n${trechos}`;
 
                   let slides: any[] | null = null;
-                  for (let tentativa = 0; tentativa < 2 && !slides; tentativa++) {
+                  if (aulasComGemini < 2) for (let tentativa = 0; tentativa < 1 && !slides; tentativa++) {
                     try {
-                      const resp = await callGeminiJson(SYSTEM_SLIDES, userSlides, 24_000);
+                      const resp = await callGeminiJson(SYSTEM_SLIDES, userSlides, 14_000, 55_000);
                       const arr = Array.isArray(resp?.slides) ? resp.slides : null;
                       if (arr && arr.length >= 10) {
-                        slides = arr.map((s: any, i: number) => ({
-                          ordem: i,
-                          tipo: String(s?.tipo ?? "conceito"),
-                          conteudo: s?.conteudo ?? {},
-                          imagem_url: null,
-                          quiz_json: s?.quiz_json ?? null,
-                        }));
+                        slides = normalizeSlides(arr, aul, trechos);
+                        aulasComGemini++;
                       }
                     } catch (e: any) {
                       console.error(`[preview] slides Gemini falhou (aula="${aul.titulo}", tentativa=${tentativa + 1}):`, e?.message);
