@@ -411,6 +411,36 @@ function tryParseJson(raw: string): any {
   }
 }
 
+function normalizeSlides(slides: any[], aula: any, trechos: string) {
+  const locais = buildLocalSlides(aula, trechos);
+  const byTipo = new Map<string, any[]>();
+  for (const s of slides) {
+    const tipo = String(s?.tipo ?? "conceito");
+    byTipo.set(tipo, [...(byTipo.get(tipo) ?? []), s]);
+  }
+
+  return locais.map((fallback, i) => {
+    const tipo = String(fallback.tipo);
+    const candidatos = byTipo.get(tipo) ?? [];
+    const original = candidatos.shift();
+    if (original) byTipo.set(tipo, candidatos);
+    const conteudo = { ...(fallback.conteudo ?? {}), ...(original?.conteudo ?? {}) };
+    const textoCurto = typeof conteudo.texto === "string" && conteudo.texto.trim().length < 420;
+    const analiseCurta = typeof conteudo.analise === "string" && conteudo.analise.trim().length < 420;
+    return {
+      ordem: i,
+      tipo,
+      conteudo: {
+        ...conteudo,
+        ...(textoCurto ? { texto: fallback.conteudo?.texto } : {}),
+        ...(analiseCurta ? { analise: fallback.conteudo?.analise } : {}),
+      },
+      imagem_url: original?.imagem_url ?? fallback.imagem_url ?? null,
+      quiz_json: original?.quiz_json ?? fallback.quiz_json ?? null,
+    };
+  });
+}
+
 async function callGeminiJson(system: string, user: string, maxTokens: number, timeoutMs = 180_000): Promise<any> {
   const ac = new AbortController();
   const timeout = setTimeout(() => ac.abort(), timeoutMs);
