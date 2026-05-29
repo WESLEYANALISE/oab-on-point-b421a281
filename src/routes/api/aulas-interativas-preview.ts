@@ -395,15 +395,15 @@ function tryParseJson(raw: string): any {
   }
 }
 
-async function callGeminiJson(system: string, user: string, maxTokens: number): Promise<any> {
+async function callGeminiJson(system: string, user: string, maxTokens: number, timeoutMs = 180_000): Promise<any> {
   const ac = new AbortController();
-  const timeout = setTimeout(() => ac.abort(), 110_000);
+  const timeout = setTimeout(() => ac.abort(), timeoutMs);
   try {
     const res = await geminiGenerateContent(MODEL, {
       system_instruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: user }] }],
       generationConfig: {
-        temperature: 0.4,
+        temperature: 0.5,
         responseMimeType: "application/json",
         maxOutputTokens: maxTokens,
       },
@@ -423,7 +423,10 @@ async function callGeminiJson(system: string, user: string, maxTokens: number): 
       throw new Error(`Gemini terminou sem texto (motivo: ${finishReason})`);
     }
     if (finishReason === "MAX_TOKENS") {
-      throw new Error(`Resposta do Gemini truncada por limite de tokens (len=${text.length})`);
+      // Tenta parsear mesmo assim — pode ter conteúdo útil truncado no final.
+      try { return tryParseJson(text); } catch {
+        throw new Error(`Resposta do Gemini truncada por limite de tokens (len=${text.length})`);
+      }
     }
     return tryParseJson(text);
   } catch (e: any) {
