@@ -211,6 +211,22 @@ function pickSentences(text: string, start: number, count: number, fallback: str
   return sentences.length ? sentences.join(" ") : fallback;
 }
 
+function paragraphFrom(text: string, fallback: string) {
+  const cleaned = compactText(text || fallback, 720);
+  const base = cleaned || fallback;
+  return `${base} Perceba a lógica: primeiro identificamos a ideia central, depois aproximamos essa ideia do caso concreto e, por fim, perguntamos qual consequência jurídica faz sentido dentro do tema. Esse passo a passo evita decorar palavras soltas e ajuda o aluno a enxergar como a banca costuma transformar teoria em alternativa de prova.`;
+}
+
+function longAulaText(titulo: string, base: string, escopo: string, start: number) {
+  const blocos = [
+    paragraphFrom(pickSentences(base, start, 3, escopo), `Vamos entender ${titulo} a partir do ponto central da aula: ${escopo}`),
+    paragraphFrom(pickSentences(base, start + 3, 3, escopo), `Na prática, ${titulo} precisa ser lido com atenção ao contexto, aos conceitos usados no material e à finalidade do instituto estudado.`),
+    paragraphFrom(pickSentences(base, start + 6, 3, escopo), `Para prova, o mais importante é transformar o conteúdo em método: localizar o tema, separar regra e exceção, e eliminar alternativas absolutas.`),
+    paragraphFrom(pickSentences(base, start + 9, 3, escopo), `Agora conecte isso com um exemplo simples: quando o enunciado muda um fato, muda também o raciocínio que leva à resposta correta.`),
+  ];
+  return blocos.join("\n\n");
+}
+
 function cap(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
@@ -244,12 +260,12 @@ function buildLocalSlides(aula: any, trechos: string) {
   const escopo = String(aula?.escopo ?? aula?.descricao ?? "Tema central da aula.");
   const base = compactText(trechos.replace(/PÁGINA \d+:/g, " ").replace(/---/g, " "), 12_000);
 
-  const c1 = pickSentences(base, 0, 4, escopo);
-  const c2 = pickSentences(base, 4, 4, escopo);
-  const ex1 = pickSentences(base, 8, 3, `Aplique ${titulo} a um caso concreto, identificando conceito, regra e consequência.`);
-  const ex2 = pickSentences(base, 11, 3, `Outro ângulo de ${titulo}: observe o fato, enquadre na norma e conclua.`);
-  const casoTexto = pickSentences(base, 14, 3, `Situação envolvendo ${titulo}.`);
-  const analise = pickSentences(base, 5, 3, `Identifique o instituto, destaque os fatos relevantes e aplique a regra estudada.`);
+  const c1 = longAulaText(titulo, base, escopo, 0);
+  const c2 = longAulaText(titulo, base, escopo, 6);
+  const ex1 = longAulaText(`aplicação prática de ${titulo}`, base, `João estuda uma questão sobre ${titulo}. Ele lê o enunciado, identifica os fatos importantes, separa a regra da exceção e só então escolhe a alternativa. ${escopo}`, 10);
+  const ex2 = longAulaText(`segunda aplicação de ${titulo}`, base, `Maria revisa o mesmo tema por outro ângulo: ela compara conceitos próximos, marca as palavras decisivas do enunciado e explica por que uma alternativa parece correta, mas não é. ${escopo}`, 14);
+  const casoTexto = compactText(`João, candidato da OAB, recebeu uma questão envolvendo ${titulo}. O enunciado trouxe uma situação concreta ligada ao material estudado e misturou conceitos parecidos para testar atenção. Primeiro, ele precisou identificar qual instituto estava sendo cobrado. Depois, separou fatos relevantes de informações apenas decorativas. Por fim, comparou cada alternativa com a regra estudada.`, 720);
+  const analise = longAulaText(`análise do caso de ${titulo}`, base, `O caminho correto é: instituto → fatos relevantes → regra aplicável → subsunção → conclusão. ${escopo}`, 4);
 
   const termos = extractTokens(titulo, escopo, base).slice(0, 8);
   const pares = buildPares(titulo, base, termos);
@@ -284,17 +300,17 @@ function buildLocalSlides(aula: any, trechos: string) {
     { ordem: next(), tipo: "conceito", conteudo: { titulo: "Aprofundamento", texto: c2, destaque: "Atenção às palavras que alteram o alcance da regra." }, imagem_url: null, quiz_json: null },
 
     { ordem: next(), tipo: "comparativo", conteudo: { titulo: "Regra x Exceção", colunas: [
-      { titulo: "Regra geral", bullets: ["Aplica-se à maioria dos casos", "Decorre direto do conteúdo estudado", "Cobra-se com frequência na OAB"] },
-      { titulo: "Exceções e cuidados", bullets: ["Hipóteses restritas previstas no material", "Exigem leitura atenta do enunciado", "Costumam ser pegadinha de prova"] },
+      { titulo: "Regra geral", itens: ["Aplica-se à maioria dos casos descritos pelo material.", "Decorre diretamente do conceito estudado na aula.", "Costuma aparecer na OAB como ponto de partida do raciocínio.", "Ajuda a eliminar alternativas que distorcem o instituto."] },
+      { titulo: "Exceções e cuidados", itens: ["Só valem quando o próprio material ou o enunciado indicam uma hipótese especial.", "Exigem leitura atenta das palavras que limitam o alcance da regra.", "Costumam aparecer como pegadinha porque parecem negar todo o tema.", "Devem ser aplicadas depois da identificação da regra geral."] },
     ] }, imagem_url: null, quiz_json: null },
 
     { ordem: next(), tipo: "ligar_termos", conteudo: { titulo: "Ligue os termos", pares }, imagem_url: null, quiz_json: null },
 
     { ordem: next(), tipo: "caso_pratico", conteudo: {
       titulo: "Caso prático",
-      enunciado: compactText(casoTexto, 320),
+      enunciado: casoTexto,
       pergunta: `Qual é o primeiro passo para resolver corretamente uma questão sobre ${titulo}?`,
-      analise: compactText(analise, 360),
+      analise,
     }, imagem_url: null, quiz_json: null },
 
     { ordem: next(), tipo: "quiz", conteudo: { titulo: "Aplicação em prova" }, imagem_url: null, quiz_json: {
