@@ -137,7 +137,7 @@ export function SimuladoProgressModal({
           onClick={() => setLogsOpen((o) => !o)}
           className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground mb-2"
         >
-          <span>Logs detalhados ({(job?.logs ?? []).length})</span>
+          <span>Logs detalhados ({(Array.isArray(job?.logs) ? job!.logs.length : 0)})</span>
           {logsOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </button>
         {logsOpen && (
