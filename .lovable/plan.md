@@ -1,59 +1,119 @@
-## Problema
+## Objetivo
 
-A geração de slides hoje **não chama o LLM para os slides** — só para o esqueleto (módulos/aulas). Os slides em si são montados por um builder determinístico (`buildLongSlides`) que extrai frases do PDF e usa palavras soltas como "termos". Isso causa exatamente o que aparece nos prints:
+Transformar a página `/admin/simulados` num fluxo claro de **2 etapas visíveis** (Extração → Geração), com layout que não estoura no mobile e uma **barra fixa de fila no topo** no lugar do card flutuante.
 
-- Pares termo↔definição com palavras avulsas ("Filosofia", "Mudanca", "Grega") e definições truncadas/vazias → 2 caixas em branco no slide 8/17.
-- Conteúdo "Base conceitual" sem explicação real, só um trecho recortado do PDF.
-- Quizzes genéricos (sempre o mesmo padrão "Sobre X, qual afirmação é correta?").
-- Botão **Próximo** trava no slide de Ligar termos: `SlideLigarTermos` exige `acertados.size === paresValidos.length` para destravar, mas como há definições vazias, é impossível acertar tudo.
+A fila continua em modo automático: assim que a Etapa 1 termina, a Etapa 2 começa sozinha. Quando uma prova termina, a próxima da fila começa.
 
-## O que vou fazer
+## Mudanças
 
-### 1. Gerar slides com o Gemini (em vez do builder determinístico)
+### 1. Barra fixa de fila no topo (substitui o card flutuante)
 
-No `src/routes/api/aulas-interativas-preview.ts`, no Pass 2 (loop por aula), trocar `buildLongSlides(aul, trechos)` por uma **chamada `callGeminiJson` por aula**, com um system prompt novo que:
+Novo componente `SimuladoQueueTopBar` que aparece dentro da página de admin (sticky `top-0`) sempre que houver `atual` ou `fila`:
 
-- Receba `titulo`, `descricao`, `escopo` da aula + `trechos` extraídos do PDF.
-- Devolva **17 slides completos** no schema que o `SlidePlayer` já espera (`capa`, `conceito`, `esquema`, `exemplo`, `quiz`, `comparativo`, `ligar_termos`, `caso_pratico`, `mapa_mental`, `dicas`, `resumo`, `conclusao`).
-- Para cada slide, exigir:
-  - `conceito`/`exemplo`/`resumo`/`conclusao`: `texto` com **2–4 parágrafos didáticos** (explicação passo a passo, tom de aula falada — "vamos entender…", "perceba que…"), `bullets` opcional, `destaque` curto.
-  - `ligar_termos`: **exatamente 5 pares válidos**, `termo` curto (1–3 palavras com sentido jurídico real, não palavra solta) e `definicao` em 1 frase completa (80–160 caracteres). Schema rejeita pares com campos vazios.
-  - `caso_pratico`: `enunciado` com situação concreta (3–6 frases), `pergunta` objetiva, `analise` com raciocínio fato → norma → consequência.
-  - `quiz`: `pergunta` específica do tema da aula (não template), 4 alternativas plausíveis, `explicacao` comentando A/B/C/D.
-  - `mapa_mental`: 4 `ramos` com `titulo` real e `descricao`.
-  - `dicas`: 4 dicas com `tipo` variado (`dica`/`atencao`/`alvo`/`estrela`).
-- `maxOutputTokens: 16_000`, `temperature: 0.5`, `responseMimeType: "application/json"`.
-- Validar resultado com Zod; se inválido OU se algum slide obrigatório estiver faltando, fazer **1 retry** e só então cair no `buildLongSlides` como fallback.
+```
+┌──────────────────────────────────────────────────────────────┐
+│ ● Gerando prova 45 · Etapa 2/2 · 47/80 questões · 58%        │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │
+│ Fila: 3 aguardando (44, 43, 42)        [Ver detalhes] [✕]    │
+└──────────────────────────────────────────────────────────────┘
+```
 
-Manter o stream SSE intacto (eventos `progress` por aula). Cada aula vira uma chamada Gemini independente (resiliência + paralelismo natural do loop já existente).
+- Mostra etapa atual, contagem de questões, %, ETA
+- Botão "Ver detalhes" abre o `SimuladoProgressModal` existente
+- Botão ✕ cancela a fila inteira (com confirm)
+- Remover o `SimuladoQueueIndicator` flutuante da rota `/admin/simulados` (mantém em outras rotas se quiser, ou troca por uma pílula menor)
 
-### 2. Reforçar a validação dos pares (anti-caixa vazia)
+### 2. Card de prova reformatado (vertical, sem overflow)
 
-Em `SlideLigarTermos` (`src/components/aulas-interativas/SlidePlayer.tsx`):
+Hoje os botões `Auditar / Reextrair falhas / Regerar` empilham na horizontal e estouram o card. Reescrever cada item da lista como um card vertical:
 
-- Filtro mais estrito: `termo.trim().length >= 2 && definicao.trim().length >= 10`.
-- Se sobrar **menos de 3 pares válidos**, renderizar mensagem "Atividade indisponível" **e chamar `onConcluir()` no mount** — isso destrava o botão Próximo automaticamente, eliminando o bug do botão preso.
+```
+┌────────────────────────────────────────────────┐
+│ ☐  45º EXAME DE ORDEM UNIFICADO                │
+│    ● Pronto · 80 questões · 0 falhas           │
+│                                                │
+│    ┌──── Etapa 1: Extração ────────────┐       │
+│    │ ✓ 80 questões extraídas do PDF    │       │
+│    └──────────────────────────────────┘        │
+│    ┌──── Etapa 2: Geração ─────────────┐       │
+│    │ ✓ Simulado pronto                 │       │
+│    └──────────────────────────────────┘        │
+│                                                │
+│    [Auditar] [Reextrair falhas] [Regerar] [🗑] │
+└────────────────────────────────────────────────┘
+```
 
-### 3. Limpeza do fallback determinístico
+- Cabeçalho: checkbox + título + status
+- Bloco "Etapas" (só aparece quando a prova é o `atual`, ou foi gerada): mostra Etapa 1 e Etapa 2 como dois sub-cards com tick/spinner/erro
+- Linha inferior de ações com `flex-wrap`, ícone-only no mobile, label completa no desktop
+- `min-w-0` + `truncate` no título para não estourar
 
-Em `src/lib/aulas-interativas-long-slides.ts` e na cópia dentro de `aulas-interativas-preview.ts` (`buildLocalSlides`), o `buildPares` passa a só devolver pares cujo `termo` tenha 2+ palavras E `definicao` 60+ caracteres — se não atingir, devolve array vazio (o slide `ligar_termos` é então pulado pela validação acima). Evita o fallback ruim virar produção.
+### 3. Mapa de etapas explícito (Etapa 1 / Etapa 2)
 
-### 4. QA
+Hoje o backend tem 4 sub-etapas (`ocr`, `analisando`, `gerando`, `validando`). Agrupar visualmente:
 
-- Reprocessar a aula "1.1. Introdução à Filosofia Grega do Direito" pela tela de admin (`/admin/aulas-interativas`) e percorrer os 17 slides no preview confirmando:
-  - Conteúdo denso e didático em `conceito`/`exemplo`.
-  - 5 pares válidos no `ligar_termos`, sem caixa vazia.
-  - Botão Próximo funciona após completar (ou pula se inválido).
-  - Quiz com pergunta específica do tema, não genérica.
+- **Etapa 1 — Extração** = `ocr` + `analisando`
+  - Sub-status: "Lendo PDF da prova e gabarito (OCR)" → "Detectando total de questões"
+  - Resultado: "X questões detectadas · gabarito oficial carregado"
+- **Etapa 2 — Geração** = `gerando` + `validando`
+  - Sub-status: "Extraindo questão N/X" → "Revalidando faltantes"
+  - Resultado: "X questões geradas · Y falhas reextraídas"
 
-## Detalhes técnicos
+Isso é puramente apresentação — nenhuma mudança no pipeline backend. Helper:
 
-- **Modelo**: `gemini-2.5-flash` direto via `geminiGenerateContent` (já é o padrão do projeto, conforme memória `mem://constraints/ai-provider-gemini.md`).
-- **Sem mudanças de schema** no Supabase — o JSON dos slides já é livre em `aulas_interativas_previas.estrutura`.
-- **Sem mudanças** no fluxo de "ingestão" (que move da prévia para `aulas_interativas_aulas` / `aulas_interativas_slides`) — ele já copia o JSON tal como vem.
-- Tempo por aula: ~15–30 s. Para 9 aulas, o stream já mostra progresso aula a aula, então a UX continua a mesma.
+```ts
+function mapEtapa(etapa: string): { numero: 1 | 2; label: string; sub: string } {
+  if (etapa === "ocr") return { numero: 1, label: "Extração", sub: "Lendo PDFs..." };
+  if (etapa === "analisando") return { numero: 1, label: "Extração", sub: "Contando questões..." };
+  if (etapa === "gerando") return { numero: 2, label: "Geração", sub: "Extraindo questões..." };
+  if (etapa === "validando") return { numero: 2, label: "Geração", sub: "Revalidando..." };
+  // pronto / erro
+}
+```
+
+### 4. SimuladoProgressModal — visualização das 2 etapas
+
+Reorganizar o modal para mostrar as 2 etapas como um stepper vertical:
+
+```
+Prova 45
+
+[●] Etapa 1 — Extração                         ✓ Concluída
+    └─ 80 questões detectadas no gabarito
+
+[●] Etapa 2 — Geração                          ▶ Em andamento
+    └─ Extraindo questões com Gemini
+       ━━━━━━━━━━━━━░░░░░░░░░░  47/80 (58%)
+       ~32s restantes
+
+▼ Logs detalhados (collapse)
+```
+
+- Mantém os logs detalhados num accordion fechado por padrão (menos ruído)
+- Cada etapa tem estado: pendente / em andamento (spinner) / concluída (✓) / erro (⚠)
+
+### 5. Confirmar comportamento automático em fila
+
+Sem mudanças no `SimuladoQueueDriver` — ele já avança automaticamente de uma sub-etapa para outra e da prova atual para a próxima. Só revisar para garantir que:
+- Em caso de erro numa prova, a fila **continua** com a próxima (já é o comportamento atual via `finishAtual("erro")`).
+- Mostrar toast claro: "Prova 45 falhou. Pulando para prova 44…".
+
+### 6. Limpeza visual
+
+- Espaçamento maior entre os cards (`gap-3` em vez de `divide-y`)
+- Fundo do card com borda mais suave
+- Badge "Pronto/Gerando/Erro" com largura mínima para não ficar cortado
+- Action bar fixa no fundo do card, separada por borda tracejada
+
+## Arquivos a alterar
+
+- `src/routes/_app.admin.simulados.tsx` — reescrever a lista como cards verticais e montar a top-bar
+- `src/components/admin/SimuladoQueueTopBar.tsx` — **novo** componente sticky no topo
+- `src/components/admin/SimuladoProgressModal.tsx` — refatorar para stepper de 2 etapas + accordion de logs
+- `src/components/admin/SimuladoQueueIndicator.tsx` — opcional: esconder na rota `/admin/simulados` (já existe top-bar lá), manter nas outras
 
 ## Fora de escopo
 
-- Não vou mexer no design dos slides nem no layout do `SlidePlayer` além do filtro do `ligar_termos`.
-- Não vou refazer a tela de listagem `/aulas-interativas` (a estrutura "lista + capa" da primeira screenshot já está correta).
+- Mudanças no pipeline backend (`simulados-admin.functions.ts`) — o fluxo OCR→análise→geração→validação fica idêntico.
+- Mudança no schema do `simulado_jobs`.
+- Lógica de fila (continua automática, já funciona).
