@@ -27,7 +27,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { simuladoQueue, useSimuladoQueue } from "@/lib/simulado-queue";
 import { SimuladoProgressModal } from "@/components/admin/SimuladoProgressModal";
 import { SimuladoQueueTopBar } from "@/components/admin/SimuladoQueueTopBar";
-import { mapEtapa, getStageStatus, type StageStatus } from "@/lib/simulado-etapas";
+import { type StageStatus } from "@/lib/simulado-etapas";
 
 export const Route = createFileRoute("/_app/admin/simulados")({
   component: AdminSimulados,
