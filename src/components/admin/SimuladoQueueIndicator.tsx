@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { useRouterState } from "@tanstack/react-router";
 import { Loader2, ListOrdered, X, ChevronUp } from "lucide-react";
 import { useSimuladoQueue, simuladoQueue } from "@/lib/simulado-queue";
 import { useAuth } from "@/hooks/use-auth";
