@@ -301,7 +301,7 @@ function AtoPage() {
               onClick={() => setOpenArtigo(null)}
             />
             <motion.div
-              className="fixed inset-x-0 bottom-0 z-50 max-h-[90vh] bg-background rounded-t-3xl border-t border-border shadow-2xl flex flex-col"
+              className="fixed inset-x-0 bottom-0 top-0 z-50 bg-background border-t border-border shadow-2xl flex flex-col sm:top-8 sm:rounded-t-3xl"
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
