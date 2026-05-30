@@ -31,7 +31,10 @@ export function SimuladoQueueIndicator() {
     refetchInterval: 2000,
   });
 
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
   if (!isAdmin) return null;
+  if (pathname.startsWith("/admin/simulados")) return null;
   if (!state.atual && state.fila.length === 0) return null;
 
   const total = job?.total_estimado ?? 0;
